@@ -1,13 +1,10 @@
 # FLIMage
 This software allows for controlling TCSPC software and produce image.
 
-* To build this software, please get the following package (you can do NuGet):
-1 BitMiracle.LibTiff.NET 2.4.626 or higher
-2 MathNet.Numerics.4.7.0 or higher
-3 System.Numerics.Vector.4.5.0 or higher
+* To build this software, please get the following package (you can do NuGet): BitMiracle.LibTiff.NET 2.4.626 or higher, MathNet.Numerics.4.7.0 or higher, System.Numerics.Vector.4.5.0 or higher
 
 * When we build FLIMage, we put external libraries in 
-..\External and ..\Library folders. In the default setting, you need to create these folder. Alternatively you can change pre-compile option (in FLIMage properties).
+..\External and ..\Library folders. In the default setting, you need to create these folders. Alternatively you can change pre-compile option (in FLIMage properties).
 
 * National Instruments
 If you want to use National Instruments, please install National instrument driver with DotNet support. We tested with PCIe-6231/6233 and PCI-6371/6373.
