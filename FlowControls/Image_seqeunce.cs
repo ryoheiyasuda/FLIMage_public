@@ -263,7 +263,7 @@ namespace FLIMimage
 
         private void RunSequence()
         {
-            FLIMage.imageSequencing = true;
+            FLIMage.flimage_io.imageSequencing = true;
             bool firstImage = false;
             if (autoDriftCorrection)
                 FLIMage.drift_correction.TurnOnOffCorrection(false);
@@ -295,7 +295,7 @@ namespace FLIMimage
 
                     System.Threading.Thread.Sleep(CheckingInterval_ms);
 
-                    while (FLIMage.grabbing && !abortGrabActivated)
+                    while (FLIMage.flimage_io.grabbing && !abortGrabActivated)
                     {
                         System.Threading.Thread.Sleep(CheckingInterval_ms);
                         reportProgress(true);
@@ -326,7 +326,7 @@ namespace FLIMimage
 
             }
 
-            FLIMage.imageSequencing = false;
+            FLIMage.flimage_io.imageSequencing = false;
             FLIMage.Invoke((Action)delegate
             {
                 FLIMage.ChangeItemsStatus(true, false);
@@ -336,7 +336,7 @@ namespace FLIMimage
         private void RunOnce()
         {
             FLIMage.ExternalCommand("StartGrab");
-            Debug.WriteLine("Start Grab started : " + FLIMage.grabbing);
+            Debug.WriteLine("Start Grab started : " + FLIMage.flimage_io.grabbing);
         }
 
         private void ImageSequenceGridView_CurrentCellChanged(object sender, EventArgs e)

@@ -172,7 +172,7 @@ namespace FLIMimage
         FastZ_Calibration fast_calib;
 
         String PythonPath = "";
-        String ScriptDirectoryName = "Python Scripts 1.1.0.30";
+        String ScriptDirectoryName = "Python Scripts";
         String ScriptPath = "";
         String lastFilePath = "";
         SettingManager settingManager;
@@ -857,14 +857,12 @@ namespace FLIMimage
             if (drawing_ROI && ROItype.Equals(ROI.ROItype.Polygon))
             {
                 drawing_ROI = false;
-                //imageRoi = imageRoi.addPoints(imageRoiOld.Points[0]);
                 imageRoiOld.X[imageRoiOld.X.Length - 1] = imageRoiOld.X[0];
                 imageRoiOld.Y[imageRoiOld.Y.Length - 1] = imageRoiOld.Y[0];
                 imageRoi = new ROI(ROItype, imageRoiOld.X, imageRoiOld.Y, FLIM_ImgData.nChannels, 0, imageRoiOld.Roi3d, imageRoiOld.Z);
 
                 //StatusText.Text = String.Format("{0}, {1}", imageRoiOld.Points[0].X, imageRoiOld.Points[1].Y);
-                ROI roi1 = convertROIFromDataToDisplay(imageRoiOld);
-                //imageRoiOld.ScaleRoi((double)FLIM_ImgData.width / (double)Image1.Width, calculateImageOffset());
+                ROI roi1 = convertROIfromDisplayToData(imageRoiOld);
                 FLIM_ImgData.Roi = new ROI(ROItype, roi1.X, roi1.Y, FLIM_ImgData.nChannels, 0, roi1.Roi3d, roi1.Z);
             }
             else
@@ -1200,7 +1198,7 @@ namespace FLIMimage
                     uncagingLocFrac[1] = uLoc.Y / (double)Image1.Height;
                     FLIMage.UpdateUncagingFromDisplay();
                     referenceLoc = new Point(-1, -1);
-                    FLIMage.uncaging_Calib = new double[] { 0.0, 0.0 };
+                    FLIMage.flimage_io.uncaging_Calib = new double[] { 0.0, 0.0 };
 
                     if (moveUncaging)
                     {
@@ -1220,7 +1218,7 @@ namespace FLIMimage
                         double[] originalLocationV = IOControls.PositionFracToVoltage(uncagingLocFrac, FLIMage.State);
 
                         for (int i = 0; i < 2; i++)
-                            FLIMage.uncaging_Calib[i] = calibratedLocationV[i] - originalLocationV[i];
+                            FLIMage.flimage_io.uncaging_Calib[i] = calibratedLocationV[i] - originalLocationV[i];
 
                         FLIMage.UpdateUncagingFromDisplay();
                     }
@@ -5330,7 +5328,7 @@ namespace FLIMimage
         public void FormatProject()
         {
 
-            if (!focusing || !FLIMage.parameters.StripeDuringFocus)
+            if (!focusing || !FLIMage.flimage_io.parameters.StripeDuringFocus)
             {
                 lock (syncBmp[0])
                 {
@@ -5718,7 +5716,7 @@ namespace FLIMimage
 
             if (!Ch12.Checked)
             {
-                if (!focusing || !FLIMage.parameters.StripeDuringFocus)
+                if (!focusing || !FLIMage.flimage_io.parameters.StripeDuringFocus)
                 {
                     Image1.Invalidate();
                 }
@@ -5727,7 +5725,7 @@ namespace FLIMimage
             }
             else
             {
-                if (!focusing || !FLIMage.parameters.StripeDuringFocus)
+                if (!focusing || !FLIMage.flimage_io.parameters.StripeDuringFocus)
                     DrawImages();
             }
 

@@ -34,8 +34,8 @@ namespace FLIMimage
 
         public void updateWindow()
         {
-            UncagingCalibX.Text = String.Format("{0:0.000}", State.Uncaging.CalibV[0] - FLIMage.uncaging_Calib[0]);
-            UncagingCalibY.Text = String.Format("{0:0.000}", State.Uncaging.CalibV[1] - FLIMage.uncaging_Calib[1]);
+            UncagingCalibX.Text = String.Format("{0:0.000}", State.Uncaging.CalibV[0] - FLIMage.flimage_io.uncaging_Calib[0]);
+            UncagingCalibY.Text = String.Format("{0:0.000}", State.Uncaging.CalibV[1] - FLIMage.flimage_io.uncaging_Calib[1]);
         }
 
         private void ApplyCalib_Click(object sender, EventArgs e)
@@ -53,7 +53,7 @@ namespace FLIMimage
 
         private void UncagingCalibration_FormClosing(object sender, FormClosingEventArgs e)
         {
-            FLIMage.uncaging_Calib = new double[] { 0.0, 0.0 };
+            FLIMage.flimage_io.uncaging_Calib = new double[] { 0.0, 0.0 };
             FLIMage.image_display.referenceLoc = new Point(-1, -1);
             FLIMage.image_display.calib_on = false;
             FLIMage.image_display.Refresh();

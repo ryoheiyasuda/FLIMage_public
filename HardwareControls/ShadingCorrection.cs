@@ -31,7 +31,7 @@ namespace FLIMimage
             FLIMage = FLIMage_in;
             State = FLIMage.State;
             image_display = FLIMage.image_display;
-            shading = FLIMage.shading;
+            shading = FLIMage.flimage_io.shading;
             fileIO = FLIMage.fileIO;
             ShadingFileSetting();
         }
@@ -79,7 +79,7 @@ namespace FLIMimage
 
             int ShadingCh = image_display.currentChannel;
 
-            shading.AddShadingImage(FLIMage.FLIM_ImgData, LaserN, ShadingCh);
+            shading.AddShadingImage(FLIMage.flimage_io.FLIM_ImgData, LaserN, ShadingCh);
             fileIO.SaveFloatImageInTiff(shading.ShadingImages[LaserN], shading_filePath[LaserN]);
             //fileIO.SaveArray(shading_filePath[LaserN], shading.ShadingImages[LaserN]);
 

@@ -1723,7 +1723,7 @@ namespace FLIMimage
                     int width1 = img[0].Length;
 
                     //Check if they have the same size. If different size, just calculate intensity.
-                    if (height1 != lf_img.Length || width1 != lf_img[0].Length) 
+                    if (lf_img == null || height1 != lf_img.Length || width1 != lf_img[0].Length) 
                         lf_img = null;
 
                     for (int y = roi.Rect.Top; y < roi.Rect.Bottom; y++)

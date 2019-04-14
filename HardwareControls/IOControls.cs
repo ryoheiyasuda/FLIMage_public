@@ -690,26 +690,6 @@ namespace FLIMimage
             }
 
 
-            //public void EvokeExternal()
-            //{
-            //    if (dioTask != null)
-            //        dioTask.Dispose();
-            //    dioTask = new Task();
-            //    dioTask.DOChannels.CreateChannel(port, "DIO", ChannelLineGrouping.OneChannelForAllLines);
-            //    dioTask.Timing.ConfigureSampleClock("", outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples);
-            //    dioTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(State.Init.ExternalTriggerInput, DigitalEdgeStartTriggerEdge.Rising);
-            //    dioTask.Control(TaskAction.Verify);
-
-            //    waveform = new DigitalWaveform(nSamples, 1, DigitalState.ForceDown);
-            //    waveform.Signals[0].States[0] = DigitalState.ForceUp;
-
-            //    writerS.WriteSingleSampleSingleLine(true, false);
-
-            //    writer = new DigitalSingleChannelWriter(dioTask.Stream);
-            //    writer.WriteWaveform(false, waveform);
-            //    dioTask.Start();
-            //}
-
             public void Evoke()
             {
                 //if (dioTask != null)
@@ -765,15 +745,13 @@ namespace FLIMimage
             }
         }
 
-        public static bool IfSameBoard_EOM_Mirror(ScanParameters State)
+        public static bool IfSameBoard_With_Mirror(String BoardName, ScanParameters State)
         {
             String[] sP;
             sP = State.Init.mirrorAOPortX.Split('/');
             String BoardMirror = sP[0];
-            sP = State.Init.EOM_Port0.Split('/');
-            String BoardEOM = sP[0];
 
-            return (String.Compare(BoardMirror, BoardEOM, StringComparison.OrdinalIgnoreCase) == 0);
+            return (String.Compare(BoardMirror, BoardName, StringComparison.OrdinalIgnoreCase) == 0);
         }
 
         static double[,] ConcatChannels(double[,] DataA, double[,] DataB)
@@ -806,8 +784,10 @@ namespace FLIMimage
         public class DigitalUncagingShutterSignal
         {
             private String digitalOutputPort;
-            private String triggerPort;
-            private String sampleClockPort;
+            private String triggerPort = "";
+            private String ExternalTriggerPort = "";
+            private String sampleClockPort = "";
+            private String Board = "";
             private ScanParameters State;
 
             private int nSamples;
@@ -819,17 +799,24 @@ namespace FLIMimage
 
             private bool portActive = false;
 
+            private bool sameBoardWithMirrors = false;
+
             public DigitalUncagingShutterSignal(ScanParameters State_in)
             {
                 State = State_in;
                 digitalOutputPort = State.Init.UncagingShutterDOPort;
-                sampleClockPort = State.Init.lineClockPort;
-                triggerPort = State.Init.UncagingShutterTrigger;
-                activeHigh = !State.Init.DO_uncagingShutter_useForPMTsignal;
+                GetTriggerPortName(digitalOutputPort, State, ref Board, ref triggerPort, ref ExternalTriggerPort, ref sampleClockPort);
+                
+                sameBoardWithMirrors = IfSameBoard_With_Mirror(Board, State);
 
+                if (sameBoardWithMirrors)
+                    sampleClockPort = "";
+
+                activeHigh = !State.Init.DO_uncagingShutter_useForPMTsignal;
 
                 onoffTask = new Task();
                 onoffTask.DOChannels.CreateChannel(digitalOutputPort, "", ChannelLineGrouping.OneChannelForEachLine);
+
                 writerOnOff = new DigitalSingleChannelWriter(onoffTask.Stream);
             }
 
@@ -837,7 +824,7 @@ namespace FLIMimage
             /// For uncaging data. Can be together with Frame or Slice/page acquisition.
             /// </summary>
             /// <param name="forFrame"></param>
-            public void PutValue_and_Start(bool forFrame)
+            public void PutValue_and_Start(bool forFrame, bool ext_trigger)
             {
                 portActive = true;
                 double outputRate = State.Uncaging.outputRate;
@@ -859,11 +846,17 @@ namespace FLIMimage
 
                 myTask = new Task();
                 myTask.DOChannels.CreateChannel(digitalOutputPort, "", ChannelLineGrouping.OneChannelForEachLine);
-                //myTask.Timing.ConfigurePipelinedSampleClock("", outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples);
-                myTask.Timing.ConfigureSampleClock("", outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples);
-                myTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
+                myTask.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples);
 
+                if (sameBoardWithMirrors)
+                {
+                    if (ext_trigger)
+                        myTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
+                    else
+                        myTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(ExternalTriggerPort, DigitalEdgeStartTriggerEdge.Rising);
+                }
                 myTask.Control(TaskAction.Verify);
+
                 //myTask.Stream.WriteRegenerationMode = WriteRegenerationMode.DoNotAllowRegeneration;
                 DigitalState digital_state = DigitalState.ForceDown;
                 if (!activeHigh)
@@ -936,7 +929,7 @@ namespace FLIMimage
                 {
                     writerOnOff.WriteSingleSampleSingleLine(true, ON);
                 }
-                catch(Exception EX)
+                catch (Exception EX)
                 {
                     Debug.WriteLine(EX.ToString());
                 }
@@ -958,8 +951,111 @@ namespace FLIMimage
                 if (myTask != null)
                     myTask.Dispose();
             }
+        }
+
+        //
+        //Clock is coming out of the second board. For now.
+        //
+        public class DigitalLineClock
+        {
+            private String digitalLinePort;
+            private String triggerPort;
+            private String ExternalTriggerPort;
+            private String sampleClockPort;
+            private bool sameBoardWithMirrors;
+            private ScanParameters State;
+            private String Board;
+            private int nSamples;
+            private Task myTask;
+            private Task onoffTask;
+            private DigitalWaveform waveform;
+            private DigitalSingleChannelWriter writer, writerOnOff;
+            private bool activeHigh = true;
+
+            private bool portActive = false;
+
+            public DigitalLineClock(ScanParameters State_in)
+            {
+                State = State_in;
+                GetTriggerPortName(State.Init.EOM_Port0, State, ref Board, ref triggerPort, ref ExternalTriggerPort, ref sampleClockPort);
+                digitalLinePort = Board + "/port0/" + State.Init.DigitalLinePort;
+                sameBoardWithMirrors = IfSameBoard_With_Mirror(Board, State);
+                if (sameBoardWithMirrors)
+                {
+                    sampleClockPort = "";
+                }
+
+                onoffTask = new Task();
+                onoffTask.DOChannels.CreateChannel(digitalLinePort, "", ChannelLineGrouping.OneChannelForEachLine);
+
+                writerOnOff = new DigitalSingleChannelWriter(onoffTask.Stream);
+            }
+
+            public void PutValue_and_Start(bool ext_trigger)
+            {
+                portActive = true;
+                double outputRate = State.Uncaging.outputRate;
+                double totalLength_ms = (State.Uncaging.baselineBeforeTrain_forFrame + State.Uncaging.pulseSetInterval_forFrame * State.Uncaging.trainRepeat);
+
+                double msPerLine = State.Acq.msPerLine;
+                if (State.Acq.fastZScan)
+                    msPerLine = State.Acq.FastZ_msPerLine;
+
+                nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame);
+
+                myTask = new Task();
+                myTask.DOChannels.CreateChannel(digitalLinePort, "", ChannelLineGrouping.OneChannelForEachLine);
+                myTask.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples * State.Acq.nFrames);
+
+                if (sameBoardWithMirrors)
+                {
+                    if (ext_trigger)
+                        myTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
+                    else
+                        myTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(ExternalTriggerPort, DigitalEdgeStartTriggerEdge.Rising);
+                }
+
+                myTask.Control(TaskAction.Verify);
+
+                DigitalState digital_state = DigitalState.ForceDown;
+                if (!activeHigh)
+                    digital_state = DigitalState.ForceUp;
+
+                waveform = new DigitalWaveform(nSamples, 1, digital_state);
+
+                for (int i = 0; i < State.Acq.linesPerFrame; i++)
+                {
+                    int loc = i * (int)(outputRate / (1000.0 * msPerLine));
+                    if (activeHigh)
+                        waveform.Signals[0].States[loc] = DigitalState.ForceUp;
+                    else
+                        waveform.Signals[0].States[loc] = DigitalState.ForceDown;
+                }
+
+                writer = new DigitalSingleChannelWriter(myTask.Stream);
+                writer.WriteWaveform(false, waveform);
+                myTask.Start();
+            }
+
+            public void Stop()
+            {
+                if (myTask != null && portActive)
+                {
+                    myTask.Stop();
+                    myTask.WaitUntilDone();
+                    //myTask.Dispose();
+                    portActive = false;
+                }
+            }
+
+            public void dispose()
+            {
+                if (myTask != null)
+                    myTask.Dispose();
+            }
 
         }
+
 
         //Analog output class to control galvanoic mirrors. X and Y outputs are defined by State.Init.mirrorAOPortX and State.Init.mirrorAOPortY
         public class MirrorAO
@@ -976,8 +1072,10 @@ namespace FLIMimage
             public double ScanFraction;
             public String portX;
             public String portY;
-            public String triggerPort;
-            public String sampleClockPort;
+            public String triggerPort = "";
+            public String sampleClockPort = "";
+            public String Board = "";
+            public String ExternalTriggerInputPort = "";
 
             public ScanParameters State;
             public Shading shading;
@@ -986,8 +1084,6 @@ namespace FLIMimage
             public EventArgs e = null;
             public delegate void FrameDoneHandler(MirrorAO mirrorAO, EventArgs e);
             public bool SameBoard = false;
-            public String Board;
-            public String ExternalTriggerInputPort;
 
             public MirrorAO(ScanParameters State_in, Shading shading_in)
             {
@@ -1000,10 +1096,8 @@ namespace FLIMimage
                 double maxV = 10;
                 double minV = -10;
 
-                triggerPort = State.Init.mirrorAOTrigger;
                 portX = State.Init.mirrorAOPortX;
                 portY = State.Init.mirrorAOPortY;
-                sampleClockPort = State.Init.mirrorAOSampleClockOutput;
 
                 hAOXY.AOChannels.CreateVoltageChannel(portX, "aoChannelX", minV, maxV, AOVoltageUnits.Volts);
                 hAOXY.AOChannels.CreateVoltageChannel(portY, "aoChannelY", minV, maxV, AOVoltageUnits.Volts);
@@ -1011,40 +1105,38 @@ namespace FLIMimage
                 hAOXY_S.AOChannels.CreateVoltageChannel(portX, "aoChannelXS", minV, maxV, AOVoltageUnits.Volts);
                 hAOXY_S.AOChannels.CreateVoltageChannel(portY, "aoChannelYS", minV, maxV, AOVoltageUnits.Volts);
 
-                String[] sP = portX.Split('/');
-                Board = sP[0];
-                ExternalTriggerInputPort = "/" + Board + "/" + State.Init.ExternalTriggerInputPort;
+                GetTriggerPortName(portX, State, ref Board, ref triggerPort, ref ExternalTriggerInputPort, ref sampleClockPort);
 
                 if (State.Init.EOM_nChannels > 0)
                 {
-                    SameBoard = IfSameBoard_EOM_Mirror(State);
+                    string tmpBoard = "";
+                    string tmpTrigger = "";
+                    string tmpExt = "";
+                    string tmpSample = "";
+                    GetTriggerPortName(State.Init.EOM_Port0, State, ref tmpBoard, ref tmpTrigger, ref tmpExt, ref tmpSample);
+                    SameBoard = IfSameBoard_With_Mirror(tmpBoard, State);
                     minV = -2;
                     maxV = 2;
 
                     if (SameBoard)
                     {
                         hAOXY.AOChannels.CreateVoltageChannel(State.Init.EOM_Port0, "M_EOM0", minV, maxV, AOVoltageUnits.Volts);
-                        //hAOXY_S.AOChannels.CreateVoltageChannel(State.Init.EOM_Port0, "M_EOM0S", minV, maxV, AOVoltageUnits.Volts);
                         if (State.Init.EOM_nChannels > 1)
                         {
                             hAOXY.AOChannels.CreateVoltageChannel(State.Init.EOM_Port1, "M_EOM1S", minV, maxV, AOVoltageUnits.Volts);
-                            //hAOXY_S.AOChannels.CreateVoltageChannel(State.Init.EOM_Port1, "M_EOM1S", minV, maxV, AOVoltageUnits.Volts);
                         }
                         if (State.Init.EOM_nChannels > 2)
                         {
                             hAOXY.AOChannels.CreateVoltageChannel(State.Init.EOM_Port2, "M_EOM2", minV, maxV, AOVoltageUnits.Volts);
-                            //hAOXY_S.AOChannels.CreateVoltageChannel(State.Init.EOM_Port2, "M_EOM2S", minV, maxV, AOVoltageUnits.Volts);
                         }
                         if (State.Init.EOM_nChannels > 3)
                         {
                             hAOXY.AOChannels.CreateVoltageChannel(State.Init.EOM_Port3, "M_EOM3", minV, maxV, AOVoltageUnits.Volts);
-                            //hAOXY_S.AOChannels.CreateVoltageChannel(State.Init.EOM_Port2, "M_EOM2S", minV, maxV, AOVoltageUnits.Volts);
                         }
 
                         if (State.Init.AO_uncagingShutter)
                         {
                             hAOXY.AOChannels.CreateVoltageChannel(State.Init.UncagingShutterAnalogPort, "M_UncagingShutter", 0, 5, AOVoltageUnits.Volts);
-                            //hAOXY_S.AOChannels.CreateVoltageChannel(State.Init.UncageShutterAO, "M_UncagingShutterS", 0, 5, AOVoltageUnits.Volts);
                         }
                     }
                 }
@@ -1202,13 +1294,22 @@ namespace FLIMimage
                 }
             }
 
-            public void start(bool externalTrigger)
+            public bool start(bool externalTrigger)
             {
                 if (externalTrigger)
                     hAOXY.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(ExternalTriggerInputPort, DigitalEdgeStartTriggerEdge.Rising);
                 //else
                 //    hAOXY.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
-                hAOXY.Start();
+                try
+                {
+                    hAOXY.Start();
+                    return true;
+                }
+                catch (DaqException ex)
+                {
+                    hAOXY.Start();
+                    return false;
+                }
             }
 
             public void WaitUntilDone(int timeout)
@@ -1558,18 +1659,27 @@ namespace FLIMimage
             return DataEOM;
         }
 
+        static public void GetTriggerPortName(String DeviceName, ScanParameters State, ref String BoardName, ref string triggerPort, ref String ExternalTriggerInputPort, ref String SampleClockPort)
+        {
+            String[] sP = DeviceName.Split('/');
+            BoardName = sP[0];
+            for (int i = 0; i < sP.Length; i++)
+                if (sP[i].StartsWith("Dev"))
+                {
+                    BoardName = sP[i];
+                }
+
+            ExternalTriggerInputPort = "/" + BoardName + "/" + State.Init.ExternalTriggerInputPort;
+            triggerPort = "/" + BoardName + "/" + State.Init.TriggerInput;
+            SampleClockPort = "/" + BoardName + "/" + State.Init.SampleClockPort;
+        }
+
         public class pockelAI
         {
             public Task hEOM_AI, hEOM_AI_S;
             public AnalogMultiChannelReader readerEOM_AI; // readerEOM_AI_S;
             public Task runningTask;
             public AsyncCallback analogCallback;
-
-            ////public double inputRate;
-            ////public double msPerLine;
-            ////public int nFrames;
-            ////public int nLines;
-            ////public double ScanFraction;
 
             public String port0;
             public String port1;
@@ -1580,6 +1690,7 @@ namespace FLIMimage
 
             public int samplesPerTrigger;
             public String triggerPort;
+            public String SampleClockPort;
             public DigitalEdgeStartTriggerEdge triggerEdge;
 
             public bool measurement_done = false;
@@ -1595,16 +1706,14 @@ namespace FLIMimage
             public pockelAI(ScanParameters State_in)
             {
                 State = State_in;
-                triggerPort = State.Init.EOM_AI_Trigger;
+                //triggerPort = State.Init.EOM_AI_Trigger;
                 port0 = State.Init.EOM_AI_Port0;
                 port1 = State.Init.EOM_AI_Port1;
                 port2 = State.Init.EOM_AI_Port2;
                 port3 = State.Init.EOM_AI_Port3;
                 nChannels = State.Init.EOM_nChannels;
 
-                String[] sP = port0.Split('/');
-                Board = sP[0];
-                ExternalTriggerInputPort = "/" + Board + "/" + State.Init.ExternalTriggerInputPort;
+                GetTriggerPortName(port0, State, ref Board, ref triggerPort, ref ExternalTriggerInputPort, ref SampleClockPort);
 
                 double maxV = 1;
                 double minV = -1;
@@ -1790,7 +1899,7 @@ namespace FLIMimage
             {
                 State = State_in;
                 shading = shading_in;
-                triggerPort = State.Init.EOM_Trigger;
+
                 outputRate = State.Acq.outputRate;
                 port0 = State.Init.EOM_Port0;
                 port1 = State.Init.EOM_Port1;
@@ -1798,12 +1907,9 @@ namespace FLIMimage
                 port3 = State.Init.EOM_Port3;
                 portU = State.Init.UncagingShutterAnalogPort;
                 nChannels = State.Init.EOM_nChannels;
-                sampleClockPort = State.Init.EOM_SampleClockInput;
                 slaveClockPort = State.Init.EOM_slaveClockPort;
 
-                String[] sP = port0.Split('/');
-                Board = sP[0];
-                ExternalTriggerInputPort = "/" + Board + "/" + State.Init.ExternalTriggerInputPort;
+                GetTriggerPortName(port0, State, ref Board, ref triggerPort, ref ExternalTriggerInputPort, ref sampleClockPort);
 
                 if (sampleClockPort.Length <= 4) //Like NA;
                     sampleClockPort = "";
@@ -2064,6 +2170,7 @@ namespace FLIMimage
             public ScanParameters State;
             public String Board;
             public String ExternalTriggerInputPort;
+            public String sampleClockPort;
 
             public lineClock(ScanParameters State_in, bool focus) //Constructor
             {
@@ -2071,7 +2178,8 @@ namespace FLIMimage
 
                 lineClockPort = State.Init.lineClockPort;
                 frameClockPort = State.Init.frameClockPort;
-                TriggerPort = State.Init.lineClockTrigger;
+
+                GetTriggerPortName(lineClockPort, State, ref Board, ref TriggerPort, ref ExternalTriggerInputPort, ref sampleClockPort);
 
                 msPerLine = State.Acq.msPerLine;
                 if (State.Acq.fastZScan)
@@ -2105,10 +2213,6 @@ namespace FLIMimage
                     lineClockTask.Timing.ConfigureImplicit(SampleQuantityMode.ContinuousSamples);
                     //lineClockTask.Timing.ConfigureImplicit(SampleQuantityMode.FiniteSamples, nRepeat);
                 }
-                //lineClockTask.Timing.ConfigureImplicit(SampleQuantityMode.ContinuousSamples, nRepeat);
-                String[] sP = lineClockPort.Split('/');
-                Board = sP[0];
-                ExternalTriggerInputPort = "/" + Board + "/" + State.Init.ExternalTriggerInputPort;
             }
 
             public void start(bool externalTrigger)
@@ -2616,20 +2720,6 @@ namespace FLIMimage
             double[] offset = new double[] { State.Acq.XOffset, State.Acq.YOffset };
             double[] limit = new double[] { State.Init.AbsoluteMaxVoltageScan, State.Init.AbsoluteMaxVoltageScan };
             MatrixCalc.RotateOffsetTimeSeries(mirrorOutput, State.Acq.Rotation, offset, limit, State.Acq.flipXYScan, State.Acq.switchXYScan);
-
-            //int nChannels = mirrorOutput.GetLength(0);
-            //int nSamples = mirrorOutput.GetLength(1);
-            //double angle = State.Acq.Rotation / 180.0 * Math.PI;
-            //double cosA = Math.Cos(angle);
-            //double sinA = Math.Sin(angle);
-            //for (int i = 0; i < nSamples; i++)
-            //{
-            //    double x = cosA * mirrorOutput[0, i] - sinA * mirrorOutput[1, i];
-            //    double y = sinA * mirrorOutput[0, i] + cosA * mirrorOutput[1, i];
-
-            //    mirrorOutput[0, i] = x + State.Acq.XOffset;
-            //    mirrorOutput[1, i] = y + State.Acq.YOffset;
-            //}
         }
 
     } //Class

@@ -41,7 +41,7 @@ namespace FLIMimage
             State = fc.State;
             text_server = fc.text_server;
 
-            FLIMage.EventNotify += new FLIMageMain.FLIMage_EventHandler(EventHandling);
+            FLIMage.flimage_io.EventNotify += new FLIMage_IO.FLIMage_EventHandler(EventHandling);
             com_server.r_tick += new COMserver.ReadHandler(RemoteEventHandling);
 
             uf = new UserFunction(fc);
@@ -166,10 +166,10 @@ namespace FLIMimage
         public void UnSubscribe()
         {
             com_server.r_tick -= RemoteEventHandling;
-            FLIMage.EventNotify -= EventHandling;
+            FLIMage.flimage_io.EventNotify -= EventHandling;
         }
 
-        public void EventHandling(FLIMageMain fc, FLIMageMain.ProcessEventArgs e)
+        public void EventHandling(FLIMage_IO fc, ProcessEventArgs e)
         {
             State = FLIMage.State;
 
@@ -425,12 +425,12 @@ namespace FLIMimage
                     }
                 case "SliceAcquisitionDone":
                     {
-                        writeString = String.Format("{0}, {1}, {2}", EventStr, FLIMage.internalSliceCounter, State.Acq.nSlices);
+                        writeString = String.Format("{0}, {1}, {2}", EventStr, FLIMage.flimage_io.internalSliceCounter, State.Acq.nSlices);
                         break;
                     }
                 case "FrameAcquisitionDone":
                     {
-                        writeString = String.Format("{0}, {1}, {2}", EventStr, FLIMage.internalFrameCounter, State.Acq.nSlices);
+                        writeString = String.Format("{0}, {1}, {2}", EventStr, FLIMage.flimage_io.internalFrameCounter, State.Acq.nSlices);
                         break;
                     }
                 case "ParametersChanged":
@@ -533,7 +533,7 @@ namespace FLIMimage
                     case "IntensityFilePath":
                         {
                             int FileCounter = 0;
-                            if (FLIMage.grabbing)
+                            if (FLIMage.flimage_io.grabbing)
                                 FileCounter = State.Files.fileCounter;
                             else
                                 FileCounter = State.Files.fileCounter - 1;

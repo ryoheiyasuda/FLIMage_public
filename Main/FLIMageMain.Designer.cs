@@ -2731,6 +2731,7 @@
             this.analyzeEach.TabIndex = 322;
             this.analyzeEach.Text = "Analyze after each acquisition";
             this.analyzeEach.UseVisualStyleBackColor = true;
+            this.analyzeEach.CheckedChanged += new System.EventHandler(this.analyzeEach_CheckedChanged);
             // 
             // label79
             // 
@@ -5074,7 +5075,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "FLIMage!";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FLIMControls_FormClosing);
-            this.Load += new System.EventHandler(this.FLIMControls_Load);
+            this.Load += new System.EventHandler(this.FLIMageMain_Load);
             this.Shown += new System.EventHandler(this.FLIMcontrols_Shown);
             tabPage2.ResumeLayout(false);
             tabPage2.PerformLayout();

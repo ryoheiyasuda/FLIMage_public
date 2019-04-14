@@ -438,12 +438,12 @@ namespace FLIMimage
             SyncWithFrame_Check.Checked = State.Uncaging.sync_withFrame;
             SyncWithSlice_Check.Checked = State.Uncaging.sync_withSlice;
 
-            if (FLIMage.uc != null && !FLIMage.uc.IsDisposed)
-                FLIMage.uc.updateWindow();
+            if (FLIMage.flimage_io.uc != null && !FLIMage.flimage_io.uc.IsDisposed)
+                FLIMage.flimage_io.uc.updateWindow();
 
-            FLIMage.shading.applyCalibration(State);
+            FLIMage.flimage_io.shading.applyCalibration(State);
             DataXY = IOControls.MakeUncagePulses_MirrorAO(State, State.Uncaging.outputRate);
-            DataEOM = IOControls.MakePockelsPulses_PockelsAO(State, State.Uncaging.outputRate, ShowShutter.Checked, ShowRepeat.Checked, FLIMage.shading);
+            DataEOM = IOControls.MakePockelsPulses_PockelsAO(State, State.Uncaging.outputRate, ShowShutter.Checked, ShowRepeat.Checked, FLIMage.flimage_io.shading);
 
             if (pp1 != null)
             {
@@ -524,8 +524,8 @@ namespace FLIMimage
                 UncagePockelAO.dispose();
             if (UncageMirrorAO != null)
                 UncageMirrorAO.dispose();
-            if (FLIMage.UncagingShutter_DO != null)
-                FLIMage.UncagingShutter_DO.dispose();
+            if (FLIMage.flimage_io.UncagingShutter_DO != null)
+                FLIMage.flimage_io.UncagingShutter_DO.dispose();
         }
 
         /// <summary>
@@ -542,36 +542,36 @@ namespace FLIMimage
             double[,] uncagingPos = IOControls.DefinePulsePosition(State);
 
             //Put static values first.
-            FLIMage.mirrorAO_S.putValue_S(new double[] { uncagingPos[0, 0], uncagingPos[1, 0] });
+            FLIMage.flimage_io.mirrorAO_S.putValue_S(new double[] { uncagingPos[0, 0], uncagingPos[1, 0] });
 
             if (State.Init.DO_uncagingShutter)
             {
-                FLIMage.UncagingShutter_DO_S.TurnOnOff(false);
-                FLIMage.UncagingShutter_DO = new IOControls.DigitalUncagingShutterSignal(State);
-                FLIMage.UncagingShutter_DO.PutValue_and_Start(false);
+                FLIMage.flimage_io.UncagingShutter_DO_S.TurnOnOff(false);
+                FLIMage.flimage_io.UncagingShutter_DO = new IOControls.DigitalUncagingShutterSignal(State);
+                FLIMage.flimage_io.UncagingShutter_DO.PutValue_and_Start(false, false);
             }
 
             //System.Threading.Thread.Sleep(10); //Not sure.
 
             if (mainShutterCtrl)
             {
-                FLIMage.ShutterCtrl.open();
+                FLIMage.flimage_io.ShutterCtrl.open();
                 System.Threading.Thread.Sleep(1); //Wait for shutter open.
             }
 
-            UncageMirrorAO = new IOControls.MirrorAO(State, FLIMage.shading);
-            FLIMage.shading.applyCalibration(State);
+            UncageMirrorAO = new IOControls.MirrorAO(State, FLIMage.flimage_io.shading);
+            FLIMage.flimage_io.shading.applyCalibration(State);
             double[,] dataXY = UncageMirrorAO.putvalueUncageOnce();
             UncageMirrorAO.start(false);
 
             if (State.Init.EOM_nChannels > 0 && !UncageMirrorAO.SameBoard)
             {
-                UncagePockelAO = new IOControls.pockelAO(State, FLIMage.shading, false);
+                UncagePockelAO = new IOControls.pockelAO(State, FLIMage.flimage_io.shading, false);
                 UncagePockelAO.putvalueUncageOnce();
                 UncagePockelAO.start(false);
             }
 
-            FLIMage.dioTrigger.Evoke();
+            FLIMage.flimage_io.dioTrigger.Evoke();
 
             int timeout = (int)(State.Uncaging.sampleLength);
 
@@ -610,12 +610,12 @@ namespace FLIMimage
 
             if (State.Init.DO_uncagingShutter)
             {
-                FLIMage.UncagingShutter_DO.Stop();
-                FLIMage.UncagingShutter_DO.dispose();
+                FLIMage.flimage_io.UncagingShutter_DO.Stop();
+                FLIMage.flimage_io.UncagingShutter_DO.dispose();
             }
 
             if (mainShutterCtrl)
-                FLIMage.ShutterCtrl.close();
+                FLIMage.flimage_io.ShutterCtrl.close();
 
             if (UncagePockelAO != null)
                 UncagePockelAO.dispose();
@@ -748,7 +748,7 @@ namespace FLIMimage
 
         private void Shutter2_Click(object sender, EventArgs e)
         {
-            FLIMage.uncagingShutterCtrl(Shutter2.Checked, !FLIMage.grabbing && !FLIMage.focusing, true);
+            FLIMage.flimage_io.uncagingShutterCtrl(Shutter2.Checked, !FLIMage.flimage_io.grabbing && !FLIMage.flimage_io.focusing, true);
         }
 
         private void ShowShutter_Click(object sender, EventArgs e)

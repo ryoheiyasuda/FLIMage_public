@@ -1645,7 +1645,7 @@ namespace FLIMimage
 
             sw.Stop();
             time_elapsed = (int)sw.ElapsedMilliseconds;
-            Debug.WriteLine("Max value = " + maxValue + ": Time spend = " + sw.ElapsedMilliseconds + "ms");
+            //Debug.WriteLine("Max value = " + maxValue + ": Time spend = " + sw.ElapsedMilliseconds + "ms");
 
             using (Tiff output = Tiff.Open(fileName, writeMode))
             {

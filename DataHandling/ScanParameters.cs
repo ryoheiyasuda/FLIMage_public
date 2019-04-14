@@ -27,9 +27,8 @@ namespace FLIMimage
             //            public String NI_Version = "NI9_8";
 
             //public String pixelClockPort = "Dev4/ctr2";
-            public String lineClockPort = "Dev4/ctr1";
-            public String frameClockPort = "Dev4/ctr0";
-            public String lineClockTrigger = "/Dev4/PFI6";
+            public String lineClockPort = "Dev4/ctr0";
+            public String frameClockPort = "Dev4/ctr1";
 
             public String triggerPort = "Dev4/Port0/line0";
             public String shutterPort = "Dev4/Port0/line1";
@@ -38,8 +37,6 @@ namespace FLIMimage
             public String mirrorAOPortY = "Dev4/AO1";
             public String mirrorOffsetX = "Dev4/AO5";
             public String mirrorOffsetY = "Dev4/AO6";
-            public String mirrorAOTrigger = "/Dev4/PFI6";
-            public String mirrorAOSampleClockOutput = "/Dev4/PFI4";
 
             public String masterClock = ""; //"/Dev4/20MHzTimebase";
             public String masterClockPort = "/Dev4/RTSI7";
@@ -51,10 +48,10 @@ namespace FLIMimage
 
             public String UncagingShutterAnalogPort = "Dev2/AO3";
             public String UncagingShutterDOPort = "Dev4/Port0/line3";
-            public String UncagingShutterTrigger = "/Dev4/PFI6";
 
-            public String EOM_Trigger = "/Dev2/PFI6";
-            public String EOM_SampleClockInput = "/Dev2/PFI4";
+            public String DigitalLinePort = "line2";
+            public String TriggerInput = "PFI6";
+            public String SampleClockPort = "PFI4";
 
             public String EOM_slaveClockPort = ""; //"/Dev1/RTSI7";
 
@@ -63,7 +60,7 @@ namespace FLIMimage
             public String EOM_AI_Port2 = "Dev4/AI2";
             public String EOM_AI_Port3 = "Dev4/AI3";
 
-            public String EOM_AI_Trigger = "/Dev4/PFI6";
+            //public String EOM_AI_Trigger = "/Dev4/PFI6";
 
             public String MarkerInput = "";
 
@@ -78,7 +75,7 @@ namespace FLIMimage
             public double[] mirrorParkPosition = { 5, 5 };
 
             public String MotorComPort = "COM1";
-            public String MotorHWName = "MP-285A";
+            public String MotorHWName = "MP-285A"; //or "MP-285" or "ThorlabMCM3000"
 
             public String TagLensPort = "COM6";
 
@@ -333,7 +330,7 @@ namespace FLIMimage
                 pathNameFLIM = pathName + Path.DirectorySeparatorChar + "FLIM";
                 initFolderPath = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + FLIMfolderPath + Path.DirectorySeparatorChar + "Init_Files";
                 initFileName = initFolderPath + Path.DirectorySeparatorChar + "FLIM_init.txt";
-                deviceFileName = initFolderPath + Path.DirectorySeparatorChar + "FLIM_deviceFile.txt";
+                deviceFileName = initFolderPath + Path.DirectorySeparatorChar + "FLIM_deviceFile_V1.txt";
                 BH_initFile = initFolderPath + Path.DirectorySeparatorChar + "spcm.ini";
                 defaultInitFile = initFolderPath + Path.DirectorySeparatorChar + "Default.txt";
                 commandPathName = initFolderPath + Path.DirectorySeparatorChar + "Command";

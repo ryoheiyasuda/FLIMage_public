@@ -47,13 +47,9 @@
             this.label9 = new System.Windows.Forms.Label();
             this.TriggerOutputBoard = new System.Windows.Forms.TextBox();
             this.label10 = new System.Windows.Forms.Label();
-            this.label11 = new System.Windows.Forms.Label();
-            this.Mirror_SampleClkOutput = new System.Windows.Forms.TextBox();
-            this.Mirror_TriggerInput = new System.Windows.Forms.TextBox();
-            this.label13 = new System.Windows.Forms.Label();
+            this.TriggerInput = new System.Windows.Forms.TextBox();
             this.label14 = new System.Windows.Forms.Label();
-            this.Pockels_SampleClkInput = new System.Windows.Forms.TextBox();
-            this.Pockels_TriggerIn = new System.Windows.Forms.TextBox();
+            this.SampleClkPort = new System.Windows.Forms.TextBox();
             this.label15 = new System.Windows.Forms.Label();
             this.LineClock_Output = new System.Windows.Forms.TextBox();
             this.TriggerOutputChannel = new System.Windows.Forms.TextBox();
@@ -110,7 +106,6 @@
             this.label38 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
             this.ActiveLow = new System.Windows.Forms.CheckBox();
-            this.UncagingDOBoard = new System.Windows.Forms.Label();
             this.label46 = new System.Windows.Forms.Label();
             this.DO_uncagingShutterCheck = new System.Windows.Forms.CheckBox();
             this.Shutter_DOChannel = new System.Windows.Forms.TextBox();
@@ -121,8 +116,15 @@
             this.PQ_radio = new System.Windows.Forms.RadioButton();
             this.label43 = new System.Windows.Forms.Label();
             this.Motor_onCheck = new System.Windows.Forms.CheckBox();
+            this.panel3 = new System.Windows.Forms.Panel();
+            this.Sutter_MP285A = new System.Windows.Forms.RadioButton();
+            this.Sutter_MP285 = new System.Windows.Forms.RadioButton();
+            this.Thorlab_MCM = new System.Windows.Forms.RadioButton();
+            this.label45 = new System.Windows.Forms.Label();
+            this.UncagingDOBoard = new System.Windows.Forms.TextBox();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
+            this.panel3.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -292,67 +294,31 @@
             this.label10.TabIndex = 18;
             this.label10.Text = "Trigger input";
             // 
-            // label11
+            // TriggerInput
             // 
-            this.label11.AutoSize = true;
-            this.label11.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label11.Location = new System.Drawing.Point(264, 80);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(103, 14);
-            this.label11.TabIndex = 17;
-            this.label11.Text = "Sample clock output";
-            // 
-            // Mirror_SampleClkOutput
-            // 
-            this.Mirror_SampleClkOutput.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Mirror_SampleClkOutput.Location = new System.Drawing.Point(371, 77);
-            this.Mirror_SampleClkOutput.Name = "Mirror_SampleClkOutput";
-            this.Mirror_SampleClkOutput.Size = new System.Drawing.Size(70, 20);
-            this.Mirror_SampleClkOutput.TabIndex = 16;
-            // 
-            // Mirror_TriggerInput
-            // 
-            this.Mirror_TriggerInput.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Mirror_TriggerInput.Location = new System.Drawing.Point(371, 51);
-            this.Mirror_TriggerInput.Name = "Mirror_TriggerInput";
-            this.Mirror_TriggerInput.Size = new System.Drawing.Size(70, 20);
-            this.Mirror_TriggerInput.TabIndex = 15;
-            // 
-            // label13
-            // 
-            this.label13.AutoSize = true;
-            this.label13.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label13.Location = new System.Drawing.Point(297, 211);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(67, 14);
-            this.label13.TabIndex = 24;
-            this.label13.Text = "Trigger input";
+            this.TriggerInput.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.TriggerInput.Location = new System.Drawing.Point(371, 51);
+            this.TriggerInput.Name = "TriggerInput";
+            this.TriggerInput.Size = new System.Drawing.Size(70, 20);
+            this.TriggerInput.TabIndex = 15;
             // 
             // label14
             // 
             this.label14.AutoSize = true;
             this.label14.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label14.Location = new System.Drawing.Point(268, 237);
+            this.label14.Location = new System.Drawing.Point(270, 237);
             this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(96, 14);
+            this.label14.Size = new System.Drawing.Size(92, 14);
             this.label14.TabIndex = 23;
-            this.label14.Text = "Sample clock input";
+            this.label14.Text = "Sample clock port";
             // 
-            // Pockels_SampleClkInput
+            // SampleClkPort
             // 
-            this.Pockels_SampleClkInput.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Pockels_SampleClkInput.Location = new System.Drawing.Point(371, 234);
-            this.Pockels_SampleClkInput.Name = "Pockels_SampleClkInput";
-            this.Pockels_SampleClkInput.Size = new System.Drawing.Size(70, 20);
-            this.Pockels_SampleClkInput.TabIndex = 22;
-            // 
-            // Pockels_TriggerIn
-            // 
-            this.Pockels_TriggerIn.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Pockels_TriggerIn.Location = new System.Drawing.Point(371, 208);
-            this.Pockels_TriggerIn.Name = "Pockels_TriggerIn";
-            this.Pockels_TriggerIn.Size = new System.Drawing.Size(70, 20);
-            this.Pockels_TriggerIn.TabIndex = 21;
+            this.SampleClkPort.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.SampleClkPort.Location = new System.Drawing.Point(371, 234);
+            this.SampleClkPort.Name = "SampleClkPort";
+            this.SampleClkPort.Size = new System.Drawing.Size(70, 20);
+            this.SampleClkPort.TabIndex = 22;
             // 
             // label15
             // 
@@ -535,7 +501,7 @@
             // 
             this.label24.AutoSize = true;
             this.label24.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label24.Location = new System.Drawing.Point(339, 504);
+            this.label24.Location = new System.Drawing.Point(473, 159);
             this.label24.Name = "label24";
             this.label24.Size = new System.Drawing.Size(78, 14);
             this.label24.TabIndex = 48;
@@ -544,7 +510,7 @@
             // MarkerInput
             // 
             this.MarkerInput.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.MarkerInput.Location = new System.Drawing.Point(343, 518);
+            this.MarkerInput.Location = new System.Drawing.Point(477, 173);
             this.MarkerInput.Name = "MarkerInput";
             this.MarkerInput.Size = new System.Drawing.Size(70, 20);
             this.MarkerInput.TabIndex = 49;
@@ -553,7 +519,7 @@
             // 
             this.label25.AutoSize = true;
             this.label25.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label25.Location = new System.Drawing.Point(9, 356);
+            this.label25.Location = new System.Drawing.Point(474, 80);
             this.label25.Name = "label25";
             this.label25.Size = new System.Drawing.Size(118, 14);
             this.label25.TabIndex = 50;
@@ -626,7 +592,7 @@
             // ExternalTriggerChannel
             // 
             this.ExternalTriggerChannel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.ExternalTriggerChannel.Location = new System.Drawing.Point(68, 400);
+            this.ExternalTriggerChannel.Location = new System.Drawing.Point(533, 120);
             this.ExternalTriggerChannel.Name = "ExternalTriggerChannel";
             this.ExternalTriggerChannel.Size = new System.Drawing.Size(70, 20);
             this.ExternalTriggerChannel.TabIndex = 59;
@@ -635,7 +601,7 @@
             // 
             this.label30.AutoSize = true;
             this.label30.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label30.Location = new System.Drawing.Point(28, 379);
+            this.label30.Location = new System.Drawing.Point(493, 103);
             this.label30.Name = "label30";
             this.label30.Size = new System.Drawing.Size(83, 14);
             this.label30.TabIndex = 61;
@@ -645,7 +611,7 @@
             // 
             this.label31.AutoSize = true;
             this.label31.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label31.Location = new System.Drawing.Point(17, 403);
+            this.label31.Location = new System.Drawing.Point(482, 123);
             this.label31.Name = "label31";
             this.label31.Size = new System.Drawing.Size(46, 14);
             this.label31.TabIndex = 60;
@@ -667,7 +633,7 @@
             // 
             this.label32.AutoSize = true;
             this.label32.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label32.Location = new System.Drawing.Point(9, 439);
+            this.label32.Location = new System.Drawing.Point(15, 12);
             this.label32.Name = "label32";
             this.label32.Size = new System.Drawing.Size(95, 14);
             this.label32.TabIndex = 64;
@@ -676,7 +642,7 @@
             // MotorCOM
             // 
             this.MotorCOM.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.MotorCOM.Location = new System.Drawing.Point(96, 454);
+            this.MotorCOM.Location = new System.Drawing.Point(102, 27);
             this.MotorCOM.Name = "MotorCOM";
             this.MotorCOM.Size = new System.Drawing.Size(70, 20);
             this.MotorCOM.TabIndex = 63;
@@ -787,9 +753,9 @@
             this.openDuringCalib.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.openDuringCalib.Location = new System.Drawing.Point(300, 293);
             this.openDuringCalib.Name = "openDuringCalib";
-            this.openDuringCalib.Size = new System.Drawing.Size(108, 32);
+            this.openDuringCalib.Size = new System.Drawing.Size(114, 32);
             this.openDuringCalib.TabIndex = 119;
-            this.openDuringCalib.Text = "Open shutter\r\nduring calibration";
+            this.openDuringCalib.Text = "Open main shutter\r\nduring calibration";
             this.openDuringCalib.UseVisualStyleBackColor = true;
             // 
             // label33
@@ -860,8 +826,8 @@
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(this.ActiveLow);
             this.panel1.Controls.Add(this.UncagingDOBoard);
+            this.panel1.Controls.Add(this.ActiveLow);
             this.panel1.Controls.Add(this.label46);
             this.panel1.Controls.Add(this.DO_uncagingShutterCheck);
             this.panel1.Controls.Add(this.Shutter_DOChannel);
@@ -872,7 +838,7 @@
             this.panel1.Controls.Add(this.label33);
             this.panel1.Controls.Add(this.AO_uncagingShutterCheck);
             this.panel1.Controls.Add(this.label34);
-            this.panel1.Location = new System.Drawing.Point(179, 341);
+            this.panel1.Location = new System.Drawing.Point(18, 356);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(238, 135);
             this.panel1.TabIndex = 130;
@@ -888,21 +854,11 @@
             this.ActiveLow.Text = "for PMT";
             this.ActiveLow.UseVisualStyleBackColor = true;
             // 
-            // UncagingDOBoard
-            // 
-            this.UncagingDOBoard.AutoSize = true;
-            this.UncagingDOBoard.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.UncagingDOBoard.Location = new System.Drawing.Point(71, 81);
-            this.UncagingDOBoard.Name = "UncagingDOBoard";
-            this.UncagingDOBoard.Size = new System.Drawing.Size(36, 14);
-            this.UncagingDOBoard.TabIndex = 130;
-            this.UncagingDOBoard.Text = "Board";
-            // 
             // label46
             // 
             this.label46.AutoSize = true;
             this.label46.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label46.Location = new System.Drawing.Point(29, 81);
+            this.label46.Location = new System.Drawing.Point(29, 92);
             this.label46.Name = "label46";
             this.label46.Size = new System.Drawing.Size(36, 14);
             this.label46.TabIndex = 129;
@@ -923,7 +879,7 @@
             // Shutter_DOChannel
             // 
             this.Shutter_DOChannel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Shutter_DOChannel.Location = new System.Drawing.Point(69, 97);
+            this.Shutter_DOChannel.Location = new System.Drawing.Point(69, 108);
             this.Shutter_DOChannel.Name = "Shutter_DOChannel";
             this.Shutter_DOChannel.Size = new System.Drawing.Size(70, 20);
             this.Shutter_DOChannel.TabIndex = 126;
@@ -932,7 +888,7 @@
             // 
             this.label44.AutoSize = true;
             this.label44.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label44.Location = new System.Drawing.Point(19, 100);
+            this.label44.Location = new System.Drawing.Point(19, 111);
             this.label44.Name = "label44";
             this.label44.Size = new System.Drawing.Size(46, 14);
             this.label44.TabIndex = 127;
@@ -948,7 +904,7 @@
             this.panel2.Controls.Add(this.label43);
             this.panel2.Controls.Add(this.ComputerID);
             this.panel2.Controls.Add(this.FlimID);
-            this.panel2.Location = new System.Drawing.Point(15, 492);
+            this.panel2.Location = new System.Drawing.Point(15, 510);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(287, 82);
             this.panel2.TabIndex = 131;
@@ -1000,19 +956,85 @@
             // 
             this.Motor_onCheck.AutoSize = true;
             this.Motor_onCheck.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Motor_onCheck.Location = new System.Drawing.Point(15, 456);
+            this.Motor_onCheck.Location = new System.Drawing.Point(21, 29);
             this.Motor_onCheck.Name = "Motor_onCheck";
             this.Motor_onCheck.Size = new System.Drawing.Size(75, 18);
             this.Motor_onCheck.TabIndex = 134;
             this.Motor_onCheck.Text = "Use motor";
             this.Motor_onCheck.UseVisualStyleBackColor = true;
             // 
+            // panel3
+            // 
+            this.panel3.Controls.Add(this.Sutter_MP285A);
+            this.panel3.Controls.Add(this.Sutter_MP285);
+            this.panel3.Controls.Add(this.Thorlab_MCM);
+            this.panel3.Controls.Add(this.label32);
+            this.panel3.Controls.Add(this.Motor_onCheck);
+            this.panel3.Controls.Add(this.MotorCOM);
+            this.panel3.Location = new System.Drawing.Point(282, 356);
+            this.panel3.Name = "panel3";
+            this.panel3.Size = new System.Drawing.Size(236, 135);
+            this.panel3.TabIndex = 135;
+            // 
+            // Sutter_MP285A
+            // 
+            this.Sutter_MP285A.AutoSize = true;
+            this.Sutter_MP285A.Location = new System.Drawing.Point(66, 78);
+            this.Sutter_MP285A.Name = "Sutter_MP285A";
+            this.Sutter_MP285A.Size = new System.Drawing.Size(97, 17);
+            this.Sutter_MP285A.TabIndex = 136;
+            this.Sutter_MP285A.TabStop = true;
+            this.Sutter_MP285A.Text = "Sutter MP285A";
+            this.Sutter_MP285A.UseVisualStyleBackColor = true;
+            // 
+            // Sutter_MP285
+            // 
+            this.Sutter_MP285.AutoSize = true;
+            this.Sutter_MP285.Location = new System.Drawing.Point(66, 59);
+            this.Sutter_MP285.Name = "Sutter_MP285";
+            this.Sutter_MP285.Size = new System.Drawing.Size(90, 17);
+            this.Sutter_MP285.TabIndex = 135;
+            this.Sutter_MP285.TabStop = true;
+            this.Sutter_MP285.Text = "Sutter MP285";
+            this.Sutter_MP285.UseVisualStyleBackColor = true;
+            // 
+            // Thorlab_MCM
+            // 
+            this.Thorlab_MCM.AutoSize = true;
+            this.Thorlab_MCM.Location = new System.Drawing.Point(66, 98);
+            this.Thorlab_MCM.Name = "Thorlab_MCM";
+            this.Thorlab_MCM.Size = new System.Drawing.Size(114, 17);
+            this.Thorlab_MCM.TabIndex = 134;
+            this.Thorlab_MCM.TabStop = true;
+            this.Thorlab_MCM.Text = "Thorlab MCMX000";
+            this.Thorlab_MCM.UseVisualStyleBackColor = true;
+            this.Thorlab_MCM.CheckedChanged += new System.EventHandler(this.Thorlab_MCM_CheckedChanged);
+            // 
+            // label45
+            // 
+            this.label45.AutoSize = true;
+            this.label45.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label45.Location = new System.Drawing.Point(312, 7);
+            this.label45.Name = "label45";
+            this.label45.Size = new System.Drawing.Size(165, 14);
+            this.label45.TabIndex = 136;
+            this.label45.Text = "Line clock and trigger for AO";
+            // 
+            // UncagingDOBoard
+            // 
+            this.UncagingDOBoard.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.UncagingDOBoard.Location = new System.Drawing.Point(69, 88);
+            this.UncagingDOBoard.Name = "UncagingDOBoard";
+            this.UncagingDOBoard.Size = new System.Drawing.Size(70, 20);
+            this.UncagingDOBoard.TabIndex = 132;
+            // 
             // NIDAQ_Config
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(469, 610);
-            this.Controls.Add(this.Motor_onCheck);
+            this.ClientSize = new System.Drawing.Size(627, 610);
+            this.Controls.Add(this.label45);
+            this.Controls.Add(this.panel3);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.label35);
@@ -1026,8 +1048,6 @@
             this.Controls.Add(this.label42);
             this.Controls.Add(this.AI2);
             this.Controls.Add(this.AI1);
-            this.Controls.Add(this.label32);
-            this.Controls.Add(this.MotorCOM);
             this.Controls.Add(this.label30);
             this.Controls.Add(this.label31);
             this.Controls.Add(this.ExternalTriggerChannel);
@@ -1057,16 +1077,12 @@
             this.Controls.Add(this.TriggerOutputChannel);
             this.Controls.Add(this.label15);
             this.Controls.Add(this.LineClock_Output);
-            this.Controls.Add(this.label13);
             this.Controls.Add(this.label14);
-            this.Controls.Add(this.Pockels_SampleClkInput);
-            this.Controls.Add(this.Pockels_TriggerIn);
+            this.Controls.Add(this.SampleClkPort);
             this.Controls.Add(this.label9);
             this.Controls.Add(this.TriggerOutputBoard);
             this.Controls.Add(this.label10);
-            this.Controls.Add(this.label11);
-            this.Controls.Add(this.Mirror_SampleClkOutput);
-            this.Controls.Add(this.Mirror_TriggerInput);
+            this.Controls.Add(this.TriggerInput);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.PockelsBoard);
@@ -1094,6 +1110,8 @@
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
+            this.panel3.ResumeLayout(false);
+            this.panel3.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1119,13 +1137,9 @@
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.TextBox TriggerOutputBoard;
         private System.Windows.Forms.Label label10;
-        private System.Windows.Forms.Label label11;
-        private System.Windows.Forms.TextBox Mirror_SampleClkOutput;
-        private System.Windows.Forms.TextBox Mirror_TriggerInput;
-        private System.Windows.Forms.Label label13;
+        private System.Windows.Forms.TextBox TriggerInput;
         private System.Windows.Forms.Label label14;
-        private System.Windows.Forms.TextBox Pockels_SampleClkInput;
-        private System.Windows.Forms.TextBox Pockels_TriggerIn;
+        private System.Windows.Forms.TextBox SampleClkPort;
         private System.Windows.Forms.Label label15;
         private System.Windows.Forms.TextBox LineClock_Output;
         private System.Windows.Forms.TextBox TriggerOutputChannel;
@@ -1189,9 +1203,14 @@
         private System.Windows.Forms.CheckBox Motor_onCheck;
         private System.Windows.Forms.TextBox Shutter_DOChannel;
         private System.Windows.Forms.Label label44;
-        private System.Windows.Forms.Label UncagingDOBoard;
         private System.Windows.Forms.Label label46;
         private System.Windows.Forms.CheckBox DO_uncagingShutterCheck;
         private System.Windows.Forms.CheckBox ActiveLow;
+        private System.Windows.Forms.Panel panel3;
+        private System.Windows.Forms.RadioButton Sutter_MP285;
+        private System.Windows.Forms.RadioButton Thorlab_MCM;
+        private System.Windows.Forms.Label label45;
+        private System.Windows.Forms.RadioButton Sutter_MP285A;
+        private System.Windows.Forms.TextBox UncagingDOBoard;
     }
 }

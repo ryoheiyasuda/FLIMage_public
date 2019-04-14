@@ -115,8 +115,8 @@ namespace FLIMimage
         {
             FLIMage = FLIMage_in;
             State = FLIMage.State;
-            parameters = FLIMage.parameters;
-            FiFo_acquire = FLIMage.FiFo_acquire;
+            parameters = FLIMage.flimage_io.parameters;
+            FiFo_acquire = FLIMage.flimage_io.FiFo_acquire;
         }
 
         /// <summary>
@@ -149,17 +149,18 @@ namespace FLIMimage
         {
             if (State.Acq.FastZ_nSlices < 1)
                 State.Acq.FastZ_nSlices = 1;
-            NFastZSlices.Text = State.Acq.FastZ_nSlices.ToString();
-            PhaseRangeStart.Text = State.Acq.FastZ_PhaseRange[0].ToString();
-            PhaseRangeEnd.Text = State.Acq.FastZ_PhaseRange[1].ToString();
+           
+                NFastZSlices.Text = State.Acq.FastZ_nSlices.ToString();
+                PhaseRangeStart.Text = State.Acq.FastZ_PhaseRange[0].ToString();
+                PhaseRangeEnd.Text = State.Acq.FastZ_PhaseRange[1].ToString();
 
-            FormControllers.PulldownSelectByItemString(SetFrequency_Pulldown, State.Acq.FastZ_Freq.ToString());
-            AmplitudeEditBox.Text = State.Acq.FastZ_Amp.ToString();
-            PhaseTextBox1.Text = State.Acq.FastZ_Phase[0].ToString();
-            PhaseTextBox2.Text = State.Acq.FastZ_Phase[1].ToString();
-            PhaseTextBox3.Text = State.Acq.FastZ_Phase[2].ToString();
+                FormControllers.PulldownSelectByItemString(SetFrequency_Pulldown, State.Acq.FastZ_Freq.ToString());
+                AmplitudeEditBox.Text = State.Acq.FastZ_Amp.ToString();
+                PhaseTextBox1.Text = State.Acq.FastZ_Phase[0].ToString();
+                PhaseTextBox2.Text = State.Acq.FastZ_Phase[1].ToString();
+                PhaseTextBox3.Text = State.Acq.FastZ_Phase[2].ToString();
 
-            //SetPreset_Pulldown();
+                //SetPreset_Pulldown();
         }
 
         /// <summary>
@@ -172,7 +173,7 @@ namespace FLIMimage
             parameters.enableFastZscan = false;
             if (FiFo_acquire == null)
                 return;
-            FLIMage.FiFo_StartNew(true, true, true);
+            FLIMage.flimage_io.FiFo_StartNew(true, true, true);
             System.Threading.Thread.Sleep(100);
             FiFo_acquire.StopMeas(true);
             System.Threading.Thread.Sleep(100);
@@ -190,7 +191,7 @@ namespace FLIMimage
             RGBPulseStart();
             System.Threading.Thread.Sleep(100);
 
-            parameters = FLIMage.parameters;
+            parameters = FLIMage.flimage_io.parameters;
 
             if (parameters.rateInfo.syncRate[0] > 1e6)
             {

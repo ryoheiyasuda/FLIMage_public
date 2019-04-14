@@ -122,9 +122,8 @@
     <SignManifests>false</SignManifests>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BitMiracle.LibTiff.NET, Version=2.4.560.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\BitMiracle.LibTiff.Net\BitMiracle.LibTiff.NET.dll</HintPath>
+    <Reference Include="BitMiracle.LibTiff.NET">
+      <HintPath>..\Libraries\BitMiracle.LibTiff.NET.dll</HintPath>
     </Reference>
     <Reference Include="NationalInstruments.Common, Version=15.1.40.49152, Culture=neutral, PublicKeyToken=dc6ad606294fc298, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -155,17 +154,28 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Flow Controls\COMserver.cs" />
-    <Compile Include="Hardware Controls\DigitalSignalPanel.cs">
+    <Compile Include="HardwareControls\MotorCtrl.cs" />
+    <Compile Include="HardwareControls\MotorCtrl_MP285.cs" />
+    <Compile Include="HardwareControls\MotorCtrl_MP285A.cs" />
+    <Compile Include="HardwareControls\PMTControl.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Hardware Controls\DigitalSignalPanel.Designer.cs">
+    <Compile Include="HardwareControls\PMTControl.Designer.cs">
+      <DependentUpon>PMTControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HardwareControls\ThorMCM3000.cs" />
+    <Compile Include="Main\FLIMage_IO.cs" />
+    <Compile Include="FlowControls\COMserver.cs" />
+    <Compile Include="HardwareControls\DigitalSignalPanel.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="HardwareControls\DigitalSignalPanel.Designer.cs">
       <DependentUpon>DigitalSignalPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="Flow Controls\DriftCorrection.cs">
+    <Compile Include="FlowControls\DriftCorrection.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Flow Controls\DriftCorrection.Designer.cs">
+    <Compile Include="FlowControls\DriftCorrection.Designer.cs">
       <DependentUpon>DriftCorrection.cs</DependentUpon>
     </Compile>
     <Compile Include="Dialogs\ExportForm.cs">
@@ -174,10 +184,10 @@
     <Compile Include="Dialogs\ExportForm.Designer.cs">
       <DependentUpon>ExportForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Hardware Controls\FastZControl.cs">
+    <Compile Include="HardwareControls\FastZControl.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Hardware Controls\FastZControl.Designer.cs">
+    <Compile Include="HardwareControls\FastZControl.Designer.cs">
       <DependentUpon>FastZControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Analysis\FastZ_Calibration.cs">
@@ -186,15 +196,15 @@
     <Compile Include="Analysis\FastZ_Calibration.Designer.cs">
       <DependentUpon>FastZ_Calibration.cs</DependentUpon>
     </Compile>
-    <Compile Include="Data and parameter handling\FileIO.cs" />
+    <Compile Include="DataHandling\FileIO.cs" />
     <Compile Include="Main\FLIMageMain.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Main\FLIMageMain.Designer.cs">
       <DependentUpon>FLIMageMain.cs</DependentUpon>
     </Compile>
-    <Compile Include="Flow Controls\FLIMage_Event.cs" />
-    <Compile Include="Data and parameter handling\FLIMData.cs" />
+    <Compile Include="FlowControls\FLIMage_Event.cs" />
+    <Compile Include="DataHandling\FLIMData.cs" />
     <Compile Include="Analysis\ImageDescription.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -207,29 +217,29 @@
     <Compile Include="Analysis\Image_Display.Designer.cs">
       <DependentUpon>Image_Display.cs</DependentUpon>
     </Compile>
-    <Compile Include="Flow Controls\Image_seqeunce.cs">
+    <Compile Include="FlowControls\Image_seqeunce.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Flow Controls\Image_seqeunce.Designer.cs">
+    <Compile Include="FlowControls\Image_seqeunce.Designer.cs">
       <DependentUpon>Image_seqeunce.cs</DependentUpon>
     </Compile>
-    <Compile Include="Hardware Controls\IOControls.cs" />
-    <Compile Include="Hardware Controls\MotorCtrlPanel.cs">
+    <Compile Include="HardwareControls\IOControls.cs" />
+    <Compile Include="HardwareControls\MotorCtrlPanel.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Hardware Controls\MotorCtrlPanel.Designer.cs">
+    <Compile Include="HardwareControls\MotorCtrlPanel.Designer.cs">
       <DependentUpon>MotorCtrlPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="Hardware Controls\NIDAQ_Config.cs">
+    <Compile Include="HardwareControls\Hardware_Config.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Hardware Controls\NIDAQ_Config.Designer.cs">
-      <DependentUpon>NIDAQ_Config.cs</DependentUpon>
+    <Compile Include="HardwareControls\Hardware_Config.Designer.cs">
+      <DependentUpon>Hardware_Config.cs</DependentUpon>
     </Compile>
-    <Compile Include="Flow Controls\NotificationTable.cs">
+    <Compile Include="FlowControls\NotificationTable.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Flow Controls\NotificationTable.Designer.cs">
+    <Compile Include="FlowControls\NotificationTable.Designer.cs">
       <DependentUpon>NotificationTable.cs</DependentUpon>
     </Compile>
     <Compile Include="Plotting\Plot.cs">
@@ -248,18 +258,18 @@
       <DependentUpon>Realtime_plot.cs</DependentUpon>
     </Compile>
     <Compile Include="Analysis\ROI.cs" />
-    <Compile Include="Data and parameter handling\ScanParameters.cs" />
-    <Compile Include="Flow Controls\RemoteControl.cs">
+    <Compile Include="DataHandling\ScanParameters.cs" />
+    <Compile Include="FlowControls\RemoteControl.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Flow Controls\RemoteControl.Designer.cs">
+    <Compile Include="FlowControls\RemoteControl.Designer.cs">
       <DependentUpon>RemoteControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Main\Settings.cs" />
-    <Compile Include="Hardware Controls\ShadingCorrection.cs">
+    <Compile Include="HardwareControls\ShadingCorrection.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Hardware Controls\ShadingCorrection.Designer.cs">
+    <Compile Include="HardwareControls\ShadingCorrection.Designer.cs">
       <DependentUpon>ShadingCorrection.cs</DependentUpon>
     </Compile>
     <Compile Include="Main\splashScreen.cs">
@@ -268,7 +278,7 @@
     <Compile Include="Main\splashScreen.Designer.cs">
       <DependentUpon>splashScreen.cs</DependentUpon>
     </Compile>
-    <Compile Include="Flow Controls\TextServer.cs" />
+    <Compile Include="FlowControls\TextServer.cs" />
     <Compile Include="Analysis\TimeCourse.cs" />
     <Compile Include="Uncaging\UncagingCalib.cs">
       <SubType>Form</SubType>
@@ -289,20 +299,25 @@
       <DependentUpon>Uncaging_Trigger_Panel.cs</DependentUpon>
     </Compile>
     <Compile Include="Analysis\UserFunction.cs" />
-    <EmbeddedResource Include="Hardware Controls\DigitalSignalPanel.resx">
+    <Compile Include="Utilities\Utilities.cs" />
+    <Compile Include="Utilities\WindowLocManager.cs" />
+    <EmbeddedResource Include="HardwareControls\DigitalSignalPanel.resx">
       <DependentUpon>DigitalSignalPanel.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Flow Controls\DriftCorrection.resx">
+    <EmbeddedResource Include="FlowControls\DriftCorrection.resx">
       <DependentUpon>DriftCorrection.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ExportForm.resx">
       <DependentUpon>ExportForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Hardware Controls\FastZControl.resx">
+    <EmbeddedResource Include="HardwareControls\FastZControl.resx">
       <DependentUpon>FastZControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Analysis\FastZ_Calibration.resx">
       <DependentUpon>FastZ_Calibration.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="HardwareControls\PMTControl.resx">
+      <DependentUpon>PMTControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Main\FLIMageMain.resx">
       <DependentUpon>FLIMageMain.cs</DependentUpon>
@@ -313,16 +328,16 @@
     <EmbeddedResource Include="Analysis\Image_Display.resx">
       <DependentUpon>Image_Display.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Flow Controls\Image_seqeunce.resx">
+    <EmbeddedResource Include="FlowControls\Image_seqeunce.resx">
       <DependentUpon>Image_seqeunce.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Hardware Controls\MotorCtrlPanel.resx">
+    <EmbeddedResource Include="HardwareControls\MotorCtrlPanel.resx">
       <DependentUpon>MotorCtrlPanel.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Hardware Controls\NIDAQ_Config.resx">
-      <DependentUpon>NIDAQ_Config.cs</DependentUpon>
+    <EmbeddedResource Include="HardwareControls\Hardware_Config.resx">
+      <DependentUpon>Hardware_Config.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Flow Controls\NotificationTable.resx">
+    <EmbeddedResource Include="FlowControls\NotificationTable.resx">
       <DependentUpon>NotificationTable.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Plotting\Plot.resx">
@@ -341,10 +356,10 @@
     <EmbeddedResource Include="Plotting\Realtime_plot.resx">
       <DependentUpon>Realtime_plot.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Flow Controls\RemoteControl.resx">
+    <EmbeddedResource Include="FlowControls\RemoteControl.resx">
       <DependentUpon>RemoteControl.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Hardware Controls\ShadingCorrection.resx">
+    <EmbeddedResource Include="HardwareControls\ShadingCorrection.resx">
       <DependentUpon>ShadingCorrection.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Main\splashScreen.resx">
@@ -446,14 +461,6 @@
     </PublishFile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Hardware\BScopeController\ThorlabController.csproj">
-      <Project>{ec72fe64-cc39-4ccc-a0c2-744267e7f6b9}</Project>
-      <Name>ThorlabController</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Hardware\StageController\StageController.csproj">
-      <Project>{db8b3c3d-827d-48a7-873e-32d47f87ec04}</Project>
-      <Name>StageController</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Hardware\TagLensController\TagLensController.csproj">
       <Project>{0a7b6826-6cef-49d0-a2f6-647ca600e6d6}</Project>
       <Name>TagLensController</Name>
@@ -466,12 +473,16 @@
       <Project>{9fd3b2db-4c5e-4444-9eed-3e146d767d63}</Project>
       <Name>MathLibrary</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Utilities\Utilities.csproj">
-      <Project>{9d40d5c4-0e5f-4670-826d-06e14c42831a}</Project>
-      <Name>Utilities</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>copy "$(ProjectDir)..\External\$(Configuration)\*" "$(OutDir)"
+copy "$(ProjectDir)..\Libraries\*" "$(OutDir)"</PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

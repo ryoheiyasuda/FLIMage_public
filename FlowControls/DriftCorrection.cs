@@ -42,7 +42,7 @@ namespace FLIMimage
             State = FLIMage.State;
             Channel_Pulldown.SelectedIndex = 0; // FLIMage.image_display.currentChannel;
 
-            FLIMage.EventNotify += new FLIMageMain.FLIMage_EventHandler(EventHandling);
+            FLIMage.flimage_io.EventNotify += new FLIMage_IO.FLIMage_EventHandler(EventHandling);
 
             template_image = MatrixCalc.MatrixCreate2D<ushort>(128, 128);
             template_z_profile = new double[16];
@@ -213,7 +213,7 @@ namespace FLIMimage
             }
         }
 
-        private void EventHandling(FLIMageMain fc, FLIMageMain.ProcessEventArgs e)
+        private void EventHandling(FLIMage_IO fc, ProcessEventArgs e)
         {
             String eventStr = e.EventName;
             String eventName;
@@ -243,7 +243,7 @@ namespace FLIMimage
 
         private void DriftCorrection_FormClosing(object sender, FormClosingEventArgs e)
         {
-            FLIMage.EventNotify -= EventHandling;
+            FLIMage.flimage_io.EventNotify -= EventHandling;
             SaveWindowLocation();
             Hide();
             FLIMage.ToolWindowClosed();

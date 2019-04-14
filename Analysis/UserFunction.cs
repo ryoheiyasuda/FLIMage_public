@@ -56,7 +56,7 @@ namespace UserFnc
                         case "FrameDone":
                             {
                                 bool value = readDigitalValue(State.Init.MarkerInput);
-                                Debug.WriteLine("Digital input (Frame " + FLIMage.AO_FrameCounter + ") = " + value);
+                                Debug.WriteLine("Digital input (Frame " + FLIMage.flimage_io.AO_FrameCounter + ") = " + value);
                                 Markers.Add((Convert.ToInt32(value)));
                                 break;
                             }
@@ -131,7 +131,7 @@ namespace UserFnc
         /// This contains information about the event. e.EventName is the name of the event.
         /// There might be data associated.
 
-        public void FLIM_EventHandling(FLIMageMain fc, FLIMageMain.ProcessEventArgs e)
+        public void FLIM_EventHandling(FLIMage_IO fc, ProcessEventArgs e)
         {
             ///////// HERE YOU CAN WRITE WHATEVER.
             String eventStr = e.EventName;
@@ -207,7 +207,7 @@ namespace UserFnc
         public bool readDigitalValue(String port)
         {
             bool value = false;
-            if (FLIMage.use_nidaq)
+            if (FLIMage.flimage_io.use_nidaq)
             {
                 IOControls.DigitalIn DI = new IOControls.DigitalIn(port);
                 value = DI.readDI();

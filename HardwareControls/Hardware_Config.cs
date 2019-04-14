@@ -50,10 +50,9 @@ namespace FLIMimage
         {
             State.Init.mirrorAOPortX = MirrorBoard.Text + "/" + MirrorX.Text;
             State.Init.mirrorAOPortY = MirrorBoard.Text + "/" + MirrorY.Text;
-            State.Init.mirrorAOTrigger = "/" + MirrorBoard.Text + "/" + Mirror_TriggerInput.Text;
             State.Init.lineClockPort = MirrorBoard.Text + "/" + LineClock_Output.Text;
-            State.Init.lineClockTrigger = "/" + MirrorBoard.Text + "/" + Mirror_TriggerInput.Text;
-            State.Init.mirrorAOSampleClockOutput = "/" + MirrorBoard.Text + "/" + Mirror_SampleClkOutput.Text;
+            State.Init.TriggerInput = TriggerInput.Text;
+            State.Init.SampleClockPort = SampleClkPort.Text;
 
             State.Init.UseExternalMirrorOffset = UseAOMirrorOffset.Checked;
 
@@ -79,7 +78,6 @@ namespace FLIMimage
                 State.Init.GetType().GetField("EOM_AI_Port" + i).SetValue(State.Init, AOText);
             }
 
-            State.Init.EOM_AI_Trigger = "/" + AIBoard.Text + "/" + Pockels_TriggerIn.Text;
 
             State.Init.AO_uncagingShutter = AO_uncagingShutterCheck.Checked;
             State.Init.DO_uncagingShutter = DO_uncagingShutterCheck.Checked;
@@ -87,11 +85,10 @@ namespace FLIMimage
 
             State.Init.UncagingShutterAnalogPort = PockelsBoard.Text + "/" + Shutter_AOChannel.Text;
             
-            State.Init.UncagingShutterDOPort = MirrorBoard.Text + "/Port0/" + Shutter_DOChannel.Text;
-            State.Init.UncagingShutterTrigger = "/" + MirrorBoard.Text + "/" + Mirror_TriggerInput.Text; //This is for Digital signal!
+            State.Init.UncagingShutterDOPort = UncagingDOBoard.Text + "/Port0/" + Shutter_DOChannel.Text;
 
-            State.Init.EOM_SampleClockInput = "/" + PockelsBoard.Text + "/" + Pockels_SampleClkInput.Text;
-            State.Init.EOM_Trigger = "/" + PockelsBoard.Text + "/" + Pockels_TriggerIn.Text;
+            State.Init.SampleClockPort = SampleClkPort.Text;
+            State.Init.TriggerInput = TriggerInput.Text;
 
             State.Init.shutterPort = ShutterOutputBoard.Text + "/Port0/" + ShutterOutputChannel.Text;
             State.Init.triggerPort = TriggerOutputBoard.Text + "/Port0/" + TriggerOutputChannel.Text;
@@ -109,6 +106,13 @@ namespace FLIMimage
             State.Init.motor_on = Motor_onCheck.Checked;
 
             State.Init.FLIM_mode = (PQ_radio.Checked) ? "PQ" : "BH";
+
+            State.Init.MotorHWName = "MP-285A";
+            if (Thorlab_MCM.Checked)
+                State.Init.MotorHWName = "ThorMCM3000";
+            else if (Sutter_MP285.Checked)
+                State.Init.MotorHWName = "MP-285";
+
         }
 
         private void setupGUI()
@@ -121,11 +125,6 @@ namespace FLIMimage
             sP = State.Init.mirrorAOPortY.Split('/');
             MirrorY.Text = sP[1];
 
-            sP = State.Init.mirrorAOTrigger.Split('/');
-            Mirror_TriggerInput.Text = sP[2];
-
-            sP = State.Init.mirrorAOSampleClockOutput.Split('/');
-            Mirror_SampleClkOutput.Text = sP[2];
 
             sP = State.Init.lineClockPort.Split('/');
             LineClock_Output.Text = sP[1];
@@ -184,15 +183,12 @@ namespace FLIMimage
 
 
             sP = State.Init.UncagingShutterDOPort.Split('/');
-            UncagingDOBoard.Text = MirrorBoard.Text + String_Mirror;
+            UncagingDOBoard.Text = sP[0];
             Shutter_DOChannel.Text = sP[2];
             Shutter_DOChannel.Enabled = State.Init.DO_uncagingShutter;
 
-            sP = State.Init.EOM_SampleClockInput.Split('/');
-            Pockels_SampleClkInput.Text = sP[2];
-
-            sP = State.Init.EOM_Trigger.Split('/');
-            Pockels_TriggerIn.Text = sP[2];
+            SampleClkPort.Text = State.Init.SampleClockPort;
+            TriggerInput.Text = State.Init.TriggerInput;
 
             sP = State.Init.shutterPort.Split('/');
             ShutterOutputBoard.Text = sP[0];
@@ -215,6 +211,10 @@ namespace FLIMimage
 
             BH_radio.Checked = State.Init.FLIM_mode == "BH";
             PQ_radio.Checked = State.Init.FLIM_mode == "PQ";
+
+            Thorlab_MCM.Checked = State.Init.MotorHWName == "ThorMCM3000";
+            Sutter_MP285.Checked = State.Init.MotorHWName == "MP-285";
+            Sutter_MP285A.Checked = State.Init.MotorHWName == "MP-285A";
 
             Motor_onCheck.Checked = State.Init.motor_on;
             FLIM_onCheck.Checked = State.Init.FLIM_on;
@@ -291,6 +291,19 @@ namespace FLIMimage
             }
         }
 
+        private void Thorlab_MCM_CheckedChanged(object sender, EventArgs e)
+        {
+            if (Thorlab_MCM.Checked)
+            {
+                MotorCOM.Text = "COM32";
+                MotorCOM.ReadOnly = true;
+            }
+            else
+            {
+                MotorCOM.Text = State.Init.MotorComPort;
+                MotorCOM.ReadOnly = false;
 
+            }
+        }
     }
 }
