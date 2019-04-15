@@ -11,7 +11,7 @@ This software allows for controlling TCSPC software and produce image.
 * TCSPC card: Additionally, if you want to use TCSPC card from PicoQuant (TimeHarp 260 / MultiHarp) or Becker Hickl (SPC-150), you need to install drivers. Contrlling DLL writen in C++ and C# wrapper is included in \External. In the default setting, you need to copy them to ..\External. In addition, to use some of DLL you need to get license from Florida Lifetime Imaging LCC.
 
 * Thorlab linear motor stage.
-If you want to use ThorLab MCM3000 or MCM5000 motor control, you need to put ThorMCM3000.dll and ThorMCM3000Settings.xml in ../External folder. Default appears to be port 32.
+If you want to use ThorLab MCM3000 or MCM5000 motor control, you need to put ThorMCM3000.dll and ThorMCM3000Settings.xml in ../Libraries folder. Default appears to be port 32.
 
 * Sutter linear stage.
 This uses COM port. You can just configure at Documents\FLIMage\Init_Files\FLIM_deviceFile.txt.
