@@ -1,4 +1,4 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage
 {
     partial class ImageDescription
     {

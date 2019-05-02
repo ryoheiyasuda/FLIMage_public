@@ -1,11 +1,11 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.Analysis
 {
     partial class FastZ_Calibration
     {
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        public System.ComponentModel.IContainer components = null;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -26,7 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
+        public void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FastZ_Calibration));
             this.ZStack_Start = new System.Windows.Forms.TextBox();
@@ -410,31 +410,31 @@
 
         #endregion
 
-        private System.Windows.Forms.PictureBox PlotPanel;
-        private System.Windows.Forms.TextBox ZStack_Start;
-        private System.Windows.Forms.Label label104;
-        private System.Windows.Forms.TextBox ZStack_End;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Button CalcButton;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.TextBox FastZStack_End;
-        private System.Windows.Forms.TextBox FastZStack_Start;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label FitData;
-        private System.Windows.Forms.PictureBox PlotPanel2;
-        private System.Windows.Forms.PictureBox PlotPanel3;
-        private System.Windows.Forms.Label FitData2;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.TextBox IntensityThreshold;
-        private System.Windows.Forms.Label label8;
-        private System.Windows.Forms.CheckBox AllSlices;
-        private System.Windows.Forms.PictureBox PlotPanel4;
-        private System.Windows.Forms.PictureBox PlotPanel5;
-        private System.Windows.Forms.PictureBox PlotPanel6;
-        private System.Windows.Forms.Label FOVLabel;
-        private System.Windows.Forms.ComboBox Objective_Pulldown;
+        public System.Windows.Forms.PictureBox PlotPanel;
+        public System.Windows.Forms.TextBox ZStack_Start;
+        public System.Windows.Forms.Label label104;
+        public System.Windows.Forms.TextBox ZStack_End;
+        public System.Windows.Forms.Label label1;
+        public System.Windows.Forms.Label label2;
+        public System.Windows.Forms.Button CalcButton;
+        public System.Windows.Forms.Label label3;
+        public System.Windows.Forms.Label label4;
+        public System.Windows.Forms.TextBox FastZStack_End;
+        public System.Windows.Forms.TextBox FastZStack_Start;
+        public System.Windows.Forms.Label label5;
+        public System.Windows.Forms.Label label6;
+        public System.Windows.Forms.Label FitData;
+        public System.Windows.Forms.PictureBox PlotPanel2;
+        public System.Windows.Forms.PictureBox PlotPanel3;
+        public System.Windows.Forms.Label FitData2;
+        public System.Windows.Forms.Label label7;
+        public System.Windows.Forms.TextBox IntensityThreshold;
+        public System.Windows.Forms.Label label8;
+        public System.Windows.Forms.CheckBox AllSlices;
+        public System.Windows.Forms.PictureBox PlotPanel4;
+        public System.Windows.Forms.PictureBox PlotPanel5;
+        public System.Windows.Forms.PictureBox PlotPanel6;
+        public System.Windows.Forms.Label FOVLabel;
+        public System.Windows.Forms.ComboBox Objective_Pulldown;
     }
 }

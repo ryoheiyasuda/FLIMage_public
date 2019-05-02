@@ -1,11 +1,11 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.FlowControls
 {
     partial class NotificationTable
     {
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        public System.ComponentModel.IContainer components = null;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -26,7 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
+        public void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(NotificationTable));
@@ -71,7 +71,7 @@
         }
 
         #endregion
-        private System.Windows.Forms.BindingSource eventNotificationTableDataSetBindingSource;
-        private System.Windows.Forms.DataGridView dataGridView1;
+        public System.Windows.Forms.BindingSource eventNotificationTableDataSetBindingSource;
+        public System.Windows.Forms.DataGridView dataGridView1;
     }
 }

@@ -1,11 +1,11 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.Uncaging
 {
     partial class Uncaging_Trigger_Panel
     {
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        public System.ComponentModel.IContainer components = null;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -26,7 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
+        public void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Uncaging_Trigger_Panel));
             this.UncagingPosY = new System.Windows.Forms.TextBox();
@@ -1140,86 +1140,86 @@
 
         #endregion
 
-        private System.Windows.Forms.TextBox UncagingPosY;
-        private System.Windows.Forms.Button Uncage_Save;
-        private System.Windows.Forms.TextBox PulseName;
-        private System.Windows.Forms.NumericUpDown PulseNumber;
-        private System.Windows.Forms.CheckBox Shutter2;
-        private System.Windows.Forms.Label label97;
-        private System.Windows.Forms.TextBox OutputRate;
-        private System.Windows.Forms.Label label95;
-        private System.Windows.Forms.Label label94;
-        private System.Windows.Forms.TextBox AnalogShutterDelay;
-        private System.Windows.Forms.TextBox UncagingPosX;
-        private System.Windows.Forms.Label label92;
-        private System.Windows.Forms.Label label65;
-        private System.Windows.Forms.TextBox Uncage_Length;
-        private System.Windows.Forms.Label label90;
-        private System.Windows.Forms.Label label64;
-        private System.Windows.Forms.TextBox Uncage_Delay;
-        private System.Windows.Forms.Label label10;
-        private System.Windows.Forms.TextBox Uncage_ISI;
-        private System.Windows.Forms.ComboBox UncageMultiRoi;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label uncageNote;
-        private System.Windows.Forms.GroupBox groupBox10;
-        private System.Windows.Forms.RadioButton SyncWithSlice_Check;
-        private System.Windows.Forms.RadioButton SyncWithFrame_Check;
-        private System.Windows.Forms.TextBox Uncage_SliceInterval;
-        private System.Windows.Forms.TextBox SlicesBeforeUncage;
-        private System.Windows.Forms.Label label73;
-        private System.Windows.Forms.Label label71;
-        private System.Windows.Forms.TextBox Uncage_FrameInterval;
-        private System.Windows.Forms.Label label63;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.TextBox Uncage_Repeat;
-        private System.Windows.Forms.Label U_counter;
-        private System.Windows.Forms.Button StartUncaging_button;
-        private System.Windows.Forms.Label label75;
-        private System.Windows.Forms.TextBox uncage_interval;
-        private System.Windows.Forms.Label label68;
-        private System.Windows.Forms.TextBox uncage_power;
-        private System.Windows.Forms.Label label62;
-        private System.Windows.Forms.TextBox undage_dwell;
-        private System.Windows.Forms.Label label12;
-        private System.Windows.Forms.TextBox uncage_pulseN;
-        private System.Windows.Forms.Label label93;
-        private System.Windows.Forms.PictureBox panel1;
-        private System.Windows.Forms.PictureBox panel2;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.CheckBox ShowShutter;
-        private System.Windows.Forms.GroupBox UncageOnlyPanel;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Label U_counter2;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label96;
-        private System.Windows.Forms.TextBox FramesBeforeUncage;
-        private System.Windows.Forms.Label label8;
-        private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.TextBox Uncage_FrameInterval_ms;
-        private System.Windows.Forms.Label label15;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox FrameBeforeUncage_ms;
-        private System.Windows.Forms.Label label11;
-        private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.CheckBox ShowRepeat;
-        private System.Windows.Forms.Label label14;
-        private System.Windows.Forms.Label RepeatFrame;
-        private System.Windows.Forms.Label label13;
-        private System.Windows.Forms.Label label16;
-        private System.Windows.Forms.TextBox DigitalShutterDelay;
-        private System.Windows.Forms.MenuStrip menuStrip1;
-        private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem advancedToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem calibrationToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem miscSettingToolStripMenuItem;
-        private System.Windows.Forms.Label SliceInterval_s;
-        private System.Windows.Forms.Label BaseLine_Slice_s;
-        private System.Windows.Forms.Label label17;
-        private System.Windows.Forms.Label label19;
-        private System.Windows.Forms.Label label18;
-        private System.Windows.Forms.Label SliceNote;
-        private System.Windows.Forms.Label FrameNote;
+        public System.Windows.Forms.TextBox UncagingPosY;
+        public System.Windows.Forms.Button Uncage_Save;
+        public System.Windows.Forms.TextBox PulseName;
+        public System.Windows.Forms.NumericUpDown PulseNumber;
+        public System.Windows.Forms.CheckBox Shutter2;
+        public System.Windows.Forms.Label label97;
+        public System.Windows.Forms.TextBox OutputRate;
+        public System.Windows.Forms.Label label95;
+        public System.Windows.Forms.Label label94;
+        public System.Windows.Forms.TextBox AnalogShutterDelay;
+        public System.Windows.Forms.TextBox UncagingPosX;
+        public System.Windows.Forms.Label label92;
+        public System.Windows.Forms.Label label65;
+        public System.Windows.Forms.TextBox Uncage_Length;
+        public System.Windows.Forms.Label label90;
+        public System.Windows.Forms.Label label64;
+        public System.Windows.Forms.TextBox Uncage_Delay;
+        public System.Windows.Forms.Label label10;
+        public System.Windows.Forms.TextBox Uncage_ISI;
+        public System.Windows.Forms.ComboBox UncageMultiRoi;
+        public System.Windows.Forms.Label label4;
+        public System.Windows.Forms.Label uncageNote;
+        public System.Windows.Forms.GroupBox groupBox10;
+        public System.Windows.Forms.RadioButton SyncWithSlice_Check;
+        public System.Windows.Forms.RadioButton SyncWithFrame_Check;
+        public System.Windows.Forms.TextBox Uncage_SliceInterval;
+        public System.Windows.Forms.TextBox SlicesBeforeUncage;
+        public System.Windows.Forms.Label label73;
+        public System.Windows.Forms.Label label71;
+        public System.Windows.Forms.TextBox Uncage_FrameInterval;
+        public System.Windows.Forms.Label label63;
+        public System.Windows.Forms.Label label5;
+        public System.Windows.Forms.TextBox Uncage_Repeat;
+        public System.Windows.Forms.Label U_counter;
+        public System.Windows.Forms.Button StartUncaging_button;
+        public System.Windows.Forms.Label label75;
+        public System.Windows.Forms.TextBox uncage_interval;
+        public System.Windows.Forms.Label label68;
+        public System.Windows.Forms.TextBox uncage_power;
+        public System.Windows.Forms.Label label62;
+        public System.Windows.Forms.TextBox undage_dwell;
+        public System.Windows.Forms.Label label12;
+        public System.Windows.Forms.TextBox uncage_pulseN;
+        public System.Windows.Forms.Label label93;
+        public System.Windows.Forms.PictureBox panel1;
+        public System.Windows.Forms.PictureBox panel2;
+        public System.Windows.Forms.Label label1;
+        public System.Windows.Forms.Label label2;
+        public System.Windows.Forms.CheckBox ShowShutter;
+        public System.Windows.Forms.GroupBox UncageOnlyPanel;
+        public System.Windows.Forms.Label label7;
+        public System.Windows.Forms.Label U_counter2;
+        public System.Windows.Forms.Label label6;
+        public System.Windows.Forms.Label label96;
+        public System.Windows.Forms.TextBox FramesBeforeUncage;
+        public System.Windows.Forms.Label label8;
+        public System.Windows.Forms.GroupBox groupBox1;
+        public System.Windows.Forms.TextBox Uncage_FrameInterval_ms;
+        public System.Windows.Forms.Label label15;
+        public System.Windows.Forms.Label label3;
+        public System.Windows.Forms.TextBox FrameBeforeUncage_ms;
+        public System.Windows.Forms.Label label11;
+        public System.Windows.Forms.Label label9;
+        public System.Windows.Forms.CheckBox ShowRepeat;
+        public System.Windows.Forms.Label label14;
+        public System.Windows.Forms.Label RepeatFrame;
+        public System.Windows.Forms.Label label13;
+        public System.Windows.Forms.Label label16;
+        public System.Windows.Forms.TextBox DigitalShutterDelay;
+        public System.Windows.Forms.MenuStrip menuStrip1;
+        public System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem advancedToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem calibrationToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem miscSettingToolStripMenuItem;
+        public System.Windows.Forms.Label SliceInterval_s;
+        public System.Windows.Forms.Label BaseLine_Slice_s;
+        public System.Windows.Forms.Label label17;
+        public System.Windows.Forms.Label label19;
+        public System.Windows.Forms.Label label18;
+        public System.Windows.Forms.Label SliceNote;
+        public System.Windows.Forms.Label FrameNote;
     }
 }

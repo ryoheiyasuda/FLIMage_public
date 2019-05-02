@@ -8,8 +8,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utilities;
+using FLIMage.Analysis;
 
-namespace FLIMimage
+namespace FLIMage.Dialogs
 {
     public partial class ExportForm : Form
     {

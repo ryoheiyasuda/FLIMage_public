@@ -1,4 +1,4 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.HardwareControls.StageControls
 {
     partial class MotorCtrlPanel
     {

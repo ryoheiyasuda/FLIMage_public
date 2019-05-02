@@ -1,11 +1,11 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.HardwareControls
 {
     partial class ShadingCorrection
     {
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        public System.ComponentModel.IContainer components = null;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -26,7 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
+        public void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ShadingCorrection));
             this.ShadingFilePath3 = new System.Windows.Forms.Label();
@@ -190,16 +190,16 @@
 
         #endregion
 
-        private System.Windows.Forms.Label ShadingFilePath3;
-        private System.Windows.Forms.Label ShadingFilePath2;
-        private System.Windows.Forms.Label ShadingFilePath1;
-        private System.Windows.Forms.CheckBox Shading_On_Uncaging;
-        private System.Windows.Forms.CheckBox ShadingOnCB;
-        private System.Windows.Forms.Label label96;
-        private System.Windows.Forms.Button ShadingImage3;
-        private System.Windows.Forms.Label label95;
-        private System.Windows.Forms.Button ShadingImage2;
-        private System.Windows.Forms.Label label94;
-        private System.Windows.Forms.Button ShadingImage1;
+        public System.Windows.Forms.Label ShadingFilePath3;
+        public System.Windows.Forms.Label ShadingFilePath2;
+        public System.Windows.Forms.Label ShadingFilePath1;
+        public System.Windows.Forms.CheckBox Shading_On_Uncaging;
+        public System.Windows.Forms.CheckBox ShadingOnCB;
+        public System.Windows.Forms.Label label96;
+        public System.Windows.Forms.Button ShadingImage3;
+        public System.Windows.Forms.Label label95;
+        public System.Windows.Forms.Button ShadingImage2;
+        public System.Windows.Forms.Label label94;
+        public System.Windows.Forms.Button ShadingImage1;
     }
 }

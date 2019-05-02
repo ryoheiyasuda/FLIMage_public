@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 
-namespace FLIMimage
+namespace FLIMage.Uncaging
 {
     public partial class UncagingCalibration : Form
     {
@@ -38,7 +38,7 @@ namespace FLIMimage
             UncagingCalibY.Text = String.Format("{0:0.000}", State.Uncaging.CalibV[1] - FLIMage.flimage_io.uncaging_Calib[1]);
         }
 
-        private void ApplyCalib_Click(object sender, EventArgs e)
+        public void ApplyCalib_Click(object sender, EventArgs e)
         {
             double valD;
             if (Double.TryParse(UncagingCalibX.Text, out valD)) State.Uncaging.CalibV[0] = valD;
@@ -46,12 +46,12 @@ namespace FLIMimage
             this.Close();
         }
 
-        private void CancelButton_Click(object sender, EventArgs e)
+        public void CancelButton_Click(object sender, EventArgs e)
         {
             this.Close();
         }
 
-        private void UncagingCalibration_FormClosing(object sender, FormClosingEventArgs e)
+        public void UncagingCalibration_FormClosing(object sender, FormClosingEventArgs e)
         {
             FLIMage.flimage_io.uncaging_Calib = new double[] { 0.0, 0.0 };
             FLIMage.image_display.referenceLoc = new Point(-1, -1);

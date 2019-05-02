@@ -7,9 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
-using Stage_Control;
+using FLIMage.HardwareControls.StageControls;
 
-namespace FLIMimage
+namespace FLIMage.FlowControls
 {
     public class TextServer
     {
@@ -185,7 +185,7 @@ namespace FLIMimage
             watcher.EnableRaisingEvents = true;
         }
 
-        private void OnChanged(object source, FileSystemEventArgs e)
+        public void OnChanged(object source, FileSystemEventArgs e)
         {
             if (State.Files.useCommandFile)
             {

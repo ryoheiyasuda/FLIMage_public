@@ -1,11 +1,11 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.FlowControls
 {
     partial class DriftCorrection
     {
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        public System.ComponentModel.IContainer components = null;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -26,7 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
+        public void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DriftCorrection));
             this.DriftCorrection_CB = new System.Windows.Forms.CheckBox();
@@ -211,18 +211,18 @@
 
         #endregion
 
-        private System.Windows.Forms.CheckBox DriftCorrection_CB;
-        private System.Windows.Forms.CheckBox XYCorrect_CB;
-        private System.Windows.Forms.CheckBox ZCorrect_CB;
-        private System.Windows.Forms.CheckBox UseMirror_CB;
-        private System.Windows.Forms.Button SelectCurrentImage;
-        private System.Windows.Forms.Label TemplateFileName;
-        private System.Windows.Forms.ComboBox Channel_Pulldown;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.PictureBox TemplateImage_PB;
-        private System.Windows.Forms.Label Status_XY;
-        private System.Windows.Forms.Label Status_Z;
-        private System.Windows.Forms.Label Status_V;
-        private System.Windows.Forms.CheckBox MoveOposite_Z;
+        public System.Windows.Forms.CheckBox DriftCorrection_CB;
+        public System.Windows.Forms.CheckBox XYCorrect_CB;
+        public System.Windows.Forms.CheckBox ZCorrect_CB;
+        public System.Windows.Forms.CheckBox UseMirror_CB;
+        public System.Windows.Forms.Button SelectCurrentImage;
+        public System.Windows.Forms.Label TemplateFileName;
+        public System.Windows.Forms.ComboBox Channel_Pulldown;
+        public System.Windows.Forms.Label label1;
+        public System.Windows.Forms.PictureBox TemplateImage_PB;
+        public System.Windows.Forms.Label Status_XY;
+        public System.Windows.Forms.Label Status_Z;
+        public System.Windows.Forms.Label Status_V;
+        public System.Windows.Forms.CheckBox MoveOposite_Z;
     }
 }

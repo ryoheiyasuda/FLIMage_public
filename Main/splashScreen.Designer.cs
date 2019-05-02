@@ -1,4 +1,4 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage
 {
     partial class splashScreen
     {
@@ -47,7 +47,7 @@
             // 
             // pictureBox1
             // 
-            this.pictureBox1.Image = global::FLIMimage.Properties.Resources.FLIMage_title;
+            this.pictureBox1.Image = global::FLIMage.Properties.Resources.FLIMage_title;
             this.pictureBox1.Location = new System.Drawing.Point(12, 120);
             this.pictureBox1.Name = "pictureBox1";
             this.pictureBox1.Size = new System.Drawing.Size(697, 202);

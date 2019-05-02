@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FLIMage.HardwareControls.ThorLabs;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -6,21 +7,18 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO.Ports;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utilities;
 
-namespace ThorlabController
+namespace FLIMage.HardwareControls
 {
     public partial class PMTControl : Form
     {
-        SerialPort port;
-        String COMport;
-        int baudRate = 115200;
-
-        int defaultGain1 = 80;
-        int defaultGain2 = 80;
+        int defaultGain1 = 800;
+        int defaultGain2 = 800;
         int nChannels = 2;
 
         SettingManager settingManager;
@@ -29,112 +27,198 @@ namespace ThorlabController
         WindowLocManager winManager;
         String windowName = "PMTControl";
 
-        public PMTControl()
+
+
+        private const int PARAM_DEVICE_TYPE = 0;
+
+        private const int LIGHT_PATH = 0x2000000;
+        private const int PARAM_LIGHTPATH_GG = 1600;
+        private const int PARAM_LIGHTPATH_GR = 1601;
+        private const int PARAM_LIGHTPATH_CAMERA = 1602;
+
+        private const int TRUE = 1, FALSE = 0;
+
+        //Buffer for getinformation.
+        int paramType = 0;
+        int paramAvailable = 0;
+        int paramReadOnly = 0;
+        double paramMin = 0.0;
+        double paramMax = 0.0;
+        double paramDefault = 0.0;
+
+        ScanParameters State;
+
+        ThorDLL thorECU;
+        ThorDLL thorBCM;
+
+        public PMTControl(ScanParameters state)
         {
             InitializeComponent();
             PMTPanel.Enabled = false;
+
+            State = state;
+            if (State.Init.ThorPMTModule == "ThorECU")
+                thorECU = ThorDLL.ThorDLL_Load(ThorDLL.DLLType.ThorECU);
+            else if (State.Init.ThorPMTModule == "ThorBScope")
+                thorECU = ThorDLL.ThorDLL_Load(ThorDLL.DLLType.ThorBScope);
+            else
+            {
+                MessageBox.Show("There is no PMT module DLL for " + state);
+                return;
+            }
+
+            if (State.Init.ThorFlipper == "ThorBCM")
+                thorBCM = ThorDLL.ThorDLL_Load(ThorDLL.DLLType.ThorBCM);
+            else if (State.Init.ThorFlipper == "ThorBScope")
+                thorBCM = ThorDLL.ThorDLL_Load(ThorDLL.DLLType.ThorBScope);
+
+            initFolder = State.Files.initFolderPath;
         }
 
-        public PMTControl(String SettingSaveFolder)
+
+        public void DLLUnload()
         {
-            InitializeComponent();
-            PMTPanel.Enabled = false;
-            initFolder = SettingSaveFolder;
+            //We should not unload until very end.
+            //ThorDLL.ThorlabDLL_Unload(ThorDLL.DLLType.ThorECU);
+            //ThorDLL.ThorlabDLL_Unload(ThorDLL.DLLType.ThorBCM);
         }
-
+        
         public void connectToSerial()
         {
+            int ret;
+            int deviceCount = 0;
 
-            COMport = PortName.Text;
-            port = new SerialPort(COMport, baudRate, Parity.None, 8, StopBits.One);
-            try
+            ret = thorECU.FindDevices(ref deviceCount);
+            if (ret != 1)
             {
-                if (ConnectButton.Text == "Connect")
-                {
-                    port.Open();
-                    PMTPanel.Enabled = true;
-                    ConnectButton.Text = "Disconnect";
-                    StatusLabel.Text = "Connected!";
-                }
-                else
-                {
-                    port.Close();
-                    ConnectButton.Text = "Connect";
-                    StatusLabel.Text = "Disconnected!";
-                }
+                MessageBox.Show("ThorECU.FindDevices(ref deviceCount) failed: Failed to connect with the device. Check XML file and port!");
+                return;
             }
-            catch (Exception EX)
+
+            ret = thorECU.SelectDevice(0);
+            if (ret != 1)
             {
-                Debug.WriteLine(EX.ToString());
-                StatusLabel.Text = "Failed connecting!!";
+                MessageBox.Show("ThorECU.SelectDevice(0) failed: Failed to connect with the device. Check if device is connected!");
+                return;
             }
-            System.Threading.Thread.Sleep(200);
+
+            if (thorECU.GetParamInfo(ThorParam.PARAM_PMT2_SAFETY, ref paramType, ref paramAvailable, ref paramReadOnly, ref paramMin, ref paramMax, ref paramDefault) == 1)
+            {
+                thorECU.GetParam(ThorParam.PARAM_PMT1_SAFETY, ref paramDefault);
+                thorECU.GetParam(ThorParam.PARAM_PMT2_SAFETY, ref paramDefault);
+            }
+
+
+            ret = thorBCM.FindDevices(ref deviceCount);
+            if (ret != 1)
+            {
+                MessageBox.Show("ThorBCM.FindDevices(ref deviceCount) failed: Failed to connect with the device. Check XML file and port!");
+                return;
+            }
+
+            ret = thorBCM.SelectDevice(0);
+            if (ret != 1)
+            {
+                MessageBox.Show("ThorBCM.SelectDevice(0) failed: Failed to connect with the device. Check if device is connected!");
+                return;
+            }
+
         }
 
-        private void ConnectButton_Click(object sender, EventArgs e)
-        {
-            connectToSerial();
-        }
-
-        public void ClearBuffer()
-        {
-            try
-            {
-                port.ReadExisting();
-            }
-            catch (TimeoutException EX)
-            {
-                Debug.WriteLine("Clearing --- timeout");
-            }
-        }
 
         private void PMTEnableCB_CheckedChanged(object sender, EventArgs e)
         {
-            PMTPanel.Enabled = false;
-            ClearBuffer();
-            int enable = PMTEnableCB.Checked ? 1 : 0;
-            int gain1 = Int32.TryParse(PMTGain1.Text, out int gain1T) ? gain1T : defaultGain1;
-            int gain2 = Int32.TryParse(PMTGain2.Text, out int gain2T) ? gain2T : defaultGain2;
-            port.Write(String.Format("pmt1={0}\r", enable));
-            port.Write(String.Format("pmt2={0}\r", enable));
-            port.Write(String.Format("pmt1gain={0}\r", gain1));
-            port.Write(String.Format("pmt1gain={0}\r", gain2));
+            TurnOnPMT(PMTEnableCB.Checked);
+        }
 
-            System.Threading.Thread.Sleep(250);
+        void SwitchToCamera(bool camera_on)
+        {
+            int CameraBool = camera_on ? 1 : 0;
+            int PMTBool = camera_on ? 0 : 1;
 
-            ClearBuffer();
-            for (int i = 0; i < nChannels; i++)
+            //First put switch to Camera port anyway first.
+            if (thorBCM.GetParamInfo(PARAM_LIGHTPATH_CAMERA, ref paramType, ref paramAvailable, ref paramReadOnly, ref paramMin, ref paramMax, ref paramDefault) == TRUE)
             {
-                port.Write(String.Format("pmt{0}?\r", i));
-                System.Threading.Thread.Sleep(200);
-                String str = ReadPort();
-                if (i == 0)
-                    PMT1Status.Text = str;
-                else
-                    PMT2Status.Text = str;
+                thorBCM.SetParam(PARAM_LIGHTPATH_CAMERA, 1);
+                thorBCM.StartPosition();
+
             }
 
-            PMTPanel.Enabled = true;
+            //Not sure necessary?
+            if (thorBCM.GetParamInfo(PARAM_LIGHTPATH_GR, ref paramType, ref paramAvailable, ref paramReadOnly, ref paramMin, ref paramMax, ref paramDefault) == TRUE)
+            {
+                thorBCM.SetParam(PARAM_LIGHTPATH_GR, PMTBool);
+                thorBCM.StartPosition();
+            }
+
+            if (thorBCM.GetParamInfo(PARAM_LIGHTPATH_GG, ref paramType, ref paramAvailable, ref paramReadOnly, ref paramMin, ref paramMax, ref paramDefault) == TRUE)
+            {
+                thorBCM.SetParam(PARAM_LIGHTPATH_GG, PMTBool);
+                thorBCM.StartPosition();
+            }
+
+            if (!camera_on) //PMT on.
+                if (thorBCM.GetParamInfo(PARAM_LIGHTPATH_CAMERA, ref paramType, ref paramAvailable, ref paramReadOnly, ref paramMin, ref paramMax, ref paramDefault) == TRUE)
+                {
+                    thorBCM.SetParam(PARAM_LIGHTPATH_CAMERA, CameraBool);
+                    thorBCM.StartPosition();
+                }
         }
 
-        String ReadPort()
+        void TurnOnPMT(bool on)
         {
-            return port.ReadLine();
-        }
+            int TurnOn = (on) ? 1 : 0;
 
-        public void InitializeSerial()
-        {
-            string[] ports = SerialPort.GetPortNames();
-            ComportPulldown.Items.Clear();
-            foreach (string port in ports)
-                ComportPulldown.Items.Add(port);
+            if (!Double.TryParse(PMTGain1.Text, out double Gain1) || Gain1 >= 1000.0 || Gain1 < 0)
+            {
+                Gain1 = defaultGain1;
+            }
 
-            FormControllers.PulldownSelectByItemString(ComportPulldown, PortName.Text);
-        }
+            if (!Double.TryParse(PMTGain1.Text, out double Gain2) || Gain2 >= 1000.0 || Gain2 < 0)
+            {
+                Gain2 = defaultGain2;
+            }
 
-        private void ComportPulldown_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            PortName.Text = ComportPulldown.SelectedItem.ToString();
+            if (thorECU.GetParamInfo(ThorParam.PARAM_PMT1_GAIN_POS, ref paramType, ref paramAvailable, ref paramReadOnly, ref paramMin, ref paramMax, ref paramDefault) == 1)
+            {
+                thorECU.PreflightPosition();
+                thorECU.SetParam(ThorParam.PARAM_PMT1_ENABLE, TurnOn);
+                if (PMTEnableCB.Checked)
+                    thorECU.SetParam(ThorParam.PARAM_PMT1_GAIN_POS, Gain1 / 1000.0 * paramMax);
+                else
+                    thorECU.SetParam(ThorParam.PARAM_PMT1_GAIN_POS, paramMin);
+                thorECU.SetupPosition();
+                thorECU.StartPosition();
+                thorECU.PostflightPosition();
+                thorECU.GetParam(ThorParam.PARAM_PMT1_GAIN_POS, ref Gain1);
+                PMT1Status.Text = "PMT1 Gain: " + (Gain1 / paramMax * 1000.0);
+            }
+            else
+            {
+                MessageBox.Show("PMT1 not available");
+                return;
+            }
+
+            if (thorECU.GetParamInfo(ThorParam.PARAM_PMT2_GAIN_POS, ref paramType, ref paramAvailable, ref paramReadOnly, ref paramMin, ref paramMax, ref paramDefault) == 1)
+            {
+                thorECU.PreflightPosition();
+                thorECU.SetParam(ThorParam.PARAM_PMT2_ENABLE, TurnOn);
+                if (PMTEnableCB.Checked)
+                    thorECU.SetParam(ThorParam.PARAM_PMT2_GAIN_POS, Gain2 / 1000.0 * paramMax);
+                else
+                    thorECU.SetParam(ThorParam.PARAM_PMT2_GAIN_POS, paramMin);
+                thorECU.SetupPosition();
+                thorECU.StartPosition();
+                thorECU.PostflightPosition();
+                thorECU.GetParam(ThorParam.PARAM_PMT2_GAIN_POS, ref Gain2);
+                PMT2Status.Text = "PMT2 Gain: " + (Gain2 / paramMax * 1000.0);
+            }
+            else
+            {
+                MessageBox.Show("PMT2 not available");
+                return;
+            }
+
         }
 
         void InitializeSetting()
@@ -142,7 +226,6 @@ namespace ThorlabController
             if (initFolder != "")
             {
                 settingManager = new SettingManager(settingName, initFolder);
-                settingManager.AddToDict(PortName);
                 settingManager.AddToDict(PMTGain1);
                 settingManager.AddToDict(PMTGain2);
                 settingManager.LoadToObject();
@@ -152,6 +235,13 @@ namespace ThorlabController
         }
 
         void PMTControl_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            WindowClosing();
+            Hide();
+            e.Cancel = true;
+        }
+
+        public void WindowClosing()
         {
             SaveWindowLocationAndSetting();
         }
@@ -165,13 +255,16 @@ namespace ThorlabController
                 winManager.SaveWindowLocation();
         }
 
+        private void Camera2PSwitchRadioClick(object sender, EventArgs e)
+        {
+            SwitchToCamera(CameraRadio.Checked);
+        }
+
         private void PMTControl_Load(object sender, EventArgs e)
         {
             InitializeSetting();
-            InitializeSerial();
-            Application.DoEvents();
-            System.Threading.Thread.Sleep(100);
             connectToSerial();
         }
+
     }//Class
 }

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FLIMimage
+namespace FLIMage
 {
     public class ScanParameters
     {
@@ -33,6 +33,7 @@ namespace FLIMimage
             public String triggerPort = "Dev4/Port0/line0";
             public String shutterPort = "Dev4/Port0/line1";
 
+            public String MirrorAOBoard = "Dev4";
             public String mirrorAOPortX = "Dev4/AO0";
             public String mirrorAOPortY = "Dev4/AO1";
             public String mirrorOffsetX = "Dev4/AO5";
@@ -41,15 +42,16 @@ namespace FLIMimage
             public String masterClock = ""; //"/Dev4/20MHzTimebase";
             public String masterClockPort = "/Dev4/RTSI7";
 
+            public String EOMBoard = "Dev2";
             public String EOM_Port0 = "Dev2/AO0";
             public String EOM_Port1 = "Dev2/AO1";
             public String EOM_Port2 = "Dev2/AO2";
             public String EOM_Port3 = "Dev2/AO4";
 
             public String UncagingShutterAnalogPort = "Dev2/AO3";
-            public String UncagingShutterDOPort = "Dev4/Port0/line3";
 
             public String DigitalLinePort = "line2";
+            public String DigitalShutterPort = "line3";
             public String TriggerInput = "PFI6";
             public String SampleClockPort = "PFI4";
 
@@ -70,14 +72,18 @@ namespace FLIMimage
 
             public int EOM_nChannels = 2;
             public bool AO_uncagingShutter = true;
-            public bool DO_uncagingShutter = true;
+            public bool DO_uncagingShutter = false;
             public bool DO_uncagingShutter_useForPMTsignal = false;
             public double[] mirrorParkPosition = { 5, 5 };
 
             public String MotorComPort = "COM1";
             public String MotorHWName = "MP-285A"; //or "MP-285" or "ThorlabMCM3000"
-
             public String TagLensPort = "COM6";
+
+            public String MicroscopeSystem = "Thor"; //or None
+            public String ThorPMTModule = "ThorECU"; //or ThorPMT21000
+            public String ThorFlipper = "ThorBCA"; // or ThorBScope
+            public bool Use_EPhys = true;
 
             public int FLIMserial = 0;
             public int ComputerID = 0;

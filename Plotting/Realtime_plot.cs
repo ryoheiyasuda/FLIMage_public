@@ -11,8 +11,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utilities;
+using FLIMage.Analysis;
 
-namespace FLIMimage
+namespace FLIMage.Plotting
 {
     public partial class plot_timeCourse : Form
     {
@@ -30,7 +31,7 @@ namespace FLIMimage
 
         public bool autoScale = true;
 
-        plot_panel pp;
+        PlotOnPictureBox plot;
 
         TimeCourse_Files TCF; // = new TimeCourse_Files(); 
         TimeCourse TC;
@@ -55,7 +56,8 @@ namespace FLIMimage
             image_display = imd;
             FLIMage = imd.FLIMage;
 
-            pp = new plot_panel(RealtimePlot.Width, RealtimePlot.Height);
+            plot = new PlotOnPictureBox(RealtimePlot);
+
 
             if (real_time)
             {
@@ -85,18 +87,24 @@ namespace FLIMimage
             TC = TC1;
             image_display = imd;
 
-            RealtimePlot.Invalidate();
+            updatePlot();
         }
 
         public void updatePlot()
         {
-            RealtimePlot.Invalidate();
+            plot.ClearData();
+
+            if (real_time)
+                plot_realtime();
+            else
+                plotTimeCourse();
+            plot.UpdatePlot();
         }
 
         public void plotNow_realtime(List<double> realtimeData1)
         {
             realtimeData = realtimeData1;
-            RealtimePlot.Invalidate();
+            updatePlot();
         }
 
         public void WarningTextDisplay(String str)
@@ -104,61 +112,23 @@ namespace FLIMimage
             Warning.Text = str;
         }
 
-        private void pictureBox1_Paint(object sender, PaintEventArgs e)
-        {
-            try
-            {
-                pp.clearData();
-
-                //Debug.WriteLine("autoScale: " + pp.autoScaleX);
-
-
-                if (real_time)
-                    plot_realtime(e);
-                else
-                    plotTimeCourse(e);
-            }
-            catch (Exception Ex)
-            {
-                if (real_time)
-                    Debug.WriteLine("Problem in Drawing realtime_plot: " + Ex.Message);
-                else
-                    Debug.WriteLine("Problem in Drawing plot data: " + Ex.Message);
-            }
-            finally { }
-
-            if (pp.drawingROI)
-            {
-                Pen rectPen = new Pen(Color.Red, (float)0.5);
-                e.Graphics.DrawRectangle(rectPen, pp.boxRoi);
-            }
-        }
-
-        private void plot_realtime(PaintEventArgs e)
+        private void plot_realtime()
         {
             double[] time1 = new double[realtimeData.Count];
             for (int i = 0; i < realtimeData.Count; i++)
                 time1[i] = (double)i;
 
             double[] realtimedata1 = realtimeData.ToArray();
-            pp.addData(time1, realtimedata1, new Pen(Brushes.Red, 1), "-");
-            //pp.addData(realtimeData);
-
-            pp.plotType = "-";
-            pp.XTitle = "Time Point";
+            plot.AddData(time1, realtimedata1,  "-r", 1f);
+            plot.XTitle = "Time Point";
 
             if (!meanIntensity_radio.Checked && !sumIntensity_radio.Checked)
-                pp.YTitle = "Fluorescence lifetime (ns)";
+                plot.YTitle = "Fluorescence lifetime (ns)";
             else
-                pp.YTitle = "Intensity (#Photons)";
-            pp.plot(e);
+                plot.YTitle = "Intensity (#Photons)";
+            plot.UpdatePlot();
         }
 
-
-        public void updateGraph()
-        {
-            RealtimePlot.Invalidate();
-        }
 
         private void Intensity_radio_Click(object sender, EventArgs e)
         {
@@ -175,19 +145,16 @@ namespace FLIMimage
             else if (fraction2_fit_radio.Checked)
                 plotType = plotWhat.farction2_fit;
 
-            RealtimePlot.Invalidate();
+            updatePlot();
         }
 
 
-        private void plotTimeCourse(PaintEventArgs e)
+        private void plotTimeCourse()
         {
-
             int c = channel;
 
-            pp.XTitle = "Time (s)";
-            pp.YTitle = "Fluorescence lifetime (ns)";
-            pp.plotType = "-";
-
+            plot.XTitle = "Time (s)";
+            plot.YTitle = "Fluorescence lifetime (ns)";
 
             List<String> strList = new List<String>();
 
@@ -202,7 +169,7 @@ namespace FLIMimage
                     {
                         curve = TCF.Fraction2[c];
                         curve2 = TC.Fraction2[c];
-                        pp.YTitle = "Binding fraction";
+                        plot.YTitle = "Binding fraction";
                     }
                     else if (tau_m_fit_radio.Checked)
                     {
@@ -213,22 +180,22 @@ namespace FLIMimage
                     {
                         curve = TCF.Fraction2_fit[c];
                         curve2 = TC.Fraction2_fit[c];
-                        pp.YTitle = "Binding fraction";
+                        plot.YTitle = "Binding fraction";
                     }
                     else if (sumIntensity_radio.Checked)
                     {
                         curve = TCF.sumIntensity[c];
                         curve2 = TC.sumIntensity[c];
-                        pp.YTitle = "Intensity";
+                        plot.YTitle = "Intensity";
                     }
                     else if (meanIntensity_radio.Checked)
                     {
                         curve = TCF.Intensity[c];
                         curve2 = TC.Intensity[c];
-                        pp.YTitle = "Intensity";
+                        plot.YTitle = "Intensity";
                     }
 
-                    pp.addData(TCF.time_seconds, curve, new Pen(Brushes.Red, 1), "-");
+                    plot.AddData(TCF.time_seconds, curve, "-r", 1);
 
                     //pp.addData(x1, curve);
                     strList.Add("Selected ROI");
@@ -270,11 +237,10 @@ namespace FLIMimage
                             curveROI = TCF.sumIntensity_ROI[c, j];
                         }
 
-                        pp.addData(TCF.time_seconds, curveROI);
                         if (TCF.nData < 200)
-                            pp.applyPlotType("o-");
+                            plot.AddData(TCF.time_seconds, curveROI, "o-", 1f);
                         else
-                            pp.applyPlotType("-");
+                            plot.AddData(TCF.time_seconds, curveROI, "-", 1f);
 
                         strList.Add("ROI-" + (j + 1));
 
@@ -288,16 +254,15 @@ namespace FLIMimage
 
                 if (currentCurve != null)
                 {
-                    pp.addData(TCF.time_seconds, currentCurve, new Pen(Brushes.Red, 2), "-");
-                    pp.DrawLegendWithHighlight(e, strList, hilightID);
+                    plot.AddData(TCF.time_seconds, currentCurve, "or-", 2);
+                    plot.AddLegendWithHighlight(strList, hilightID);
                 }
                 else
-                    pp.DrawLegend(e, strList);
+                    plot.AddLegend(strList);
             }
 
-            pp.autoAxisPosition(e);
-            pp.plot(e);
             calcFitCheck.Checked = calc_Fit;
+            plot.UpdatePlot();
         }
 
         public void intensity_onlyData()
@@ -308,11 +273,7 @@ namespace FLIMimage
 
         private void plot_timeCourse_Resize(object sender, EventArgs e)
         {
-            pp = new plot_panel(RealtimePlot.Width, RealtimePlot.Height);
-            RealtimePlot.Invalidate();
-            calcFitCheck.Checked = calc_Fit;
         }
-
 
         private void TC_Reset_Click(object sender, EventArgs e)
         {
@@ -334,7 +295,6 @@ namespace FLIMimage
             {
                 realtimeData.Clear();
             }
-            //realtime_plot.Invalidate();
         }
 
 
@@ -345,9 +305,7 @@ namespace FLIMimage
 
             image_display.CalculateTimecourse(true);
             calcFitCheck.Checked = calc_Fit;
-            //showCurrentTF = true;
-            //Refresh();
-            RealtimePlot.Invalidate();
+            updatePlot();
         }
 
 
@@ -357,43 +315,12 @@ namespace FLIMimage
         }
 
         //////////////////////////////////////////////////////////////
-        /// <summary>
-        /// This is to get a zoom-up view of the plot --- next 3 functions.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-
-        private void realtime_plot_MouseDown(object sender, MouseEventArgs e)
-        {
-            pp.StartDrawingROI(e);
-        }
-
-        private void realtime_plot_MouseDoubleClick(object sender, MouseEventArgs e)
-        {
-            pp.AutoScaleNow(true);
-            RealtimePlot.Invalidate();
-        }
-
-        private void realtime_plot_MouseMove(object sender, MouseEventArgs e)
-        {
-            pp.Draw_DuringMoveMouse(e);
-            if (pp.drawingROI)
-                RealtimePlot.Invalidate();
-        }
-
-        private void realtime_plot_MouseUp(object sender, MouseEventArgs e)
-        {
-            pp.Finish_DrawoingROI_MouseUp(e);
-            RealtimePlot.Invalidate();
-        }
-
-        //////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////
 
         private void CalculateSinglePage_Click(object sender, EventArgs e)
         {
             image_display.CalculateCurrentPage(true);
-            RealtimePlot.Invalidate();
+            updatePlot();
         }
 
         private void plot_timeCourse_FormClosing(object sender, FormClosingEventArgs e)

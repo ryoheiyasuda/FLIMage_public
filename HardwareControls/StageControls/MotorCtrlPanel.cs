@@ -7,9 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Stage_Control;
+using FLIMage;
 
-namespace FLIMimage
+namespace FLIMage.HardwareControls.StageControls
 {
     public partial class MotorCtrlPanel : Form
     {

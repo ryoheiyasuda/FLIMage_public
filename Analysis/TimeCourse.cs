@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using TCSPC_controls;
 using MathLibrary;
 
-namespace FLIMimage
+namespace FLIMage.Analysis
 {
     public class ImageInfo
     {

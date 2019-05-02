@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace FLIMimage
+namespace FLIMage.HardwareControls
 {
     public partial class DigitalSignalPanel : Form
     {
@@ -24,7 +24,7 @@ namespace FLIMimage
             InitializeComponent();
         }
 
-        private void checkBox1_Click(object sender, EventArgs e)
+        public void checkBox1_Click(object sender, EventArgs e)
         {
             for (int i = 0; i < nChannels; i++)
             {
@@ -34,7 +34,7 @@ namespace FLIMimage
             }
         }
 
-        private void DigitalSignalPanel_Load(object sender, EventArgs e)
+        public void DigitalSignalPanel_Load(object sender, EventArgs e)
         {
             DigitalOutputs = new IOControls.DigitalOut[nChannels];
 

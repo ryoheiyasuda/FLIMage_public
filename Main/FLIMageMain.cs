@@ -1,5 +1,5 @@
 ﻿using MathLibrary;
-using Stage_Control;
+using PhysiologyCSharp;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,11 +16,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
-using TCSPC_controls;
-using ThorlabController;
 using Utilities;
+using FLIMage.Analysis;
+using FLIMage.HardwareControls;
+using FLIMage.HardwareControls.StageControls;
+using FLIMage.FlowControls;
+using FLIMage.Plotting;
+using FLIMage.Uncaging;
 
-namespace FLIMimage
+namespace FLIMage
 {
     public partial class FLIMageMain : Form
     {
@@ -71,6 +75,7 @@ namespace FLIMimage
         public DigitalSignalPanel DIO_panel;
         public PMTControl pmt_control;
         public FastZControl fastZcontrol;
+        public StimPanel physiology;
 
         public Plot uncaging_plotXY;
         public Plot uncaging_plotPockels;
@@ -82,7 +87,7 @@ namespace FLIMimage
         public COMserver com_server;
         public TextServer text_server;
         public FLIMage_Event flim_event;
-        public Script script;
+        public RemoteControl script;
         public String versionText;
 
 
@@ -114,14 +119,23 @@ namespace FLIMimage
             {
                 //After version 1.2.0.0, FLIMage uses "FLIM_deviceFile_N" file.
                 //System.IO.Directory.CreateDirectory(State.Files.FLIMfolderPath);
-                
+
                 System.IO.Directory.CreateDirectory(State.Files.initFolderPath);
-                if (!System.IO.File.Exists(State.Files.deviceFileName)) 
+                if (!System.IO.File.Exists(State.Files.deviceFileName))
                 {
                     //Old filename is FLIM_deviceFile. For backword compatibility, we will import it first.
                     string old_fileName = Path.Combine(State.Files.initFolderPath, "FLIM_deviceFile.txt");
-                    if (!File.Exists(old_fileName))
-                         fileIO.LoadSetupFile(old_fileName);
+                    if (File.Exists(old_fileName))
+                        fileIO.LoadSetupFile(old_fileName);
+                    string board = "";
+                    string trigger = "";
+                    string ex_trigger = "";
+                    string sclock = "";
+                    IOControls.GetTriggerPortName(State.Init.mirrorAOPortX, State, ref board, ref trigger, ref ex_trigger, ref sclock);
+                    State.Init.MirrorAOBoard = board;
+                    IOControls.GetTriggerPortName(State.Init.EOM_AI_Port0, State, ref board, ref trigger, ref ex_trigger, ref sclock);
+                    State.Init.EOMBoard = board;
+
                     //create new file.
                     System.IO.File.WriteAllText(State.Files.deviceFileName, fileIO.AllSetupValues_device());
                 }
@@ -196,6 +210,7 @@ namespace FLIMimage
                 sync_offset2.Enabled = false;
                 Binning_setting.Visible = false;
                 NTimePoints.Visible = false;
+                StartPointBox.Visible = false;
                 st_binning.Visible = false;
                 st_tp.Visible = false;
                 PQMode_Pulldown.Visible = false;
@@ -370,13 +385,13 @@ namespace FLIMimage
 
                 if (readText.Contains("script"))
                 {
-                    script = new Script(this);
+                    script = new RemoteControl(this);
                     script.Show();
                 }
 
-                if (readText.Contains("pmt_control"))
+                if (readText.Contains("pmt_control") && State.Init.MicroscopeSystem == "Thor")
                 {
-                    pmt_control = new PMTControl(State.Files.initFolderPath);
+                    pmt_control = new PMTControl(State);
                     pmt_control.Show();
                 }
 
@@ -432,13 +447,13 @@ namespace FLIMimage
             if (script != null && !script.IsDisposed)
             {
                 script.Close();
-                script = new Script(this);
+                script = new RemoteControl(this);
             }
 
             if (pmt_control != null && !pmt_control.IsDisposed)
             {
                 pmt_control.Close();
-                pmt_control = new PMTControl();
+                pmt_control = new PMTControl(State);
             }
 
             if (image_display != null && !image_display.IsDisposed)
@@ -520,14 +535,14 @@ namespace FLIMimage
 
             if (pmt_control != null && pmt_control.Visible)
             {
-                pmt_control.SaveWindowLocationAndSetting();
+                pmt_control.WindowClosing();
                 sb.Append("pmt_control");
                 sb.Append(",");
             }
 
             string allStr = sb.ToString();
             File.WriteAllText(WindowsInfoFileName(), allStr);
-        }
+        } //SaveWindows
 
         public void ToolWindowClosed()
         {
@@ -552,6 +567,8 @@ namespace FLIMimage
             nIDAQConfigToolStripMenuItem.Checked = (nidaq_config != null && nidaq_config.Visible);
             dIOPanelToolStripMenuItem.Checked = (DIO_panel != null && DIO_panel.Visible);
             pMTControlToolStripMenuItem.Checked = pmt_control != null && pmt_control.Visible;
+
+            pMTControlToolStripMenuItem.Visible = State.Init.MicroscopeSystem == "Thor";
         }
 
         string WindowsInfoFileName()
@@ -766,7 +783,7 @@ namespace FLIMimage
 
         public void FLIM_On_GUIUpdate(bool ON)
         {
-            
+
         }
 
 
@@ -1686,6 +1703,8 @@ namespace FLIMimage
             else
                 State.Acq.fastZScan = false;
 
+            if (Int32.TryParse(FreqDivBox.Text, out valI)) State.Spc.spcData.sync_divider[0] = valI;
+
             if (flimage_io.use_pq)
             {
                 if (Binning_setting.SelectedIndex >= 0)
@@ -1693,6 +1712,8 @@ namespace FLIMimage
 
                 //if (Int32.TryParse(binning.Text, out valI)) State.Spc.spcData.binning = valI;
                 if (Int32.TryParse(NTimePoints.Text, out valI)) State.Spc.spcData.n_dataPoint = valI;
+                if (Int32.TryParse(StartPointBox.Text, out valI)) State.Spc.spcData.startPoint = valI;
+
                 if (PQMode_Pulldown.SelectedIndex == 0)
                     State.Spc.spcData.acq_modePQ = 3;
                 else if (PQMode_Pulldown.SelectedIndex == 1)
@@ -2051,6 +2072,8 @@ namespace FLIMimage
             else
                 State.Acq.fastZScan = false;
 
+            FreqDivBox.Text = State.Spc.spcData.sync_divider[0].ToString();
+
             if (flimage_io.use_bh)
             {
                 resolution2.Text = String.Format("{0:0.0}", State.Spc.spcData.resolution[1]);
@@ -2063,6 +2086,7 @@ namespace FLIMimage
             else if (flimage_io.use_pq)
             {
                 NTimePoints.Text = Convert.ToString(State.Spc.spcData.n_dataPoint);
+                StartPointBox.Text = Convert.ToString(State.Spc.spcData.startPoint);
 
                 if (Binning_setting != null && PQMode_Pulldown != null)
                 {
@@ -3516,7 +3540,7 @@ namespace FLIMimage
         private void remoteControlToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             if (script == null || script.IsDisposed)
-                script = new Script(this);
+                script = new RemoteControl(this);
             script.Show();
             MenuItems_CheckControls();
         }
@@ -3525,7 +3549,7 @@ namespace FLIMimage
         private void pMTControlToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (pmt_control == null || pmt_control.IsDisposed)
-                pmt_control = new PMTControl(State.Files.initFolderPath);
+                pmt_control = new PMTControl(State);
             pmt_control.Show();
             pmt_control.Activate();
             MenuItems_CheckControls();
@@ -3602,10 +3626,18 @@ namespace FLIMimage
             }
         }
 
+        private void electrophysiologyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (physiology == null || physiology.IsDisposed)
+                physiology = new StimPanel(true);
+            physiology.Show();
+        }
+
         private void analyzeEach_CheckedChanged(object sender, EventArgs e)
         {
             analyzeAfterEachAcquisiiton = analyzeEach.Checked;
         }
+
     } //Form
 
 

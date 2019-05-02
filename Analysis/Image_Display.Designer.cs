@@ -1,11 +1,11 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.Analysis
 {
     partial class Image_Display
     {
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        public System.ComponentModel.IContainer components = null;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -26,7 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
+        public void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Image_Display));
@@ -826,8 +826,8 @@
             // 
             // label4
             // 
-            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -840,8 +840,8 @@
             // 
             // label3
             // 
-            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -1808,7 +1808,7 @@
             // 
             // LifetimeCurvePlot
             // 
-            this.LifetimeCurvePlot.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.LifetimeCurvePlot.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.LifetimeCurvePlot.BackColor = System.Drawing.Color.White;
             this.LifetimeCurvePlot.Location = new System.Drawing.Point(770, 50);
@@ -1860,7 +1860,7 @@
             // 
             // Image2
             // 
-            this.Image2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.Image2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.Image2.BackColor = System.Drawing.Color.Black;
             this.Image2.Cursor = System.Windows.Forms.Cursors.Default;
@@ -1878,7 +1878,7 @@
             // 
             // Image1
             // 
-            this.Image1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.Image1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.Image1.BackColor = System.Drawing.Color.Black;
             this.Image1.Cursor = System.Windows.Forms.Cursors.Default;
@@ -2390,191 +2390,191 @@
         }
 
         #endregion
-        private System.Windows.Forms.CheckBox logScale;
-        private System.Windows.Forms.CheckBox ShowFLIM;
-        private System.Windows.Forms.RadioButton Channel1;
-        private System.Windows.Forms.RadioButton Channel2;
-        private System.Windows.Forms.Label imgOffset1;
-        private System.Windows.Forms.Button Apply_Offset;
-        private System.Windows.Forms.CheckBox fix_all;
-        private System.Windows.Forms.Label label75;
-        private System.Windows.Forms.Label xi_square;
-        private System.Windows.Forms.Label label73;
-        private System.Windows.Forms.Label label74;
-        private System.Windows.Forms.TextBox fit_end;
-        private System.Windows.Forms.Label label67;
-        private System.Windows.Forms.TextBox t0_Img;
-        private System.Windows.Forms.TextBox fit_start;
-        private System.Windows.Forms.CheckBox cb_T0Fix;
-        private System.Windows.Forms.CheckBox cb_tauGFix;
-        private System.Windows.Forms.CheckBox cb_tau2Fix;
-        private System.Windows.Forms.CheckBox cb_tau1Fix;
-        private System.Windows.Forms.Label frac2;
-        private System.Windows.Forms.Label frac1;
-        private System.Windows.Forms.Label label69;
-        private System.Windows.Forms.Label tau_m;
-        private System.Windows.Forms.Label label66;
-        private System.Windows.Forms.TextBox t0;
-        private System.Windows.Forms.Label label65;
-        private System.Windows.Forms.TextBox tauG;
-        private System.Windows.Forms.Label label63;
-        private System.Windows.Forms.Label label64;
-        private System.Windows.Forms.Label label62;
-        private System.Windows.Forms.Label label61;
-        private System.Windows.Forms.TextBox tau2;
-        private System.Windows.Forms.TextBox pop2;
-        private System.Windows.Forms.TextBox tau1;
-        private System.Windows.Forms.TextBox pop1;
-        private System.Windows.Forms.CheckBox Values_selectedROI;
-        private System.Windows.Forms.RadioButton AllRois;
-        private System.Windows.Forms.RadioButton SelectRoi;
-        private System.Windows.Forms.Button Fit;
-        private System.Windows.Forms.ContextMenuStrip rightClickMenuStrip_inROI;
-        private System.Windows.Forms.ToolStripMenuItem rmoeveRoiToolStripMenuItem;
-        private System.Windows.Forms.ContextMenuStrip rightClickMenuStrip;
-        private System.Windows.Forms.ToolStripMenuItem CreateRoi;
-        private System.Windows.Forms.CheckBox Auto1;
-        private System.Windows.Forms.TrackBar MinSldr1;
-        private System.Windows.Forms.TrackBar MaxSldr1;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox MinIntensity1;
-        private System.Windows.Forms.TextBox MaxIntensity1;
-        private System.Windows.Forms.TrackBar MinSldr2;
-        private System.Windows.Forms.TrackBar MaxSldr2;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.TextBox MinIntensity2;
-        private System.Windows.Forms.TextBox MaxIntensity2;
-        private System.Windows.Forms.TrackBar MinSldr3;
-        private System.Windows.Forms.TextBox MinIntensity3;
-        private System.Windows.Forms.TrackBar MaxSldr3;
-        private System.Windows.Forms.TextBox MaxIntensity3;
-        private System.Windows.Forms.GroupBox Fitting_Group;
-        private System.Windows.Forms.GroupBox FrameSlicePanel;
-        private System.Windows.Forms.RadioButton AveProjection;
-        private System.Windows.Forms.RadioButton MaxProjection;
-        private System.Windows.Forms.Label st_Filter;
-        private System.Windows.Forms.TextBox filterWindow;
-        private System.Windows.Forms.ContextMenuStrip rightClickMenu_removeAll;
-        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
-        private System.Windows.Forms.Button PageDownDown;
-        private System.Windows.Forms.Button PageUpUp;
-        private System.Windows.Forms.Button PageUp;
-        private System.Windows.Forms.Button PageDown;
-        private System.Windows.Forms.MenuStrip Main_Menu;
-        private System.Windows.Forms.GroupBox FilePanel;
-        private System.Windows.Forms.TextBox FileN;
-        private System.Windows.Forms.TextBox BaseName;
-        private System.Windows.Forms.Label st_fileN;
-        private System.Windows.Forms.Label st_BaseName;
-        private System.Windows.Forms.GroupBox groupBox3;
-        private System.Windows.Forms.Label st_im1;
-        private System.Windows.Forms.Label st_im2;
-        private System.Windows.Forms.PictureBox LifetimeCurvePlot;
-        private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem openFLIMImageToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem saveFLIMImageToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem rOIsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem recoverRoisToolStripMenuItem;
-        private System.Windows.Forms.Button FileUp;
-        private System.Windows.Forms.Button FileDown;
-        private System.Windows.Forms.Label st_panel;
-        private System.Windows.Forms.Label st_2Ch;
-        private System.Windows.Forms.Label st_1stCh;
-        private System.Windows.Forms.Label st_panel2;
-        private System.Windows.Forms.PictureBox Image2;
-        private System.Windows.Forms.PictureBox Image1;
-        private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.CheckBox cb_projectionYes;
-        private System.Windows.Forms.PictureBox Square_Box;
-        private System.Windows.Forms.PictureBox ElipsoidBox;
-        private System.Windows.Forms.PictureBox UncagingBox;
-        private System.Windows.Forms.PictureBox PolygonBox;
-        private System.Windows.Forms.Button stopOpening;
-        private System.Windows.Forms.ToolStripMenuItem windowsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem timeCoursePlotToolStripMenuItem;
-        private System.Windows.Forms.Panel ctrlPanel;
-        private System.Windows.Forms.Panel st_im3;
-        private System.Windows.Forms.RadioButton Ch12;
-        private System.Windows.Forms.Panel LifetimeCh_panel;
-        private System.Windows.Forms.Label label8;
-        private System.Windows.Forms.RadioButton Ch1;
-        private System.Windows.Forms.RadioButton Ch2;
-        private System.Windows.Forms.ToolStripMenuItem uncagingToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem setUncagingPositionToolStripMenuItem;
-        private System.Windows.Forms.PictureBox colorBar;
-        private System.Windows.Forms.Label st_lifetime_ns;
-        private System.Windows.Forms.CheckBox FrameAdjustment;
-        private System.Windows.Forms.ToolStripMenuItem removeAllRoisToolStripMenuItem;
-        private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.TextBox PageEnd;
-        private System.Windows.Forms.TextBox PageStart;
-        private System.Windows.Forms.ToolStripMenuItem analysisToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem alignSlicesframesToolStripMenuItem;
-        private System.Windows.Forms.Label st_pageN;
-        private System.Windows.Forms.TextBox c_page;
-        private System.Windows.Forms.RadioButton DoubleExp;
-        private System.Windows.Forms.RadioButton SingleExp;
-        private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.ToolStripMenuItem BatchProcessingToolStripMenuItem;
-        private System.Windows.Forms.ContextMenuStrip rightClick_CreateUncaging;
-        private System.Windows.Forms.ToolStripMenuItem CreateUncagingLoc;
-        private System.Windows.Forms.ContextMenuStrip rightClick_removeUncaging;
-        private System.Windows.Forms.ToolStripMenuItem RemoveAllUncaging;
-        private System.Windows.Forms.ContextMenuStrip rightClick_remUncageEach;
-        private System.Windows.Forms.ToolStripMenuItem removeUncagingEach;
-        private System.Windows.Forms.ToolStripMenuItem removeAllToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem removeAllToolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem createRoiToolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem readRoiFromImageJToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem saveRoiAsImageJToolStripMenuItem;
-        private System.Windows.Forms.Label psPerUnit;
-        private System.Windows.Forms.Label label10;
-        private System.Windows.Forms.CheckBox HoldCurrentImageCheckBox;
-        private System.Windows.Forms.ComboBox Roi_SelectA;
-        private System.Windows.Forms.ToolStripMenuItem scanThisRoiToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem saveRoisToolStripMenuItem;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
-        private System.Windows.Forms.CheckBox EntireStack_Check;
-        private System.Windows.Forms.ToolStripMenuItem makeSinlgeFileMovieFromFilesToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem saveFLIMImageToolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem deleteCurrentPageToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem openFLIMImageInNewWindowToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem convertToRectangularROIToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem convertToElipsoidROIToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem convertToPolygonROIToolStripMenuItem;
-        private System.Windows.Forms.CheckBox MergeCB;
-        private System.Windows.Forms.ToolStripMenuItem setttingToolStripMenuItem;
-        private System.Windows.Forms.GroupBox FastZPanel;
-        private System.Windows.Forms.Button FastZUp;
-        private System.Windows.Forms.Button FastZDown;
-        private System.Windows.Forms.TextBox CurrentFastZPageTB;
-        private System.Windows.Forms.Label TotalFastZFrame;
-        private System.Windows.Forms.ToolStripMenuItem keepPagesInMemoryToolStripMenuItem;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
-        private System.Windows.Forms.ToolStripMenuItem showImageDescriptionToolStripMenuItem;
-        private System.Windows.Forms.GroupBox FastZPhasePanel;
-        private System.Windows.Forms.Label PhaseDetectionMode_Status;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label PhaseDetectionMode_Status2;
-        private System.Windows.Forms.Label FastZFreqText;
-        private System.Windows.Forms.Label FastZAmpText;
-        private System.Windows.Forms.Label label11;
-        private System.Windows.Forms.Label FastZPhaseText;
-        private System.Windows.Forms.ToolStripMenuItem intelMKLLibraryOnToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem getFocusFrameToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem driftMeasurementToolStripMenuItem;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
-        private System.Windows.Forms.ToolStripMenuItem fastZCalibrationToolStripMenuItem;
-        private System.Windows.Forms.PictureBox ThreeDROIPanel;
-        private System.Windows.Forms.Label umPerSliceLabel;
-        private System.Windows.Forms.ToolStripMenuItem pythonScriptToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem averageTimeCoursePythonToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem setPythonPathToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem setScriptPathToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem runPythonScriptToolStripMenuItem;
+        public System.Windows.Forms.CheckBox logScale;
+        public System.Windows.Forms.CheckBox ShowFLIM;
+        public System.Windows.Forms.RadioButton Channel1;
+        public System.Windows.Forms.RadioButton Channel2;
+        public System.Windows.Forms.Label imgOffset1;
+        public System.Windows.Forms.Button Apply_Offset;
+        public System.Windows.Forms.CheckBox fix_all;
+        public System.Windows.Forms.Label label75;
+        public System.Windows.Forms.Label xi_square;
+        public System.Windows.Forms.Label label73;
+        public System.Windows.Forms.Label label74;
+        public System.Windows.Forms.TextBox fit_end;
+        public System.Windows.Forms.Label label67;
+        public System.Windows.Forms.TextBox t0_Img;
+        public System.Windows.Forms.TextBox fit_start;
+        public System.Windows.Forms.CheckBox cb_T0Fix;
+        public System.Windows.Forms.CheckBox cb_tauGFix;
+        public System.Windows.Forms.CheckBox cb_tau2Fix;
+        public System.Windows.Forms.CheckBox cb_tau1Fix;
+        public System.Windows.Forms.Label frac2;
+        public System.Windows.Forms.Label frac1;
+        public System.Windows.Forms.Label label69;
+        public System.Windows.Forms.Label tau_m;
+        public System.Windows.Forms.Label label66;
+        public System.Windows.Forms.TextBox t0;
+        public System.Windows.Forms.Label label65;
+        public System.Windows.Forms.TextBox tauG;
+        public System.Windows.Forms.Label label63;
+        public System.Windows.Forms.Label label64;
+        public System.Windows.Forms.Label label62;
+        public System.Windows.Forms.Label label61;
+        public System.Windows.Forms.TextBox tau2;
+        public System.Windows.Forms.TextBox pop2;
+        public System.Windows.Forms.TextBox tau1;
+        public System.Windows.Forms.TextBox pop1;
+        public System.Windows.Forms.CheckBox Values_selectedROI;
+        public System.Windows.Forms.RadioButton AllRois;
+        public System.Windows.Forms.RadioButton SelectRoi;
+        public System.Windows.Forms.Button Fit;
+        public System.Windows.Forms.ContextMenuStrip rightClickMenuStrip_inROI;
+        public System.Windows.Forms.ToolStripMenuItem rmoeveRoiToolStripMenuItem;
+        public System.Windows.Forms.ContextMenuStrip rightClickMenuStrip;
+        public System.Windows.Forms.ToolStripMenuItem CreateRoi;
+        public System.Windows.Forms.CheckBox Auto1;
+        public System.Windows.Forms.TrackBar MinSldr1;
+        public System.Windows.Forms.TrackBar MaxSldr1;
+        public System.Windows.Forms.Label label4;
+        public System.Windows.Forms.Label label3;
+        public System.Windows.Forms.TextBox MinIntensity1;
+        public System.Windows.Forms.TextBox MaxIntensity1;
+        public System.Windows.Forms.TrackBar MinSldr2;
+        public System.Windows.Forms.TrackBar MaxSldr2;
+        public System.Windows.Forms.Label label5;
+        public System.Windows.Forms.Label label7;
+        public System.Windows.Forms.TextBox MinIntensity2;
+        public System.Windows.Forms.TextBox MaxIntensity2;
+        public System.Windows.Forms.TrackBar MinSldr3;
+        public System.Windows.Forms.TextBox MinIntensity3;
+        public System.Windows.Forms.TrackBar MaxSldr3;
+        public System.Windows.Forms.TextBox MaxIntensity3;
+        public System.Windows.Forms.GroupBox Fitting_Group;
+        public System.Windows.Forms.GroupBox FrameSlicePanel;
+        public System.Windows.Forms.RadioButton AveProjection;
+        public System.Windows.Forms.RadioButton MaxProjection;
+        public System.Windows.Forms.Label st_Filter;
+        public System.Windows.Forms.TextBox filterWindow;
+        public System.Windows.Forms.ContextMenuStrip rightClickMenu_removeAll;
+        public System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        public System.Windows.Forms.Button PageDownDown;
+        public System.Windows.Forms.Button PageUpUp;
+        public System.Windows.Forms.Button PageUp;
+        public System.Windows.Forms.Button PageDown;
+        public System.Windows.Forms.MenuStrip Main_Menu;
+        public System.Windows.Forms.GroupBox FilePanel;
+        public System.Windows.Forms.TextBox FileN;
+        public System.Windows.Forms.TextBox BaseName;
+        public System.Windows.Forms.Label st_fileN;
+        public System.Windows.Forms.Label st_BaseName;
+        public System.Windows.Forms.GroupBox groupBox3;
+        public System.Windows.Forms.Label st_im1;
+        public System.Windows.Forms.Label st_im2;
+        public System.Windows.Forms.PictureBox LifetimeCurvePlot;
+        public System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem openFLIMImageToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem saveFLIMImageToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem rOIsToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem recoverRoisToolStripMenuItem;
+        public System.Windows.Forms.Button FileUp;
+        public System.Windows.Forms.Button FileDown;
+        public System.Windows.Forms.Label st_panel;
+        public System.Windows.Forms.Label st_2Ch;
+        public System.Windows.Forms.Label st_1stCh;
+        public System.Windows.Forms.Label st_panel2;
+        public System.Windows.Forms.PictureBox Image2;
+        public System.Windows.Forms.PictureBox Image1;
+        public System.Windows.Forms.GroupBox groupBox1;
+        public System.Windows.Forms.CheckBox cb_projectionYes;
+        public System.Windows.Forms.PictureBox Square_Box;
+        public System.Windows.Forms.PictureBox ElipsoidBox;
+        public System.Windows.Forms.PictureBox UncagingBox;
+        public System.Windows.Forms.PictureBox PolygonBox;
+        public System.Windows.Forms.Button stopOpening;
+        public System.Windows.Forms.ToolStripMenuItem windowsToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem timeCoursePlotToolStripMenuItem;
+        public System.Windows.Forms.Panel ctrlPanel;
+        public System.Windows.Forms.Panel st_im3;
+        public System.Windows.Forms.RadioButton Ch12;
+        public System.Windows.Forms.Panel LifetimeCh_panel;
+        public System.Windows.Forms.Label label8;
+        public System.Windows.Forms.RadioButton Ch1;
+        public System.Windows.Forms.RadioButton Ch2;
+        public System.Windows.Forms.ToolStripMenuItem uncagingToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem setUncagingPositionToolStripMenuItem;
+        public System.Windows.Forms.PictureBox colorBar;
+        public System.Windows.Forms.Label st_lifetime_ns;
+        public System.Windows.Forms.CheckBox FrameAdjustment;
+        public System.Windows.Forms.ToolStripMenuItem removeAllRoisToolStripMenuItem;
+        public System.Windows.Forms.Label label9;
+        public System.Windows.Forms.Label label6;
+        public System.Windows.Forms.TextBox PageEnd;
+        public System.Windows.Forms.TextBox PageStart;
+        public System.Windows.Forms.ToolStripMenuItem analysisToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem alignSlicesframesToolStripMenuItem;
+        public System.Windows.Forms.Label st_pageN;
+        public System.Windows.Forms.TextBox c_page;
+        public System.Windows.Forms.RadioButton DoubleExp;
+        public System.Windows.Forms.RadioButton SingleExp;
+        public System.Windows.Forms.Panel panel1;
+        public System.Windows.Forms.ToolStripMenuItem BatchProcessingToolStripMenuItem;
+        public System.Windows.Forms.ContextMenuStrip rightClick_CreateUncaging;
+        public System.Windows.Forms.ToolStripMenuItem CreateUncagingLoc;
+        public System.Windows.Forms.ContextMenuStrip rightClick_removeUncaging;
+        public System.Windows.Forms.ToolStripMenuItem RemoveAllUncaging;
+        public System.Windows.Forms.ContextMenuStrip rightClick_remUncageEach;
+        public System.Windows.Forms.ToolStripMenuItem removeUncagingEach;
+        public System.Windows.Forms.ToolStripMenuItem removeAllToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem removeAllToolStripMenuItem1;
+        public System.Windows.Forms.ToolStripMenuItem createRoiToolStripMenuItem1;
+        public System.Windows.Forms.ToolStripMenuItem readRoiFromImageJToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem saveRoiAsImageJToolStripMenuItem;
+        public System.Windows.Forms.Label psPerUnit;
+        public System.Windows.Forms.Label label10;
+        public System.Windows.Forms.CheckBox HoldCurrentImageCheckBox;
+        public System.Windows.Forms.ComboBox Roi_SelectA;
+        public System.Windows.Forms.ToolStripMenuItem scanThisRoiToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem saveRoisToolStripMenuItem;
+        public System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        public System.Windows.Forms.CheckBox EntireStack_Check;
+        public System.Windows.Forms.ToolStripMenuItem makeSinlgeFileMovieFromFilesToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem saveFLIMImageToolStripMenuItem1;
+        public System.Windows.Forms.ToolStripMenuItem deleteCurrentPageToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem openFLIMImageInNewWindowToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem convertToRectangularROIToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem convertToElipsoidROIToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem convertToPolygonROIToolStripMenuItem;
+        public System.Windows.Forms.CheckBox MergeCB;
+        public System.Windows.Forms.ToolStripMenuItem setttingToolStripMenuItem;
+        public System.Windows.Forms.GroupBox FastZPanel;
+        public System.Windows.Forms.Button FastZUp;
+        public System.Windows.Forms.Button FastZDown;
+        public System.Windows.Forms.TextBox CurrentFastZPageTB;
+        public System.Windows.Forms.Label TotalFastZFrame;
+        public System.Windows.Forms.ToolStripMenuItem keepPagesInMemoryToolStripMenuItem;
+        public System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+        public System.Windows.Forms.ToolStripMenuItem showImageDescriptionToolStripMenuItem;
+        public System.Windows.Forms.GroupBox FastZPhasePanel;
+        public System.Windows.Forms.Label PhaseDetectionMode_Status;
+        public System.Windows.Forms.Label label1;
+        public System.Windows.Forms.Label PhaseDetectionMode_Status2;
+        public System.Windows.Forms.Label FastZFreqText;
+        public System.Windows.Forms.Label FastZAmpText;
+        public System.Windows.Forms.Label label11;
+        public System.Windows.Forms.Label FastZPhaseText;
+        public System.Windows.Forms.ToolStripMenuItem intelMKLLibraryOnToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem getFocusFrameToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem driftMeasurementToolStripMenuItem;
+        public System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+        public System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
+        public System.Windows.Forms.ToolStripMenuItem fastZCalibrationToolStripMenuItem;
+        public System.Windows.Forms.PictureBox ThreeDROIPanel;
+        public System.Windows.Forms.Label umPerSliceLabel;
+        public System.Windows.Forms.ToolStripMenuItem pythonScriptToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem averageTimeCoursePythonToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem setPythonPathToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem setScriptPathToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem runPythonScriptToolStripMenuItem;
     }
 }

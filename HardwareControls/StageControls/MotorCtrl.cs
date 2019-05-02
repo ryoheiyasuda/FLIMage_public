@@ -7,13 +7,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Stage_Control
+namespace FLIMage.HardwareControls.StageControls
 {
     public class MotorCtrl
     {
         MotorCtrl_MP285 mp285;
         MotorCtrl_MP285A mp285a;
-        ThorMCM3000 thorMCM3000;
+        ThorMCMX000 thorMCMX000;
 
         public event MotorHandler MotH;
         public MotrEventArgs e = new MotrEventArgs("");
@@ -88,13 +88,16 @@ namespace Stage_Control
                 resolution = mp285a.GetResolution();
                 controller_object = mp285a;
             }
-            else if (MotorType_in == "ThorMCM3000")
+            else if (MotorType_in == "ThorMCM3000" || MotorType_in == "ThorMCM5000" || MotorType_in == "ThorBScope")
             {
                 MotorType = MotorTypeEnum.thorMCM3000;
-                thorMCM3000 = new ThorMCM3000();
-                thorMCM3000.MotH += new ThorMCM3000.MotorHandler(MotorListenerThor3000);
-                resolution = thorMCM3000.GetResolution();
-                controller_object = thorMCM3000;
+                if (MotorType_in == "ThorMCM5000" || MotorType_in == "ThorBScope")
+                    MotorType = MotorTypeEnum.thorMCM5000;
+
+                thorMCMX000 = new ThorMCMX000(resolution, MotorType);
+                thorMCMX000.MotH += new ThorMCMX000.MotorHandler(MotorListenerThor3000);
+                resolution = thorMCMX000.GetResolution();
+                controller_object = thorMCMX000;
             }
 
 
@@ -121,7 +124,7 @@ namespace Stage_Control
             MotH?.Invoke(this, e);
         }
 
-        public void MotorListenerThor3000(ThorMCM3000 th, MotrEventArgs e)
+        public void MotorListenerThor3000(ThorMCMX000 th, MotrEventArgs e)
         {
             getParameters();
             MotH?.Invoke(this, e);
@@ -262,9 +265,9 @@ namespace Stage_Control
                 velocity[0] = mp285a.velocity_coarse;
             }
 
-            if (MotorType == MotorTypeEnum.thorMCM3000)
+            if (MotorType == MotorTypeEnum.thorMCM3000 || MotorType == MotorTypeEnum.thorMCM5000)
             {
-                velocity = thorMCM3000.GetStatus(block);
+                velocity = thorMCMX000.GetStatus(block);
                 block = true;
             }
 
@@ -275,7 +278,7 @@ namespace Stage_Control
         public void GetPosition(bool block)
         {
             controller_object.GetType().GetMethod("GetPosition").Invoke(controller_object, new object[] { block, true });
-            if (block || MotorType == MotorTypeEnum.thorMCM3000)
+            if (block || MotorType == MotorTypeEnum.thorMCM3000 || MotorType == MotorTypeEnum.thorMCM5000)
                 getParameters();
         }
 
@@ -321,9 +324,9 @@ namespace Stage_Control
             {
                 mp285a.SetVelocity((int)value[0]);
             }
-            else if (MotorType == MotorTypeEnum.thorMCM3000) //NOT implemented yet.
+            else if (MotorType == MotorTypeEnum.thorMCM3000 || MotorType == MotorTypeEnum.thorMCM5000) //NOT implemented yet.
             {
-                thorMCM3000.SetVelocity(value);
+                thorMCMX000.SetVelocity(value);
             }
         }
 
@@ -367,6 +370,7 @@ namespace Stage_Control
             mp285 = 1,
             mp285a = 2,
             thorMCM3000 = 3,
+            thorMCM5000 = 4,
         }
 
         public enum DeviceMode

@@ -11,7 +11,7 @@ using System.Diagnostics;
 using TCSPC_controls;
 using System.Deployment.Application;
 
-namespace FLIMimage
+namespace FLIMage
 {
     public partial class splashScreen : Form
     {

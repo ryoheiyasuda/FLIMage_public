@@ -10,7 +10,7 @@ using System.Text;
 using System.Timers;
 using System.Windows.Forms;
 
-namespace FLIMimage
+namespace FLIMage
 {
     //This class controls National Instruments cards.
     public class IOControls
@@ -449,7 +449,7 @@ namespace FLIMimage
                     for (int i = nChannels; i < nChannels * 2; i++)
                         LegendStr[i] = "Fitting-" + (i - nChannels + 1).ToString();
 
-                    Plot plot1 = new Plot(inputValues, outputValues, "Applied voltage (V)", "Photodiode (V)", (double)sampleN / maxV, LegendStr);
+                    var plot1 = new FLIMage.Plotting.Plot(inputValues, outputValues, "Applied voltage (V)", "Photodiode (V)", (double)sampleN / maxV, LegendStr);
                     plot1.Show();
                 }
 
@@ -804,9 +804,9 @@ namespace FLIMimage
             public DigitalUncagingShutterSignal(ScanParameters State_in)
             {
                 State = State_in;
-                digitalOutputPort = State.Init.UncagingShutterDOPort;
-                GetTriggerPortName(digitalOutputPort, State, ref Board, ref triggerPort, ref ExternalTriggerPort, ref sampleClockPort);
-                
+                GetTriggerPortName(State.Init.mirrorAOPortX, State, ref Board, ref triggerPort, ref ExternalTriggerPort, ref sampleClockPort);
+                digitalOutputPort = Board + "/" + "port0" + "/" + State.Init.DigitalShutterPort;
+
                 sameBoardWithMirrors = IfSameBoard_With_Mirror(Board, State);
 
                 if (sameBoardWithMirrors)
@@ -820,33 +820,9 @@ namespace FLIMimage
                 writerOnOff = new DigitalSingleChannelWriter(onoffTask.Stream);
             }
 
-            /// <summary>
-            /// For uncaging data. Can be together with Frame or Slice/page acquisition.
-            /// </summary>
-            /// <param name="forFrame"></param>
-            public void PutValue_and_Start(bool forFrame, bool ext_trigger)
+            public void PutValue_and_Start(bool ext_trigger)
             {
-                portActive = true;
                 double outputRate = State.Uncaging.outputRate;
-                double totalLength_ms;
-
-                if (forFrame)
-                    totalLength_ms = (State.Uncaging.baselineBeforeTrain_forFrame + State.Uncaging.pulseSetInterval_forFrame * State.Uncaging.trainRepeat);
-                else
-                    totalLength_ms = State.Uncaging.sampleLength;
-
-                double msPerLine = State.Acq.msPerLine;
-                if (State.Acq.fastZScan)
-                    msPerLine = State.Acq.FastZ_msPerLine;
-
-                nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame * State.Acq.nFrames);
-
-                if (nSamples % 2 == 1) //NI-DAQ cannot wirte add number samples.
-                    nSamples += 1;
-
-                myTask = new Task();
-                myTask.DOChannels.CreateChannel(digitalOutputPort, "", ChannelLineGrouping.OneChannelForEachLine);
-                myTask.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples);
 
                 if (sameBoardWithMirrors)
                 {
@@ -857,63 +833,17 @@ namespace FLIMimage
                 }
                 myTask.Control(TaskAction.Verify);
 
-                //myTask.Stream.WriteRegenerationMode = WriteRegenerationMode.DoNotAllowRegeneration;
-                DigitalState digital_state = DigitalState.ForceDown;
-                if (!activeHigh)
-                    digital_state = DigitalState.ForceUp;
+                double totalLength_ms = State.Uncaging.sampleLength;
 
-                waveform = new DigitalWaveform(nSamples, 1, digital_state);
+                int nSamples = (int)(outputRate / 1000.0 * State.Uncaging.sampleLength);
 
-                int baseLine_train = (int)(State.Uncaging.baselineBeforeTrain_forFrame * outputRate / 1000.0);
-                int trainInterval = (int)(State.Uncaging.pulseSetInterval_forFrame * outputRate / 1000.0);
+                myTask = new Task();
+                myTask.DOChannels.CreateChannel(digitalOutputPort, "", ChannelLineGrouping.OneChannelForEachLine);
+                myTask.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples);
 
-                int nRepeat = State.Uncaging.trainRepeat;
-                if (!forFrame)
-                {
-                    baseLine_train = 0;
-                    trainInterval = 0;
-                    nRepeat = 1;
-                }
+                //waveform = new DigitalWaveform(nSamples, 1);
 
-                int initialDelay_pulse = (int)((State.Uncaging.pulseDelay - State.Uncaging.DigitalShutter_delay) * outputRate / 1000.0);
-                int pulseWidth = (int)((State.Uncaging.pulseWidth + State.Uncaging.DigitalShutter_delay) * outputRate / 1000.0);
-                int pulseInterval = (int)(State.Uncaging.pulseISI * outputRate / 1000.0);
-
-                bool end_of_pulse = false;
-                for (int train = 0; train < nRepeat; train++)
-                {
-                    int train_Start = baseLine_train + train * trainInterval;
-                    int initialDelay = train_Start + initialDelay_pulse;
-
-                    for (int j = 0; j < State.Uncaging.pulse_number; j++)
-                    {
-                        int pulseStart = initialDelay + j * pulseInterval;
-                        int pulseEnd = initialDelay + j * pulseInterval + pulseWidth;
-
-                        if (pulseStart < 0)
-                            pulseStart = 0;
-
-                        if (pulseEnd < 0)
-                            pulseEnd = 0;
-
-                        if (pulseStart >= nSamples || pulseEnd >= nSamples)
-                        {
-                            end_of_pulse = true;
-                            break;
-                        }
-
-                        for (int i = pulseStart; i < pulseEnd; i++)
-                        {
-                            if (activeHigh)
-                                waveform.Signals[0].States[i] = DigitalState.ForceUp;
-                            else
-                                waveform.Signals[0].States[i] = DigitalState.ForceDown;
-                        }
-                    }
-
-                    if (end_of_pulse)
-                        break;
-                }
+                waveform = MakeWaveFormForDigitalUncaging(State, outputRate, false, 0, nSamples);
 
                 writer = new DigitalSingleChannelWriter(myTask.Stream);
                 writer.WriteWaveform(false, waveform);
@@ -953,12 +883,77 @@ namespace FLIMimage
             }
         }
 
+        static public DigitalWaveform MakeWaveFormForDigitalUncaging(ScanParameters State, double outputRate, bool forFrame, int channel, int nSamples)
+        {
+            bool activeHigh = !State.Init.DO_uncagingShutter_useForPMTsignal;
+            int baseLine_train = (int)(State.Uncaging.baselineBeforeTrain_forFrame * outputRate / 1000.0);
+            int trainInterval = (int)(State.Uncaging.pulseSetInterval_forFrame * outputRate / 1000.0);
+
+            int nRepeat = State.Uncaging.trainRepeat;
+            if (!forFrame)
+            {
+                baseLine_train = 0;
+                trainInterval = 0;
+                nRepeat = 1;
+            }
+
+            int initialDelay_pulse = (int)((State.Uncaging.pulseDelay - State.Uncaging.DigitalShutter_delay) * outputRate / 1000.0);
+            int pulseWidth = (int)((State.Uncaging.pulseWidth + State.Uncaging.DigitalShutter_delay) * outputRate / 1000.0);
+            int pulseInterval = (int)(State.Uncaging.pulseISI * outputRate / 1000.0);
+
+            bool end_of_pulse = false;
+            DigitalState state = DigitalState.ForceDown;
+            if (activeHigh)
+                state = DigitalState.ForceUp;
+
+            DigitalWaveform waveform = new DigitalWaveform(nSamples, 1, state);
+
+
+            for (int train = 0; train < nRepeat; train++)
+            {
+                int train_Start = baseLine_train + train * trainInterval;
+                int initialDelay = train_Start + initialDelay_pulse;
+
+                for (int j = 0; j < State.Uncaging.pulse_number; j++)
+                {
+                    int pulseStart = initialDelay + j * pulseInterval;
+                    int pulseEnd = initialDelay + j * pulseInterval + pulseWidth;
+
+                    if (pulseStart < 0)
+                        pulseStart = 0;
+
+                    if (pulseEnd < 0)
+                        pulseEnd = 0;
+
+                    if (pulseStart >= nSamples || pulseEnd >= nSamples)
+                    {
+                        end_of_pulse = true;
+                        break;
+                    }
+
+                    for (int i = pulseStart; i < pulseEnd; i++)
+                    {
+                        if (activeHigh)
+                            waveform.Signals[channel].States[i] = DigitalState.ForceUp;
+                        else
+                            waveform.Signals[channel].States[i] = DigitalState.ForceDown;
+                    }
+                }
+
+                if (end_of_pulse)
+                    break;
+            }
+
+            return waveform;
+        }
+
         //
         //Clock is coming out of the second board. For now.
         //
         public class DigitalLineClock
         {
             private String digitalLinePort;
+            private String digitalShutterPort = "";
             private String triggerPort;
             private String ExternalTriggerPort;
             private String sampleClockPort;
@@ -967,9 +962,8 @@ namespace FLIMimage
             private String Board;
             private int nSamples;
             private Task myTask;
-            private Task onoffTask;
-            private DigitalWaveform waveform;
-            private DigitalSingleChannelWriter writer, writerOnOff;
+            private DigitalWaveform[] waveform;
+            private DigitalMultiChannelWriter writer;
             private bool activeHigh = true;
 
             private bool portActive = false;
@@ -977,35 +971,36 @@ namespace FLIMimage
             public DigitalLineClock(ScanParameters State_in)
             {
                 State = State_in;
-                GetTriggerPortName(State.Init.EOM_Port0, State, ref Board, ref triggerPort, ref ExternalTriggerPort, ref sampleClockPort);
+                GetTriggerPortName(State.Init.mirrorAOPortX, State, ref Board, ref triggerPort, ref ExternalTriggerPort, ref sampleClockPort);
+
                 digitalLinePort = Board + "/port0/" + State.Init.DigitalLinePort;
+                digitalShutterPort = Board + "/port0/" + State.Init.DigitalShutterPort;
+
                 sameBoardWithMirrors = IfSameBoard_With_Mirror(Board, State);
+
                 if (sameBoardWithMirrors)
                 {
                     sampleClockPort = "";
                 }
 
-                onoffTask = new Task();
-                onoffTask.DOChannels.CreateChannel(digitalLinePort, "", ChannelLineGrouping.OneChannelForEachLine);
-
-                writerOnOff = new DigitalSingleChannelWriter(onoffTask.Stream);
             }
 
             public void PutValue_and_Start(bool ext_trigger)
             {
                 portActive = true;
-                double outputRate = State.Uncaging.outputRate;
-                double totalLength_ms = (State.Uncaging.baselineBeforeTrain_forFrame + State.Uncaging.pulseSetInterval_forFrame * State.Uncaging.trainRepeat);
+                double outputRate = State.Acq.outputRate / 10;
 
                 double msPerLine = State.Acq.msPerLine;
                 if (State.Acq.fastZScan)
                     msPerLine = State.Acq.FastZ_msPerLine;
 
-                nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame);
+                nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame * State.Acq.nFrames);
 
                 myTask = new Task();
                 myTask.DOChannels.CreateChannel(digitalLinePort, "", ChannelLineGrouping.OneChannelForEachLine);
-                myTask.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples * State.Acq.nFrames);
+                myTask.DOChannels.CreateChannel(digitalShutterPort, "", ChannelLineGrouping.OneChannelForEachLine);
+
+                myTask.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples);
 
                 if (sameBoardWithMirrors)
                 {
@@ -1021,18 +1016,24 @@ namespace FLIMimage
                 if (!activeHigh)
                     digital_state = DigitalState.ForceUp;
 
-                waveform = new DigitalWaveform(nSamples, 1, digital_state);
+                waveform = new DigitalWaveform[2];
+                waveform[0] = new DigitalWaveform(nSamples, 1, digital_state);
 
-                for (int i = 0; i < State.Acq.linesPerFrame; i++)
+                for (int i = 0; i < State.Acq.linesPerFrame * State.Acq.nFrames; i++)
                 {
                     int loc = i * (int)(outputRate / (1000.0 * msPerLine));
                     if (activeHigh)
-                        waveform.Signals[0].States[loc] = DigitalState.ForceUp;
+                        waveform[0].Signals[0].States[loc] = DigitalState.ForceUp;
                     else
-                        waveform.Signals[0].States[loc] = DigitalState.ForceDown;
+                        waveform[0].Signals[0].States[loc] = DigitalState.ForceDown;
                 }
 
-                writer = new DigitalSingleChannelWriter(myTask.Stream);
+                if (State.Init.DO_uncagingShutter)
+                    waveform[1] = MakeWaveFormForDigitalUncaging(State, outputRate, true, 0, nSamples);
+                else
+                    waveform[1] = new DigitalWaveform(nSamples, 1, DigitalState.ForceDown);
+
+                writer = new DigitalMultiChannelWriter(myTask.Stream);
                 writer.WriteWaveform(false, waveform);
                 myTask.Start();
             }
@@ -1106,6 +1107,8 @@ namespace FLIMimage
                 hAOXY_S.AOChannels.CreateVoltageChannel(portY, "aoChannelYS", minV, maxV, AOVoltageUnits.Volts);
 
                 GetTriggerPortName(portX, State, ref Board, ref triggerPort, ref ExternalTriggerInputPort, ref sampleClockPort);
+                State.Init.MirrorAOBoard = Board;
+
 
                 if (State.Init.EOM_nChannels > 0)
                 {
@@ -1910,6 +1913,7 @@ namespace FLIMimage
                 slaveClockPort = State.Init.EOM_slaveClockPort;
 
                 GetTriggerPortName(port0, State, ref Board, ref triggerPort, ref ExternalTriggerInputPort, ref sampleClockPort);
+                State.Init.EOMBoard = Board;
 
                 if (sampleClockPort.Length <= 4) //Like NA;
                     sampleClockPort = "";

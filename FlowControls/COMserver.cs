@@ -9,7 +9,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace FLIMimage
+namespace FLIMage.FlowControls
 {
     public class COMserver
     {

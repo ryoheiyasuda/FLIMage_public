@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Collections;
 using System.Windows.Forms;
 
-namespace Stage_Control
+namespace FLIMage.HardwareControls.StageControls
 {
     public class MotorCtrl_MP285
     {

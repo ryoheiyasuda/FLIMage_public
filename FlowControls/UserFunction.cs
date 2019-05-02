@@ -4,16 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TCSPC_controls;
-using FLIMimage;
 using System.Text.RegularExpressions;
 using System.Reflection;
 using System.Diagnostics;
-
 using MathLibrary;
 using System.IO;
-using Stage_Control;
+using FLIMage.HardwareControls;
+using FLIMage.HardwareControls.StageControls;
 
-namespace UserFnc
+namespace FLIMage.FlowControls
 {
     public class UserFunction
     {

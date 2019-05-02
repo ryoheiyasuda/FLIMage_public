@@ -1,16 +1,18 @@
 ﻿using MathLibrary;
-using Stage_Control;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using TCSPC_controls;
+using FLIMage.Analysis;
+using FLIMage.HardwareControls.StageControls;
+using FLIMage.Uncaging;
 
-
-namespace FLIMimage
+namespace FLIMage
 {
     public class FLIMage_IO
     {
@@ -92,7 +94,7 @@ namespace FLIMimage
         public IOControls.ShutterCtrl ShutterCtrl;
         public IOControls.DigitalIn DI;
         public IOControls.AO_Write UncagingShutterAO; //This is static.
-        public IOControls.DigitalUncagingShutterSignal UncagingShutter_DO; //for time control
+        //public IOControls.DigitalUncagingShutterSignal UncagingShutter_DO; //for time control
         public IOControls.DigitalUncagingShutterSignal UncagingShutter_DO_S; //_S for static shutter control.
         public IOControls.DigitalLineClock dLineClock; //for time control
 
@@ -149,7 +151,7 @@ namespace FLIMimage
 
                     if (State.Init.DO_uncagingShutter)
                     {
-                        UncagingShutter_DO = new IOControls.DigitalUncagingShutterSignal(State);
+                        //UncagingShutter_DO = new IOControls.DigitalUncagingShutterSignal(State);
                         UncagingShutter_DO_S = new IOControls.DigitalUncagingShutterSignal(State);
                     }
 
@@ -198,7 +200,10 @@ namespace FLIMimage
                 }
 
                 if (serialError)
+                {
                     MessageBox.Show("Wrong FLIM Serial number!! FLIMage DLL was not loaded");
+                    File.WriteAllText(State.Files.deviceFileName, fileIO.AllSetupValues_device());
+                }
             }
 
             if (!use_bh && !use_pq)
@@ -228,7 +233,7 @@ namespace FLIMimage
             InitializeCounter(); //Counter reset.
         }
 
-        private void InitializeCounter()
+        public void InitializeCounter()
         {
             averageCounter = 0;
             averageSliceCounter = 0;
@@ -292,7 +297,7 @@ namespace FLIMimage
         /// </summary>
         /// <param name="o"></param>
         /// <param name="e"></param>
-        private void mirrorAOFrameDoneEvent(object o, EventArgs e)
+        public void mirrorAOFrameDoneEvent(object o, EventArgs e)
         {
             AO_FrameCounter++;
             //EventNotify?.Invoke(this, new ProcessEventArgs("FrameScanDone", (object)AO_FrameCounter));
@@ -333,7 +338,7 @@ namespace FLIMimage
         /// </summary>
         /// <param name="myObject"></param>
         /// <param name="myEventArgs"></param>
-        private void TimerEventProcessorRate(Object myObject, EventArgs myEventArgs)
+        public void TimerEventProcessorRate(Object myObject, EventArgs myEventArgs)
         {
             bool badRate = (badSyncRateCounter > badSyncRateMaxCount);
 
@@ -386,6 +391,10 @@ namespace FLIMimage
                 shading.applyCalibration(State);
 
                 if (FLIMage.fastZcontrol != null && FLIMage.fastZcontrol.Visible)
+                {
+                    /////
+                }
+                else
                     ShutterCtrl.close();
 
                 FLIMage.CalibEOM_GUI_Update(success);
@@ -421,7 +430,7 @@ namespace FLIMimage
         }
 
         //
-        private void StartDAQ(bool[] eraseSPCmemory, bool putValue, bool recordTriggerTime)
+        public void StartDAQ(bool[] eraseSPCmemory, bool putValue, bool recordTriggerTime)
         {
             runningImgAcq = true;
             waitForAcquisitionTaskCompleted();
@@ -458,12 +467,6 @@ namespace FLIMimage
                         if (State.Init.EOM_nChannels > 0 && !mirrorAO.SameBoard)
                             pockelAO.putValueScanAndUncaging();
 
-                        if (State.Init.DO_uncagingShutter)
-                        {
-                            UncagingShutter_DO.dispose();
-                            UncagingShutter_DO = new IOControls.DigitalUncagingShutterSignal(State);
-                            UncagingShutter_DO.PutValue_and_Start(true, State.Acq.externalTrigger);
-                        }
                     }
                     else
                     {
@@ -636,6 +639,8 @@ namespace FLIMimage
 
                 UIstopWatch_Image.Reset();
 
+                if (FLIMage.physiology != null && FLIMage.physiology.image_trigger_waiting)
+                    FLIMage.physiology.StartAcq();
 
                 StartDAQ(eraseMemoryA, true, true); //Including trigger.
 
@@ -687,9 +692,6 @@ namespace FLIMimage
             if (UncagingShutterAO != null)
                 UncagingShutterAO.dispose();
 
-            if (UncagingShutter_DO != null)
-                UncagingShutter_DO.dispose();
-
             if (UncagingShutter_DO_S != null)
                 UncagingShutter_DO_S.dispose();
 
@@ -703,6 +705,10 @@ namespace FLIMimage
             if (use_nidaq)
             {
                 if (FLIMage.fastZcontrol != null && FLIMage.fastZcontrol.Visible)
+                {
+                    //does not do any thing
+                }
+                else
                     ShutterCtrl.close();
 
                 lineClock.stop();
@@ -712,10 +718,6 @@ namespace FLIMimage
                 if (State.Init.EOM_nChannels > 0)
                     pockelAO.stop();
 
-                if (State.Init.DO_uncagingShutter)
-                {
-                    UncagingShutter_DO.Stop();
-                }
             }
             runningImgAcq = false;
         }
@@ -845,9 +847,6 @@ namespace FLIMimage
 
                 if (State.Init.EOM_nChannels > 0)
                     pockelAO.dispose();
-
-                if (State.Init.DO_uncagingShutter)
-                    UncagingShutter_DO.dispose();
             }
         }
 
@@ -1084,7 +1083,7 @@ namespace FLIMimage
 
         ///////////////////////////////////FRAME EVENT HANDLING////////////////////////////////////////
 
-        private void BackGroundFLIMAcq(FiFio_multiBoards fifo, EventArgs e) //called when a Frame is done.
+        public void BackGroundFLIMAcq(FiFio_multiBoards fifo, EventArgs e) //called when a Frame is done.
         {
             lock (syncFLIMacq) //acquisition lock.
             {
@@ -1092,7 +1091,7 @@ namespace FLIMimage
             }
         }
 
-        private int[] GetAverageFrame(int nAverage)
+        public int[] GetAverageFrame(int nAverage)
         {
             int[] aveN = new int[State.Acq.nChannels];
             for (int c = 0; c < State.Acq.nChannels; c++)
@@ -1104,7 +1103,7 @@ namespace FLIMimage
             return aveN;
         }
 
-        private int[] Get_n_time()
+        public int[] Get_n_time()
         {
             int[] n_time = Enumerable.Repeat<int>(State.Spc.spcData.n_dataPoint, State.Acq.nChannels).ToArray();
             for (int i = 0; i < State.Acq.nChannels; i++)
@@ -1120,7 +1119,7 @@ namespace FLIMimage
         /// This handles acquired images. Called by FiFo when a frame is acquired.
         /// </summary>
         /// <param name="fifo"></param>
-        private void BackGroundFLIMAll(FiFio_multiBoards fifo)
+        public void BackGroundFLIMAll(FiFio_multiBoards fifo)
         {
             if (DEBUGMODE)
                 Debug.WriteLine("Frame done event received. Time = " + DateTime.Now.ToString("HH:mm:ss.fff"));
@@ -1261,7 +1260,7 @@ namespace FLIMimage
         /// </summary>
         /// <param name="saveFileBools"></param>
         /// <param name="protecting_save_task"></param>
-        private void SaveUpdateAcquiredImage(bool[] saveFileBools, bool protecting_save_task)
+        public void SaveUpdateAcquiredImage(bool[] saveFileBools, bool protecting_save_task)
         {
             DateTime acTime;
             double msPerLine = State.Acq.fastZScan ? State.Acq.FastZ_msPerLine : State.Acq.msPerLine;
@@ -1314,7 +1313,7 @@ namespace FLIMimage
         /// <summary>
         /// If not keeping the data in memory, the stack is removed after saving. For ZStack, everything is saved in memory.
         /// </summary>
-        private void CheckDeletePageBuffer()
+        public void CheckDeletePageBuffer()
         {
             lock (saveBufferObj)
             {
@@ -1334,13 +1333,13 @@ namespace FLIMimage
             }
         }
 
-        private void RemoveFrameAt(int frameToWork) //Clear memory very well.
+        public void RemoveFrameAt(int frameToWork) //Clear memory very well.
         {
             if (FLIMSaveBuffer != null && frameToWork < FLIMSaveBuffer.Count)
                 FLIMSaveBuffer.RemoveAt(frameToWork);
         }
 
-        private int totalPagesSaved()
+        public int totalPagesSaved()
         {
             int aveNFrame = 1;
             if (State.Acq.aveFrameA.Any(x => x == true))
@@ -1358,7 +1357,7 @@ namespace FLIMimage
             return TotalNPages;
         }
 
-        private void SaveFile(bool protecting_save_task)
+        public void SaveFile(bool protecting_save_task)
         {
             if (DEBUGMODE)
                 Debug.WriteLine("Start Save File");
@@ -1414,7 +1413,7 @@ namespace FLIMimage
         /// Save acquired image. Called in different thread (Task.Factory.StartNew). 
         /// </summary>
         /// <param name="savePage"></param>
-        private void SaveTask(int savePage)
+        public void SaveTask(int savePage)
         {
             if (DEBUGMODE)
                 Debug.WriteLine("Start Save Task");
@@ -1640,7 +1639,7 @@ namespace FLIMimage
         ///////////////////////////////////FRAME EVENT HANDLING////////////////////////////////////////
 
         ///////////////////////////////////STRIPE EVENT HANDLING////////////////////////////////////////
-        private void StripeDoneEventAll(UInt16[][][,,] StripeImage, StripeEventArgs e)
+        public void StripeDoneEventAll(UInt16[][][,,] StripeImage, StripeEventArgs e)
         {
             if (DEBUGMODE)
                 Debug.WriteLine("Stripe event called: device = " + e.device + "/ channel" + e.channelList[0] + " / " + e.channelList.Count + " FirstLine = " + e.StartLine + "EndLine = " + e.EndLine);
@@ -1657,7 +1656,7 @@ namespace FLIMimage
             }
         }
 
-        private void StripeDoneEvent(FiFio_multiBoards fifo, StripeEventArgs e)
+        public void StripeDoneEvent(FiFio_multiBoards fifo, StripeEventArgs e)
         {
             if (focusing)
             {
@@ -1673,7 +1672,7 @@ namespace FLIMimage
         /// <summary>
         /// Called when Background acquisition is done. However, it should be noted that save task and display Task are in spearated threads.
         /// </summary>
-        private void FLIMProgressChanged()
+        public void FLIMProgressChanged()
         {
             int[] nAve = GetAverageFrame(State.Acq.nAveFrame);
             for (int ch = 0; ch < State.Acq.nChannels; ch++)
@@ -1842,7 +1841,7 @@ namespace FLIMimage
             });
         }
 
-        private void UpdateImages() //Can be slow. //Done with timer. //Thread safe.
+        public void UpdateImages() //Can be slow. //Done with timer. //Thread safe.
         {
             bool updated = false;
 

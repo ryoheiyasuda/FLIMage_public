@@ -1,4 +1,4 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.Uncaging
 {
     partial class Uncaging_miscSetting
     {

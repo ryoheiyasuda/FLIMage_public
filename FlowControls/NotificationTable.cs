@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace FLIMimage
+namespace FLIMage.FlowControls
 {
     public partial class NotificationTable : Form
     {
@@ -20,7 +20,7 @@ namespace FLIMimage
             flimage_event = f_e;
         }
 
-        private void NotificationTable_Load(object sender, EventArgs e)
+        public void NotificationTable_Load(object sender, EventArgs e)
         {
             dataGridView1.DataSource = flimage_event.eventNotifyTable;
 
@@ -48,13 +48,13 @@ namespace FLIMimage
             dataGridView1.Refresh();
         }
 
-        private void NotificationTable_FormClosing(object sender, FormClosingEventArgs e)
+        public void NotificationTable_FormClosing(object sender, FormClosingEventArgs e)
         {
             flimage_event.WriteEventNotifyList();
         }
 
 
-        private void dataGridView1_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
+        public void dataGridView1_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
         {
             flimage_event.WriteEventNotifyList();
         }

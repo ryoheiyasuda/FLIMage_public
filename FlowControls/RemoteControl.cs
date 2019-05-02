@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utilities;
 
-namespace FLIMimage
+namespace FLIMage.FlowControls
 {
-    public partial class Script : Form
+    public partial class RemoteControl : Form
     {
         public FLIMageMain FLIMage;
         public FLIMage_Event FLIM_event;
@@ -27,7 +27,7 @@ namespace FLIMimage
         WindowLocManager winManager;
         String WindowName = "RemoteControl.loc";
 
-        public Script(FLIMageMain fc)
+        public RemoteControl(FLIMageMain fc)
         {
             InitializeComponent();
             FLIMage = fc;

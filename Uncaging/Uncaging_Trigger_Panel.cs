@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utilities;
 
-namespace FLIMimage
+namespace FLIMage.Uncaging
 {
     public partial class Uncaging_Trigger_Panel : Form
     {
@@ -26,11 +26,12 @@ namespace FLIMimage
 
         IOControls.pockelAO UncagePockelAO;
         IOControls.MirrorAO UncageMirrorAO;
+        IOControls.DigitalUncagingShutterSignal UncagingShutterSignal;
 
         double[,] DataXY;
         double[,] DataEOM;
 
-        plot_panel pp1, pp2;
+        PlotOnPanel pp1, pp2;
 
         public bool UncagingShutter = false;
         public bool uncaging_running = false;
@@ -50,15 +51,15 @@ namespace FLIMimage
         }
 
 
-        private void Uncaging_Trigger_Panel_Load(object sender, EventArgs e)
+        public void Uncaging_Trigger_Panel_Load(object sender, EventArgs e)
         {
             State = FLIMage.State;
             if (!FLIMage.image_display.uncaging_on)
                 FLIMage.image_display.ActivateUncaging();
 
             UpdateUncaging(this);
-            pp1 = new plot_panel(panel1.Width, panel1.Height);
-            pp2 = new plot_panel(panel2.Width, panel2.Height);
+            pp1 = new PlotOnPanel(panel1.Width, panel1.Height);
+            pp2 = new PlotOnPanel(panel2.Width, panel2.Height);
 
             winManager = new WindowLocManager(this, WindowName, State.Files.windowsInfoPath);
             winManager.LoadWindowLocation(false);
@@ -69,7 +70,7 @@ namespace FLIMimage
             winManager.SaveWindowLocation();
         }
 
-        private void Uncaging_Trigger_Panel_FormClosing(object sender, FormClosingEventArgs e)
+        public void Uncaging_Trigger_Panel_FormClosing(object sender, FormClosingEventArgs e)
         {
             winManager.SaveWindowLocation();
             e.Cancel = true;
@@ -78,13 +79,13 @@ namespace FLIMimage
             FLIMage.ToolWindowClosed();
         }
 
-        private void MoveMirrosDuringUncagingPosCheck_Click(object sender, EventArgs e)
+        public void MoveMirrosDuringUncagingPosCheck_Click(object sender, EventArgs e)
         {
             SetupUncage(sender);
         }
 
 
-        private void uncage_generic_KeyDown(object sender, KeyEventArgs e)
+        public void uncage_generic_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -171,7 +172,7 @@ namespace FLIMimage
             UpdateUncaging(sender);
         }
 
-        private void UncageMultiRoi_SelectedIndexChanged(object sender, EventArgs e)
+        public void UncageMultiRoi_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (UncageMultiRoi.SelectedItem.ToString() == "Rotate")
                 State.Uncaging.rotatePosition = true;
@@ -184,7 +185,7 @@ namespace FLIMimage
             UpdateUncaging(sender);
         }
 
-        private void Uncage_Save_Click(object sender, EventArgs e)
+        public void Uncage_Save_Click(object sender, EventArgs e)
         {
             List<String> ls = new List<String>();
             ls.Add("State.Uncaging");
@@ -209,7 +210,7 @@ namespace FLIMimage
                     str1 = "";
 
                 if (State.Init.DO_uncagingShutter)
-                    str1 = str1 + "DO: " + State.Init.UncagingShutterDOPort;
+                    str1 = str1 + "DO: " + State.Init.MirrorAOBoard + "/port0/" + State.Init.DigitalShutterPort;
 
                 if (!State.Init.AO_uncagingShutter && !State.Init.DO_uncagingShutter)
                     str1 = "No shutter";
@@ -232,7 +233,7 @@ namespace FLIMimage
 
                 if (State.Init.DO_uncagingShutter)
                 {
-                    str1 = str1 + "\r\nUncaging DO shutter: " + State.Init.UncagingShutterDOPort;
+                    str1 = str1 + "\r\nUncaging DO shutter: " + State.Init.MirrorAOBoard + "/port0/" + State.Init.DigitalShutterPort;
                 }
             }
 
@@ -512,7 +513,7 @@ namespace FLIMimage
             }
         }
 
-        private void UpdateUncagingCounter()
+        public void UpdateUncagingCounter()
         {
             U_counter.Text = String.Format("{0} / {1}", uncaging_count, State.Uncaging.trainRepeat);
             U_counter2.Text = String.Format("{0} / {1}", uncaging_count, State.Uncaging.trainRepeat);
@@ -524,8 +525,8 @@ namespace FLIMimage
                 UncagePockelAO.dispose();
             if (UncageMirrorAO != null)
                 UncageMirrorAO.dispose();
-            if (FLIMage.flimage_io.UncagingShutter_DO != null)
-                FLIMage.flimage_io.UncagingShutter_DO.dispose();
+            if (UncagingShutterSignal != null)
+                UncagingShutterSignal.dispose();
         }
 
         /// <summary>
@@ -547,8 +548,8 @@ namespace FLIMimage
             if (State.Init.DO_uncagingShutter)
             {
                 FLIMage.flimage_io.UncagingShutter_DO_S.TurnOnOff(false);
-                FLIMage.flimage_io.UncagingShutter_DO = new IOControls.DigitalUncagingShutterSignal(State);
-                FLIMage.flimage_io.UncagingShutter_DO.PutValue_and_Start(false, false);
+                UncagingShutterSignal = new IOControls.DigitalUncagingShutterSignal(State);
+                UncagingShutterSignal.PutValue_and_Start(false);
             }
 
             //System.Threading.Thread.Sleep(10); //Not sure.
@@ -610,8 +611,8 @@ namespace FLIMimage
 
             if (State.Init.DO_uncagingShutter)
             {
-                FLIMage.flimage_io.UncagingShutter_DO.Stop();
-                FLIMage.flimage_io.UncagingShutter_DO.dispose();
+                UncagingShutterSignal.Stop();
+                UncagingShutterSignal.dispose();
             }
 
             if (mainShutterCtrl)
@@ -630,7 +631,7 @@ namespace FLIMimage
                 U_counter.BeginInvoke(new Action(() => UpdateUncagingCounter()));
         }
 
-        private void PulseNumber_ValueChanged(object sender, EventArgs e)
+        public void PulseNumber_ValueChanged(object sender, EventArgs e)
         {
 
             if (PulseNumber.Value > 0)
@@ -672,7 +673,7 @@ namespace FLIMimage
             }
         }
 
-        private void PlotNow(plot_panel pp, PaintEventArgs e, double[,] Data)
+        public void PlotNow(PlotOnPanel pp, PaintEventArgs e, double[,] Data)
         {
             pp.xMergin = 0.12F;
             pp.xFrac = 0.85F;
@@ -687,7 +688,7 @@ namespace FLIMimage
             pp.plot(e);
         }
 
-        private void panel1_Paint(object sender, PaintEventArgs e)
+        public void panel1_Paint(object sender, PaintEventArgs e)
         {
             PlotNow(pp1, e, DataEOM);
 
@@ -698,82 +699,82 @@ namespace FLIMimage
             }
         }
 
-        private void panel1_DoubleClick(object sender, EventArgs e)
+        public void panel1_DoubleClick(object sender, EventArgs e)
         {
             pp1.AutoScaleNow(true);
             panel1.Invalidate();
         }
 
-        private void panel1_MouseDown(object sender, MouseEventArgs e)
+        public void panel1_MouseDown(object sender, MouseEventArgs e)
         {
             pp1.StartDrawingROI(e);
         }
 
-        private void panel1_MouseMove(object sender, MouseEventArgs e)
+        public void panel1_MouseMove(object sender, MouseEventArgs e)
         {
             pp1.Draw_DuringMoveMouse(e);
             if (pp1.drawingROI)
                 panel1.Invalidate();
         }
 
-        private void panel1_MouseUp(object sender, MouseEventArgs e)
+        public void panel1_MouseUp(object sender, MouseEventArgs e)
         {
             pp1.Finish_DrawoingROI_MouseUp(e);
             panel1.Invalidate();
         }
 
-        private void panel2_DoubleClick(object sender, EventArgs e)
+        public void panel2_DoubleClick(object sender, EventArgs e)
         {
             pp2.AutoScaleNow(true);
             panel2.Invalidate();
         }
 
 
-        private void panel2_MouseDown(object sender, MouseEventArgs e)
+        public void panel2_MouseDown(object sender, MouseEventArgs e)
         {
             pp2.StartDrawingROI(e);
         }
 
-        private void panel2_MouseMove(object sender, MouseEventArgs e)
+        public void panel2_MouseMove(object sender, MouseEventArgs e)
         {
             pp2.Draw_DuringMoveMouse(e);
             panel2.Invalidate();
         }
 
-        private void panel2_MouseUp(object sender, MouseEventArgs e)
+        public void panel2_MouseUp(object sender, MouseEventArgs e)
         {
             pp2.Finish_DrawoingROI_MouseUp(e);
             panel2.Invalidate();
         }
 
-        private void Shutter2_Click(object sender, EventArgs e)
+        public void Shutter2_Click(object sender, EventArgs e)
         {
             FLIMage.flimage_io.uncagingShutterCtrl(Shutter2.Checked, !FLIMage.flimage_io.grabbing && !FLIMage.flimage_io.focusing, true);
         }
 
-        private void ShowShutter_Click(object sender, EventArgs e)
+        public void ShowShutter_Click(object sender, EventArgs e)
         {
             UpdateUncaging(sender);
         }
 
-        private void Generic_RadioButton(object sender, EventArgs e)
+        public void Generic_RadioButton(object sender, EventArgs e)
         {
             SetupUncage(sender);
         }
 
-        private void calibrationToolStripMenuItem_Click(object sender, EventArgs e)
+        public void calibrationToolStripMenuItem_Click(object sender, EventArgs e)
         {
             uc = new UncagingCalibration(FLIMage);
             uc.Show();
         }
 
-        private void miscSettingToolStripMenuItem_Click(object sender, EventArgs e)
+        public void miscSettingToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Uncaging_miscSetting um = new Uncaging_miscSetting(FLIMage);
             um.Show();
         }
 
-        private void panel2_Paint(object sender, PaintEventArgs e)
+        public void panel2_Paint(object sender, PaintEventArgs e)
         {
             PlotNow(pp2, e, DataXY);
 

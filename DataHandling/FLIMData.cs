@@ -10,9 +10,9 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using TCSPC_controls;
+using FLIMage.Analysis;
 
-namespace FLIMimage
+namespace FLIMage
 {
     public class FLIMData
     {

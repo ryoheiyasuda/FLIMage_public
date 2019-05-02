@@ -1,5 +1,4 @@
 ﻿
-using MathLibrary;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,9 +14,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using FLIMage.Plotting;
+using FLIMage.FlowControls;
+using MathLibrary;
 using Utilities;
 
-namespace FLIMimage
+namespace FLIMage.Analysis
 {
     public partial class Image_Display : Form
     {
@@ -690,6 +692,7 @@ namespace FLIMimage
             FLIM_ImgData.addCurrentRoi();
             SetFitting_Param(true);
             DrawImages();
+            SaveAllRois();
             drag_ROI = false;
             drawing_ROI = false;
         }
@@ -826,8 +829,8 @@ namespace FLIMimage
 
                 roiLeft = X1.Min();
                 roiTop = Y1.Min();
-                roiWidth = (X1.Max() - X1.Min() + 1);
-                roiHeight = (Y1.Max() - Y1.Min() + 1);
+                roiWidth = (X1.Max() - X1.Min());
+                roiHeight = (Y1.Max() - Y1.Min());
             }
             else
             {
@@ -1143,6 +1146,8 @@ namespace FLIMimage
                             {
                                 FLIM_ImgData.currentRoi = -1;
                             }
+
+                            SaveAllRois();
                         }
                     }
                     else
@@ -1406,7 +1411,7 @@ namespace FLIMimage
                                     roi.ID = roiID;
                                     if (mode == 1)
                                     {
-                                        if (roi.Rect.Left >= 0 && roi.Rect.Top >= 0 && roi.Rect.Right < FLIM_ImgData.width && roi.Rect.Bottom < FLIM_ImgData.height)
+                                        if (roi.Rect.Left >= 0 && roi.Rect.Top >= 0 && roi.Rect.Right <= FLIM_ImgData.width && roi.Rect.Bottom <= FLIM_ImgData.height)
                                         {
                                             FLIM_ImgData.Roi = roi;
                                             imageRoi = convertROIFromDataToDisplay(roi);
@@ -1414,7 +1419,7 @@ namespace FLIMimage
                                     }
                                     else if (mode == 2) //MultiROI
                                     {
-                                        if (roi.Rect.Left >= 0 && roi.Rect.Top >= 0 && roi.Rect.Right < FLIM_ImgData.width && roi.Rect.Bottom < FLIM_ImgData.height)
+                                        if (roi.Rect.Left >= 0 && roi.Rect.Top >= 0 && roi.Rect.Right <= FLIM_ImgData.width && roi.Rect.Bottom <= FLIM_ImgData.height)
                                         {
                                             if (roiID == 0)
                                                 FLIM_ImgData.addToMultiRoi(roi);
@@ -1815,9 +1820,9 @@ namespace FLIMimage
                     if (z != roi.Z.Length - 1)
                         sb.Append(",");
                 }
+                sb.AppendLine();
             }
-
-            sb.AppendLine();
+           
             if (roi.ROI_type == ROI.ROItype.Elipsoid || roi.ROI_type == ROI.ROItype.Rectangle)
             {
                 sb.Append("Rect,");
@@ -2922,7 +2927,7 @@ namespace FLIMimage
         /// <param name="e"></param>
         private void SaveFLIMImageToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var exp = new ExportForm(this);
+            var exp = new FLIMage.Dialogs.ExportForm(this);
             exp.Show();
         }
 
@@ -3328,7 +3333,7 @@ namespace FLIMimage
             if (FLIM_ImgData.Lifetime_X[ch].Length < 2)
                 return;
 
-            plot_panel pp = new plot_panel(e, LifetimeCurvePlot.Width, LifetimeCurvePlot.Height);
+            PlotOnPanel pp = new PlotOnPanel(e, LifetimeCurvePlot.Width, LifetimeCurvePlot.Height);
             pp.plotType = "-";
             pp.addData(FLIM_ImgData.Lifetime_X[ch], FLIM_ImgData.Lifetime_Y[ch], plotPen, "-");
             if (showFit && fittingDone)
@@ -3352,7 +3357,7 @@ namespace FLIMimage
             pp.plot(e);
 
 
-            plot_panel pp2 = new plot_panel(e, LifetimeCurvePlot.Width, LifetimeCurvePlot.Height);
+            PlotOnPanel pp2 = new PlotOnPanel(e, LifetimeCurvePlot.Width, LifetimeCurvePlot.Height);
             pp2.plotType = "-";
             pp2.addData(FLIM_ImgData.Lifetime_X[ch], FLIM_ImgData.Residuals[ch], plotPen, "-");
             pp2.YTitle = "Residuals";
@@ -3405,7 +3410,7 @@ namespace FLIMimage
 
         public FileIO.FileError OpenFLIM(String fn, bool TuningOnStopOpeningButton)
         {
-            //SavePageInMemoryOn(true);
+            string oldBaseName = FLIM_ImgData.baseName;
 
             int nPages = FileIO.SetupFLIMOpening(fn, out string Header);
             //FLIM_ImgData.decodeHeader(Header);
@@ -3501,7 +3506,7 @@ namespace FLIMimage
             SetupOpenedFile();
 
             ReadTimeCourse();
-            if (FLIM_ImgData.ROIs.Count == 0)
+            if (FLIM_ImgData.ROIs.Count == 0 || oldBaseName != FLIM_ImgData.baseName)
             {
                 ReadRois();
                 if (FLIM_ImgData.ROIs.Count > 0)
@@ -4987,6 +4992,9 @@ namespace FLIMimage
                 }
             }
 
+            if (filename == "")
+                return;
+
             using (ZipArchive archive = ZipFile.OpenRead(filename))
             {
                 FLIM_ImgData.ROIs.Clear();
@@ -5044,7 +5052,7 @@ namespace FLIMimage
                         roi = new ROI(roiType, X, Y, FLIM_ImgData.nChannels, 0, false, new int[] { 0 });
                     }
 
-                    if (roi.Rect.Left >= 0 && roi.Rect.Top >= 0 && roi.Rect.Right < FLIM_ImgData.width && roi.Rect.Bottom < FLIM_ImgData.height)
+                    if (roi.Rect.Left >= 0 && roi.Rect.Top >= 0 && roi.Rect.Right <= FLIM_ImgData.width && roi.Rect.Bottom <= FLIM_ImgData.height)
                     {
                         //roi.ID = FLIM_ImgData.ROIs.Count + 1;
                         if (filename.Contains("ROI-"))

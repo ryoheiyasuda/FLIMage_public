@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 
-namespace FLIMimage
+namespace FLIMage.HardwareControls
 {
     public partial class NIDAQ_Config : Form
     {
@@ -85,7 +85,7 @@ namespace FLIMimage
 
             State.Init.UncagingShutterAnalogPort = PockelsBoard.Text + "/" + Shutter_AOChannel.Text;
             
-            State.Init.UncagingShutterDOPort = UncagingDOBoard.Text + "/Port0/" + Shutter_DOChannel.Text;
+            State.Init.DigitalShutterPort = Shutter_DOChannel.Text;
 
             State.Init.SampleClockPort = SampleClkPort.Text;
             State.Init.TriggerInput = TriggerInput.Text;
@@ -105,10 +105,15 @@ namespace FLIMimage
             State.Init.FLIM_on = FLIM_onCheck.Checked;
             State.Init.motor_on = Motor_onCheck.Checked;
 
-            State.Init.FLIM_mode = (PQ_radio.Checked) ? "PQ" : "BH";
+            if (BH_radio.Checked)
+                State.Init.FLIM_mode = "BH";
+            else if (MH_radio.Checked)
+                State.Init.FLIM_mode = "MH";
+            else
+                State.Init.FLIM_mode = "PQ";
 
             State.Init.MotorHWName = "MP-285A";
-            if (Thorlab_MCM.Checked)
+            if (Thorlab_MCM3000.Checked)
                 State.Init.MotorHWName = "ThorMCM3000";
             else if (Sutter_MP285.Checked)
                 State.Init.MotorHWName = "MP-285";
@@ -181,10 +186,9 @@ namespace FLIMimage
             Shutter_AOChannel.Text = sP[1];
             Shutter_AOChannel.Enabled = State.Init.AO_uncagingShutter;
 
-
-            sP = State.Init.UncagingShutterDOPort.Split('/');
-            UncagingDOBoard.Text = sP[0];
-            Shutter_DOChannel.Text = sP[2];
+            Shutter_DOBoard.Text = State.Init.MirrorAOBoard;
+            Shutter_DOBoard.ReadOnly = true;
+            Shutter_DOChannel.Text = State.Init.DigitalShutterPort;
             Shutter_DOChannel.Enabled = State.Init.DO_uncagingShutter;
 
             SampleClkPort.Text = State.Init.SampleClockPort;
@@ -211,8 +215,10 @@ namespace FLIMimage
 
             BH_radio.Checked = State.Init.FLIM_mode == "BH";
             PQ_radio.Checked = State.Init.FLIM_mode == "PQ";
+            MH_radio.Checked = State.Init.FLIM_mode == "MH";
 
-            Thorlab_MCM.Checked = State.Init.MotorHWName == "ThorMCM3000";
+            Thorlab_MCM5000.Checked = State.Init.MotorHWName == "ThorMCM5000" || State.Init.MotorHWName == "ThorBScope";
+            Thorlab_MCM3000.Checked = State.Init.MotorHWName == "ThorMCM3000";
             Sutter_MP285.Checked = State.Init.MotorHWName == "MP-285";
             Sutter_MP285A.Checked = State.Init.MotorHWName == "MP-285A";
 
@@ -293,9 +299,14 @@ namespace FLIMimage
 
         private void Thorlab_MCM_CheckedChanged(object sender, EventArgs e)
         {
-            if (Thorlab_MCM.Checked)
+            if (Thorlab_MCM3000.Checked)
             {
                 MotorCOM.Text = "COM32";
+                MotorCOM.ReadOnly = true;
+            }
+            else if (Thorlab_MCM5000.Checked)
+            {
+                MotorCOM.Text = "COM31";
                 MotorCOM.ReadOnly = true;
             }
             else

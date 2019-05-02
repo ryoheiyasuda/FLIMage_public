@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FLIMimage
+namespace FLIMage.Analysis
 {
     public class ROI
     {
@@ -59,7 +59,7 @@ namespace FLIMimage
             //Y = new int[y.Length];
             X = (int[])x.Clone();
             Y = (int[])y.Clone();
-            Rect = new Rectangle(x.Min(), y.Min(), (x.Max() - x.Min() + 1), (y.Max() - y.Min() + 1));
+            Rect = new Rectangle(x.Min(), y.Min(), (x.Max() - x.Min()), (y.Max() - y.Min()));
             producePointArray();
             nChannels = n_channels;
             initializeFittingParam();

@@ -1,4 +1,4 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.Dialogs
 {
     partial class ExportForm
     {

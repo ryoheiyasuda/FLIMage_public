@@ -1,11 +1,11 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.FlowControls
 {
     partial class Image_seqeunce
     {
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        public System.ComponentModel.IContainer components = null;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -26,7 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
+        public void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Image_seqeunce));
             this.ImageSequenceGridView = new System.Windows.Forms.DataGridView();
@@ -265,24 +265,24 @@
 
         #endregion
 
-        private System.Windows.Forms.DataGridView ImageSequenceGridView;
-        private System.Windows.Forms.Button AddCurrentSetting;
-        private System.Windows.Forms.Button RowUp;
-        private System.Windows.Forms.Button RowDown;
-        private System.Windows.Forms.Button DeleteRow;
-        private System.Windows.Forms.Button RunSeq;
-        private System.Windows.Forms.Button ClearSetting;
-        private System.Windows.Forms.Label Progress;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.DataGridViewTextBoxColumn SettingID;
-        private System.Windows.Forms.DataGridViewTextBoxColumn SettingName;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Interval;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Repetition;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Zoom;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label RepTime;
-        private System.Windows.Forms.Button ReplaceWithCurrent;
-        private System.Windows.Forms.Button LoadSelected;
-        private System.Windows.Forms.CheckBox AutoDriftCorrection;
+        public System.Windows.Forms.DataGridView ImageSequenceGridView;
+        public System.Windows.Forms.Button AddCurrentSetting;
+        public System.Windows.Forms.Button RowUp;
+        public System.Windows.Forms.Button RowDown;
+        public System.Windows.Forms.Button DeleteRow;
+        public System.Windows.Forms.Button RunSeq;
+        public System.Windows.Forms.Button ClearSetting;
+        public System.Windows.Forms.Label Progress;
+        public System.Windows.Forms.Label label1;
+        public System.Windows.Forms.DataGridViewTextBoxColumn SettingID;
+        public System.Windows.Forms.DataGridViewTextBoxColumn SettingName;
+        public System.Windows.Forms.DataGridViewTextBoxColumn Interval;
+        public System.Windows.Forms.DataGridViewTextBoxColumn Repetition;
+        public System.Windows.Forms.DataGridViewTextBoxColumn Zoom;
+        public System.Windows.Forms.Label label2;
+        public System.Windows.Forms.Label RepTime;
+        public System.Windows.Forms.Button ReplaceWithCurrent;
+        public System.Windows.Forms.Button LoadSelected;
+        public System.Windows.Forms.CheckBox AutoDriftCorrection;
     }
 }

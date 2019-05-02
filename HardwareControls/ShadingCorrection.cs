@@ -9,8 +9,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utilities;
+using FLIMage.Analysis;
 
-namespace FLIMimage
+namespace FLIMage.HardwareControls
 {
     public partial class ShadingCorrection : Form
     {
@@ -67,7 +68,7 @@ namespace FLIMimage
             }
         }
 
-        private void ShadingImage1_Click(object sender, EventArgs e)
+        public void ShadingImage1_Click(object sender, EventArgs e)
         {
             Button buttonBoj = (Button)sender;
             int LaserN = 0;
@@ -91,13 +92,13 @@ namespace FLIMimage
                 ShadingFilePath3.Text = shading_filePath[LaserN];
         }
 
-        private void ShadingOnCB_Click(object sender, EventArgs e)
+        public void ShadingOnCB_Click(object sender, EventArgs e)
         {
             shading.shading_on = ShadingOnCB.Checked;
             shading.shading_uncaging = Shading_On_Uncaging.Checked;
         }
 
-        private void ShadingCorrection_FormClosing(object sender, FormClosingEventArgs e)
+        public void ShadingCorrection_FormClosing(object sender, FormClosingEventArgs e)
         {
             shading.shading_on = false;
             shading.shading_uncaging = false;
@@ -112,7 +113,7 @@ namespace FLIMimage
             winManager.SaveWindowLocation();
         }
 
-        private void ShadingCorrection_Load(object sender, EventArgs e)
+        public void ShadingCorrection_Load(object sender, EventArgs e)
         {
             winManager = new WindowLocManager(this, WindowName, State.Files.windowsInfoPath);
             winManager.LoadWindowLocation(false);

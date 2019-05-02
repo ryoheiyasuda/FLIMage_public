@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace FLIMimage
+namespace FLIMage.Plotting
 {
     public partial class Plot : Form
     {
@@ -186,7 +186,7 @@ namespace FLIMimage
             plot_chart();
         }
 
-        private void plot_chart()
+        public void plot_chart()
         {
             double[] maxXarray = new double[nChannels];
             double[] minXarray = new double[nChannels];
@@ -270,7 +270,7 @@ namespace FLIMimage
             }
         }
 
-        private Rectangle getRectangle()
+        public Rectangle getRectangle()
         {
             return new Rectangle(
                 Math.Min(startPos.X, currentPos.X),
@@ -279,13 +279,13 @@ namespace FLIMimage
                 Math.Abs(startPos.Y - currentPos.Y));
         }
 
-        private void chart1_MouseDown(object sender, MouseEventArgs e)
+        public void chart1_MouseDown(object sender, MouseEventArgs e)
         {
             startPos = e.Location;
             drawing = true;
         }
 
-        private void chart1_MouseMove(object sender, MouseEventArgs e)
+        public void chart1_MouseMove(object sender, MouseEventArgs e)
         {
             if (drawing)
             {
@@ -298,7 +298,7 @@ namespace FLIMimage
         }
 
 
-        private void chart1_MouseUp(object sender, MouseEventArgs e)
+        public void chart1_MouseUp(object sender, MouseEventArgs e)
         {
             if (drawing)
             {
@@ -361,7 +361,7 @@ namespace FLIMimage
             this.Text = str;
         }
 
-        private void chart1_Paint(object sender, PaintEventArgs e)
+        public void chart1_Paint(object sender, PaintEventArgs e)
         {
             if (drawing)
             {
@@ -371,7 +371,7 @@ namespace FLIMimage
             }
         }
 
-        private void maximizePlot()
+        public void maximizePlot()
         {
             double[] maxXarray = new double[nChannels];
             double[] minXarray = new double[nChannels];
@@ -417,7 +417,7 @@ namespace FLIMimage
             chart1.ChartAreas[0].AxisY.Minimum = yValueMin;
         }
 
-        private void chart1_DoubleClick(object sender, EventArgs e)
+        public void chart1_DoubleClick(object sender, EventArgs e)
         {
 
             xrange = new double[] { X[0].Min() * outputRate, X[0].Max() * outputRate };

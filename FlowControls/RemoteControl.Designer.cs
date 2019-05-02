@@ -1,6 +1,6 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.FlowControls
 {
-    partial class Script
+    partial class RemoteControl
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Script));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RemoteControl));
             this.FLIMageMessageWindow = new System.Windows.Forms.TextBox();
             this.Execute = new System.Windows.Forms.Button();
             this.ClientMessageWindow = new System.Windows.Forms.TextBox();

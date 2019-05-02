@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace FLIMimage
+namespace FLIMage
 {
     public partial class ImageDescription : Form
     {

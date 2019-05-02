@@ -1,5 +1,4 @@
 ﻿
-using MathLibrary;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,8 +11,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Utilities;
+using MathLibrary;
 
-namespace FLIMimage
+namespace FLIMage.Analysis
 {
     public partial class FastZ_Calibration : Form
     {
@@ -38,7 +39,7 @@ namespace FLIMimage
         double default_phase_end = 145;
         double default_intensity = 15;
 
-        plot_panel pp, pp2, pp3, pp4, pp5, pp6;
+        PlotOnPanel pp, pp2, pp3, pp4, pp5, pp6;
 
         public FastZ_Calibration(Image_Display image_display_in)
         {
@@ -168,7 +169,7 @@ namespace FLIMimage
             PlotPanel_Display();
         }
 
-        private void GaussianFit_Display(double[] phase_data, double[] z_um_data, double[] fit_data)
+        public void GaussianFit_Display(double[] phase_data, double[] z_um_data, double[] fit_data)
         {
             pp.clearData();
             pp.addData(phase_data, z_um_data, "o");
@@ -178,7 +179,7 @@ namespace FLIMimage
             PlotPanel.Invalidate();
         }
 
-        private void PlotPanel_Display()
+        public void PlotPanel_Display()
         {
             if (zz_um == null)
                 return;
@@ -337,14 +338,14 @@ namespace FLIMimage
             SaveData(all_data, titles, beta);
         }
 
-        private void DisplayFitData(double[] beta)
+        public void DisplayFitData(double[] beta)
         {
 
             FitData.Text = String.Format("{0:0.0} um / 90 deg", beta[1] * 90.0);
             FitData2.Text = String.Format("{0:0.0} um / fastZ", beta[1] * deg_per_slice);
         }
 
-        private void SaveData(double[][] all_data, List<string> titles, double[] beta)
+        public void SaveData(double[][] all_data, List<string> titles, double[] beta)
         {
             var directoryPath = Path.Combine(FLIM_ImgData.pathName, "Analysis");
             var fileName = String.Format("{0}{1:000}_PhaseData.csv", FLIM_ImgData.baseName, FLIM_ImgData.fileCounter);
@@ -401,7 +402,7 @@ namespace FLIMimage
             }
         }
 
-        private void PlotPanel_Paint(object sender, PaintEventArgs e)
+        public void PlotPanel_Paint(object sender, PaintEventArgs e)
         {
             if (pp != null)
             {
@@ -410,7 +411,7 @@ namespace FLIMimage
             }
         }
 
-        private void PlotPanel2_Paint(object sender, PaintEventArgs e)
+        public void PlotPanel2_Paint(object sender, PaintEventArgs e)
         {
             if (pp2 != null)
             {
@@ -419,7 +420,7 @@ namespace FLIMimage
             }
         }
 
-        private void PlotPanel3_Paint(object sender, PaintEventArgs e)
+        public void PlotPanel3_Paint(object sender, PaintEventArgs e)
         {
             if (pp3 != null)
             {
@@ -428,7 +429,7 @@ namespace FLIMimage
             }
         }
 
-        private void PlotPanel4_Paint(object sender, PaintEventArgs e)
+        public void PlotPanel4_Paint(object sender, PaintEventArgs e)
         {
             if (pp4 != null)
             {
@@ -437,7 +438,7 @@ namespace FLIMimage
             }
         }
 
-        private void PlotPanel5_Paint(object sender, PaintEventArgs e)
+        public void PlotPanel5_Paint(object sender, PaintEventArgs e)
         {
             if (pp5 != null)
             {
@@ -447,7 +448,7 @@ namespace FLIMimage
         }
 
 
-        private void PlotPanel6_Paint(object sender, PaintEventArgs e)
+        public void PlotPanel6_Paint(object sender, PaintEventArgs e)
         {
             if (pp6 != null)
             {
@@ -456,7 +457,7 @@ namespace FLIMimage
             }
         }
 
-        private void FastZ_Calibration_Shown(object sender, EventArgs e)
+        public void FastZ_Calibration_Shown(object sender, EventArgs e)
         {
             //int y1 = State.Acq.FastZ_phase_detection_mode ? FLIM_ImgData.n_pages / 2 : FLIM_ImgData.n_pages;
 
@@ -466,27 +467,27 @@ namespace FLIMimage
             FastZStack_End.Text = default_phase_end.ToString();
             IntensityThreshold.Text = default_intensity.ToString();
 
-            pp = new plot_panel(PlotPanel.Width, PlotPanel.Height);
-            pp2 = new plot_panel(PlotPanel2.Width, PlotPanel2.Height);
-            pp3 = new plot_panel(PlotPanel3.Width, PlotPanel3.Height);
-            pp4 = new plot_panel(PlotPanel4.Width, PlotPanel4.Height);
-            pp5 = new plot_panel(PlotPanel5.Width, PlotPanel5.Height);
-            pp6 = new plot_panel(PlotPanel6.Width, PlotPanel6.Height);
+            pp = new PlotOnPanel(PlotPanel.Width, PlotPanel.Height);
+            pp2 = new PlotOnPanel(PlotPanel2.Width, PlotPanel2.Height);
+            pp3 = new PlotOnPanel(PlotPanel3.Width, PlotPanel3.Height);
+            pp4 = new PlotOnPanel(PlotPanel4.Width, PlotPanel4.Height);
+            pp5 = new PlotOnPanel(PlotPanel5.Width, PlotPanel5.Height);
+            pp6 = new PlotOnPanel(PlotPanel6.Width, PlotPanel6.Height);
 
             calculateFocus();
         }
 
-        private void Objective_Pulldown_SelectedIndexChanged(object sender, EventArgs e)
+        public void Objective_Pulldown_SelectedIndexChanged(object sender, EventArgs e)
         {
             PlotPanel_Display();
         }
 
-        private void AllSlices_CheckedChanged(object sender, EventArgs e)
+        public void AllSlices_CheckedChanged(object sender, EventArgs e)
         {
             PlotPanel_Display();
         }
 
-        private void CalcButton_Click(object sender, EventArgs e)
+        public void CalcButton_Click(object sender, EventArgs e)
         {
             CalcButton.Enabled = false;
             FLIM_ImgData = image_display.FLIM_ImgData;
@@ -495,7 +496,7 @@ namespace FLIMimage
             CalcButton.Enabled = true;
         }
 
-        private void ZStack_Start_KeyDown(object sender, KeyEventArgs e)
+        public void ZStack_Start_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {

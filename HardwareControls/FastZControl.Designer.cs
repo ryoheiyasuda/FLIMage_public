@@ -1,11 +1,11 @@
-﻿namespace FLIMimage
+﻿namespace FLIMage.HardwareControls
 {
     partial class FastZControl
     {
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        public System.ComponentModel.IContainer components = null;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -26,7 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
+        public void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FastZControl));
@@ -837,68 +837,68 @@
         }
 
         #endregion
-        private System.Windows.Forms.Label label96;
-        private System.Windows.Forms.TextBox US_Per_ZScan;
-        private System.Windows.Forms.Label label12;
-        private System.Windows.Forms.Button AdjustFillFraction;
-        private System.Windows.Forms.TextBox NFastZSlices;
-        private System.Windows.Forms.Label label104;
-        private System.Windows.Forms.CheckBox EnableTagScan;
-        private System.Windows.Forms.TextBox VoxelCount;
-        private System.Windows.Forms.Label label103;
-        private System.Windows.Forms.TextBox VoxelTimeUS;
-        private System.Windows.Forms.Label label102;
-        private System.Windows.Forms.TextBox ZPixelsPerLine;
-        private System.Windows.Forms.Label label100;
-        private System.Windows.Forms.TextBox ZScanPerPixel;
-        private System.Windows.Forms.Label label99;
-        private System.Windows.Forms.Label FastScanFreq;
-        private System.Windows.Forms.Label label98;
-        private System.Windows.Forms.TextBox ZScanPerLine;
-        private System.Windows.Forms.CheckBox PhaseDetecCB;
-        private System.Windows.Forms.GroupBox TagScanPanel;
-        private System.Windows.Forms.ComboBox SetFrequency_Pulldown;
-        private System.Windows.Forms.Button Connect_button;
-        private System.Windows.Forms.Button LockResonance;
-        private System.Windows.Forms.ComboBox ComportPulldown;
-        private System.Windows.Forms.Button PowerButton;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label Freq_Label;
-        private System.Windows.Forms.TextBox PhaseTextBox1;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label StatusLabel;
-        private System.Windows.Forms.Timer dataAcqTimer;
-        private System.Windows.Forms.Label AmplitudeLabel;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label_25;
-        private System.Windows.Forms.Label label_26;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Label RMSC_Label;
-        private System.Windows.Forms.Label RMSV_Label;
-        private System.Windows.Forms.Label RealPowerMW;
-        private System.Windows.Forms.Label ImgPowermVA;
-        private System.Windows.Forms.Label LensPhase;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.TextBox AmplitudeEditBox;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label RGBPhase1;
-        private System.Windows.Forms.Label RGBPhase2;
-        private System.Windows.Forms.TextBox PhaseTextBox2;
-        private System.Windows.Forms.Label RGBPhase3;
-        private System.Windows.Forms.TextBox PhaseTextBox3;
-        private System.Windows.Forms.TextBox FreqKHz;
-        private System.Windows.Forms.TextBox FastZScanMsPerLine;
-        private System.Windows.Forms.ComboBox Preset_Pulldown;
-        private System.Windows.Forms.Label label8;
-        private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.TextBox PhaseRangeEnd;
-        private System.Windows.Forms.TextBox PhaseRangeStart;
-        private System.Windows.Forms.Label FastZSliceStep;
-        private System.Windows.Forms.TextBox CountPerZScanEB;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox ResidualEB;
-        private System.Windows.Forms.Label label10;
-        private System.Windows.Forms.Label label11;
-        private System.Windows.Forms.Label Residual_deg;
+        public System.Windows.Forms.Label label96;
+        public System.Windows.Forms.TextBox US_Per_ZScan;
+        public System.Windows.Forms.Label label12;
+        public System.Windows.Forms.Button AdjustFillFraction;
+        public System.Windows.Forms.TextBox NFastZSlices;
+        public System.Windows.Forms.Label label104;
+        public System.Windows.Forms.CheckBox EnableTagScan;
+        public System.Windows.Forms.TextBox VoxelCount;
+        public System.Windows.Forms.Label label103;
+        public System.Windows.Forms.TextBox VoxelTimeUS;
+        public System.Windows.Forms.Label label102;
+        public System.Windows.Forms.TextBox ZPixelsPerLine;
+        public System.Windows.Forms.Label label100;
+        public System.Windows.Forms.TextBox ZScanPerPixel;
+        public System.Windows.Forms.Label label99;
+        public System.Windows.Forms.Label FastScanFreq;
+        public System.Windows.Forms.Label label98;
+        public System.Windows.Forms.TextBox ZScanPerLine;
+        public System.Windows.Forms.CheckBox PhaseDetecCB;
+        public System.Windows.Forms.GroupBox TagScanPanel;
+        public System.Windows.Forms.ComboBox SetFrequency_Pulldown;
+        public System.Windows.Forms.Button Connect_button;
+        public System.Windows.Forms.Button LockResonance;
+        public System.Windows.Forms.ComboBox ComportPulldown;
+        public System.Windows.Forms.Button PowerButton;
+        public System.Windows.Forms.Label label1;
+        public System.Windows.Forms.Label Freq_Label;
+        public System.Windows.Forms.TextBox PhaseTextBox1;
+        public System.Windows.Forms.Label label2;
+        public System.Windows.Forms.Label StatusLabel;
+        public System.Windows.Forms.Timer dataAcqTimer;
+        public System.Windows.Forms.Label AmplitudeLabel;
+        public System.Windows.Forms.Label label4;
+        public System.Windows.Forms.Label label_25;
+        public System.Windows.Forms.Label label_26;
+        public System.Windows.Forms.Label label7;
+        public System.Windows.Forms.Label RMSC_Label;
+        public System.Windows.Forms.Label RMSV_Label;
+        public System.Windows.Forms.Label RealPowerMW;
+        public System.Windows.Forms.Label ImgPowermVA;
+        public System.Windows.Forms.Label LensPhase;
+        public System.Windows.Forms.Label label6;
+        public System.Windows.Forms.TextBox AmplitudeEditBox;
+        public System.Windows.Forms.Label label5;
+        public System.Windows.Forms.Label RGBPhase1;
+        public System.Windows.Forms.Label RGBPhase2;
+        public System.Windows.Forms.TextBox PhaseTextBox2;
+        public System.Windows.Forms.Label RGBPhase3;
+        public System.Windows.Forms.TextBox PhaseTextBox3;
+        public System.Windows.Forms.TextBox FreqKHz;
+        public System.Windows.Forms.TextBox FastZScanMsPerLine;
+        public System.Windows.Forms.ComboBox Preset_Pulldown;
+        public System.Windows.Forms.Label label8;
+        public System.Windows.Forms.Label label9;
+        public System.Windows.Forms.TextBox PhaseRangeEnd;
+        public System.Windows.Forms.TextBox PhaseRangeStart;
+        public System.Windows.Forms.Label FastZSliceStep;
+        public System.Windows.Forms.TextBox CountPerZScanEB;
+        public System.Windows.Forms.Label label3;
+        public System.Windows.Forms.TextBox ResidualEB;
+        public System.Windows.Forms.Label label10;
+        public System.Windows.Forms.Label label11;
+        public System.Windows.Forms.Label Residual_deg;
     }
 }

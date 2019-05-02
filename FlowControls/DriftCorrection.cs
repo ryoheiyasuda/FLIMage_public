@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utilities;
 
-namespace FLIMimage
+namespace FLIMage.FlowControls
 {
     public partial class DriftCorrection : Form
     {
@@ -49,12 +49,12 @@ namespace FLIMimage
             ApplyBMP();
         }
 
-        private void SelectCurrentImage_Click(object sender, EventArgs e)
+        public void SelectCurrentImage_Click(object sender, EventArgs e)
         {
             SelectImage();
         }
 
-        private void ApplyBMP()
+        public void ApplyBMP()
         {
             templateBMP = ImageProcessing.FormatImage(FLIMage.image_display.State_intensity_range[correctionChannel], template_image);
             TemplateImage_PB.Invalidate();
@@ -94,7 +94,7 @@ namespace FLIMimage
                 ApplyBMP();
         }
 
-        private void reconstructImageFromPages()
+        public void reconstructImageFromPages()
         {
             FLIM_5D = MatrixCalc.MatrixCopy3D(FLIMage.image_display.FLIM_ImgData.FLIM_Pages);
             dimYXT = FLIMage.image_display.FLIM_ImgData.dimensionYXT(correctionChannel);
@@ -149,7 +149,7 @@ namespace FLIMimage
             return xyz_drift;
         }
 
-        private double CalculateZdrift()
+        public double CalculateZdrift()
         {
             double z_drift = 0;
             if (nSlices > 3)
@@ -165,7 +165,7 @@ namespace FLIMimage
             return z_drift;
         }
 
-        private void DisplayDriftXYZ(double[] xyz_drift)
+        public void DisplayDriftXYZ(double[] xyz_drift)
         {
             Status_XY.Text = String.Format("X, Y drift = {0:0}, {1:0} pixels", xyz_drift[0], xyz_drift[1]);
             Status_Z.Text = String.Format("Z drift = {0:0.00}", xyz_drift[2]);
@@ -213,7 +213,7 @@ namespace FLIMimage
             }
         }
 
-        private void EventHandling(FLIMage_IO fc, ProcessEventArgs e)
+        public void EventHandling(FLIMage_IO fc, ProcessEventArgs e)
         {
             String eventStr = e.EventName;
             String eventName;
@@ -235,13 +235,13 @@ namespace FLIMimage
             winManager.SaveWindowLocation();
         }
 
-        private void DriftCorrection_Load(object sender, EventArgs e)
+        public void DriftCorrection_Load(object sender, EventArgs e)
         {
             winManager = new WindowLocManager(this, WindowName, State.Files.windowsInfoPath);
             winManager.LoadWindowLocation(false);
         }
 
-        private void DriftCorrection_FormClosing(object sender, FormClosingEventArgs e)
+        public void DriftCorrection_FormClosing(object sender, FormClosingEventArgs e)
         {
             FLIMage.flimage_io.EventNotify -= EventHandling;
             SaveWindowLocation();
@@ -249,14 +249,14 @@ namespace FLIMimage
             FLIMage.ToolWindowClosed();
         }
 
-        private double[] calculate_drift()
+        public double[] calculate_drift()
         {
             double[] xy_drift;
             double corVal = ImageProcessing.MatrixMeasureDrift2D_FFT(template_image, current_image, out xy_drift);
             return xy_drift;
         }
 
-        private double[] getProjection_z()
+        public double[] getProjection_z()
         {
             double[] data_projection_z = new double[imageZYX.Length];
 
@@ -268,7 +268,7 @@ namespace FLIMimage
             return data_projection_z;
         }
 
-        private UInt16[][] getProjection()
+        public UInt16[][] getProjection()
         {
             int z_length = FLIM_5D.Length;
             int c_length = FLIM_5D[0].Length;
@@ -284,7 +284,7 @@ namespace FLIMimage
             return data_projection;
         }
 
-        private void TemplateImage_PB_Paint(object sender, PaintEventArgs e)
+        public void TemplateImage_PB_Paint(object sender, PaintEventArgs e)
         {
             e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
             e.Graphics.DrawImage(templateBMP,

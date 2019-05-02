@@ -1,6 +1,4 @@
 ﻿using TCSPC_controls;
-
-using Stage_Control;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -11,9 +9,9 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using UserFnc;
+using FLIMage.HardwareControls.StageControls;
 
-namespace FLIMimage
+namespace FLIMage.FlowControls
 {
     public class FLIMage_Event
     {
@@ -114,7 +112,7 @@ namespace FLIMimage
 
         }
 
-        private bool IfNotify(String EventName)
+        public bool IfNotify(String EventName)
         {
             bool notify = false;
             for (int i = 0; i < eventNotifyTable.Rows.Count; i++)
@@ -213,7 +211,7 @@ namespace FLIMimage
             }
         }
 
-        private String FLIMageQuery(String s, ref CommandMode cm)
+        public String FLIMageQuery(String s, ref CommandMode cm)
         {
             String replyMessage = "";
             string[] sP = s.Split('.');
@@ -237,7 +235,7 @@ namespace FLIMimage
             return replyMessage;
         }
 
-        private String MotorQuery(String s, ref CommandMode cm)
+        public String MotorQuery(String s, ref CommandMode cm)
         {
             String replyMessage = "";
             string[] sP = s.Split('.');
@@ -277,7 +275,7 @@ namespace FLIMimage
             if (cm != CommandMode.None)
                 return replyMessage;
 
-            FileIO fio = new FLIMimage.FileIO(State);
+            FileIO fio = new FileIO(State);
 
             String tempStr = "";
 
@@ -459,9 +457,12 @@ namespace FLIMimage
                 {
                     case "CurrentPosition":
                         {
-                            double[] motorPos = motorCtrl.getCalibratedAbsolutePosition();
-                            for (int j = 0; j < 3; j++)
-                                saveFileParameterTable.Rows[i][j + 2] = motorPos[j].ToString();
+                            if (motorCtrl != null)
+                            {
+                                double[] motorPos = motorCtrl.getCalibratedAbsolutePosition();
+                                for (int j = 0; j < 3; j++)
+                                    saveFileParameterTable.Rows[i][j + 2] = motorPos[j].ToString();
+                            }
                             break;
                         }
                     case "FOVXYum":

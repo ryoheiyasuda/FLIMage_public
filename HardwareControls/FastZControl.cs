@@ -15,7 +15,7 @@ using TagLensController;
 using TCSPC_controls;
 using Utilities;
 
-namespace FLIMimage
+namespace FLIMage.HardwareControls
 {
     public partial class FastZControl : Form
     {

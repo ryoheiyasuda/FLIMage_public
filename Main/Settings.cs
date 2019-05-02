@@ -1,4 +1,4 @@
-﻿namespace FLIMimage.Properties {
+﻿namespace FLIMage.Properties {
     
     
     // このクラスでは設定クラスでの特定のイベントを処理することができます:
@@ -17,11 +17,11 @@
             //
         }
         
-        private void SettingChangingEventHandler(object sender, System.Configuration.SettingChangingEventArgs e) {
+        public void SettingChangingEventHandler(object sender, System.Configuration.SettingChangingEventArgs e) {
             // SettingChangingEvent イベントを処理するコードをここに追加してください。
         }
         
-        private void SettingsSavingEventHandler(object sender, System.ComponentModel.CancelEventArgs e) {
+        public void SettingsSavingEventHandler(object sender, System.ComponentModel.CancelEventArgs e) {
             // SettingsSaving イベントを処理するコードをここに追加してください。
         }
     }

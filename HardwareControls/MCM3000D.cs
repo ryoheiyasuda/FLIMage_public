@@ -7,13 +7,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+//namespace FLIMimage.HardwareControls
 namespace Stage_Control
 {
-    public class MotorCtrl_MP285A
+    class MCM3000D
     {
         public event MotorHandler MotH;
         public MotrEventArgs e = new MotrEventArgs("");
-        public delegate void MotorHandler(MotorCtrl_MP285A mCtrls, MotrEventArgs e);
+        public delegate void MotorHandler(MCM3000D mCtrls, MotrEventArgs e);
 
         public double maxDistanceXY = 500; //micrometers
         public double maxDistanceZ = 100;
@@ -73,11 +74,11 @@ namespace Stage_Control
         public bool continuous_readCheck = true;
 
 
-        public MotorCtrl_MP285A(String COMport, Double[] resolution, int velocity)
+        public MCM3000D(String COMport, Double[] resolution, int velocity)
         {
             lockPort = new object();
             port = new SerialPort(COMport);
-            port.BaudRate = 9600;
+            port.BaudRate = 460800;
             port.DataBits = 8;
             port.StopBits = StopBits.One;
             port.NewLine = "\r";
@@ -95,7 +96,7 @@ namespace Stage_Control
             System.Threading.Thread.Sleep(timeout);
 
             reset();
-            
+
 
             XPos = 0;
             YPos = 0;
@@ -259,7 +260,7 @@ namespace Stage_Control
         {
             return new double[] { resolutionX, resolutionY, resolutionZ };
         }
-      
+
 
         public double[] GetNewPosition()
         {
@@ -769,7 +770,5 @@ namespace Stage_Control
             return freez;
 
         }
-
-    } //motorCtrl
-
+    }
 }

@@ -17,9 +17,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Serialization;
-using TCSPC_controls;
 
-namespace FLIMimage
+namespace FLIMage
 {
     public class FileIO
     {
@@ -222,7 +221,10 @@ namespace FLIMimage
 
         public void LoadSetupFile(String fileName)
         {
-            //            String fileName = "C:\\Users\\yasudalab\\Documents\\Data\\Data-20161011\\setup_files.txt";
+            string saveDeviceSettinFileName = State.Files.deviceFileName;
+            string saveInitFilePath = State.Files.initFolderPath;
+            string saveDefaultInitFile = State.Files.defaultInitFile;
+
             if (File.Exists(fileName))
             {
                 using (StreamReader sr = File.OpenText(fileName))
@@ -242,6 +244,11 @@ namespace FLIMimage
                     sr.Close();
                 }
             }
+
+            State.Files.deviceFileName = saveDeviceSettinFileName;
+            State.Files.initFolderPath = saveInitFilePath;
+            State.Files.defaultInitFile = saveDefaultInitFile;
+
             for (int i = State.Init.EOM_nChannels; i < State.Init.imagingLasers.Length; i++)
             {
                 State.Init.imagingLasers[i] = false;
@@ -1368,7 +1375,7 @@ namespace FLIMimage
             return (error);
         } //SaveImageInTiff
 
-        private static byte[] GetImageRasterBytes(Bitmap bmp, PixelFormat format)
+        public static byte[] GetImageRasterBytes(Bitmap bmp, PixelFormat format)
         {
             Rectangle rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
             byte[] bits = null;
@@ -1398,7 +1405,7 @@ namespace FLIMimage
             return bits;
         }
 
-        private static byte[] ConvertSamples(byte[] data, int width, int height, PixelFormat format)
+        public static byte[] ConvertSamples(byte[] data, int width, int height, PixelFormat format)
         {
             //data is always in 24bit color.
             int stride = data.Length / height;

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utilities;
 
-namespace FLIMimage
+namespace FLIMage.FlowControls
 {
     public partial class Image_seqeunce : Form
     {
@@ -55,7 +55,7 @@ namespace FLIMimage
             LoadImageSeqFile();
         }
 
-        private void Image_seqeunce_Load(object sender, EventArgs e)
+        public void Image_seqeunce_Load(object sender, EventArgs e)
         {
             winManager = new WindowLocManager(this, WindowName, State.Files.windowsInfoPath);
             winManager.LoadWindowLocation(false);
@@ -66,7 +66,7 @@ namespace FLIMimage
             winManager.SaveWindowLocation();
         }
 
-        private void Image_seqeunce_FormClosing(object sender, FormClosingEventArgs e)
+        public void Image_seqeunce_FormClosing(object sender, FormClosingEventArgs e)
         {
             SaveTable();
             SaveWindowLocation();
@@ -77,7 +77,7 @@ namespace FLIMimage
             FLIMage.ToolWindowClosed();
         }
 
-        private void AddCurrentSetting_Click(object sender, EventArgs e)
+        public void AddCurrentSetting_Click(object sender, EventArgs e)
         {
             State = FLIMage.State;
             SetLargestID();
@@ -96,7 +96,7 @@ namespace FLIMimage
             ImageSequenceGridView.Rows[nRows - 1].Selected = true;
         }
 
-        private void ReplaceWithCurrent_Click(object sender, EventArgs e)
+        public void ReplaceWithCurrent_Click(object sender, EventArgs e)
         {
             int selected = ImageSequenceGridView.CurrentCell.RowIndex;
             int num = Convert.ToInt32(ImageSequenceGridView.Rows[selected].Cells["SettingID"].Value);
@@ -109,12 +109,12 @@ namespace FLIMimage
             File.WriteAllText(StateFileName(num), str1);
         }
 
-        private String StateFileName(int settingNumber)
+        public String StateFileName(int settingNumber)
         {
             return Path.Combine(SettingFolderPath, SettingNameHeader + settingNumber) + ".txt";
         }
 
-        private void SaveTable()
+        public void SaveTable()
         {
             var builder = new StringBuilder();
             for (int i = 0; i < ImageSequenceGridView.Rows.Count; i++)
@@ -130,7 +130,7 @@ namespace FLIMimage
             File.WriteAllText(ImageSeqFilePath, builder.ToString());
         }
 
-        private void LoadImageSeqFile()
+        public void LoadImageSeqFile()
         {
             if (File.Exists(ImageSeqFilePath))
             {
@@ -152,7 +152,7 @@ namespace FLIMimage
             }
         }
 
-        private void SettingID_UpDown(object sender, EventArgs e)
+        public void SettingID_UpDown(object sender, EventArgs e)
         {
             int selected = ImageSequenceGridView.CurrentCell.RowIndex;
             var row = ImageSequenceGridView.Rows[selected];
@@ -178,7 +178,7 @@ namespace FLIMimage
             ImageSequenceGridView.Rows[selected].Selected = true;
         }
 
-        private void DeleteRow_Click(object sender, EventArgs e)
+        public void DeleteRow_Click(object sender, EventArgs e)
         {
             int selected = ImageSequenceGridView.CurrentCell.RowIndex;
             int num = Convert.ToInt32(ImageSequenceGridView.Rows[selected].Cells["SettingID"].Value);
@@ -189,7 +189,7 @@ namespace FLIMimage
             SetLargestID();
         }
 
-        private void SetLargestID()
+        public void SetLargestID()
         {
             int max = 0;
             for (int i = 0; i < ImageSequenceGridView.Rows.Count; i++)
@@ -201,7 +201,7 @@ namespace FLIMimage
             settingIDLargest = max;
         }
 
-        private void ClearSetting_Click(object sender, EventArgs e)
+        public void ClearSetting_Click(object sender, EventArgs e)
         {
             settingIDLargest = 0;
             ImageSequenceGridView.Rows.Clear();
@@ -213,7 +213,7 @@ namespace FLIMimage
             }
         }
 
-        private void RunSeq_Click(object sender, EventArgs e)
+        public void RunSeq_Click(object sender, EventArgs e)
         {
             State = FLIMage.State;
 
@@ -236,7 +236,7 @@ namespace FLIMimage
         }
 
 
-        private void reportProgress(bool timeonly)
+        public void reportProgress(bool timeonly)
         {
             this.Invoke((Action)delegate
             {
@@ -253,7 +253,7 @@ namespace FLIMimage
             });
         }
 
-        private void LoadSetting(String fileName)
+        public void LoadSetting(String fileName)
         {
             FLIMage.BeginInvoke((Action)delegate
             {
@@ -261,7 +261,7 @@ namespace FLIMimage
             });
         }
 
-        private void RunSequence()
+        public void RunSequence()
         {
             FLIMage.flimage_io.imageSequencing = true;
             bool firstImage = false;
@@ -333,13 +333,13 @@ namespace FLIMimage
             });
         }
 
-        private void RunOnce()
+        public void RunOnce()
         {
             FLIMage.ExternalCommand("StartGrab");
             Debug.WriteLine("Start Grab started : " + FLIMage.flimage_io.grabbing);
         }
 
-        private void ImageSequenceGridView_CurrentCellChanged(object sender, EventArgs e)
+        public void ImageSequenceGridView_CurrentCellChanged(object sender, EventArgs e)
         {
             if (ImageSequenceGridView.CurrentCell != null)
             {
@@ -348,18 +348,18 @@ namespace FLIMimage
             }
         }
 
-        private void LoadSetting_Number(int num)
+        public void LoadSetting_Number(int num)
         {
             String fileName = StateFileName(num);
             LoadSetting(fileName);
         }
 
-        private void LoadSelected_Click(object sender, EventArgs e)
+        public void LoadSelected_Click(object sender, EventArgs e)
         {
             LoadSelectedSetting();
         }
 
-        private void LoadSelectedSetting()
+        public void LoadSelectedSetting()
         {
             int index = ImageSequenceGridView.CurrentCell.RowIndex;
             int num = Convert.ToInt32(ImageSequenceGridView.Rows[index].Cells["SettingID"].Value);
@@ -370,13 +370,13 @@ namespace FLIMimage
         }
 
 
-        private void ImageSequenceGridView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        public void ImageSequenceGridView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
             SaveTable();
             SaveWindowLocation();
         }
 
-        private void AutoDriftCorrection_Click(object sender, EventArgs e)
+        public void AutoDriftCorrection_Click(object sender, EventArgs e)
         {
             if (AutoDriftCorrection.Checked)
             {
