@@ -127,7 +127,7 @@
     </Reference>
     <Reference Include="MathLibrary, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\bin\Release\MathLibrary.dll</HintPath>
+      <HintPath>External\MathLibrary.dll</HintPath>
     </Reference>
     <Reference Include="NationalInstruments.Common, Version=15.1.40.49152, Culture=neutral, PublicKeyToken=dc6ad606294fc298, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -139,7 +139,7 @@
     </Reference>
     <Reference Include="PhysiologyCSharp, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\bin\Release\PhysiologyCSharp.dll</HintPath>
+      <HintPath>External\PhysiologyCSharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -162,15 +162,15 @@
     <Reference Include="System.Xml" />
     <Reference Include="TagLensController, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\bin\Release\TagLensController.dll</HintPath>
+      <HintPath>External\TagLensController.dll</HintPath>
     </Reference>
     <Reference Include="TCSPC_controls, Version=1.1.0.30, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\bin\Release\TCSPC_controls.dll</HintPath>
+      <HintPath>External\TCSPC_controls.dll</HintPath>
     </Reference>
     <Reference Include="Utilities, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\bin\Release\Utilities.dll</HintPath>
+      <HintPath>External\Utilities.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
