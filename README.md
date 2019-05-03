@@ -3,6 +3,8 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 
 * Compiled and packaged installer can be found in https://github.com/ryoheiyasuda/FLIMage_Installer
 
+* This is open as it is, but for support, please contact Florida Lifetime Imaging LLC (info@lifetime-imaging.com).
+
 * The project file is for Visual Studio 17 (free "Community" version should build this).
 
 * To build this software, please get the following packages, either by direct download or NuGet: BitMiracle.LibTiff.NET 2.4.626 or higher, System.Numerics.Vector.4.5.0 or higher, and C# DotNet 4.6.1 or higher.
