@@ -231,6 +231,10 @@ namespace FLIMage.FlowControls
                 Task.Factory.StartNew((Action)delegate
                 {
                     RunSequence();
+                    Invoke((Action)delegate
+                    {
+                        RunSeq.Text = "Run sequence";
+                    });
                 });
             }
         }

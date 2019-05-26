@@ -2,10 +2,6 @@
 {
     partial class Image_Display
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
-        public System.ComponentModel.IContainer components = null;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -143,6 +139,7 @@
             this.setUncagingPositionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.analysisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.alignSlicesframesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.timeBinningToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.makeSinlgeFileMovieFromFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.getFocusFrameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
@@ -155,6 +152,11 @@
             this.setttingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.keepPagesInMemoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.intelMKLLibraryOnToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.pythonScriptToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.averageTimeCoursePythonToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.runPythonScriptToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.setPythonPathToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.setScriptPathToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.FilePanel = new System.Windows.Forms.GroupBox();
             this.FileUp = new System.Windows.Forms.Button();
             this.FileDown = new System.Windows.Forms.Button();
@@ -211,11 +213,6 @@
             this.HoldCurrentImageCheckBox = new System.Windows.Forms.CheckBox();
             this.MergeCB = new System.Windows.Forms.CheckBox();
             this.ThreeDROIPanel = new System.Windows.Forms.PictureBox();
-            this.pythonScriptToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.averageTimeCoursePythonToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.setPythonPathToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.setScriptPathToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.runPythonScriptToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.rightClickMenuStrip_inROI.SuspendLayout();
             this.rightClickMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.MinSldr1)).BeginInit();
@@ -826,8 +823,8 @@
             // 
             // label4
             // 
-            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -840,8 +837,8 @@
             // 
             // label3
             // 
-            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -1417,7 +1414,7 @@
             // 
             this.saveFLIMImageToolStripMenuItem1.Name = "saveFLIMImageToolStripMenuItem1";
             this.saveFLIMImageToolStripMenuItem1.Size = new System.Drawing.Size(251, 22);
-            this.saveFLIMImageToolStripMenuItem1.Text = "Save FLIM image";
+            this.saveFLIMImageToolStripMenuItem1.Text = "Save FLIM image ...";
             this.saveFLIMImageToolStripMenuItem1.Click += new System.EventHandler(this.saveFLIMImageToolStripMenuItem1_Click);
             // 
             // saveFLIMImageToolStripMenuItem
@@ -1525,8 +1522,9 @@
             // analysisToolStripMenuItem
             // 
             this.analysisToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.alignSlicesframesToolStripMenuItem,
+            this.timeBinningToolStripMenuItem,
             this.makeSinlgeFileMovieFromFilesToolStripMenuItem,
+            this.alignSlicesframesToolStripMenuItem,
             this.getFocusFrameToolStripMenuItem,
             this.toolStripSeparator4,
             this.fastZCalibrationToolStripMenuItem,
@@ -1539,45 +1537,52 @@
             // alignSlicesframesToolStripMenuItem
             // 
             this.alignSlicesframesToolStripMenuItem.Name = "alignSlicesframesToolStripMenuItem";
-            this.alignSlicesframesToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
-            this.alignSlicesframesToolStripMenuItem.Text = "Align pages";
+            this.alignSlicesframesToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
+            this.alignSlicesframesToolStripMenuItem.Text = "Align frames";
             this.alignSlicesframesToolStripMenuItem.Click += new System.EventHandler(this.AlignSlicesframesToolStripMenuItem_Click);
+            // 
+            // timeBinningToolStripMenuItem
+            // 
+            this.timeBinningToolStripMenuItem.Name = "timeBinningToolStripMenuItem";
+            this.timeBinningToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
+            this.timeBinningToolStripMenuItem.Text = "Time binning ...";
+            this.timeBinningToolStripMenuItem.Click += new System.EventHandler(this.timeBinningToolStripMenuItem_Click);
             // 
             // makeSinlgeFileMovieFromFilesToolStripMenuItem
             // 
             this.makeSinlgeFileMovieFromFilesToolStripMenuItem.Name = "makeSinlgeFileMovieFromFilesToolStripMenuItem";
-            this.makeSinlgeFileMovieFromFilesToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
-            this.makeSinlgeFileMovieFromFilesToolStripMenuItem.Text = "Make Movie From Series";
+            this.makeSinlgeFileMovieFromFilesToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
+            this.makeSinlgeFileMovieFromFilesToolStripMenuItem.Text = "Concatenate files with same basename";
             this.makeSinlgeFileMovieFromFilesToolStripMenuItem.Click += new System.EventHandler(this.makeMoviesWithTheSameBaseNameToolStripMenuItem_Click);
             // 
             // getFocusFrameToolStripMenuItem
             // 
             this.getFocusFrameToolStripMenuItem.Name = "getFocusFrameToolStripMenuItem";
-            this.getFocusFrameToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
-            this.getFocusFrameToolStripMenuItem.Text = "GetFocusFrame";
+            this.getFocusFrameToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
+            this.getFocusFrameToolStripMenuItem.Text = "Get focus frame";
             this.getFocusFrameToolStripMenuItem.Click += new System.EventHandler(this.getFocusFrameToolStripMenuItem_Click);
             // 
             // toolStripSeparator4
             // 
             this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(200, 6);
+            this.toolStripSeparator4.Size = new System.Drawing.Size(276, 6);
             // 
             // fastZCalibrationToolStripMenuItem
             // 
             this.fastZCalibrationToolStripMenuItem.Name = "fastZCalibrationToolStripMenuItem";
-            this.fastZCalibrationToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
+            this.fastZCalibrationToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
             this.fastZCalibrationToolStripMenuItem.Text = "Fast Z Calibration";
             this.fastZCalibrationToolStripMenuItem.Click += new System.EventHandler(this.fastZCalibrationToolStripMenuItem_Click);
             // 
             // toolStripSeparator3
             // 
             this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(200, 6);
+            this.toolStripSeparator3.Size = new System.Drawing.Size(276, 6);
             // 
             // deleteCurrentPageToolStripMenuItem
             // 
             this.deleteCurrentPageToolStripMenuItem.Name = "deleteCurrentPageToolStripMenuItem";
-            this.deleteCurrentPageToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
+            this.deleteCurrentPageToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
             this.deleteCurrentPageToolStripMenuItem.Text = "Delete current page";
             this.deleteCurrentPageToolStripMenuItem.Click += new System.EventHandler(this.deleteCurrentPageToolStripMenuItem_Click);
             // 
@@ -1593,14 +1598,14 @@
             // timeCoursePlotToolStripMenuItem
             // 
             this.timeCoursePlotToolStripMenuItem.Name = "timeCoursePlotToolStripMenuItem";
-            this.timeCoursePlotToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
+            this.timeCoursePlotToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.timeCoursePlotToolStripMenuItem.Text = "Time course plot";
             this.timeCoursePlotToolStripMenuItem.Click += new System.EventHandler(this.TimeCoursePlotToolStripMenuItem_Click);
             // 
             // driftMeasurementToolStripMenuItem
             // 
             this.driftMeasurementToolStripMenuItem.Name = "driftMeasurementToolStripMenuItem";
-            this.driftMeasurementToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
+            this.driftMeasurementToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.driftMeasurementToolStripMenuItem.Text = "Drift measurement";
             this.driftMeasurementToolStripMenuItem.Click += new System.EventHandler(this.driftMeasurementToolStripMenuItem_Click);
             // 
@@ -1628,6 +1633,45 @@
             this.intelMKLLibraryOnToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.intelMKLLibraryOnToolStripMenuItem.Text = "Use Intel MKL library";
             this.intelMKLLibraryOnToolStripMenuItem.Click += new System.EventHandler(this.intelMKLLibraryOnToolStripMenuItem_Click);
+            // 
+            // pythonScriptToolStripMenuItem
+            // 
+            this.pythonScriptToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.averageTimeCoursePythonToolStripMenuItem,
+            this.runPythonScriptToolStripMenuItem,
+            this.setPythonPathToolStripMenuItem,
+            this.setScriptPathToolStripMenuItem});
+            this.pythonScriptToolStripMenuItem.Name = "pythonScriptToolStripMenuItem";
+            this.pythonScriptToolStripMenuItem.Size = new System.Drawing.Size(89, 22);
+            this.pythonScriptToolStripMenuItem.Text = "Python script";
+            // 
+            // averageTimeCoursePythonToolStripMenuItem
+            // 
+            this.averageTimeCoursePythonToolStripMenuItem.Name = "averageTimeCoursePythonToolStripMenuItem";
+            this.averageTimeCoursePythonToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.averageTimeCoursePythonToolStripMenuItem.Text = "Average Time Courses";
+            this.averageTimeCoursePythonToolStripMenuItem.Click += new System.EventHandler(this.averageTimeCoursePythonToolStripMenuItem_Click);
+            // 
+            // runPythonScriptToolStripMenuItem
+            // 
+            this.runPythonScriptToolStripMenuItem.Name = "runPythonScriptToolStripMenuItem";
+            this.runPythonScriptToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.runPythonScriptToolStripMenuItem.Text = "Run Python Script";
+            this.runPythonScriptToolStripMenuItem.Click += new System.EventHandler(this.runPythonScriptToolStripMenuItem_Click);
+            // 
+            // setPythonPathToolStripMenuItem
+            // 
+            this.setPythonPathToolStripMenuItem.Name = "setPythonPathToolStripMenuItem";
+            this.setPythonPathToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.setPythonPathToolStripMenuItem.Text = "Set Python Path";
+            this.setPythonPathToolStripMenuItem.Click += new System.EventHandler(this.setPythonPathToolStripMenuItem_Click);
+            // 
+            // setScriptPathToolStripMenuItem
+            // 
+            this.setScriptPathToolStripMenuItem.Name = "setScriptPathToolStripMenuItem";
+            this.setScriptPathToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.setScriptPathToolStripMenuItem.Text = "Set Script Path";
+            this.setScriptPathToolStripMenuItem.Click += new System.EventHandler(this.setScriptPathToolStripMenuItem_Click);
             // 
             // FilePanel
             // 
@@ -1808,7 +1852,7 @@
             // 
             // LifetimeCurvePlot
             // 
-            this.LifetimeCurvePlot.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.LifetimeCurvePlot.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.LifetimeCurvePlot.BackColor = System.Drawing.Color.White;
             this.LifetimeCurvePlot.Location = new System.Drawing.Point(770, 50);
@@ -1860,7 +1904,7 @@
             // 
             // Image2
             // 
-            this.Image2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.Image2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.Image2.BackColor = System.Drawing.Color.Black;
             this.Image2.Cursor = System.Windows.Forms.Cursors.Default;
@@ -1878,7 +1922,7 @@
             // 
             // Image1
             // 
-            this.Image1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.Image1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.Image1.BackColor = System.Drawing.Color.Black;
             this.Image1.Cursor = System.Windows.Forms.Cursors.Default;
@@ -2269,45 +2313,6 @@
             this.ThreeDROIPanel.Click += new System.EventHandler(this.ToolPanelClicked);
             this.ThreeDROIPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.ToolPanelPaint);
             // 
-            // pythonScriptToolStripMenuItem
-            // 
-            this.pythonScriptToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.averageTimeCoursePythonToolStripMenuItem,
-            this.runPythonScriptToolStripMenuItem,
-            this.setPythonPathToolStripMenuItem,
-            this.setScriptPathToolStripMenuItem});
-            this.pythonScriptToolStripMenuItem.Name = "pythonScriptToolStripMenuItem";
-            this.pythonScriptToolStripMenuItem.Size = new System.Drawing.Size(89, 22);
-            this.pythonScriptToolStripMenuItem.Text = "Python script";
-            // 
-            // averageTimeCoursePythonToolStripMenuItem
-            // 
-            this.averageTimeCoursePythonToolStripMenuItem.Name = "averageTimeCoursePythonToolStripMenuItem";
-            this.averageTimeCoursePythonToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.averageTimeCoursePythonToolStripMenuItem.Text = "Average Time Courses";
-            this.averageTimeCoursePythonToolStripMenuItem.Click += new System.EventHandler(this.averageTimeCoursePythonToolStripMenuItem_Click);
-            // 
-            // setPythonPathToolStripMenuItem
-            // 
-            this.setPythonPathToolStripMenuItem.Name = "setPythonPathToolStripMenuItem";
-            this.setPythonPathToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.setPythonPathToolStripMenuItem.Text = "Set Python Path";
-            this.setPythonPathToolStripMenuItem.Click += new System.EventHandler(this.setPythonPathToolStripMenuItem_Click);
-            // 
-            // setScriptPathToolStripMenuItem
-            // 
-            this.setScriptPathToolStripMenuItem.Name = "setScriptPathToolStripMenuItem";
-            this.setScriptPathToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.setScriptPathToolStripMenuItem.Text = "Set Script Path";
-            this.setScriptPathToolStripMenuItem.Click += new System.EventHandler(this.setScriptPathToolStripMenuItem_Click);
-            // 
-            // runPythonScriptToolStripMenuItem
-            // 
-            this.runPythonScriptToolStripMenuItem.Name = "runPythonScriptToolStripMenuItem";
-            this.runPythonScriptToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.runPythonScriptToolStripMenuItem.Text = "Run Python Script";
-            this.runPythonScriptToolStripMenuItem.Click += new System.EventHandler(this.runPythonScriptToolStripMenuItem_Click);
-            // 
             // Image_Display
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2576,5 +2581,7 @@
         public System.Windows.Forms.ToolStripMenuItem setPythonPathToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem setScriptPathToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem runPythonScriptToolStripMenuItem;
+        private System.ComponentModel.IContainer components;
+        private System.Windows.Forms.ToolStripMenuItem timeBinningToolStripMenuItem;
     }
 }

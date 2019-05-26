@@ -24,9 +24,6 @@ namespace FLIMage
             public String FLIM_mode = "PQ"; //or "BH"
             public Boolean NIDAQ_on = true;
 
-            //            public String NI_Version = "NI9_8";
-
-            //public String pixelClockPort = "Dev4/ctr2";
             public String lineClockPort = "Dev4/ctr0";
             public String frameClockPort = "Dev4/ctr1";
 

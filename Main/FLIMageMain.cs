@@ -1,4 +1,10 @@
-﻿using MathLibrary;
+﻿using FLIMage.Analysis;
+using FLIMage.FlowControls;
+using FLIMage.HardwareControls;
+using FLIMage.HardwareControls.StageControls;
+using FLIMage.Plotting;
+using FLIMage.Uncaging;
+using MathLibrary;
 using PhysiologyCSharp;
 using System;
 using System.Collections;
@@ -17,12 +23,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using Utilities;
-using FLIMage.Analysis;
-using FLIMage.HardwareControls;
-using FLIMage.HardwareControls.StageControls;
-using FLIMage.FlowControls;
-using FLIMage.Plotting;
-using FLIMage.Uncaging;
 
 namespace FLIMage
 {
@@ -319,8 +319,8 @@ namespace FLIMage
             settingManager = new SettingManager(settingName, State.Files.initFolderPath);
 
             settingManager.AddToDict(KeepPagesInMemoryCheck);
-            settingManager.AddToDict(BackToCenterCheck);
-            settingManager.AddToDict(BackToStartCheck);
+            settingManager.AddToDict(BackToCenterRadio);
+            settingManager.AddToDict(BackToStartRadio);
             settingManager.AddToDict(analyzeEach);
             settingManager.LoadToObject();
         }
@@ -546,7 +546,7 @@ namespace FLIMage
 
         public void ToolWindowClosed()
         {
-            this.BeginInvoke((Action)delegate
+            this.Invoke((Action)delegate
             {
                 MenuItems_CheckControls();
             });
@@ -624,7 +624,7 @@ namespace FLIMage
         {
             if (StatusText.InvokeRequired)
             {
-                StatusText.BeginInvoke((Action)delegate
+                StatusText.Invoke((Action)delegate
                 {
                     StatusText.Text = str;
                 });
@@ -935,6 +935,12 @@ namespace FLIMage
 
             if (fastZcontrol != null)
                 fastZcontrol.ControlsDuringScanning(false);
+
+            if (BackToCenterRadio.Checked)
+                MoveMotorBackToCenter();
+
+            if (BackToStartRadio.Checked)
+                MoveMotorBackToStart();
             //SaveSetting();
             //
         }
@@ -1000,17 +1006,25 @@ namespace FLIMage
                 }
 
 
-                if (State.Acq.ZStack)
+                if (State.Acq.ZStack && use_motor)
                 {
-                    if (BackToCenterCheck.Checked)
+                    if (BackToCenterRadio.Checked)
                     {
-                        Set_Center_Click(Set_Center, null);
-                        MoveMotorFromCenterToStart();
+                        if (motorCtrl.stack_Position == MotorCtrl.StackPosition.Center)
+                        {
+                            Set_Center_Click(Set_Center, null);
+                            MoveMotorFromCenterToStart();
+                        }
+                        else
+                            MoveMotorBackToStart();
                     }
 
-                    if (BackToStartCheck.Checked)
+                    if (BackToStartRadio.Checked)
                     {
-                        Set_Top_Click(Set_Top, null); //Set the start position.
+                        if (motorCtrl.stack_Position == MotorCtrl.StackPosition.Start)
+                            Set_Top_Click(Set_Top, null); //Set the start position.
+                        else
+                            MoveMotorBackToStart();
                     }
                 }
 
@@ -1059,7 +1073,7 @@ namespace FLIMage
             flimage_io.stopGrabActivated = false;
 
             if (this.InvokeRequired)
-                this.BeginInvoke((Action)delegate { LoopButton.Text = "STOP"; });
+                this.Invoke((Action)delegate { LoopButton.Text = "STOP"; });
             else
                 LoopButton.Text = "STOP";
 
@@ -1076,7 +1090,7 @@ namespace FLIMage
 
 
             if (this.InvokeRequired)
-                this.BeginInvoke((Action)delegate
+                this.Invoke((Action)delegate
                 {
                     LoopButton.Text = "LOOP";
                     if (!flimage_io.imageSequencing)
@@ -2164,7 +2178,7 @@ namespace FLIMage
         public void UpdateFileName()
         {
             if (this.InvokeRequired)
-                this.BeginInvoke((Action)delegate
+                this.Invoke((Action)delegate
                 {
                     UpdateFileNameCore();
                 });
@@ -2502,7 +2516,7 @@ namespace FLIMage
             }
             else if (command == "StartUncaging")
             {
-                this.BeginInvoke((Action)delegate
+                this.Invoke((Action)delegate
                 {
                     image_display.uncaging_on = true;
                     image_display.Activate_uncaging(true);
@@ -2671,7 +2685,7 @@ namespace FLIMage
         {
             if (this.InvokeRequired)
             {
-                this.BeginInvoke((Action)delegate
+                this.Invoke((Action)delegate
                 {
                     Motor_TextSetCore();
                 });
@@ -2850,9 +2864,9 @@ namespace FLIMage
         {
             if (State.Acq.ZStack && State.Acq.sliceStep != 0 && State.Acq.nSlices > 1)
             {
-                if (BackToStartCheck.Checked)
+                if (BackToStartRadio.Checked)
                     MoveMotorBackToStart();
-                else if (BackToCenterCheck.Checked)
+                else if (BackToCenterRadio.Checked)
                     MoveMotorBackToCenter();
             }
         }
@@ -2998,9 +3012,11 @@ namespace FLIMage
                             motorCtrl.SetNewPosition_StepSize_um(motorQ);
                             motorQ = new double[3];
                         }
+
                         SetMotorPosition(true, true);
                     }
 
+                    
 
                     motor_moving = false;
                 });
@@ -3095,6 +3111,7 @@ namespace FLIMage
         private void Set_Center_Click(object sender, EventArgs e)
         {
             AutoCalculateStackStartEnd();
+            motorCtrl.stack_Position = MotorCtrl.StackPosition.Center;
             MotorHandler(new MotrEventArgs(""));
         }
 
@@ -3324,7 +3341,7 @@ namespace FLIMage
         {
             if (uncaging_panel.InvokeRequired && uncaging_panel.Visible)
             {
-                uncaging_panel.BeginInvoke((Action)delegate
+                uncaging_panel.Invoke((Action)delegate
                 {
                     if (uncaging_panel != null)
                         uncaging_panel.UpdateUncaging(uncaging_panel);

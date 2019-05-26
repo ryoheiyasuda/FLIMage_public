@@ -129,11 +129,13 @@
             this.Vel_Up = new System.Windows.Forms.Button();
             this.ContRead = new System.Windows.Forms.CheckBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.StayMotorRadio = new System.Windows.Forms.RadioButton();
+            this.BackToCenterRadio = new System.Windows.Forms.RadioButton();
+            this.BackToStartRadio = new System.Windows.Forms.RadioButton();
             this.ZCenter = new System.Windows.Forms.TextBox();
             this.GoCenter = new System.Windows.Forms.Button();
             this.CenterLabel = new System.Windows.Forms.Label();
             this.Set_Center = new System.Windows.Forms.Button();
-            this.BackToCenterCheck = new System.Windows.Forms.CheckBox();
             this.GoEnd = new System.Windows.Forms.Button();
             this.GoStart = new System.Windows.Forms.Button();
             this.label77 = new System.Windows.Forms.Label();
@@ -145,7 +147,6 @@
             this.ZStart = new System.Windows.Forms.TextBox();
             this.st_step = new System.Windows.Forms.Label();
             this.st_um = new System.Windows.Forms.Label();
-            this.BackToStartCheck = new System.Windows.Forms.CheckBox();
             this.st_display = new System.Windows.Forms.Label();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -252,6 +253,8 @@
             this.LoopButton = new System.Windows.Forms.Button();
             this.label88 = new System.Windows.Forms.Label();
             this.tb_Pparameters = new System.Windows.Forms.TabPage();
+            this.label97 = new System.Windows.Forms.Label();
+            this.FreqDivBox = new System.Windows.Forms.TextBox();
             this.label96 = new System.Windows.Forms.Label();
             this.StartPointBox = new System.Windows.Forms.TextBox();
             this.st_mode = new System.Windows.Forms.Label();
@@ -414,8 +417,6 @@
             this.Acquisition1 = new System.Windows.Forms.CheckBox();
             this.StatusText = new System.Windows.Forms.Label();
             this.MotorStatus = new System.Windows.Forms.Label();
-            this.label97 = new System.Windows.Forms.Label();
-            this.FreqDivBox = new System.Windows.Forms.TextBox();
             tabPage2 = new System.Windows.Forms.TabPage();
             tabPage2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.PowerSlider2)).BeginInit();
@@ -1673,11 +1674,13 @@
             // 
             // groupBox3
             // 
+            this.groupBox3.Controls.Add(this.StayMotorRadio);
+            this.groupBox3.Controls.Add(this.BackToCenterRadio);
+            this.groupBox3.Controls.Add(this.BackToStartRadio);
             this.groupBox3.Controls.Add(this.ZCenter);
             this.groupBox3.Controls.Add(this.GoCenter);
             this.groupBox3.Controls.Add(this.CenterLabel);
             this.groupBox3.Controls.Add(this.Set_Center);
-            this.groupBox3.Controls.Add(this.BackToCenterCheck);
             this.groupBox3.Controls.Add(this.GoEnd);
             this.groupBox3.Controls.Add(this.GoStart);
             this.groupBox3.Controls.Add(this.label77);
@@ -1690,7 +1693,6 @@
             this.groupBox3.Controls.Add(this.st_step);
             this.groupBox3.Controls.Add(this.st_um);
             this.groupBox3.Controls.Add(this.Set_bottom);
-            this.groupBox3.Controls.Add(this.BackToStartCheck);
             this.groupBox3.Controls.Add(this.Set_Top);
             this.groupBox3.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox3.Location = new System.Drawing.Point(10, 300);
@@ -1699,6 +1701,41 @@
             this.groupBox3.TabIndex = 274;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Z stack";
+            // 
+            // StayMotorRadio
+            // 
+            this.StayMotorRadio.AutoSize = true;
+            this.StayMotorRadio.Font = new System.Drawing.Font("Arial", 8.25F);
+            this.StayMotorRadio.Location = new System.Drawing.Point(201, 80);
+            this.StayMotorRadio.Name = "StayMotorRadio";
+            this.StayMotorRadio.Size = new System.Drawing.Size(47, 18);
+            this.StayMotorRadio.TabIndex = 341;
+            this.StayMotorRadio.Text = "Stay";
+            this.StayMotorRadio.UseVisualStyleBackColor = true;
+            // 
+            // BackToCenterRadio
+            // 
+            this.BackToCenterRadio.AutoSize = true;
+            this.BackToCenterRadio.Checked = true;
+            this.BackToCenterRadio.Font = new System.Drawing.Font("Arial", 8.25F);
+            this.BackToCenterRadio.Location = new System.Drawing.Point(8, 80);
+            this.BackToCenterRadio.Name = "BackToCenterRadio";
+            this.BackToCenterRadio.Size = new System.Drawing.Size(96, 18);
+            this.BackToCenterRadio.TabIndex = 340;
+            this.BackToCenterRadio.TabStop = true;
+            this.BackToCenterRadio.Text = "Back to Center";
+            this.BackToCenterRadio.UseVisualStyleBackColor = true;
+            // 
+            // BackToStartRadio
+            // 
+            this.BackToStartRadio.AutoSize = true;
+            this.BackToStartRadio.Font = new System.Drawing.Font("Arial", 8.25F);
+            this.BackToStartRadio.Location = new System.Drawing.Point(106, 80);
+            this.BackToStartRadio.Name = "BackToStartRadio";
+            this.BackToStartRadio.Size = new System.Drawing.Size(89, 18);
+            this.BackToStartRadio.TabIndex = 339;
+            this.BackToStartRadio.Text = "Back To Start";
+            this.BackToStartRadio.UseVisualStyleBackColor = true;
             // 
             // ZCenter
             // 
@@ -1745,19 +1782,6 @@
             this.Set_Center.Text = "Set";
             this.Set_Center.UseVisualStyleBackColor = true;
             this.Set_Center.Click += new System.EventHandler(this.Set_Center_Click);
-            // 
-            // BackToCenterCheck
-            // 
-            this.BackToCenterCheck.AutoSize = true;
-            this.BackToCenterCheck.Checked = true;
-            this.BackToCenterCheck.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.BackToCenterCheck.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.BackToCenterCheck.Location = new System.Drawing.Point(12, 81);
-            this.BackToCenterCheck.Name = "BackToCenterCheck";
-            this.BackToCenterCheck.Size = new System.Drawing.Size(97, 18);
-            this.BackToCenterCheck.TabIndex = 334;
-            this.BackToCenterCheck.Text = "Back to Center";
-            this.BackToCenterCheck.UseVisualStyleBackColor = true;
             // 
             // GoEnd
             // 
@@ -1883,17 +1907,6 @@
             this.st_um.Size = new System.Drawing.Size(21, 14);
             this.st_um.TabIndex = 276;
             this.st_um.Text = "μm";
-            // 
-            // BackToStartCheck
-            // 
-            this.BackToStartCheck.AutoSize = true;
-            this.BackToStartCheck.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.BackToStartCheck.Location = new System.Drawing.Point(114, 81);
-            this.BackToStartCheck.Name = "BackToStartCheck";
-            this.BackToStartCheck.Size = new System.Drawing.Size(88, 18);
-            this.BackToStartCheck.TabIndex = 273;
-            this.BackToStartCheck.Text = "Back to Start";
-            this.BackToStartCheck.UseVisualStyleBackColor = true;
             // 
             // st_display
             // 
@@ -3005,6 +3018,29 @@
             this.tb_Pparameters.Size = new System.Drawing.Size(314, 337);
             this.tb_Pparameters.TabIndex = 2;
             this.tb_Pparameters.Text = "Photon counting";
+            // 
+            // label97
+            // 
+            this.label97.AutoSize = true;
+            this.label97.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label97.Location = new System.Drawing.Point(161, 279);
+            this.label97.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.label97.Name = "label97";
+            this.label97.Size = new System.Drawing.Size(46, 14);
+            this.label97.TabIndex = 269;
+            this.label97.Text = "Freq div";
+            // 
+            // FreqDivBox
+            // 
+            this.FreqDivBox.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.FreqDivBox.Location = new System.Drawing.Point(163, 295);
+            this.FreqDivBox.Margin = new System.Windows.Forms.Padding(1);
+            this.FreqDivBox.Name = "FreqDivBox";
+            this.FreqDivBox.Size = new System.Drawing.Size(40, 20);
+            this.FreqDivBox.TabIndex = 270;
+            this.FreqDivBox.Text = "1";
+            this.FreqDivBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.FreqDivBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
             // 
             // label96
             // 
@@ -5078,29 +5114,6 @@
             this.MotorStatus.TabIndex = 335;
             this.MotorStatus.Text = "Status...";
             // 
-            // label97
-            // 
-            this.label97.AutoSize = true;
-            this.label97.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label97.Location = new System.Drawing.Point(161, 279);
-            this.label97.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.label97.Name = "label97";
-            this.label97.Size = new System.Drawing.Size(46, 14);
-            this.label97.TabIndex = 269;
-            this.label97.Text = "Freq div";
-            // 
-            // FreqDivBox
-            // 
-            this.FreqDivBox.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.FreqDivBox.Location = new System.Drawing.Point(163, 295);
-            this.FreqDivBox.Margin = new System.Windows.Forms.Padding(1);
-            this.FreqDivBox.Name = "FreqDivBox";
-            this.FreqDivBox.Size = new System.Drawing.Size(40, 20);
-            this.FreqDivBox.TabIndex = 270;
-            this.FreqDivBox.Text = "1";
-            this.FreqDivBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.FreqDivBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
-            // 
             // FLIMageMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -5260,7 +5273,6 @@
         public System.Windows.Forms.TextBox ZStart;
         public System.Windows.Forms.Label st_step;
         public System.Windows.Forms.Label st_um;
-        public System.Windows.Forms.CheckBox BackToStartCheck;
         public System.Windows.Forms.Label label60;
         public System.Windows.Forms.Button Vel_Down;
         public System.Windows.Forms.Button Vel_Up;
@@ -5535,7 +5547,6 @@
         public System.Windows.Forms.Label label6;
         public System.Windows.Forms.TabControl FLIMSetting_tab;
         public System.Windows.Forms.ToolStripMenuItem fastZControlToolStripMenuItem;
-        public System.Windows.Forms.CheckBox BackToCenterCheck;
         public System.Windows.Forms.ToolStripMenuItem imageSeqControlToolStripMenuItem;
         public System.Windows.Forms.Label StatusText;
         public System.Windows.Forms.Label MotorStatus;
@@ -5591,6 +5602,9 @@
         public System.Windows.Forms.Label label96;
         public System.Windows.Forms.Label label97;
         public System.Windows.Forms.TextBox FreqDivBox;
+        private System.Windows.Forms.RadioButton BackToStartRadio;
+        private System.Windows.Forms.RadioButton BackToCenterRadio;
+        private System.Windows.Forms.RadioButton StayMotorRadio;
     }
 }
 

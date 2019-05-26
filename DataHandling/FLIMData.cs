@@ -268,6 +268,18 @@ namespace FLIMage
             //intitializeAll();
         }
 
+        public List<ROI> CopyROIs()
+        {
+            List<ROI> rois = new List<ROI>();
+            foreach (ROI roi1 in ROIs)
+            {
+                var roi_copy = new ROI(roi1);
+                rois.Add(roi_copy);
+            }
+
+            return rois;
+        }
+
         public void loadFittingParamFromState()
         {
             double[] X1 = new double[n_time[0]];
@@ -841,14 +853,16 @@ namespace FLIMage
                     ProjectCalculated[i + 1] = ProjectCalculated[i];
                     FLIMMapCalculated[i + 1] = FLIMMapCalculated[i];
                 }
-                n_pages -= 1;
 
-                Array.Resize(ref Project_Pages, n_pages);
-                Array.Resize(ref LifetimeMapBase_Pages, n_pages);
-                Array.Resize(ref acquiredTime_Pages, n_pages);
-                Array.Resize(ref FLIM_Pages, n_pages);
-                Array.Resize(ref ProjectCalculated, n_pages);
-                Array.Resize(ref FLIMMapCalculated, n_pages);
+                resizePage(n_pages - 1);
+
+                //n_pages -= 1;
+                //Array.Resize(ref Project_Pages, n_pages);
+                //Array.Resize(ref LifetimeMapBase_Pages, n_pages);
+                //Array.Resize(ref acquiredTime_Pages, n_pages);
+                //Array.Resize(ref FLIM_Pages, n_pages);
+                //Array.Resize(ref ProjectCalculated, n_pages);
+                //Array.Resize(ref FLIMMapCalculated, n_pages);
             }
         }
 
@@ -962,6 +976,24 @@ namespace FLIMage
             }
 
             n_pages = n_z;
+        }
+
+        public void resizePage5D(int new_pageN)
+        {
+            n_pages5D = new_pageN;
+            Array.Resize(ref FLIM_Pages5D, new_pageN);
+            Array.Resize(ref acquiredTime_Pages5D, new_pageN);
+        }
+
+        public void resizePage(int new_pageN)
+        {
+            n_pages = new_pageN;
+            Array.Resize(ref acquiredTime_Pages, new_pageN);
+            Array.Resize(ref FLIM_Pages, new_pageN);
+            Array.Resize(ref Project_Pages, new_pageN);
+            Array.Resize(ref LifetimeMapBase_Pages, new_pageN);
+            Array.Resize(ref FLIMMapCalculated, new_pageN);
+            Array.Resize(ref ProjectCalculated, new_pageN);
         }
 
         private void expandPage(int new_n_pages)
@@ -1612,6 +1644,8 @@ namespace FLIMage
         {
             if (FLIM_on[ch])
             {
+                if (LifetimeMap == null)
+                    LifetimeMap = new float[nChannels][][];
                 LifetimeMap[ch] = MatrixCalc.SubtractConstantFromMatrix(LifetimeMapBase[ch], (float)offset[ch]);
                 if (LifetimeMap[ch] == null)
                     return;
@@ -1626,7 +1660,14 @@ namespace FLIMage
             if (fw <= 1)
             {
                 if (FLIM_on[ch])
+                {
+                    if (LifetimeMapF == null)
+                        LifetimeMapF = new float[nChannels][][];
                     LifetimeMapF[ch] = MatrixCalc.MatrixCopy2D<float>(LifetimeMap[ch]);
+                }
+
+                if (ProjectF == null)
+                    ProjectF = new ushort[nChannels][][];
                 ProjectF[ch] = MatrixCalc.MatrixCopy2D<UInt16>(Project[ch]);
             }
 
@@ -1723,7 +1764,7 @@ namespace FLIMage
                     int width1 = img[0].Length;
 
                     //Check if they have the same size. If different size, just calculate intensity.
-                    if (lf_img == null || height1 != lf_img.Length || width1 != lf_img[0].Length) 
+                    if (lf_img == null || height1 != lf_img.Length || width1 != lf_img[0].Length)
                         lf_img = null;
 
                     for (int y = roi.Rect.Top; y < roi.Rect.Bottom; y++)
@@ -2088,8 +2129,10 @@ namespace FLIMage
             Array.Copy(FLIM_Pages5D, initialPage, FLIM_Pages5D, 0, new_pageN);
             Array.Copy(acquiredTime_Pages5D, initialPage, acquiredTime_Pages5D, 0, new_pageN);
 
-            Array.Resize(ref FLIM_Pages5D, new_pageN);
-            Array.Resize(ref acquiredTime_Pages5D, new_pageN);
+            resizePage5D(new_pageN);
+
+            //Array.Resize(ref FLIM_Pages5D, new_pageN);
+            //Array.Resize(ref acquiredTime_Pages5D, new_pageN);
 
             //ushort[][][][] temp_pages = (ushort[][][][])FLIM_Pages5D.Clone();
             //DateTime[] temp_acquiredTime_Pages = (DateTime[])acquiredTime_Pages.Clone();
@@ -2130,12 +2173,15 @@ namespace FLIMage
             Array.Copy(LifetimeMapBase_Pages, initialPage, LifetimeMapBase_Pages, 0, new_pageN);
             Array.Copy(FLIMMapCalculated, initialPage, FLIMMapCalculated, 0, new_pageN);
             Array.Copy(ProjectCalculated, initialPage, ProjectCalculated, 0, new_pageN);
+            Array.Copy(acquiredTime_Pages, initialPage, acquiredTime_Pages, 0, new_pageN);
 
-            Array.Resize(ref FLIM_Pages, new_pageN);
-            Array.Resize(ref Project_Pages, new_pageN);
-            Array.Resize(ref LifetimeMapBase_Pages, new_pageN);
-            Array.Resize(ref FLIMMapCalculated, new_pageN);
-            Array.Resize(ref ProjectCalculated, new_pageN);
+            resizePage(new_pageN);
+
+            //Array.Resize(ref FLIM_Pages, new_pageN);
+            //Array.Resize(ref Project_Pages, new_pageN);
+            //Array.Resize(ref LifetimeMapBase_Pages, new_pageN);
+            //Array.Resize(ref FLIMMapCalculated, new_pageN);
+            //Array.Resize(ref ProjectCalculated, new_pageN);
 
             //ushort[][][] temp_FLIM_page = (ushort[][][])FLIM_Pages.Clone();
             //ushort[][][][] temp_Project_Pages = (ushort[][][][])Project_Pages.Clone();
@@ -2278,11 +2324,11 @@ namespace FLIMage
 
         public void addCurrentToPage5D(bool AddMAP, bool AddToFLIM_Pages, int page)
         {
-            if (page > FLIM_Pages5D.Length)
-                Array.Resize(ref FLIM_Pages5D, page);
+            if (page + 1 > FLIM_Pages5D.Length)
+                Array.Resize(ref FLIM_Pages5D, page + 1);
 
-            if (page > acquiredTime_Pages5D.Length)
-                Array.Resize(ref acquiredTime_Pages5D, page);
+            if (page + 1 > acquiredTime_Pages5D.Length)
+                Array.Resize(ref acquiredTime_Pages5D, page + 1);
 
             if (AddToFLIM_Pages)
             {
@@ -2457,6 +2503,13 @@ namespace FLIMage
         }
 
         //////////////////////////////////////////////////////////////////////////
+
+        public enum FileType
+        {
+            ZStack = 1,
+            TimeCourse = 2,
+            TimeCourse_ZStack = 3,
+        }
 
         public enum Z_Projection
         {

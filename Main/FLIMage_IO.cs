@@ -1,4 +1,7 @@
-﻿using MathLibrary;
+﻿using FLIMage.Analysis;
+using FLIMage.HardwareControls.StageControls;
+using FLIMage.Uncaging;
+using MathLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,9 +11,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using TCSPC_controls;
-using FLIMage.Analysis;
-using FLIMage.HardwareControls.StageControls;
-using FLIMage.Uncaging;
 
 namespace FLIMage
 {
@@ -357,8 +357,8 @@ namespace FLIMage
                     State.Spc.datainfo.syncRate = (int[])parameters.rateInfo.syncRate.Clone();
                     State.Spc.datainfo.countRate = (int[])parameters.rateInfo.countRate.Clone();
 
-                    syncRate1 = State.Spc.datainfo.syncRate[0]/1e6;
-                    syncRate2 = State.Spc.datainfo.syncRate[1]/1e6;
+                    syncRate1 = State.Spc.datainfo.syncRate[0] / 1e6;
+                    syncRate2 = State.Spc.datainfo.syncRate[1] / 1e6;
 
                     if (syncRate1 > State.Acq.ExpectedLaserPulseRate_MHz * 0.9
                         && syncRate1 < State.Acq.ExpectedLaserPulseRate_MHz * 1.1
@@ -424,8 +424,12 @@ namespace FLIMage
             if (FiFo_acquire != null)
             {
                 System.Threading.Thread.Sleep(5);
-                while (!FiFo_acquire.IsCompleted())
+                for (int i = 0; i < 100; i++) // (!FiFo_acquire.IsCompleted())
+                {
                     System.Threading.Thread.Sleep(5);
+                    if (FiFo_acquire.IsCompleted())
+                        break;
+                }
             }
         }
 
@@ -438,7 +442,7 @@ namespace FLIMage
             if (FiFo_acquire == null)
                 return;
 
-            if (use_nidaq)
+            if (use_nidaq && !stopGrabActivated)
             {
                 if (putValue)
                 {
@@ -562,8 +566,11 @@ namespace FLIMage
             FLIMage.SetupFLIMParameters(); //this will setup parameters for FLIM card..
 
             //Initialize FLIM_ImgData and fileIO, that reflects State.
-            if (FLIMage.fastZcontrol != null)
-                FLIMage.fastZcontrol.ControlsDuringScanning(true);
+            //if (FLIMage.fastZcontrol != null)
+            FLIMage.fastZcontrol?.Invoke((Action)delegate
+                {
+                    FLIMage.fastZcontrol.ControlsDuringScanning(true);
+                });
 
             List<ROI> ROIs = FLIM_ImgData.ROIs;
             FLIM_ImgData.InitializeData(State);
@@ -571,8 +578,11 @@ namespace FLIMage
             fileIO = new FileIO(State);
 
 
-            FLIMage.image_display.SetupRealtimeImaging(State, FLIM_ImgData);
-            FLIMage.image_display.SetFastZModeDisplay(State.Acq.fastZScan);
+            FLIMage.image_display.Invoke((Action)delegate
+            {
+                FLIMage.image_display.SetupRealtimeImaging(State, FLIM_ImgData);
+                FLIMage.image_display.SetFastZModeDisplay(State.Acq.fastZScan);
+            });
 
             Power_putEOMValues(false);
             runningImgAcq = true;
@@ -603,7 +613,10 @@ namespace FLIMage
 
             }
 
-            FLIMage.StarGrab_GUI_Update(focus);
+            FLIMage.Invoke((Action)delegate
+            {
+                FLIMage.StarGrab_GUI_Update(focus);
+            });
 
             force_stop = false;
             FLIMSaveBuffer.Clear();
@@ -766,7 +779,7 @@ namespace FLIMage
             {
                 if (FLIMage.InvokeRequired)
                 {
-                    FLIMage.BeginInvoke((Action)delegate
+                    FLIMage.Invoke((Action)delegate
                     {
                         FLIMage.StopFocus_GUI_Update();
                     });
@@ -780,7 +793,7 @@ namespace FLIMage
             {
                 if (FLIMage.InvokeRequired)
                 {
-                    FLIMage.BeginInvoke((Action)delegate
+                    FLIMage.Invoke((Action)delegate
                     {
                         FLIMage.StopGrab_GUI_Update();
                     });
@@ -998,7 +1011,7 @@ namespace FLIMage
 
             waitingImageTask = true;
 
-            FLIMage.BeginInvoke((Action)delegate ()
+            FLIMage.Invoke((Action)delegate ()
             {
                 FLIMage.FocusButtonEnable(true);
             });
@@ -1064,8 +1077,10 @@ namespace FLIMage
             {
                 if (FLIMage.fastZcontrol != null)
                 {
+                    //BeginInvoke is correct.
                     FLIMage.fastZcontrol.BeginInvoke((Action)delegate
                     {
+                        FLIMage.fastZcontrol.Enabled = true;
                         FLIMage.fastZcontrol.CalculateFastZParameters();
                     });
                 }
@@ -1151,7 +1166,7 @@ namespace FLIMage
 
                 FLIMage.DisplaySnapShot();
 
-                FLIMage.BeginInvoke((Action)delegate
+                FLIMage.Invoke((Action)delegate
                 {
                     FLIMage.SetParametersFromState(true);
                 });
@@ -1684,7 +1699,7 @@ namespace FLIMage
             internalFrameCounter++;
 
             //Update GUI. We are in different thread from main window. So, we will evoke it.
-            FLIMage.BeginInvoke((Action)delegate
+            FLIMage.Invoke((Action)delegate
              {
                  FLIMage.UpdateCounters();
              });
@@ -1735,7 +1750,7 @@ namespace FLIMage
 
                 FLIMSaveBuffer.Clear();
 
-                FLIMage.BeginInvoke((Action)delegate
+                FLIMage.Invoke((Action)delegate
                 {
                     FLIMage.UpdateMeasuredSliceInterval();
                 });
@@ -1778,7 +1793,7 @@ namespace FLIMage
 
                         if (FLIMage.analyzeAfterEachAcquisiiton)
                         {
-                            image_display.BeginInvoke((Action)delegate
+                            image_display.Invoke((Action)delegate
                             {
                                 image_display.plot_regular.Show();
                                 image_display.plot_regular.Activate();

@@ -1822,7 +1822,7 @@ namespace FLIMage.Analysis
                 }
                 sb.AppendLine();
             }
-           
+
             if (roi.ROI_type == ROI.ROItype.Elipsoid || roi.ROI_type == ROI.ROItype.Rectangle)
             {
                 sb.Append("Rect,");
@@ -2463,33 +2463,35 @@ namespace FLIMage.Analysis
         private void Auto_contrast() //Does not handle any graphics.
         {
             MapStateIntensityRange();
-            //for (int cl = 0; cl < State_intensity_range.Length; cl++)
-            for (int cl = 0; cl < FLIM_ImgData.nChannels; cl++)
+
+            int cl = currentChannel;
+
+            //for (int cl = 0; cl < FLIM_ImgData.nChannels; cl++)
+            //{
+            if (FLIM_ImgData.Project[cl] != null)
             {
-                if (FLIM_ImgData.Project[cl] != null)
-                {
-                    State_intensity_range[cl][1] = ImageProcessing.GetMaxInt(FLIM_ImgData.Project[cl]);
-                    State_intensity_range[cl][0] = 0;
-                }
-                else
-                {
-                    State_intensity_range[cl][1] = 2;
-                    State_intensity_range[cl][0] = 0;
-                }
-
-                if (State_intensity_range[cl][1] < 2)
-                    State_intensity_range[cl][1] = 2;
-
-                if (State_intensity_range[cl][0] >= State_intensity_range[cl][1])
-                    State_intensity_range[cl][0] = State_intensity_range[cl][1] - 1;
-
-                State_FLIM_intensity_range[cl][1] = Math.Ceiling(State_intensity_range[cl][1] * 0.5); //Calculate from maximum intensity.
-                State_FLIM_intensity_range[cl][0] = Math.Round(State_intensity_range[cl][1] * 0.15);
-                if (State_FLIM_intensity_range[cl][1] < 2)
-                    State_FLIM_intensity_range[cl][1] = 2;
-                if (State_FLIM_intensity_range[cl][0] < 2)
-                    State_FLIM_intensity_range[cl][0] = 0.2;
+                State_intensity_range[cl][1] = ImageProcessing.GetMaxInt(FLIM_ImgData.Project[cl]);
+                State_intensity_range[cl][0] = 0;
             }
+            else
+            {
+                State_intensity_range[cl][1] = 2;
+                State_intensity_range[cl][0] = 0;
+            }
+
+            if (State_intensity_range[cl][1] < 2)
+                State_intensity_range[cl][1] = 2;
+
+            if (State_intensity_range[cl][0] >= State_intensity_range[cl][1])
+                State_intensity_range[cl][0] = State_intensity_range[cl][1] - 1;
+
+            State_FLIM_intensity_range[cl][1] = Math.Ceiling(State_intensity_range[cl][1] * 0.5); //Calculate from maximum intensity.
+            State_FLIM_intensity_range[cl][0] = Math.Round(State_intensity_range[cl][1] * 0.15);
+            if (State_FLIM_intensity_range[cl][1] < 2)
+                State_FLIM_intensity_range[cl][1] = 2;
+            if (State_FLIM_intensity_range[cl][0] < 2)
+                State_FLIM_intensity_range[cl][0] = 0.2;
+            //}
 
             for (int ch = 0; ch < FLIM_ImgData.nChannels; ch++)
                 SaveIntensity_Range(ch, true);
@@ -3058,7 +3060,10 @@ namespace FLIMage.Analysis
                                     fileIO.Save2DImageInTiff(filePathIntensity, FLIM_ImgData.Project[ch], FLIM_ImgData.acquiredTime, overwrite, saveCh);
 
                                     if (FLIM_ImgData.FLIM_on[ch])
-                                        fileIO.SaveColorImageInTiff(filePathFLIM, FLIMBitmap, FLIM_ImgData.acquiredTime, overwrite, saveCh);
+                                    {
+                                        Bitmap bm = ImageProcessing.FormatImageFLIM(FLIM_ImgData.width, FLIM_ImgData.height, State_FLIM_intensity_range[ch], State_FLIM_lifetime_range[ch], FLIM_ImgData.LifetimeMapF[ch], FLIM_ImgData.ProjectF[ch], false);
+                                        fileIO.SaveColorImageInTiff(filePathFLIM, bm, FLIM_ImgData.acquiredTime, overwrite, saveCh);
+                                    }
 
                                     if (StopFileOpening && !FastZStack)
                                         break;
@@ -3105,6 +3110,11 @@ namespace FLIMage.Analysis
 
         private void saveFLIMImageToolStripMenuItem1_Click(object sender, EventArgs e)
         {
+            SaveFLIM();
+        }
+
+        private void SaveFLIM()
+        {
             FileIO fileIO = new FileIO(FLIM_ImgData.State);
             FLIM_ImgData.fullName(currentChannel, false);
             String fileName = FLIM_ImgData.fileName + ".flim";
@@ -3146,7 +3156,6 @@ namespace FLIMage.Analysis
                 }
             }
         }
-
 
 
 
@@ -3241,9 +3250,19 @@ namespace FLIMage.Analysis
         {
             string[] fileNames = FLIMfilesInDirectory(false);
 
+            string filenameTail = "_ALL";
+
             TurnOffDuringOpeningProc(false); //Turn on stop opening button and turn off control buttons for safety.
 
             FLIMData flim_data = new FLIMData(FLIM_ImgData.State);
+
+            flim_data.baseName = FLIM_ImgData.baseName;
+            flim_data.ROIs = FLIM_ImgData.CopyROIs();
+
+            FLIMData.FileType file_type = FLIMData.FileType.TimeCourse;
+
+            if (FLIM_ImgData.nFastZ > 1 || FLIM_ImgData.ZStack)
+                file_type = FLIMData.FileType.TimeCourse_ZStack;
 
             FLIM_ImgData.KeepPagesInMemory = true;
             flim_data.KeepPagesInMemory = true;
@@ -3253,34 +3272,61 @@ namespace FLIMage.Analysis
             if (fileNames == null)
                 return;
 
+            if (!FLIM_ImgData.numberedFile)
+            {
+                MessageBox.Show("Only numbered file works for this");
+                return;
+            }
+
             foreach (String fileName in fileNames)
             {
-                if (!StopFileOpening)
+                var fileNameWithoutPath = Path.GetFileNameWithoutExtension(fileName);
+                var fileNum = fileNameWithoutPath.Substring(FLIM_ImgData.baseName.Length);
+                
+                if (Int32.TryParse(fileNum, out int n))
                 {
-                    //Either stack or current page.
-                    OpenFLIM(fileName, false);
-
-                    if (ZStack || FastZStack)
+                    if (!StopFileOpening)
                     {
-                        flim_data.FLIMRaw = FLIM_ImgData.FLIMRaw;
-                        flim_data.addCurrentFLIMRawToPage4D(true, true, FileN);
-                        FileN++;
+                        //Either stack or current page.
+                        OpenFLIM(fileName, false);
+                        bool fast_zThis = FLIM_ImgData.nFastZ > 1;
+                        bool z_stackThis = FLIM_ImgData.ZStack;
+
+                        if (file_type == FLIMData.FileType.TimeCourse_ZStack)
+                        {
+                            if (fast_zThis)
+                            {
+                                for (int p = 0; p < FLIM_ImgData.n_pages5D; p++)
+                                {
+                                    flim_data.FLIMRaw5D = FLIM_ImgData.FLIM_Pages5D[p];
+                                    flim_data.addCurrentToPage5D(true, true, FileN);
+                                    FileN++;
+                                }
+                            }
+                            
+                            else if (z_stackThis)
+                            {
+                                flim_data.Add_AllFLIM_PageFormat_To_FLIM_Pages5D(FLIM_ImgData.FLIM_Pages, FLIM_ImgData.acquiredTime, FileN);
+                                FileN++;
+                            }
+
+                        }
+                        else if (file_type == FLIMData.FileType.TimeCourse && !fast_zThis && !z_stackThis)
+                        {
+                            var flim_pages = MatrixCalc.MatrixCopy3D<ushort>(FLIM_ImgData.FLIM_Pages);
+                            var acquiredTime_page = (DateTime[])FLIM_ImgData.acquiredTime_Pages.Clone();
+
+                            for (int i = 0; i < FLIM_ImgData.FLIM_Pages.Length; i++)
+                            {
+                                flim_data.PutToPageAndCalculate(flim_pages[i], acquiredTime_page[i], true, true, FileN);
+                                FileN++;
+                            }
+                        }
+                        Application.DoEvents();
                     }
                     else
-                    {
-                        var flim_pages = MatrixCalc.MatrixCopy3D<ushort>(FLIM_ImgData.FLIM_Pages);
-                        var acquiredTime_page = (DateTime[])FLIM_ImgData.acquiredTime_Pages.Clone();
-
-                        for (int i = 0; i < FLIM_ImgData.FLIM_Pages.Length; i++)
-                        {
-                            flim_data.PutToPageAndCalculate(flim_pages[i], acquiredTime_page[i], true, true, FileN);
-                            FileN++;
-                        }
-                    }
-                    Application.DoEvents();
+                        break;
                 }
-                else
-                    break;
             }
 
             FLIM_ImgData = flim_data;
@@ -3289,10 +3335,102 @@ namespace FLIMage.Analysis
             //UpdateImages(true, false, false, true, true);
 
             FLIM_ImgData.fileCounter = 0;
-            FLIM_ImgData.baseName = FLIM_ImgData.baseName + "_ALL";
+            FLIM_ImgData.baseName = FLIM_ImgData.baseName + filenameTail;
+            FLIM_ImgData.State.Files.baseName = FLIM_ImgData.baseName + filenameTail;
             FLIM_ImgData.numberedFile = false;
 
             TurnOffDuringOpeningProc(true);
+
+            if (FLIM_ImgData.nFastZ <= 1)
+                GotoPage4D(0);
+            else
+                GotoPage5D(0);
+
+            UpdateImages(true, realtime, focusing, true, true);
+            SaveFLIM();
+
+        }
+
+        private void timeBinningToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            int binning = 5;
+
+            var h = Microsoft.VisualBasic.Interaction.InputBox("Time binning factor", "Binning", "4");
+
+            if (!Int32.TryParse(h, out binning))
+            {
+                return;
+            }
+
+            if (binning < 1 || binning > FLIM_ImgData.n_pages)
+            {
+                MessageBox.Show("Binnig factor needs to be > 0 and < #pages (" + FLIM_ImgData.n_pages + ")");
+                return;
+            }
+
+
+
+            TurnOffDuringOpeningProc(false);
+
+            if (FLIM_ImgData.nFastZ > 1)
+            {
+                int finalPageSize = FLIM_ImgData.n_pages5D / binning;
+                for (int i = 0; i < finalPageSize; i++)
+                {
+                    ushort[][][] ave = FLIM_ImgData.FLIM_Pages5D[i * binning]; //This is linearized!
+
+                    for (int j = 1; j < binning; j++)
+                    {
+                        for (int ch = 0; ch < FLIM_ImgData.nChannels; ch++)
+                            for (int z = 0; z < FLIM_ImgData.nFastZ; z++)
+                                MatrixCalc.ArrayCalc(ave[ch][z], FLIM_ImgData.FLIM_Pages5D[i * binning + j][ch][z], "Add");
+                    }
+
+                    for (int ch = 0; ch < FLIM_ImgData.nChannels; ch++)
+                        for (int z = 0; z < FLIM_ImgData.nFastZ; z++)
+                            Array.Copy(ave[ch][z], FLIM_ImgData.FLIM_Pages5D[i][ch][z], ave[ch][z].Length);
+
+                    GotoPage5D(i * binning);
+                    FLIM_ImgData.calculateAll();
+
+                    //GotoPage(i);
+                    UpdateImages(false, false, false, false);
+                }
+
+                FLIM_ImgData.resizePage5D(finalPageSize);
+                GotoPage5D(0);
+            }
+            else
+            {
+                int finalPageSize = FLIM_ImgData.n_pages / binning;
+
+                for (int i = 0; i < finalPageSize; i++)
+                {
+                    ushort[][] ave = FLIM_ImgData.FLIM_Pages[i * binning];
+
+                    for (int j = 1; j < binning; j++)
+                    {
+                        for (int ch = 0; ch < FLIM_ImgData.nChannels; ch++)
+                            MatrixCalc.ArrayCalc(ave[ch], FLIM_ImgData.FLIM_Pages[i * binning + j][ch], "Add");
+                    }
+
+                    for (int ch = 0; ch < FLIM_ImgData.nChannels; ch++)
+                        Array.Copy(ave[ch], FLIM_ImgData.FLIM_Pages[i][ch], ave[ch].Length);
+
+                    GotoPage4D(i);
+                    FLIM_ImgData.calculateAll();
+
+                    //GotoPage(i);
+                    UpdateImages(false, false, false, false);
+                }
+
+                FLIM_ImgData.resizePage(finalPageSize);
+                GotoPage4D(0);
+            }
+
+            TurnOffDuringOpeningProc(true);
+
+            UpdateImages(true, false, false, true, true);
         }
 
         private void deleteCurrentPageToolStripMenuItem_Click(object sender, EventArgs e)
@@ -5545,7 +5683,6 @@ namespace FLIMage.Analysis
 
             return filename;
         }
-
 
         public void PostImageUserFunction()
         {

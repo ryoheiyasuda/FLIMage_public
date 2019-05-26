@@ -202,8 +202,11 @@ namespace FLIMage.Plotting
                 }
 
                 int currentRoi = image_display.FLIM_ImgData.currentRoi;
-                if (currentRoi >= 0)
+
+                if (currentRoi >= 0 && image_display.FLIM_ImgData.ROIs.Count > currentRoi)
                     currentRoi = image_display.FLIM_ImgData.ROIs[currentRoi].ID - 1;
+                else
+                    currentRoi = -1;
 
                 Pen currentRoiPen = new Pen(Brushes.Red, 1);
                 double[] currentCurve = null;
