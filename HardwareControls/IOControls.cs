@@ -2598,30 +2598,18 @@ namespace FLIMage
 
                 for (int j = 0; j < NLines - 1; j += 2) //Even
                 {
-                    //for (int i = 0; i < nSamplesXScan; i++)
-                    //    mirrorOutput[0, i + j * nSamplesX] = ((double)i / (double)nSamplesX - 0.5) * MaxVX;
-
-                    //for (int i = nSamplesXScan; i < nSamplesX; i++)
-                    //    mirrorOutput[0, i + j * nSamplesX] = ((double)(2 * nSamplesX - i) / (double)nSamplesX - 0.5) * MaxVX;
-
                     for (int i = 0; i < nSamplesX; i++)
                         mirrorOutput[0, i + j * nSamplesX] = ((double)i / (double)nSamplesX - 0.5) * MaxVX;
                 }
 
-                for (int j = 1; j < NLines; j += 2) //Add
+                for (int j = 1; j < NLines; j += 2) //Odd
                 {
-                    //for (int i = 0; i < nSamplesXScan; i++)
-                    //    mirrorOutput[0, i + j * nSamplesX] = ((double)(nSamplesX - i) / (double)nSamplesX - 0.5) * MaxVX;
-
-                    //for (int i = nSamplesXScan; i < nSamplesX; i++)
-                    //    mirrorOutput[0, i + j * nSamplesX] = ((double)(-nSamplesX + i) / (double)nSamplesX - 0.5) * MaxVX;
-
                     for (int i = 0; i < nSamplesX; i++)
                         mirrorOutput[0, i + j * nSamplesX] = ((double)(nSamplesX - i) / (double)nSamplesX - 0.5) * MaxVX;
                 }
 
             }
-            else
+            else //Normal scanning
             {
                 nSamplesXScan = (int)(nSamplesX * State.Acq.scanFraction);
 
@@ -2633,9 +2621,11 @@ namespace FLIMage
                     }
                     for (int i = nSamplesXScan; i < nSamplesX; i++)
                     {
-                        //mirrorOutput[0, i + j * nSamplesX] = ((double)(nSamplesX - i) / (double)nSamplesXFB - 0.5) * MaxVX;
-                        mirrorOutput[0, i + j * nSamplesX] = ((double)(i - nSamplesX) / (double)nSamplesXScan - 0.5) * MaxVX;
-                        //jump to -0.5, and then move forward just like scanning. Maybe not good.....
+                        mirrorOutput[0, i + j * nSamplesX] = ((double)(nSamplesX - i) / (double)nSamplesXFB - 0.5) * MaxVX;
+
+
+                        //mirrorOutput[0, i + j * nSamplesX] = ((double)(i - nSamplesX) / (double)nSamplesXScan - 0.5) * MaxVX;
+                        //This protocol jumps to -0.5, and then move forward just like scanning. Maybe not good.....
                     }
                 }
             }//Bidirectional

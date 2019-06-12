@@ -1006,25 +1006,28 @@ namespace FLIMage
                 }
 
 
-                if (State.Acq.ZStack && use_motor)
+                if (State.Acq.ZStack && State.Acq.nSlices > 1 && use_motor)
                 {
-                    if (BackToCenterRadio.Checked)
+                    if (motorCtrl.stack_Position != MotorCtrl.StackPosition.Undefined)
                     {
-                        if (motorCtrl.stack_Position == MotorCtrl.StackPosition.Center)
+                        if (BackToCenterRadio.Checked)
                         {
-                            Set_Center_Click(Set_Center, null);
-                            MoveMotorFromCenterToStart();
+                            if (motorCtrl.stack_Position == MotorCtrl.StackPosition.Center)
+                            {
+                                Set_Center_Click(Set_Center, null);
+                                MoveMotorFromCenterToStart();
+                            }
+                            else
+                                MoveMotorBackToStart();
                         }
-                        else
-                            MoveMotorBackToStart();
-                    }
 
-                    if (BackToStartRadio.Checked)
-                    {
-                        if (motorCtrl.stack_Position == MotorCtrl.StackPosition.Start)
-                            Set_Top_Click(Set_Top, null); //Set the start position.
-                        else
-                            MoveMotorBackToStart();
+                        if (BackToStartRadio.Checked)
+                        {
+                            if (motorCtrl.stack_Position == MotorCtrl.StackPosition.Start)
+                                Set_Top_Click(Set_Top, null); //Set the start position.
+                            else
+                                MoveMotorBackToStart();
+                        }
                     }
                 }
 
@@ -1309,7 +1312,7 @@ namespace FLIMage
                     {
                         if (!Double.TryParse(ScanFraction.Text, out scanFraction1)) scanFraction1 = State.Acq.scanFraction;
 
-                        if (scanFraction1 > State.Acq.fillFraction && scanFraction1 > 0.5 && scanFraction1 < 0.99)
+                        if (scanFraction1 > State.Acq.fillFraction && scanFraction1 > 0.5 && scanFraction1 <= 0.99)
                         {
                             State.Acq.scanFraction = scanFraction1;
                         }
@@ -1329,7 +1332,7 @@ namespace FLIMage
                     else if (sdr.Equals(FillFraction))
                     {
                         if (!Double.TryParse(FillFraction.Text, out fillFraction1)) fillFraction1 = State.Acq.fillFraction;
-                        if (fillFraction1 < 0.99 && fillFraction1 > 0.5 && fillFraction1 < State.Acq.scanFraction)
+                        if (fillFraction1 <= 0.99 && fillFraction1 > 0.5 && fillFraction1 < State.Acq.scanFraction)
                         {
                             State.Acq.fillFraction = fillFraction1;
                             //State.Acq.ScanDelay = State.Acq.msPerLine * (State.Acq.scanFraction - State.Acq.fillFraction);
