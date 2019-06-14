@@ -709,7 +709,7 @@ namespace FLIMage.FlowControls
                     }
                 case "GetCurrentPosition":
                     {
-                        motorCtrl.GetPosition(true);
+                        motorCtrl.GetPosition();
                         double[] motorPos = motorCtrl.getCalibratedAbsolutePosition();
                         writeString = String.Format("CurrentPosition, {0}, {1}, {2}", motorPos[0], motorPos[1], motorPos[2]);
                         cm = CommandMode.Get_Parameter;

@@ -44,7 +44,7 @@ namespace FLIMage.HardwareControls.StageControls
 
             motor_flowLayoutPanel.Controls.Add(newButton);
 
-            motorCtrl.GetPosition(true);
+            motorCtrl.GetPosition();
             SelectPosition.Items.Add(newButton.Name);
             double[] motor_pos = new double[N_Coordinate];
             motor_pos[0] = motorCtrl.XPos;

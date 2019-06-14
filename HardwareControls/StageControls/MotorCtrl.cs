@@ -11,9 +11,9 @@ namespace FLIMage.HardwareControls.StageControls
 {
     public class MotorCtrl
     {
-        MotorCtrl_MP285 mp285;
         MotorCtrl_MP285A mp285a;
         ThorMCMX000 thorMCMX000;
+        MotorCtrl_ThorMCM3001 thorMCM3001;
 
         public event MotorHandler MotH;
         public MotrEventArgs e = new MotrEventArgs("");
@@ -61,6 +61,7 @@ namespace FLIMage.HardwareControls.StageControls
         public bool freezing = false;
 
         public bool continuous_read = true;
+        public bool connected = true;
 
         public MotorTypeEnum MotorType;
         public String tString;//
@@ -72,21 +73,29 @@ namespace FLIMage.HardwareControls.StageControls
 
         public MotorCtrl(String MotorType_in, String Comport, double[] resolution, double[] velocity, double[] steps)
         {
-            if (MotorType_in == "MP-285")
-            {
-                MotorType = MotorTypeEnum.mp285;
-                mp285 = new MotorCtrl_MP285(Comport, resolution, (int)velocity[0]);
-                mp285.MotH += new MotorCtrl_MP285.MotorHandler(MotorListener);
-                resolution = mp285.GetResolution();
-                controller_object = mp285;
-            }
-            else if (MotorType_in == "MP-285A")
+            if (MotorType_in == "MP-285" || MotorType_in == "MP285")
             {
                 MotorType = MotorTypeEnum.mp285a;
-                mp285a = new MotorCtrl_MP285A(Comport, resolution, (int)velocity[0]);
-                mp285a.MotH += new MotorCtrl_MP285A.MotorHandler(MotorListenerA);
-                resolution = mp285a.GetResolution();
-                controller_object = mp285a;
+                mp285a = new MotorCtrl_MP285A(Comport, resolution, (int)velocity[0], false);
+                connected = mp285a.connected;
+                if (mp285a.connected)
+                {
+                    mp285a.MotH += new MotorCtrl_MP285A.MotorHandler(MotorListenerA);
+                    resolution = mp285a.GetResolution();
+                    controller_object = mp285a;
+                }
+            }
+            else if (MotorType_in == "MP-285A" || MotorType_in == "MP285A")
+            {
+                MotorType = MotorTypeEnum.mp285a;
+                mp285a = new MotorCtrl_MP285A(Comport, resolution, (int)velocity[0], true);
+                connected = mp285a.connected;
+                if (mp285a.connected)
+                {
+                    mp285a.MotH += new MotorCtrl_MP285A.MotorHandler(MotorListenerA);
+                    resolution = mp285a.GetResolution();
+                    controller_object = mp285a;
+                }
             }
             else if (MotorType_in == "ThorMCM3000" || MotorType_in == "ThorMCM5000" || MotorType_in == "ThorBScope")
             {
@@ -95,9 +104,25 @@ namespace FLIMage.HardwareControls.StageControls
                     MotorType = MotorTypeEnum.thorMCM5000;
 
                 thorMCMX000 = new ThorMCMX000(resolution, MotorType);
-                thorMCMX000.MotH += new ThorMCMX000.MotorHandler(MotorListenerThor3000);
-                resolution = thorMCMX000.GetResolution();
-                controller_object = thorMCMX000;
+                connected = thorMCMX000.connected;
+                if (connected)
+                {
+                    thorMCMX000.MotH += new ThorMCMX000.MotorHandler(MotorListenerThorX000);
+                    resolution = thorMCMX000.GetResolution();
+                    controller_object = thorMCMX000;
+                }
+            }
+            else if (MotorType_in.Contains("ThorMCM300") || MotorType_in == "ThorBScopeD")
+            {
+                MotorType = MotorTypeEnum.thorMCM3001;
+                thorMCM3001 = new MotorCtrl_ThorMCM3001(Comport, resolution, MotorType_in);
+                connected = thorMCM3001.connected;
+                if (connected)
+                {
+                    thorMCM3001.MotH += new MotorCtrl_ThorMCM3001.MotorHandler(MotorListenerThor3001);
+                    resolution = thorMCM3001.GetResolution();
+                    controller_object = thorMCM3001;
+                }
             }
 
 
@@ -105,26 +130,26 @@ namespace FLIMage.HardwareControls.StageControls
             resolutionY = resolution[1];
             resolutionZ = resolution[2];
 
-            GetPosition(true);
+            GetPosition();
             Zero_All();
 
             XYStep = steps[0];
             ZStep = steps[2];
         }
 
-
-        public void MotorListener(MotorCtrl_MP285 m, MotrEventArgs e)
-        {
-            getParameters();
-            MotH?.Invoke(this, e);
-        }
         public void MotorListenerA(MotorCtrl_MP285A m, MotrEventArgs e)
         {
             getParameters();
             MotH?.Invoke(this, e);
         }
 
-        public void MotorListenerThor3000(ThorMCMX000 th, MotrEventArgs e)
+        public void MotorListenerThorX000(ThorMCMX000 th, MotrEventArgs e)
+        {
+            getParameters();
+            MotH?.Invoke(this, e);
+        }
+
+        public void MotorListenerThor3001(MotorCtrl_ThorMCM3001 th, MotrEventArgs e)
         {
             getParameters();
             MotH?.Invoke(this, e);
@@ -148,14 +173,7 @@ namespace FLIMage.HardwareControls.StageControls
 
         public void getVelocity()
         {
-            if (MotorType == MotorTypeEnum.mp285)
-            {
-                velocity[0] = mp285.velocity_coarse;
-                maxVelocity[0] = mp285.maxVelocity;
-                minVelocity[0] = mp285.minVelocity;
-                tString = mp285.tString;
-            }
-            else if (MotorType == MotorTypeEnum.mp285a)
+            if (MotorType == MotorTypeEnum.mp285a)
             {
                 velocity[0] = mp285a.velocity_coarse;
                 maxVelocity[0] = mp285a.maxVelocity;
@@ -164,13 +182,17 @@ namespace FLIMage.HardwareControls.StageControls
             }
             else
             {
-                velocity = (double[])controller_object.GetType().GetField("velocity").GetValue(controller_object);
-                maxVelocity = (double[])controller_object.GetType().GetField("maxVelocity").GetValue(controller_object);
-                minVelocity = (double[])controller_object.GetType().GetField("minVelocity").GetValue(controller_object);
                 tString = (String)controller_object.GetType().GetField("tString").GetValue(controller_object);
             }
+            //else
+            //{
+            //    velocity = (double[])controller_object.GetType().GetField("velocity").GetValue(controller_object);
+            //    maxVelocity = (double[])controller_object.GetType().GetField("maxVelocity").GetValue(controller_object);
+            //    minVelocity = (double[])controller_object.GetType().GetField("minVelocity").GetValue(controller_object);
+            //    tString = (String)controller_object.GetType().GetField("tString").GetValue(controller_object);
+            //}
         }
-        
+
 
         public void getParameters()
         {
@@ -236,13 +258,13 @@ namespace FLIMage.HardwareControls.StageControls
 
         public void Zero_Z()
         {
-            GetPosition(true);
+            GetPosition();
             ZRefPos = ZPos;
         }
 
         public void Zero_All()
         {
-            GetPosition(true);
+            GetPosition();
             XRefPos = XPos;
             YRefPos = YPos;
             ZRefPos = ZPos;
@@ -253,33 +275,28 @@ namespace FLIMage.HardwareControls.StageControls
             controller_object.GetType().GetMethod("WaitUntilMovementDone").Invoke(controller_object, null);
         }
 
-        public void GetStatus(bool block)
+        public void GetStatus()
         {
-            if (MotorType == MotorTypeEnum.mp285)
+            if (MotorType == MotorTypeEnum.mp285a)
             {
-                mp285.GetStatus(block);
-            }
-            else if (MotorType == MotorTypeEnum.mp285a)
-            {
-                mp285a.GetStatus(block);
+                mp285a.GetStatus();
                 velocity[0] = mp285a.velocity_coarse;
-            }
-
-            if (MotorType == MotorTypeEnum.thorMCM3000 || MotorType == MotorTypeEnum.thorMCM5000)
-            {
-                velocity = thorMCMX000.GetStatus(block);
-                block = true;
-            }
-
-            if (block)
-                getParameters();
+            }            
+            getParameters();
         }
 
-        public void GetPosition(bool block)
+        public void GetPosition()
         {
-            controller_object.GetType().GetMethod("GetPosition").Invoke(controller_object, new object[] { block, true });
-            if (block || MotorType == MotorTypeEnum.thorMCM3000 || MotorType == MotorTypeEnum.thorMCM5000)
-                getParameters();
+            try
+            {
+                controller_object.GetType().GetMethod("GetPosition").Invoke(controller_object, null);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("MotorCtrl.GetPosition Invocation error: " + ex);
+            }
+            //if (block || MotorType == MotorTypeEnum.thorMCM3000 || MotorType == MotorTypeEnum.thorMCM5000)
+            getParameters();
         }
 
         public void IfStepTooBig(bool warningOn)
@@ -294,7 +311,14 @@ namespace FLIMage.HardwareControls.StageControls
 
             if ((StepSizeZ > maxStepZ || StepSizeX > maxStepXY || StepSizeY > maxStepXY) && warningOn)
             {
-                DialogResult dr = MessageBox.Show("Move more than " + StepSizeZ + "um in Z, Are you sure?", "", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                DialogResult dr;
+                if (StepSizeZ > maxStepZ)
+                    dr = MessageBox.Show("Moving a big step of " + StepSizeZ + "um in Z, Are you sure?", "", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                else if (StepSizeY > maxStepXY)
+                    dr = MessageBox.Show("Moving a big step of " + StepSizeY + "um in Y, Are you sure?", "", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                else
+                    dr = MessageBox.Show("Moving a big step of " + StepSizeX + "um in X, Are you sure?", "", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
                 if (dr == DialogResult.No)
                     return;
             }
@@ -316,18 +340,14 @@ namespace FLIMage.HardwareControls.StageControls
         public void SetVelocity(double[] value)
         {
             velocity = value;
-            if (MotorType == MotorTypeEnum.mp285)
-            {
-                mp285.SetVelocity((int)value[0]);
-            }
-            else if (MotorType == MotorTypeEnum.mp285a)
+            if (MotorType == MotorTypeEnum.mp285a)
             {
                 mp285a.SetVelocity((int)value[0]);
             }
-            else if (MotorType == MotorTypeEnum.thorMCM3000 || MotorType == MotorTypeEnum.thorMCM5000) //NOT implemented yet.
-            {
-                thorMCMX000.SetVelocity(value);
-            }
+            //else if (MotorType == MotorTypeEnum.thorMCM3000 || MotorType == MotorTypeEnum.thorMCM5000) //NOT implemented yet.
+            //{
+            //    thorMCMX000.SetVelocity(value);
+            //}
         }
 
         /// <summary>
@@ -367,9 +387,9 @@ namespace FLIMage.HardwareControls.StageControls
 
         public enum MotorTypeEnum
         {
-            mp285 = 1,
-            mp285a = 2,
-            thorMCM3000 = 3,
+            mp285a = 1,
+            thorMCM3000 = 2,
+            thorMCM3001 = 3,
             thorMCM5000 = 4,
         }
 

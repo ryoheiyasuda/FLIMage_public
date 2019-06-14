@@ -37,11 +37,19 @@
             this.label2 = new System.Windows.Forms.Label();
             this.PMTEnableCB = new System.Windows.Forms.CheckBox();
             this.PMTGain2 = new System.Windows.Forms.TextBox();
-            this.Camera2Pswitch = new System.Windows.Forms.GroupBox();
-            this.TwoPhotonRadio = new System.Windows.Forms.RadioButton();
-            this.CameraRadio = new System.Windows.Forms.RadioButton();
+            this.GalvoPanel = new System.Windows.Forms.GroupBox();
+            this.GalvoOnRadio = new System.Windows.Forms.RadioButton();
+            this.GalvoOffRadio = new System.Windows.Forms.RadioButton();
+            this.ResGalvoPanel = new System.Windows.Forms.GroupBox();
+            this.ResGalvoOnRadio = new System.Windows.Forms.RadioButton();
+            this.ResGalvoOffPanel = new System.Windows.Forms.RadioButton();
+            this.CameraPanel = new System.Windows.Forms.GroupBox();
+            this.CameraOnRadio = new System.Windows.Forms.RadioButton();
+            this.CameraOffRadio = new System.Windows.Forms.RadioButton();
             this.PMTPanel.SuspendLayout();
-            this.Camera2Pswitch.SuspendLayout();
+            this.GalvoPanel.SuspendLayout();
+            this.ResGalvoPanel.SuspendLayout();
+            this.CameraPanel.SuspendLayout();
             this.SuspendLayout();
             // 
             // PMTGain1
@@ -50,7 +58,7 @@
             this.PMTGain1.Name = "PMTGain1";
             this.PMTGain1.Size = new System.Drawing.Size(44, 20);
             this.PMTGain1.TabIndex = 0;
-            this.PMTGain1.Text = "800";
+            this.PMTGain1.Text = "480";
             this.PMTGain1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
             // label1
@@ -58,9 +66,9 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(21, 27);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(112, 13);
+            this.label1.Size = new System.Drawing.Size(106, 13);
             this.label1.TabIndex = 2;
-            this.label1.Text = "PMT Gain 1 (1 - 1000)";
+            this.label1.Text = "PMT Gain 1 (1 - 510)";
             // 
             // PMTPanel
             // 
@@ -73,7 +81,7 @@
             this.PMTPanel.Controls.Add(this.PMTGain2);
             this.PMTPanel.Location = new System.Drawing.Point(12, 12);
             this.PMTPanel.Name = "PMTPanel";
-            this.PMTPanel.Size = new System.Drawing.Size(252, 151);
+            this.PMTPanel.Size = new System.Drawing.Size(348, 151);
             this.PMTPanel.TabIndex = 4;
             this.PMTPanel.TabStop = false;
             this.PMTPanel.Text = "PMT Control";
@@ -81,29 +89,27 @@
             // PMT2Status
             // 
             this.PMT2Status.AutoSize = true;
-            this.PMT2Status.Location = new System.Drawing.Point(40, 95);
+            this.PMT2Status.Location = new System.Drawing.Point(27, 95);
             this.PMT2Status.Name = "PMT2Status";
-            this.PMT2Status.Size = new System.Drawing.Size(85, 13);
+            this.PMT2Status.Size = new System.Drawing.Size(0, 13);
             this.PMT2Status.TabIndex = 7;
-            this.PMT2Status.Text = "PMT1 Gain: 800";
             // 
             // PMT1Status
             // 
             this.PMT1Status.AutoSize = true;
-            this.PMT1Status.Location = new System.Drawing.Point(40, 47);
+            this.PMT1Status.Location = new System.Drawing.Point(27, 47);
             this.PMT1Status.Name = "PMT1Status";
-            this.PMT1Status.Size = new System.Drawing.Size(85, 13);
+            this.PMT1Status.Size = new System.Drawing.Size(0, 13);
             this.PMT1Status.TabIndex = 6;
-            this.PMT1Status.Text = "PMT1 Gain: 800";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(21, 75);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(112, 13);
+            this.label2.Size = new System.Drawing.Size(106, 13);
             this.label2.TabIndex = 5;
-            this.label2.Text = "PMT Gain 2 (1 - 1000)";
+            this.label2.Text = "PMT Gain 2 (1 - 510)";
             // 
             // PMTEnableCB
             // 
@@ -122,51 +128,125 @@
             this.PMTGain2.Name = "PMTGain2";
             this.PMTGain2.Size = new System.Drawing.Size(44, 20);
             this.PMTGain2.TabIndex = 1;
-            this.PMTGain2.Text = "800";
+            this.PMTGain2.Text = "480";
             this.PMTGain2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
-            // Camera2Pswitch
+            // GalvoPanel
             // 
-            this.Camera2Pswitch.Controls.Add(this.TwoPhotonRadio);
-            this.Camera2Pswitch.Controls.Add(this.CameraRadio);
-            this.Camera2Pswitch.Enabled = false;
-            this.Camera2Pswitch.Location = new System.Drawing.Point(12, 179);
-            this.Camera2Pswitch.Name = "Camera2Pswitch";
-            this.Camera2Pswitch.Size = new System.Drawing.Size(252, 77);
-            this.Camera2Pswitch.TabIndex = 5;
-            this.Camera2Pswitch.TabStop = false;
-            this.Camera2Pswitch.Text = "Camera / 2-photon switch";
+            this.GalvoPanel.Controls.Add(this.GalvoOnRadio);
+            this.GalvoPanel.Controls.Add(this.GalvoOffRadio);
+            this.GalvoPanel.Enabled = false;
+            this.GalvoPanel.Location = new System.Drawing.Point(12, 179);
+            this.GalvoPanel.Name = "GalvoPanel";
+            this.GalvoPanel.Size = new System.Drawing.Size(86, 77);
+            this.GalvoPanel.TabIndex = 5;
+            this.GalvoPanel.TabStop = false;
+            this.GalvoPanel.Text = "Galvo";
             // 
-            // TwoPhotonRadio
+            // GalvoOnRadio
             // 
-            this.TwoPhotonRadio.AutoSize = true;
-            this.TwoPhotonRadio.Location = new System.Drawing.Point(83, 36);
-            this.TwoPhotonRadio.Name = "TwoPhotonRadio";
-            this.TwoPhotonRadio.Size = new System.Drawing.Size(67, 17);
-            this.TwoPhotonRadio.TabIndex = 1;
-            this.TwoPhotonRadio.TabStop = true;
-            this.TwoPhotonRadio.Text = "2-photon";
-            this.TwoPhotonRadio.UseVisualStyleBackColor = true;
-            this.TwoPhotonRadio.Click += new System.EventHandler(this.Camera2PSwitchRadioClick);
+            this.GalvoOnRadio.AutoSize = true;
+            this.GalvoOnRadio.Location = new System.Drawing.Point(11, 28);
+            this.GalvoOnRadio.Name = "GalvoOnRadio";
+            this.GalvoOnRadio.Size = new System.Drawing.Size(39, 17);
+            this.GalvoOnRadio.TabIndex = 1;
+            this.GalvoOnRadio.Text = "On";
+            this.GalvoOnRadio.UseVisualStyleBackColor = true;
+            this.GalvoOnRadio.Click += new System.EventHandler(this.GalvoOnOffClick);
             // 
-            // CameraRadio
+            // GalvoOffRadio
             // 
-            this.CameraRadio.AutoSize = true;
-            this.CameraRadio.Location = new System.Drawing.Point(6, 36);
-            this.CameraRadio.Name = "CameraRadio";
-            this.CameraRadio.Size = new System.Drawing.Size(61, 17);
-            this.CameraRadio.TabIndex = 0;
-            this.CameraRadio.TabStop = true;
-            this.CameraRadio.Text = "Camera";
-            this.CameraRadio.UseVisualStyleBackColor = true;
-            this.CameraRadio.Click += new System.EventHandler(this.Camera2PSwitchRadioClick);
+            this.GalvoOffRadio.AutoSize = true;
+            this.GalvoOffRadio.Checked = true;
+            this.GalvoOffRadio.Location = new System.Drawing.Point(11, 49);
+            this.GalvoOffRadio.Name = "GalvoOffRadio";
+            this.GalvoOffRadio.Size = new System.Drawing.Size(39, 17);
+            this.GalvoOffRadio.TabIndex = 0;
+            this.GalvoOffRadio.TabStop = true;
+            this.GalvoOffRadio.Text = "Off";
+            this.GalvoOffRadio.UseVisualStyleBackColor = true;
+            this.GalvoOffRadio.Click += new System.EventHandler(this.GalvoOnOffClick);
+            // 
+            // ResGalvoPanel
+            // 
+            this.ResGalvoPanel.Controls.Add(this.ResGalvoOnRadio);
+            this.ResGalvoPanel.Controls.Add(this.ResGalvoOffPanel);
+            this.ResGalvoPanel.Enabled = false;
+            this.ResGalvoPanel.Location = new System.Drawing.Point(114, 179);
+            this.ResGalvoPanel.Name = "ResGalvoPanel";
+            this.ResGalvoPanel.Size = new System.Drawing.Size(86, 77);
+            this.ResGalvoPanel.TabIndex = 6;
+            this.ResGalvoPanel.TabStop = false;
+            this.ResGalvoPanel.Text = "Res Galvo";
+            // 
+            // ResGalvoOnRadio
+            // 
+            this.ResGalvoOnRadio.AutoSize = true;
+            this.ResGalvoOnRadio.Location = new System.Drawing.Point(11, 28);
+            this.ResGalvoOnRadio.Name = "ResGalvoOnRadio";
+            this.ResGalvoOnRadio.Size = new System.Drawing.Size(39, 17);
+            this.ResGalvoOnRadio.TabIndex = 1;
+            this.ResGalvoOnRadio.Text = "On";
+            this.ResGalvoOnRadio.UseVisualStyleBackColor = true;
+            this.ResGalvoOnRadio.Click += new System.EventHandler(this.ReGaolvoClick);
+            // 
+            // ResGalvoOffPanel
+            // 
+            this.ResGalvoOffPanel.AutoSize = true;
+            this.ResGalvoOffPanel.Checked = true;
+            this.ResGalvoOffPanel.Location = new System.Drawing.Point(11, 49);
+            this.ResGalvoOffPanel.Name = "ResGalvoOffPanel";
+            this.ResGalvoOffPanel.Size = new System.Drawing.Size(39, 17);
+            this.ResGalvoOffPanel.TabIndex = 0;
+            this.ResGalvoOffPanel.TabStop = true;
+            this.ResGalvoOffPanel.Text = "Off";
+            this.ResGalvoOffPanel.UseVisualStyleBackColor = true;
+            this.ResGalvoOffPanel.Click += new System.EventHandler(this.ReGaolvoClick);
+            // 
+            // CameraPanel
+            // 
+            this.CameraPanel.Controls.Add(this.CameraOnRadio);
+            this.CameraPanel.Controls.Add(this.CameraOffRadio);
+            this.CameraPanel.Enabled = false;
+            this.CameraPanel.Location = new System.Drawing.Point(213, 179);
+            this.CameraPanel.Name = "CameraPanel";
+            this.CameraPanel.Size = new System.Drawing.Size(86, 77);
+            this.CameraPanel.TabIndex = 6;
+            this.CameraPanel.TabStop = false;
+            this.CameraPanel.Text = "Camera";
+            // 
+            // CameraOnRadio
+            // 
+            this.CameraOnRadio.AutoSize = true;
+            this.CameraOnRadio.Checked = true;
+            this.CameraOnRadio.Location = new System.Drawing.Point(11, 28);
+            this.CameraOnRadio.Name = "CameraOnRadio";
+            this.CameraOnRadio.Size = new System.Drawing.Size(39, 17);
+            this.CameraOnRadio.TabIndex = 1;
+            this.CameraOnRadio.TabStop = true;
+            this.CameraOnRadio.Text = "On";
+            this.CameraOnRadio.UseVisualStyleBackColor = true;
+            this.CameraOnRadio.Click += new System.EventHandler(this.CameraOnOffClick);
+            // 
+            // CameraOffRadio
+            // 
+            this.CameraOffRadio.AutoSize = true;
+            this.CameraOffRadio.Location = new System.Drawing.Point(11, 49);
+            this.CameraOffRadio.Name = "CameraOffRadio";
+            this.CameraOffRadio.Size = new System.Drawing.Size(39, 17);
+            this.CameraOffRadio.TabIndex = 0;
+            this.CameraOffRadio.Text = "Off";
+            this.CameraOffRadio.UseVisualStyleBackColor = true;
+            this.CameraOffRadio.Click += new System.EventHandler(this.CameraOnOffClick);
             // 
             // PMTControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(276, 274);
-            this.Controls.Add(this.Camera2Pswitch);
+            this.ClientSize = new System.Drawing.Size(372, 274);
+            this.Controls.Add(this.CameraPanel);
+            this.Controls.Add(this.ResGalvoPanel);
+            this.Controls.Add(this.GalvoPanel);
             this.Controls.Add(this.PMTPanel);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "PMTControl";
@@ -175,8 +255,12 @@
             this.Load += new System.EventHandler(this.PMTControl_Load);
             this.PMTPanel.ResumeLayout(false);
             this.PMTPanel.PerformLayout();
-            this.Camera2Pswitch.ResumeLayout(false);
-            this.Camera2Pswitch.PerformLayout();
+            this.GalvoPanel.ResumeLayout(false);
+            this.GalvoPanel.PerformLayout();
+            this.ResGalvoPanel.ResumeLayout(false);
+            this.ResGalvoPanel.PerformLayout();
+            this.CameraPanel.ResumeLayout(false);
+            this.CameraPanel.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -188,12 +272,18 @@
         public System.Windows.Forms.GroupBox PMTPanel;
         public System.Windows.Forms.Label label2;
         public System.Windows.Forms.CheckBox PMTEnableCB;
-        public System.Windows.Forms.GroupBox Camera2Pswitch;
-        public System.Windows.Forms.RadioButton TwoPhotonRadio;
-        public System.Windows.Forms.RadioButton CameraRadio;
+        public System.Windows.Forms.GroupBox GalvoPanel;
+        public System.Windows.Forms.RadioButton GalvoOnRadio;
+        public System.Windows.Forms.RadioButton GalvoOffRadio;
         public System.Windows.Forms.TextBox PMTGain2;
         public System.Windows.Forms.Label PMT2Status;
         public System.Windows.Forms.Label PMT1Status;
+        public System.Windows.Forms.GroupBox ResGalvoPanel;
+        public System.Windows.Forms.RadioButton ResGalvoOnRadio;
+        public System.Windows.Forms.RadioButton ResGalvoOffPanel;
+        public System.Windows.Forms.GroupBox CameraPanel;
+        public System.Windows.Forms.RadioButton CameraOnRadio;
+        public System.Windows.Forms.RadioButton CameraOffRadio;
     }
 }
 

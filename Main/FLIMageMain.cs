@@ -232,11 +232,28 @@ namespace FLIMage
                     double[] resolution = new double[] { State.Motor.resolutionX, State.Motor.resolutionY, State.Motor.resolutionZ };
                     double[] steps = new double[] { State.Motor.stepXY, State.Motor.stepXY, State.Motor.stepZ };
                     motorCtrl = new MotorCtrl(State.Init.MotorHWName, State.Init.MotorComPort, resolution, State.Motor.velocity, steps);
-                    FillGUIMotor();
-                    motorCtrl.MotH += new MotorCtrl.MotorHandler(MotorListener);
 
-                    motorCtrl.continuousRead(false);
-                    ContRead.Checked = false;
+                    if (motorCtrl.connected)
+                    {
+                        FillGUIMotor();
+                        motorCtrl.MotH += new MotorCtrl.MotorHandler(MotorListener);
+
+                        if (State.Init.MotorHWName.Equals("MP-285") || State.Init.MotorHWName.Equals("MP285"))
+                        {
+                            motorCtrl.continuousRead(false);
+                            ContRead.Checked = false;
+                        }
+                        else
+                        {
+                            motorCtrl.continuousRead(true);
+                            ContRead.Checked = true;
+                        }
+                    }
+                    else
+                    {
+                        use_motor = false;
+                        MessageBox.Show("Motor connection problem!!");
+                    }
                 }
                 catch (Exception EX)
                 {
@@ -930,7 +947,7 @@ namespace FLIMage
             if (use_motor)
             {
                 motorCtrl.continuousRead(ContRead.Checked);
-                motorCtrl.GetPosition(true);
+                motorCtrl.GetPosition();
             }
 
             if (fastZcontrol != null)
@@ -1001,7 +1018,7 @@ namespace FLIMage
 
                 if (use_motor)
                 {
-                    motorCtrl.GetPosition(true);
+                    motorCtrl.GetPosition();
                     motorCtrl.continuousRead(false);
                 }
 
@@ -2678,9 +2695,9 @@ namespace FLIMage
         void ContRead_CheckedChanged(object sender, EventArgs e)
         {
             motorCtrl.continuousRead(ContRead.Checked);
-            motorCtrl.GetPosition(true);
+            motorCtrl.GetPosition();
             if (ContRead.Checked)
-                motorCtrl.GetStatus(false);
+                motorCtrl.GetStatus();
             //motorCtrl.GetPosition();
         }
 
@@ -2777,7 +2794,9 @@ namespace FLIMage
                 YRead.Text = String.Format("{0:0.00}", motorAbsolutePosition[1]);
                 ZRead.Text = String.Format("{0:0.00}", motorAbsolutePosition[2]);
             }
+
             Velocity.Text = String.Format("{0}", motorCtrl.velocity[0]);
+            State.Motor.velocity[0] = motorCtrl.velocity[0];
 
             if (motorCtrl.ZStackStart == int.MaxValue)
                 AutoCalculateStackStartEnd();
@@ -2817,6 +2836,13 @@ namespace FLIMage
                 motorCtrl.continuousRead(false);
                 ContRead.Checked = false;
                 ResetMotor.Visible = true;
+            }
+            else if (e.Name == "FreezeA")
+            {
+                XRead.Text = "---";
+                YRead.Text = "---";
+                ZRead.Text = "---";
+                Motor_Status.Text = "Recovering from crash...";
             }
 
             if (e.Name == "MovementDone")
@@ -2966,7 +2992,7 @@ namespace FLIMage
             if (waitUntilFinish) //For external command it will be always true.
             {
                 WaitForMotorMove();
-                motorCtrl.GetPosition(true);
+                motorCtrl.GetPosition();
                 //
             }
         }
@@ -2999,7 +3025,7 @@ namespace FLIMage
                 Debug.WriteLine("Set MotorZ position {0}", motorQ[2]);
             }
 
-            motorCtrl.GetPosition(true);
+            motorCtrl.GetPosition();
 
             if (!motor_moving)
             {
@@ -3029,7 +3055,7 @@ namespace FLIMage
 
         private void MotorReadButton_Click(object sender, EventArgs e)
         {
-            motorCtrl.GetPosition(true);
+            motorCtrl.GetPosition();
         }
 
         void Zero_Z_Click(object sender, EventArgs e)
@@ -3069,7 +3095,7 @@ namespace FLIMage
             motorCtrl.SetNewPosition(position);
             SetMotorPosition(true, true);
             motorCtrl.stack_Position = MotorCtrl.StackPosition.Start;
-            motorCtrl.GetPosition(true);
+            motorCtrl.GetPosition();
         }
 
         void GoStart_Click(object sender, EventArgs e)
@@ -3101,7 +3127,7 @@ namespace FLIMage
 
         void Set_Top_Click(object sender, EventArgs e)
         {
-            motorCtrl.GetPosition(true);
+            motorCtrl.GetPosition();
             double[] position = motorCtrl.CurrentUncalibratedPosition();
             motorCtrl.ZStackStart = (int)position[2];
             motorCtrl.ZStackCenter = motorCtrl.ZStackStart + ZStackHalfStroke();
@@ -3124,7 +3150,7 @@ namespace FLIMage
                 MessageBox.Show("Please choose Start position first");
             else
             {
-                motorCtrl.GetPosition(true);
+                motorCtrl.GetPosition();
                 double[] position = motorCtrl.CurrentUncalibratedPosition();
                 motorCtrl.ZStackEnd = (int)position[2];
                 motorCtrl.stack_Position = MotorCtrl.StackPosition.End;
@@ -3205,11 +3231,11 @@ namespace FLIMage
 
         public void Vel_Up_Click(object sender, EventArgs e)
         {
-            motorCtrl.GetStatus(true);
-            Motor_TextSet();
-
             turn_motorButtons(false);
 
+            //motorCtrl.GetStatus();
+            //Motor_TextSet();
+            
             double vel_step = 100;
             if (sender.Equals(Vel_Down))
                 vel_step = -100;
@@ -3218,7 +3244,6 @@ namespace FLIMage
             if (motorCtrl.velocity[0] + vel_step <= motorCtrl.maxVelocity[0])
                 vel = vel + vel_step;
 
-            //motorCtrl.GetStatus();
             motorCtrl.SetVelocity(new double[] { vel, vel, vel });
         }
 
@@ -3415,7 +3440,8 @@ namespace FLIMage
         private void ResetMotor_Click(object sender, EventArgs e)
         {
             ResetMotor.Visible = false;
-            motorCtrl.GetStatus(false);
+            motorCtrl.GetStatus();
+            motorCtrl.GetPosition();
         }
 
         private void ZeroMirror_Click(object sender, EventArgs e)
@@ -3466,7 +3492,7 @@ namespace FLIMage
         private void Relative_Click(object sender, EventArgs e)
         {
             show_relativePosition = Relative.Checked;
-            motorCtrl.GetPosition(true);
+            motorCtrl.GetPosition();
         }
 
         private void Velocity_KeyDown(object sender, KeyEventArgs e)

@@ -1,4 +1,7 @@
 ﻿
+using FLIMage.FlowControls;
+using FLIMage.Plotting;
+using MathLibrary;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,9 +17,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using FLIMage.Plotting;
-using FLIMage.FlowControls;
-using MathLibrary;
 using Utilities;
 
 namespace FLIMage.Analysis
@@ -1998,11 +1998,13 @@ namespace FLIMage.Analysis
                     }
                     sb.AppendLine();
                     sb.Append("Residuals-" + chName + ",");
-                    for (int x = 0; x < FLIM_ImgData.Residuals[ch].Length; x++)
-                    {
-                        sb.Append(FLIM_ImgData.Residuals[ch][x]);
-                        sb.Append(",");
-                    }
+
+                    if (FLIM_ImgData.Residuals[ch] != null)
+                        for (int x = 0; x < FLIM_ImgData.Residuals[ch].Length; x++)
+                        {
+                            sb.Append(FLIM_ImgData.Residuals[ch][x]);
+                            sb.Append(",");
+                        }
                     sb.AppendLine();
                     sb.AppendLine();
                 }
@@ -3282,7 +3284,7 @@ namespace FLIMage.Analysis
             {
                 var fileNameWithoutPath = Path.GetFileNameWithoutExtension(fileName);
                 var fileNum = fileNameWithoutPath.Substring(FLIM_ImgData.baseName.Length);
-                
+
                 if (Int32.TryParse(fileNum, out int n))
                 {
                     if (!StopFileOpening)
@@ -3303,7 +3305,7 @@ namespace FLIMage.Analysis
                                     FileN++;
                                 }
                             }
-                            
+
                             else if (z_stackThis)
                             {
                                 flim_data.Add_AllFLIM_PageFormat_To_FLIM_Pages5D(FLIM_ImgData.FLIM_Pages, FLIM_ImgData.acquiredTime, FileN);

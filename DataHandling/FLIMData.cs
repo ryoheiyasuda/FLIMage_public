@@ -1374,8 +1374,14 @@ namespace FLIMage
             }
 
             fit.PoisonWeights();
-            fit.Perform();
-
+            try
+            {
+                fit.Perform();
+            }
+            catch
+            {
+                Debug.WriteLine("Fitting did not work!");
+            }
             if (mode == 1)
             {
                 tau_m[ch] = 1 / fit.beta[1];

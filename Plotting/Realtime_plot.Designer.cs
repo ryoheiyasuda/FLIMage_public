@@ -52,10 +52,9 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.RealtimePlot.BackColor = System.Drawing.Color.White;
-            this.RealtimePlot.Location = new System.Drawing.Point(0, -2);
-            this.RealtimePlot.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.RealtimePlot.Location = new System.Drawing.Point(0, -1);
             this.RealtimePlot.Name = "RealtimePlot";
-            this.RealtimePlot.Size = new System.Drawing.Size(882, 552);
+            this.RealtimePlot.Size = new System.Drawing.Size(441, 287);
             this.RealtimePlot.TabIndex = 1;
             this.RealtimePlot.TabStop = false;
             // 
@@ -64,10 +63,9 @@
             this.tau_m_radio.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.tau_m_radio.AutoSize = true;
             this.tau_m_radio.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.tau_m_radio.Location = new System.Drawing.Point(907, 92);
-            this.tau_m_radio.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.tau_m_radio.Location = new System.Drawing.Point(450, 48);
             this.tau_m_radio.Name = "tau_m_radio";
-            this.tau_m_radio.Size = new System.Drawing.Size(139, 30);
+            this.tau_m_radio.Size = new System.Drawing.Size(74, 17);
             this.tau_m_radio.TabIndex = 1;
             this.tau_m_radio.Text = "Mean Tau";
             this.tau_m_radio.UseVisualStyleBackColor = true;
@@ -79,10 +77,9 @@
             this.meanIntensity_radio.AutoSize = true;
             this.meanIntensity_radio.Checked = true;
             this.meanIntensity_radio.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.meanIntensity_radio.Location = new System.Drawing.Point(900, 15);
-            this.meanIntensity_radio.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.meanIntensity_radio.Location = new System.Drawing.Point(449, 8);
             this.meanIntensity_radio.Name = "meanIntensity_radio";
-            this.meanIntensity_radio.Size = new System.Drawing.Size(198, 30);
+            this.meanIntensity_radio.Size = new System.Drawing.Size(100, 17);
             this.meanIntensity_radio.TabIndex = 5;
             this.meanIntensity_radio.TabStop = true;
             this.meanIntensity_radio.Text = "Intensity (Mean)";
@@ -94,10 +91,9 @@
             this.fraction2_radio.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.fraction2_radio.AutoSize = true;
             this.fraction2_radio.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.fraction2_radio.Location = new System.Drawing.Point(903, 129);
-            this.fraction2_radio.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.fraction2_radio.Location = new System.Drawing.Point(449, 67);
             this.fraction2_radio.Name = "fraction2_radio";
-            this.fraction2_radio.Size = new System.Drawing.Size(133, 30);
+            this.fraction2_radio.Size = new System.Drawing.Size(69, 17);
             this.fraction2_radio.TabIndex = 477;
             this.fraction2_radio.Text = "Fraction2";
             this.fraction2_radio.UseVisualStyleBackColor = true;
@@ -108,10 +104,9 @@
             this.tau_m_fit_radio.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.tau_m_fit_radio.AutoSize = true;
             this.tau_m_fit_radio.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.tau_m_fit_radio.Location = new System.Drawing.Point(934, 212);
-            this.tau_m_fit_radio.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.tau_m_fit_radio.Location = new System.Drawing.Point(465, 110);
             this.tau_m_fit_radio.Name = "tau_m_fit_radio";
-            this.tau_m_fit_radio.Size = new System.Drawing.Size(170, 30);
+            this.tau_m_fit_radio.Size = new System.Drawing.Size(87, 17);
             this.tau_m_fit_radio.TabIndex = 478;
             this.tau_m_fit_radio.Text = "Mean tau (fit)";
             this.tau_m_fit_radio.UseVisualStyleBackColor = true;
@@ -122,10 +117,9 @@
             this.fraction2_fit_radio.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.fraction2_fit_radio.AutoSize = true;
             this.fraction2_fit_radio.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.fraction2_fit_radio.Location = new System.Drawing.Point(932, 250);
-            this.fraction2_fit_radio.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.fraction2_fit_radio.Location = new System.Drawing.Point(465, 130);
             this.fraction2_fit_radio.Name = "fraction2_fit_radio";
-            this.fraction2_fit_radio.Size = new System.Drawing.Size(170, 30);
+            this.fraction2_fit_radio.Size = new System.Drawing.Size(86, 17);
             this.fraction2_fit_radio.TabIndex = 479;
             this.fraction2_fit_radio.Text = "Fraction2 (fit)";
             this.fraction2_fit_radio.UseVisualStyleBackColor = true;
@@ -138,10 +132,9 @@
             this.calcFitCheck.Checked = true;
             this.calcFitCheck.CheckState = System.Windows.Forms.CheckState.Checked;
             this.calcFitCheck.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.calcFitCheck.Location = new System.Drawing.Point(904, 173);
-            this.calcFitCheck.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.calcFitCheck.Location = new System.Drawing.Point(449, 90);
             this.calcFitCheck.Name = "calcFitCheck";
-            this.calcFitCheck.Size = new System.Drawing.Size(138, 30);
+            this.calcFitCheck.Size = new System.Drawing.Size(72, 17);
             this.calcFitCheck.TabIndex = 480;
             this.calcFitCheck.Text = "Fit curves";
             this.calcFitCheck.UseVisualStyleBackColor = true;
@@ -151,10 +144,9 @@
             // 
             this.TC_Reset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.TC_Reset.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.TC_Reset.Location = new System.Drawing.Point(898, 337);
-            this.TC_Reset.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.TC_Reset.Location = new System.Drawing.Point(449, 175);
             this.TC_Reset.Name = "TC_Reset";
-            this.TC_Reset.Size = new System.Drawing.Size(244, 52);
+            this.TC_Reset.Size = new System.Drawing.Size(122, 27);
             this.TC_Reset.TabIndex = 482;
             this.TC_Reset.Text = "Reset plot";
             this.TC_Reset.UseVisualStyleBackColor = true;
@@ -164,10 +156,9 @@
             // 
             this.CalcTimeCourse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.CalcTimeCourse.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.CalcTimeCourse.Location = new System.Drawing.Point(898, 437);
-            this.CalcTimeCourse.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.CalcTimeCourse.Location = new System.Drawing.Point(449, 227);
             this.CalcTimeCourse.Name = "CalcTimeCourse";
-            this.CalcTimeCourse.Size = new System.Drawing.Size(244, 52);
+            this.CalcTimeCourse.Size = new System.Drawing.Size(122, 27);
             this.CalcTimeCourse.TabIndex = 481;
             this.CalcTimeCourse.Text = "Calculate all pages";
             this.CalcTimeCourse.UseVisualStyleBackColor = true;
@@ -178,20 +169,18 @@
             this.Warning.AutoSize = true;
             this.Warning.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold);
             this.Warning.ForeColor = System.Drawing.Color.Red;
-            this.Warning.Location = new System.Drawing.Point(130, 40);
-            this.Warning.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            this.Warning.Location = new System.Drawing.Point(65, 21);
             this.Warning.Name = "Warning";
-            this.Warning.Size = new System.Drawing.Size(0, 31);
+            this.Warning.Size = new System.Drawing.Size(0, 17);
             this.Warning.TabIndex = 483;
             // 
             // CalculateSinglePage
             // 
             this.CalculateSinglePage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.CalculateSinglePage.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.CalculateSinglePage.Location = new System.Drawing.Point(898, 387);
-            this.CalculateSinglePage.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.CalculateSinglePage.Location = new System.Drawing.Point(449, 201);
             this.CalculateSinglePage.Name = "CalculateSinglePage";
-            this.CalculateSinglePage.Size = new System.Drawing.Size(244, 52);
+            this.CalculateSinglePage.Size = new System.Drawing.Size(122, 27);
             this.CalculateSinglePage.TabIndex = 484;
             this.CalculateSinglePage.Text = "Calculate current page";
             this.CalculateSinglePage.UseVisualStyleBackColor = true;
@@ -202,13 +191,13 @@
             this.sumIntensity_radio.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.sumIntensity_radio.AutoSize = true;
             this.sumIntensity_radio.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.sumIntensity_radio.Location = new System.Drawing.Point(896, 54);
-            this.sumIntensity_radio.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.sumIntensity_radio.Location = new System.Drawing.Point(449, 28);
             this.sumIntensity_radio.Name = "sumIntensity_radio";
-            this.sumIntensity_radio.Size = new System.Drawing.Size(190, 30);
+            this.sumIntensity_radio.Size = new System.Drawing.Size(94, 17);
             this.sumIntensity_radio.TabIndex = 485;
             this.sumIntensity_radio.Text = "Intensity (Sum)";
             this.sumIntensity_radio.UseVisualStyleBackColor = true;
+            this.sumIntensity_radio.Click += new System.EventHandler(this.Intensity_radio_Click);
             // 
             // CalculateUponOpen
             // 
@@ -217,10 +206,9 @@
             this.CalculateUponOpen.Checked = true;
             this.CalculateUponOpen.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CalculateUponOpen.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.CalculateUponOpen.Location = new System.Drawing.Point(899, 294);
-            this.CalculateUponOpen.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.CalculateUponOpen.Location = new System.Drawing.Point(448, 153);
             this.CalculateUponOpen.Name = "CalculateUponOpen";
-            this.CalculateUponOpen.Size = new System.Drawing.Size(243, 30);
+            this.CalculateUponOpen.Size = new System.Drawing.Size(124, 17);
             this.CalculateUponOpen.TabIndex = 486;
             this.CalculateUponOpen.Text = "Calculate upon open";
             this.CalculateUponOpen.UseVisualStyleBackColor = true;
@@ -230,10 +218,9 @@
             // 
             this.OpenExcel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.OpenExcel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.OpenExcel.Location = new System.Drawing.Point(1056, 487);
-            this.OpenExcel.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.OpenExcel.Location = new System.Drawing.Point(528, 253);
             this.OpenExcel.Name = "OpenExcel";
-            this.OpenExcel.Size = new System.Drawing.Size(84, 52);
+            this.OpenExcel.Size = new System.Drawing.Size(42, 27);
             this.OpenExcel.TabIndex = 487;
             this.OpenExcel.Text = "View";
             this.OpenExcel.UseVisualStyleBackColor = true;
@@ -241,9 +228,9 @@
             // 
             // plot_timeCourse
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1156, 548);
+            this.ClientSize = new System.Drawing.Size(578, 285);
             this.Controls.Add(this.OpenExcel);
             this.Controls.Add(this.CalculateUponOpen);
             this.Controls.Add(this.sumIntensity_radio);
@@ -259,7 +246,6 @@
             this.Controls.Add(this.tau_m_radio);
             this.Controls.Add(this.RealtimePlot);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.Name = "plot_timeCourse";
             this.Text = "Plot time course";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.plot_timeCourse_FormClosing);

@@ -1,5 +1,4 @@
-﻿using MicroscopeHardwareLibs;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,26 +7,26 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using MicroscopeHardwareLibs;
 
 namespace FLIMage.HardwareControls.StageControls
 {
-    public class MotorCtrl_MP285A
+    public class MotorCtrl_ThorMCM3001
     {
         public event MotorHandler MotH;
         public MotrEventArgs e = new MotrEventArgs("");
-        public delegate void MotorHandler(MotorCtrl_MP285A mCtrls, MotrEventArgs e);
+        public delegate void MotorHandler(MotorCtrl_ThorMCM3001 mCtrls, MotrEventArgs e);
 
         public double maxDistanceXY = 500; //micrometers
         public double maxDistanceZ = 100;
 
         public int N_Coordinate = 3;
 
-        public int XPos, YPos, ZPos;
-        public int XNewPos, YNewPos, ZNewPos;
-        public int XPosMov, YPosMov, ZPosMov;
+        public double XPos, YPos, ZPos;
+        public double XNewPos, YNewPos, ZNewPos;
+        public double XPosMov, YPosMov, ZPosMov;
 
-        public int AllowError = 5;
-        public SerialPort COMport;
+        public double AllowError = 0.1;
 
         public int minMotorVal = (int)(-Math.Pow(2, 31) + 1);
 
@@ -43,35 +42,39 @@ namespace FLIMage.HardwareControls.StageControls
         public int maxVelocity;
         public int minVelocity;
 
-        public MotorCtrl.DeviceMode device_mode = MotorCtrl.DeviceMode.coarse;
+        int timeout = 50; //millisecond
+        int total_timeout = 2000;
+
+        public MotorCtrl.DeviceMode device_mode;
+        public bool waitingReturn = false;
+        private bool positionReceived = false;
 
         public bool freezing = false;
-        public String tString;//
+        public String tString;
 
-        SutterMP285 mp285;
+        ThorMCM3000 thorMCM3000;
         System.Timers.Timer ThoTimer;
 
         public bool reading = false;
+        public bool continuous_readCheck = true;
         public bool connected = false;
-        public bool continuous_readCheck = false;
 
 
-        public MotorCtrl_MP285A(String port, Double[] resolution, int velocity, bool crash_response)
+        public MotorCtrl_ThorMCM3001(string port, Double[] resolution, String typeString)
         {
-            String COMport = port;
+            String COMport = port; //Standard is COM32.
+            var motorType = ThorMCM3000.Thor3000Type.MCM3001;
+            if (typeString.Contains("3002"))
+                motorType = ThorMCM3000.Thor3000Type.MCM3002;
+            else if (typeString.Contains("3003"))
+                motorType = ThorMCM3000.Thor3000Type.MCM3003;
 
-            mp285 = new SutterMP285(COMport, 9600);
+            thorMCM3000 = new ThorMCM3000(COMport, 115200, motorType);
 
-            if (mp285.OpenPort() == 0)
+            if (thorMCM3000.OpenPort() == 0)
                 return;
 
-            mp285.crash_response = crash_response;
             connected = true;
-
-            if (!mp285.crash_response)
-                reset();
-
-
             XPos = 0;
             YPos = 0;
             ZPos = 0;
@@ -81,7 +84,7 @@ namespace FLIMage.HardwareControls.StageControls
             ZNewPos = ZPos;
 
             velocity_fine = 100;
-            velocity_coarse = velocity;
+            velocity_coarse = 1000;
             maxVelocity = 10000;
             minVelocity = 100;
 
@@ -101,57 +104,60 @@ namespace FLIMage.HardwareControls.StageControls
             else
                 SetVelocity(1500);
 
-
+            waitingReturn = true;
             freezing = false;
             //
-
-            ThoTimer = new System.Timers.Timer(500);
+            ThoTimer = new System.Timers.Timer(300);
             ThoTimer.Elapsed += TimerEvent;
             ThoTimer.AutoReset = true;
             ThoTimer.Enabled = true;
         }
 
-        public void unsubscribe()
-        {
-
-        }
 
         public void WaitUntilMovementDone()
         {
             if (!moving)
                 return;
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < total_timeout / timeout; i++)
             {
-                int[] position = new int[3];
-                GetPosition();
-                if (Math.Abs(XPos - XNewPos) <= AllowError && Math.Abs(YPos - YNewPos) <= AllowError && Math.Abs(ZPos - ZNewPos) <= AllowError)
-                {
-                    break;
-                }
-                if (freezing)
-                {
-                    mp285.Stop();
-                    break;
-                }
-            }
-            //mp285.Stop();
-            MovementDone();
-        }
+                moving = thorMCM3000.IsMotorBusy(0) || thorMCM3000.IsMotorBusy(1) || thorMCM3000.IsMotorBusy(2);
 
+                if (!moving)
+                {
+                    break;
+                }
+                else
+                {
+                    System.Windows.Forms.Application.DoEvents(); //This is necessary for port to receive the event!!
+                    System.Threading.Thread.Sleep(timeout);
+                }
+
+                e.Name = "Moving";
+                GetPosition();
+            }
+
+            if (moving)
+            {
+                thorMCM3000.Stop();
+                MovementDone();
+            }
+            else
+            {
+                MovementDone();
+            }
+
+        }
 
         public void reopen()
         {
-            mp285.ClosePort();
-            mp285.OpenPort();
-            reset();
-            System.Threading.Thread.Sleep(100);
-            SetVelocity(velocity_coarse);
+            thorMCM3000.ClosePort();
+            thorMCM3000.OpenPort();
         }
 
         public void reset()
         {
-            mp285.Reset();
+
         }
 
         public double[] GetResolution()
@@ -182,57 +188,15 @@ namespace FLIMage.HardwareControls.StageControls
 
         public void SetVelocity(int val)
         {
-            bool findMode = (device_mode == MotorCtrl.DeviceMode.fine);
-            mp285.SetVelocity(val, findMode);
-            System.Threading.Thread.Sleep(500);
-            GetStatus();
-            GetPosition();
+
         }
 
-        public void GetStatus()
-        {
-            reading = true;
-            bool fineMode = (device_mode == MotorCtrl.DeviceMode.fine);
-            int vel;
-            if (fineMode)
-                vel = velocity_fine;
-            else
-                vel = velocity_coarse;
-            int success = mp285.GetVelocity(ref vel, ref fineMode);
-            tString = mp285.StringCode;
-            if (success == -1)
-            {
-                FreezeResponse();
-            }
-            else
-            {
-                success = mp285.GetVelocity(ref vel, ref fineMode);
-            }
-
-            if (success == 1)
-            {
-                if (fineMode)
-                {
-                    device_mode = MotorCtrl.DeviceMode.fine;
-                    velocity_fine = vel;
-                }
-                else
-                {
-                    device_mode = MotorCtrl.DeviceMode.coarse;
-                    velocity_coarse = vel;
-                }
-
-                e = new MotrEventArgs("Status");
-                MotH?.Invoke(this, e);
-            }
-            reading = false;
-        }
 
         public void SetNewPosition(double[] XYZ)
         {
-            XNewPos = (int)XYZ[0];
-            YNewPos = (int)XYZ[1];
-            ZNewPos = (int)XYZ[2];
+            XNewPos = XYZ[0];
+            YNewPos = XYZ[1];
+            ZNewPos = XYZ[2];
         }
 
 
@@ -252,7 +216,6 @@ namespace FLIMage.HardwareControls.StageControls
 
         public int setPosition_internal()
         {
-
             if (Math.Abs(XPos - XNewPos) < AllowError && Math.Abs(YPos - YNewPos) < AllowError && Math.Abs(ZPos - ZNewPos) < AllowError)
             {
                 MovementDone();
@@ -262,12 +225,34 @@ namespace FLIMage.HardwareControls.StageControls
             moving = true;
             start_moving = false;
 
-            int retcode = mp285.GoToPosition(new int[] { XNewPos, YNewPos, ZNewPos });
-            if (retcode == 1)
+            if (Math.Abs(XPos - XNewPos) > AllowError)
             {
-                freezing = false;
-                MovementDone();
-                return 0;
+                if (thorMCM3000.GoToPosition(0, XNewPos) == 0)
+                {
+                    MessageBox.Show("out of range for X movement");
+                    MovementDone();
+                    return 0;
+                }
+            }
+
+            if (Math.Abs(YPos - YNewPos) > AllowError)
+            {
+                if (thorMCM3000.GoToPosition(1, XNewPos) == 0)
+                {
+                    MessageBox.Show("out of range for Y movement");
+                    MovementDone();
+                    return 0;
+                }
+            }
+
+            if (Math.Abs(ZPos - ZNewPos) > AllowError)
+            {
+                if (thorMCM3000.GoToPosition(2, XNewPos) == 0)
+                {
+                    MessageBox.Show("out of range for Z movement");
+                    MovementDone();
+                    return 0;
+                }
             }
 
 
@@ -275,49 +260,29 @@ namespace FLIMage.HardwareControls.StageControls
             YPosMov = YPos;
             ZPosMov = ZPos;
 
-            WaitUntilMovementDone(); //Does not do anything.
+            WaitUntilMovementDone();
 
             return 0;
         }
-
-        public void FreezeResponse()
-        {
-            freezing = true;
-            if (mp285.crash_response)
-                e = new MotrEventArgs("FreezeA");
-            else
-                e = new MotrEventArgs("Freeze");
-            MotH?.Invoke(this, e);
-        }
-
+        
 
         public void GetPosition()
         {
-
             reading = true;
-            int[] pos = new int[3];
-            int success = mp285.GetPosition(pos);
-            tString = mp285.StringCode;
+            double[] pos = new double[3];
+            int success = thorMCM3000.GetPosition(pos);
+            tString = thorMCM3000.StringCode;
 
-            if (success == 1 && !pos.All(x => x == 0))
+            if (success == 1)
             {
-                freezing = false;
                 XPos = pos[0];
                 YPos = pos[1];
                 ZPos = pos[2];
-
-                if (e.Name == "Freeze" || e.Name == "FreezeA")
-                    e.Name = "GetPositionDone";
-
                 MotH?.Invoke(this, e);
-            }
-            else if (success == -1)
-            {
-                FreezeResponse();
             }
             else
             {
-                //MessageBox.Show("Position reading failed!");
+                MessageBox.Show("Position reading failed!");
             }
             reading = false;
         }

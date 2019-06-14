@@ -154,7 +154,12 @@ namespace FLIMage.Plotting
             int c = channel;
 
             plot.XTitle = "Time (s)";
-            plot.YTitle = "Fluorescence lifetime (ns)";
+            if (tau_m_fit_radio.Checked || tau_m_fit_radio.Checked)
+                plot.YTitle = "Fluorescence lifetime (ns)";
+            else if (fraction2_radio.Checked || fraction2_fit_radio.Checked)
+                plot.YTitle = "Binding fraction";
+            else if (sumIntensity_radio.Checked || meanIntensity_radio.Checked)
+                plot.YTitle = "Intensity (# photon)";
 
             List<String> strList = new List<String>();
 
@@ -169,7 +174,6 @@ namespace FLIMage.Plotting
                     {
                         curve = TCF.Fraction2[c];
                         curve2 = TC.Fraction2[c];
-                        plot.YTitle = "Binding fraction";
                     }
                     else if (tau_m_fit_radio.Checked)
                     {
@@ -180,19 +184,16 @@ namespace FLIMage.Plotting
                     {
                         curve = TCF.Fraction2_fit[c];
                         curve2 = TC.Fraction2_fit[c];
-                        plot.YTitle = "Binding fraction";
                     }
                     else if (sumIntensity_radio.Checked)
                     {
                         curve = TCF.sumIntensity[c];
                         curve2 = TC.sumIntensity[c];
-                        plot.YTitle = "Intensity";
                     }
                     else if (meanIntensity_radio.Checked)
                     {
                         curve = TCF.Intensity[c];
                         curve2 = TC.Intensity[c];
-                        plot.YTitle = "Intensity";
                     }
 
                     plot.AddData(TCF.time_seconds, curve, "-r", 1);
@@ -416,6 +417,6 @@ namespace FLIMage.Plotting
             farction2_fit = 5,
             tau_m_fit = 6,
         }
-
+       
     }
 }

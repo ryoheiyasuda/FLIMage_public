@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using FLIMage.HardwareControls.ThorLabs;
+using MicroscopeHardwareLibs;
 
 namespace FLIMage.HardwareControls.StageControls
 {
@@ -81,20 +82,29 @@ namespace FLIMage.HardwareControls.StageControls
         double param = 0.0;
 
         public const int TRUE = 1, FALSE = 0;
-        ThorLabs.ThorDLL thordll;
+        public bool connected = false;
+        ThorDLL thordll;
 
         public ThorMCMX000(double[] resolution, MotorCtrl.MotorTypeEnum motor_type)
         {
+
+            resolutionX = resolution[0];
+            resolutionY = resolution[1];
+            resolutionZ = resolution[2];
+
             lockPort = new object();
 
             if (motor_type == MotorCtrl.MotorTypeEnum.thorMCM3000)
-                thordll = ThorDLL.ThorDLL_Load(ThorLabs.ThorDLL.DLLType.ThorMCM3000);
+            {
+                thordll = ThorDLL.ThorDLL_Load(ThorDLL.DLLType.ThorMCM3000);
+            }
             else
-                thordll = ThorDLL.ThorDLL_Load(ThorLabs.ThorDLL.DLLType.ThorBScope);
+                thordll = ThorDLL.ThorDLL_Load(ThorDLL.DLLType.ThorBScope);
 
             int ret;
             int deviceCount = 0;
             ret = thordll.FindDevices(ref deviceCount);
+
             if (ret != TRUE)
             {
                 MessageBox.Show("ThorMCMX000.FindDevices(ref deviceCount) failed: Failed to connect with the device. Check XML file and port!");
@@ -122,8 +132,8 @@ namespace FLIMage.HardwareControls.StageControls
 
             if (paramAvailable == 1)
             {
-                XMax = paramMax;
-                XMin = paramMin;
+                XMax = paramMax * resolutionX;
+                XMin = paramMin * resolutionX;
             }
 
             if (thordll.GetParamInfo(ThorParam.PARAM_Y_POS, ref paramType, ref paramAvailable, ref paramReadOnly, ref paramMin, ref paramMax, ref paramDefault) != TRUE)
@@ -134,8 +144,8 @@ namespace FLIMage.HardwareControls.StageControls
 
             if (paramAvailable == 1)
             {
-                YMax = paramMax;
-                YMin = paramMin;
+                YMax = paramMax * resolutionY;
+                YMin = paramMin * resolutionY;
             }
 
 
@@ -147,19 +157,17 @@ namespace FLIMage.HardwareControls.StageControls
 
             if (paramAvailable == 1)
             {
-                ZMax = paramMax;
-                ZMin = paramMin;
+                ZMax = paramMax * resolutionZ;
+                ZMin = paramMin * resolutionZ;
             }
 
 
             GetVelocityLimits();
 
-            resolutionX = resolution[0];
-            resolutionY = resolution[1];
-            resolutionZ = resolution[2];
 
-            GetPosition(true, false);
-            velocity = GetStatus(true);
+
+            GetPosition();
+            velocity = GetStatus();
 
             start_moving = false;
             moving = false;
@@ -172,8 +180,9 @@ namespace FLIMage.HardwareControls.StageControls
             ThoTimer = new System.Timers.Timer(300);
             ThoTimer.Elapsed += TimerEvent;
             ThoTimer.AutoReset = true;
-
             ThoTimer.Enabled = true;
+
+            connected = true;
         }
 
 
@@ -343,6 +352,8 @@ namespace FLIMage.HardwareControls.StageControls
 
             if (Math.Abs(XNewPos - XPos) > minMovX / resolutionX)
             {
+                double Xtmp = 0;
+                thordll.GetParam(ThorParam.PARAM_X_POS, ref Xtmp);
                 thordll.SetParam(ThorParam.PARAM_X_POS, XNewPos);
                 ret = thordll.PreflightPosition();
                 ret = thordll.SetupPosition(); //Note that ret == 0 is fail. 
@@ -375,7 +386,7 @@ namespace FLIMage.HardwareControls.StageControls
             //System.Threading.Thread.Sleep(50);
         }
 
-        public double[] GetStatus(bool block) //pretty much just asking velocity.
+        public double[] GetStatus() //pretty much just asking velocity.
         {
             thordll.GetParam(ThorParam.PARAM_X_VELOCITY_CURRENT, ref param);
             velocity[0] = param;
@@ -386,7 +397,7 @@ namespace FLIMage.HardwareControls.StageControls
             return velocity;
         }
 
-        public void GetPosition(bool block, bool duringMovement)
+        public void GetPosition()
         {
             thordll.GetParam(ThorParam.PARAM_X_POS_CURRENT, ref param);
             XPos = param;
@@ -404,8 +415,8 @@ namespace FLIMage.HardwareControls.StageControls
 
         public void TimerEvent(object source, System.Timers.ElapsedEventArgs e)
         {
-            if (!start_moving && !moving && continuous_read)
-                GetPosition(true, false);
+            if (!start_moving && !moving && continuous_readCheck)
+                GetPosition();
         }
         
 

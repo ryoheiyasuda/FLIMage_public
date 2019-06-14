@@ -136,6 +136,9 @@
     <Reference Include="MathNet.Numerics, Version=4.8.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MathNet.Numerics.4.8.0\lib\net461\MathNet.Numerics.dll</HintPath>
     </Reference>
+    <Reference Include="MicroscopeHardwareLibs">
+      <HintPath>External\MicroscopeHardwareLibs.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="NationalInstruments.Common, Version=15.1.40.49152, Culture=neutral, PublicKeyToken=dc6ad606294fc298, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -184,7 +187,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HardwareControls\StageControls\MotorCtrl.cs" />
-    <Compile Include="HardwareControls\StageControls\MotorCtrl_MP285.cs" />
+    <Compile Include="HardwareControls\StageControls\MotorCtrl_ThorMCM3001.cs" />
     <Compile Include="HardwareControls\StageControls\MotorCtrl_MP285A.cs" />
     <Compile Include="HardwareControls\PMTControl.cs">
       <SubType>Form</SubType>
@@ -193,10 +196,6 @@
       <DependentUpon>PMTControl.cs</DependentUpon>
     </Compile>
     <Compile Include="HardwareControls\StageControls\ThorMCMX000.cs" />
-    <Compile Include="HardwareControls\ThorLabs\ThorParam.cs" />
-    <Compile Include="HardwareControls\ThorLabs\ThorDLL.cs" />
-    <Compile Include="HardwareControls\ThorLabs\ThorECU.cs" />
-    <Compile Include="HardwareControls\ThorLabs\ThorMCM3000.cs" />
     <Compile Include="Main\FLIMage_IO.cs" />
     <Compile Include="FlowControls\COMserver.cs" />
     <Compile Include="HardwareControls\DigitalSignalPanel.cs">

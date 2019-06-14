@@ -299,7 +299,8 @@ namespace FLIMage.FlowControls
 
                     System.Threading.Thread.Sleep(CheckingInterval_ms);
 
-                    while (FLIMage.flimage_io.grabbing && !abortGrabActivated)
+                    while ((FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process) 
+                        && !abortGrabActivated)
                     {
                         System.Threading.Thread.Sleep(CheckingInterval_ms);
                         reportProgress(true);

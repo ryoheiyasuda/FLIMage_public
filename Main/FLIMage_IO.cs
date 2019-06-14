@@ -46,6 +46,7 @@ namespace FLIMage
         public bool imageSequencing = false;
         public bool focusing = false;
         public bool grabbing = false;
+        public bool post_grabbing_process = false;
         public bool looping = false;
         public bool allowLoop = true;
         public bool stopGrabActivated = false;
@@ -606,6 +607,7 @@ namespace FLIMage
             {
 
                 grabbing = true;
+                post_grabbing_process = false;
                 focusing = false;
                 //RateTimer.Stop();
                 EventNotify?.Invoke(this, new ProcessEventArgs("GrabStart", null));
@@ -1762,10 +1764,14 @@ namespace FLIMage
                     State.Files.fileCounter++; //This needs to be after MoveMotorBack, since movemotorbacktohome sends notification with the current fileCounter.
                     internalImageCounter++;
 
+                    post_grabbing_process = true;
+
                     if (internalImageCounter >= State.Acq.nImages || !allowLoop)
                     {
-                        Task.Factory.StartNew(() => { StopGrab(true); });
+                        StopGrab(true); //This will stop grabbing.
+                        //Task.Factory.StartNew(() => { StopGrab(true); }); 
                     }
+
 
                     if (State.Acq.fastZScan && !State.Acq.ZStack)
                     {
@@ -1810,6 +1816,7 @@ namespace FLIMage
                     EventNotify?.Invoke(this, new ProcessEventArgs("AcquisitionDone", null));
 
                     grabbing = false; //grab is finished.
+                    post_grabbing_process = false;
 
                     //////////////
                     if (internalImageCounter < State.Acq.nImages && allowLoop)
