@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MicroscopeHardwareLibs;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,7 +8,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using MicroscopeHardwareLibs;
 
 namespace FLIMage.HardwareControls.StageControls
 {
@@ -26,7 +26,7 @@ namespace FLIMage.HardwareControls.StageControls
         public double XNewPos, YNewPos, ZNewPos;
         public double XPosMov, YPosMov, ZPosMov;
 
-        public double AllowError = 0.1;
+        public double AllowError = 0.05;
 
         public int minMotorVal = (int)(-Math.Pow(2, 31) + 1);
 
@@ -42,12 +42,10 @@ namespace FLIMage.HardwareControls.StageControls
         public int maxVelocity;
         public int minVelocity;
 
-        int timeout = 50; //millisecond
+        int timeout = 20; //millisecond
         int total_timeout = 2000;
 
         public MotorCtrl.DeviceMode device_mode;
-        public bool waitingReturn = false;
-        private bool positionReceived = false;
 
         public bool freezing = false;
         public String tString;
@@ -56,11 +54,12 @@ namespace FLIMage.HardwareControls.StageControls
         System.Timers.Timer ThoTimer;
 
         public bool reading = false;
-        public bool continuous_readCheck = true;
         public bool connected = false;
+        public bool continuous_readCheck = true;
 
+        public int MotorDisplayUpdateTime_ms = 300;
 
-        public MotorCtrl_ThorMCM3001(string port, Double[] resolution, String typeString)
+        public MotorCtrl_ThorMCM3001(string port, Double[] resolution, String typeString, int MotorDisplayUpdateTime)
         {
             String COMport = port; //Standard is COM32.
             var motorType = ThorMCM3000.Thor3000Type.MCM3001;
@@ -68,7 +67,12 @@ namespace FLIMage.HardwareControls.StageControls
                 motorType = ThorMCM3000.Thor3000Type.MCM3002;
             else if (typeString.Contains("3003"))
                 motorType = ThorMCM3000.Thor3000Type.MCM3003;
+            else if (typeString.Contains("BScope"))
+                motorType = ThorMCM3000.Thor3000Type.BScope;
+            else if (typeString.Contains("Bergamo"))
+                motorType = ThorMCM3000.Thor3000Type.Bergamo;
 
+            MotorDisplayUpdateTime_ms = MotorDisplayUpdateTime;
             thorMCM3000 = new ThorMCM3000(COMport, 115200, motorType);
 
             if (thorMCM3000.OpenPort() == 0)
@@ -104,49 +108,43 @@ namespace FLIMage.HardwareControls.StageControls
             else
                 SetVelocity(1500);
 
-            waitingReturn = true;
             freezing = false;
             //
-            ThoTimer = new System.Timers.Timer(300);
+            ThoTimer = new System.Timers.Timer(MotorDisplayUpdateTime_ms);
             ThoTimer.Elapsed += TimerEvent;
             ThoTimer.AutoReset = true;
             ThoTimer.Enabled = true;
         }
 
+        public void unsubscribe()
+        {
 
-        public void WaitUntilMovementDone()
+        }
+
+        public int WaitUntilMovementDone()
         {
             if (!moving)
-                return;
+                return 1;
 
             for (int i = 0; i < total_timeout / timeout; i++)
             {
+                System.Threading.Thread.Sleep(timeout);
                 moving = thorMCM3000.IsMotorBusy(0) || thorMCM3000.IsMotorBusy(1) || thorMCM3000.IsMotorBusy(2);
+
+                e.Name = moving ? "Moving" : "MovementDone";
+                GetPosition();
 
                 if (!moving)
                 {
-                    break;
+                    return 1;
                 }
                 else
                 {
-                    System.Windows.Forms.Application.DoEvents(); //This is necessary for port to receive the event!!
-                    System.Threading.Thread.Sleep(timeout);
+                    Application.DoEvents(); //This is necessary for port to receive the event!!                    
                 }
-
-                e.Name = "Moving";
-                GetPosition();
             }
 
-            if (moving)
-            {
-                thorMCM3000.Stop();
-                MovementDone();
-            }
-            else
-            {
-                MovementDone();
-            }
-
+            return 0;
         }
 
         public void reopen()
@@ -216,7 +214,7 @@ namespace FLIMage.HardwareControls.StageControls
 
         public int setPosition_internal()
         {
-            if (Math.Abs(XPos - XNewPos) < AllowError && Math.Abs(YPos - YNewPos) < AllowError && Math.Abs(ZPos - ZNewPos) < AllowError)
+            if (Math.Abs(XPos - XNewPos) < AllowError / resolutionX && Math.Abs(YPos - YNewPos) < AllowError / resolutionY && Math.Abs(ZPos - ZNewPos) < AllowError / resolutionZ)
             {
                 MovementDone();
                 return 0;
@@ -225,46 +223,53 @@ namespace FLIMage.HardwareControls.StageControls
             moving = true;
             start_moving = false;
 
-            if (Math.Abs(XPos - XNewPos) > AllowError)
-            {
-                if (thorMCM3000.GoToPosition(0, XNewPos) == 0)
-                {
-                    MessageBox.Show("out of range for X movement");
-                    MovementDone();
-                    return 0;
-                }
-            }
-
-            if (Math.Abs(YPos - YNewPos) > AllowError)
-            {
-                if (thorMCM3000.GoToPosition(1, XNewPos) == 0)
-                {
-                    MessageBox.Show("out of range for Y movement");
-                    MovementDone();
-                    return 0;
-                }
-            }
-
-            if (Math.Abs(ZPos - ZNewPos) > AllowError)
-            {
-                if (thorMCM3000.GoToPosition(2, XNewPos) == 0)
-                {
-                    MessageBox.Show("out of range for Z movement");
-                    MovementDone();
-                    return 0;
-                }
-            }
-
-
             XPosMov = XPos;
             YPosMov = YPos;
             ZPosMov = ZPos;
 
-            WaitUntilMovementDone();
+            int timesTrials = 1;
+            for (int i = 0; i < timesTrials; i++)
+            {
+                if (Math.Abs(XPos - XNewPos) > AllowError / resolutionX)
+                {
+                    if (thorMCM3000.GoToPosition(0, XNewPos) == 0)
+                    {
+                        MessageBox.Show("out of range for X movement");
+                        MovementDone();
+                        return 0;
+                    }
+                }
 
-            return 0;
+                if (Math.Abs(YPos - YNewPos) > AllowError / resolutionY)
+                {
+                    if (thorMCM3000.GoToPosition(1, YNewPos) == 0)
+                    {
+                        MessageBox.Show("out of range for Y movement");
+                        MovementDone();
+                        return 0;
+                    }
+                }
+
+                if (Math.Abs(ZPos - ZNewPos) > AllowError / resolutionZ)
+                {
+                    if (thorMCM3000.GoToPosition(2, ZNewPos) == 0)
+                    {
+                        MessageBox.Show("out of range for Z movement");
+                        MovementDone();
+                        return 0;
+                    }
+                }
+
+                var success = WaitUntilMovementDone();
+
+                if (success == 0)
+                    thorMCM3000.Stop();
+            }
+
+            MovementDone();
+            return 1;
         }
-        
+
 
         public void GetPosition()
         {
@@ -282,7 +287,7 @@ namespace FLIMage.HardwareControls.StageControls
             }
             else
             {
-                MessageBox.Show("Position reading failed!");
+                Debug.WriteLine("Position reading failed!");
             }
             reading = false;
         }

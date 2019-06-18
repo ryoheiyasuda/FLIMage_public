@@ -54,11 +54,14 @@ namespace FLIMage.HardwareControls.StageControls
         public bool reading = false;
         public bool connected = false;
         public bool continuous_readCheck = false;
+        public int MotorDisplayUpdateTime_ms;
 
 
-        public MotorCtrl_MP285A(String port, Double[] resolution, int velocity, bool crash_response)
+        public MotorCtrl_MP285A(String port, Double[] resolution, int velocity, bool crash_response, int MotorDisplayUpdateTime)
         {
             String COMport = port;
+
+            MotorDisplayUpdateTime_ms = MotorDisplayUpdateTime;
 
             mp285 = new SutterMP285(COMport, 9600);
 
@@ -105,7 +108,7 @@ namespace FLIMage.HardwareControls.StageControls
             freezing = false;
             //
 
-            ThoTimer = new System.Timers.Timer(500);
+            ThoTimer = new System.Timers.Timer(MotorDisplayUpdateTime_ms);
             ThoTimer.Elapsed += TimerEvent;
             ThoTimer.AutoReset = true;
             ThoTimer.Enabled = true;
@@ -293,7 +296,6 @@ namespace FLIMage.HardwareControls.StageControls
 
         public void GetPosition()
         {
-
             reading = true;
             int[] pos = new int[3];
             int success = mp285.GetPosition(pos);
@@ -325,7 +327,9 @@ namespace FLIMage.HardwareControls.StageControls
         public void TimerEvent(object source, System.Timers.ElapsedEventArgs e1)
         {
             if (!start_moving && !moving && continuous_readCheck && !reading)
+            {
                 GetPosition();
+            }
             else if (moving)
             {
                 e = new MotrEventArgs("Moving");

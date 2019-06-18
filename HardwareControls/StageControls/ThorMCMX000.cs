@@ -83,9 +83,10 @@ namespace FLIMage.HardwareControls.StageControls
 
         public const int TRUE = 1, FALSE = 0;
         public bool connected = false;
+        public int MotorDisplayUpdateTime_ms = 300;
         ThorDLL thordll;
 
-        public ThorMCMX000(double[] resolution, MotorCtrl.MotorTypeEnum motor_type)
+        public ThorMCMX000(double[] resolution, MotorCtrl.MotorTypeEnum motor_type, int MotorDisplayUpdateTime)
         {
 
             resolutionX = resolution[0];
@@ -100,6 +101,8 @@ namespace FLIMage.HardwareControls.StageControls
             }
             else
                 thordll = ThorDLL.ThorDLL_Load(ThorDLL.DLLType.ThorBScope);
+
+            MotorDisplayUpdateTime_ms = MotorDisplayUpdateTime;
 
             int ret;
             int deviceCount = 0;
@@ -177,7 +180,7 @@ namespace FLIMage.HardwareControls.StageControls
             tString = "";
             freezing = false;
 
-            ThoTimer = new System.Timers.Timer(300);
+            ThoTimer = new System.Timers.Timer(MotorDisplayUpdateTime_ms);
             ThoTimer.Elapsed += TimerEvent;
             ThoTimer.AutoReset = true;
             ThoTimer.Enabled = true;

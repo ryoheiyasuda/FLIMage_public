@@ -76,6 +76,8 @@ namespace FLIMage
             public String MotorComPort = "COM1";
             public String MotorHWName = "MP-285A"; //or "MP-285" or "ThorlabMCM3000"
             public String TagLensPort = "COM6";
+            public int MotorDisplayUpdateTime_ms = 1000;
+            public double[] MotorConversionFactor = { 0, 0, 0 };
 
             public String MicroscopeSystem = "Thor"; //or None
             public String ThorPMTModule = "ThorECU"; //or ThorPMT21000

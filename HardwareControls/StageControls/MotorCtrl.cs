@@ -63,20 +63,24 @@ namespace FLIMage.HardwareControls.StageControls
         public bool continuous_read = true;
         public bool connected = true;
 
+
         public MotorTypeEnum MotorType;
         public String tString;//
 
         public MotorCtrl.StackPosition stack_Position = MotorCtrl.StackPosition.Undefined;
 
         public bool continuous_readCheck = true;
+        public int MotorDisplayUpdateTime_ms = 1000;
 
 
-        public MotorCtrl(String MotorType_in, String Comport, double[] resolution, double[] velocity, double[] steps)
+        public MotorCtrl(String MotorType_in, String Comport, double[] resolution, double[] velocity, double[] steps, int motorDisplayUpdateTime)
         {
+            MotorDisplayUpdateTime_ms = motorDisplayUpdateTime;
             if (MotorType_in == "MP-285" || MotorType_in == "MP285")
             {
                 MotorType = MotorTypeEnum.mp285a;
-                mp285a = new MotorCtrl_MP285A(Comport, resolution, (int)velocity[0], false);
+                mp285a = new MotorCtrl_MP285A(Comport, resolution, (int)velocity[0], false, MotorDisplayUpdateTime_ms);
+
                 connected = mp285a.connected;
                 if (mp285a.connected)
                 {
@@ -88,7 +92,7 @@ namespace FLIMage.HardwareControls.StageControls
             else if (MotorType_in == "MP-285A" || MotorType_in == "MP285A")
             {
                 MotorType = MotorTypeEnum.mp285a;
-                mp285a = new MotorCtrl_MP285A(Comport, resolution, (int)velocity[0], true);
+                mp285a = new MotorCtrl_MP285A(Comport, resolution, (int)velocity[0], true, MotorDisplayUpdateTime_ms);
                 connected = mp285a.connected;
                 if (mp285a.connected)
                 {
@@ -97,13 +101,13 @@ namespace FLIMage.HardwareControls.StageControls
                     controller_object = mp285a;
                 }
             }
-            else if (MotorType_in == "ThorMCM3000" || MotorType_in == "ThorMCM5000" || MotorType_in == "ThorBScope")
+            else if (MotorType_in == "ThorMCM3000" || MotorType_in == "ThorMCM5000")
             {
                 MotorType = MotorTypeEnum.thorMCM3000;
-                if (MotorType_in == "ThorMCM5000" || MotorType_in == "ThorBScope")
+                if (MotorType_in == "ThorMCM5000")
                     MotorType = MotorTypeEnum.thorMCM5000;
 
-                thorMCMX000 = new ThorMCMX000(resolution, MotorType);
+                thorMCMX000 = new ThorMCMX000(resolution, MotorType, MotorDisplayUpdateTime_ms);
                 connected = thorMCMX000.connected;
                 if (connected)
                 {
@@ -112,10 +116,10 @@ namespace FLIMage.HardwareControls.StageControls
                     controller_object = thorMCMX000;
                 }
             }
-            else if (MotorType_in.Contains("ThorMCM300") || MotorType_in == "ThorBScopeD")
+            else if (MotorType_in.Contains("MCM300") || MotorType_in.Contains("BScope"))
             {
                 MotorType = MotorTypeEnum.thorMCM3001;
-                thorMCM3001 = new MotorCtrl_ThorMCM3001(Comport, resolution, MotorType_in);
+                thorMCM3001 = new MotorCtrl_ThorMCM3001(Comport, resolution, MotorType_in, MotorDisplayUpdateTime_ms);
                 connected = thorMCM3001.connected;
                 if (connected)
                 {
@@ -125,6 +129,8 @@ namespace FLIMage.HardwareControls.StageControls
                 }
             }
 
+            if (controller_object == null)
+                connected = false;
 
             resolutionX = resolution[0];
             resolutionY = resolution[1];
@@ -281,7 +287,7 @@ namespace FLIMage.HardwareControls.StageControls
             {
                 mp285a.GetStatus();
                 velocity[0] = mp285a.velocity_coarse;
-            }            
+            }
             getParameters();
         }
 

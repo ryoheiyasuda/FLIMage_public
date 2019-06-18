@@ -229,9 +229,23 @@ namespace FLIMage
             {
                 try
                 {
-                    double[] resolution = new double[] { State.Motor.resolutionX, State.Motor.resolutionY, State.Motor.resolutionZ };
+                    if (State.Init.MotorConversionFactor.Any(x => x == 0)) //Just for compatibility with old format. Cannot be 0.
+                    {
+                        State.Init.MotorConversionFactor[0] = State.Motor.resolutionX;
+                        State.Init.MotorConversionFactor[1] = State.Motor.resolutionY;
+                        State.Init.MotorConversionFactor[2] = State.Motor.resolutionZ;
+                        File.WriteAllText(State.Files.deviceFileName, fileIO.AllSetupValues_device());
+                    }
+                    else
+                    {
+                        State.Motor.resolutionX = State.Init.MotorConversionFactor[0];
+                        State.Motor.resolutionY = State.Init.MotorConversionFactor[1];
+                        State.Motor.resolutionZ = State.Init.MotorConversionFactor[2];
+                    }
+
+                    double[] resolution = (double[])State.Init.MotorConversionFactor.Clone();
                     double[] steps = new double[] { State.Motor.stepXY, State.Motor.stepXY, State.Motor.stepZ };
-                    motorCtrl = new MotorCtrl(State.Init.MotorHWName, State.Init.MotorComPort, resolution, State.Motor.velocity, steps);
+                    motorCtrl = new MotorCtrl(State.Init.MotorHWName, State.Init.MotorComPort, resolution, State.Motor.velocity, steps, State.Init.MotorDisplayUpdateTime_ms);
 
                     if (motorCtrl.connected)
                     {
@@ -3045,7 +3059,7 @@ namespace FLIMage
                         SetMotorPosition(true, true);
                     }
 
-                    
+
 
                     motor_moving = false;
                 });
@@ -3235,7 +3249,7 @@ namespace FLIMage
 
             //motorCtrl.GetStatus();
             //Motor_TextSet();
-            
+
             double vel_step = 100;
             if (sender.Equals(Vel_Down))
                 vel_step = -100;
