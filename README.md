@@ -13,10 +13,10 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 
 * NI-card: If you want to use National Instruments cards, you need to install National instrument driver with DotNet support (we use version 18.6). Then, put NationalInstruments.Common.dll and NationalInstruments.DAQmx.dll in ../Libraries folder (need to create). We tested with PCIe-6231/6233 and PCI-6371/6373. It should compile without these libraries for analysis. 
 
-* TCSPC card: If you want to use TCSPC card from PicoQuant (TimeHarp 260 / MultiHarp) or Becker Hickl (SPC-150), you need to install their drivers as well as DLL from Florida Lifetime Imaging LLC (info@lifetime-imaging.com).
+* TCSPC card: If you want to use TCSPC card from PicoQuant (TimeHarp 260 / MultiHarp) or Becker Hickl (SPC-150), you need to install their drivers as well as DLL from Florida Lifetime Imaging LLC (http://www.lifetime-imaging.com/).
 
-* Thorlab linear controls (PMT, Motor, etc).
-You need DLL and XML files and configure them. Contact Florida Lifetime Imaging LLC (info@lifetime-imaging.com).
+* Sutter or Thorlab linear stage controls and other hardware controls.
+You need DLL files and configure them. Contact Florida Lifetime Imaging LLC (http://www.lifetime-imaging.com/).
 
 * Tag-lens
 It is possible to scan in Z-axis extremely fast with taglens. This feature is still under development.
@@ -24,6 +24,4 @@ It is possible to scan in Z-axis extremely fast with taglens. This feature is st
 * Resonant scanning
 We are aiming to implement it in next version.
 
-* Sutter linear stage.
-This uses COM port. You can just configure at Documents\FLIMage\Init_Files\FLIM_deviceFile_V1.txt.
 
