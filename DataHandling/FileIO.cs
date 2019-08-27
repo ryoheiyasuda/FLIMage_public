@@ -655,8 +655,28 @@ namespace FLIMage
                 for (int j = 0; j < members.Length; j++)
                 {
                     var value = members[j].GetValue(obj);
-                    type2.GetField(members[j].Name).SetValue(obj2, value);
-                    //members2[j].SetValue(obj2, value);
+                    var valuetype = members[j].FieldType;
+                    if (value != null)
+                    {
+                        if (valuetype == typeof(int[]))
+                        {
+                            var valA = (int[])value;
+                            value = valA.Clone();
+                        }
+                        else if (valuetype == typeof(bool[]))
+                        {
+                            var valA = (bool[])value;
+                            value = valA.Clone();
+                        }
+                        else if (valuetype == typeof(double[]))
+                        {
+                            var valA = (double[])value;
+                            value = valA.Clone(); 
+                        }
+
+                        type2.GetField(members[j].Name).SetValue(obj2, value);
+                        //members2[j].SetValue(obj2, value);
+                    }
                 }
             }
 
@@ -984,7 +1004,10 @@ namespace FLIMage
 
 
                 value = image.GetField(TiffTag.IMAGEDESCRIPTION);
-                Header = value[0].ToString();
+                if (value != null)
+                    Header = value[0].ToString();
+                else
+                    Header = "";
 
                 //Debug.WriteLine(Description); //For Debug.
 
@@ -1019,7 +1042,9 @@ namespace FLIMage
 
                 Compression compression = (Compression)image.GetField(TiffTag.COMPRESSION)[0].ToInt();
                 value = image.GetField(TiffTag.IMAGEDESCRIPTION);
-                String Description = value[0].ToString();
+                String Description = "";
+                if (value != null)
+                    Description = value[0].ToString();
                 //Debug.WriteLine(Description); //For Debug.
 
                 value = image.GetField(TiffTag.IMAGEWIDTH);
@@ -1048,7 +1073,7 @@ namespace FLIMage
                         Description = value[0].ToString();
                         if (read_page == 0 && newFile)
                         {
-                            FLIM.decodeHeader(Description);
+                            FLIM.decodeHeader(Description, fileName);
                             dt = FLIM.acquiredTime;
                         }
                         else
@@ -1066,7 +1091,7 @@ namespace FLIMage
                     {
                         if (widthAll == FLIM.n_time.Sum() && image_length == width * height)
                             fm = FileFormat.ChTime_YX;
-                        else if (image_length == FLIM.n_time[0] && widthAll != width * height * nCh) //This can happen only if all channels have the same t.
+                        else if (image_length == FLIM.n_time[0] && widthAll == width * height * nCh) //This can happen only if all channels have the same t.
                             fm = FileFormat.ChYX_Time;
                         else if (image_length == width * height * nCh && widthAll == FLIM.n_time[0]) //This can happen only if all channels have the same t.
                             fm = FileFormat.Time_ChYX;

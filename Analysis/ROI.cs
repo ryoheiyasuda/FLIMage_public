@@ -135,9 +135,9 @@ namespace FLIMage.Analysis
                 if (finalChannels < nChannels)
                 {
                     int subChannels = -finalChannels + nChannels;
-                    beta.RemoveRange(beta.Count, subChannels);
-                    LifetimeX.RemoveRange(beta.Count, subChannels);
-                    LifetimeY.RemoveRange(beta.Count, subChannels);
+                    beta.RemoveRange(finalChannels, subChannels);
+                    LifetimeX.RemoveRange(finalChannels, subChannels);
+                    LifetimeY.RemoveRange(finalChannels, subChannels);
                 }
                 else if (finalChannels > nChannels)
                 {
@@ -182,6 +182,24 @@ namespace FLIMage.Analysis
                     Points[i] = new Point(X[i], Y[i]);
                 }
             }
+        }
+
+        public ROI changeSizeOfCircle(Point afterP, Point beforeP, ROI roiBefore)
+        {
+            var centerX = (roiBefore.Rect.Left + roiBefore.Rect.Right) / 2;
+            var centerY = (roiBefore.Rect.Top + roiBefore.Rect.Bottom) / 2;
+
+            double distFromCenterB2 = Math.Pow(centerX - beforeP.X, 2) + Math.Pow(centerY - beforeP.Y, 2);
+            double distFromCenterA2 = Math.Pow(centerX - afterP.X, 2) + Math.Pow(centerY - afterP.Y, 2);
+            double scale = Math.Sqrt(distFromCenterA2 / distFromCenterB2);
+            int newWidth = (int)(roiBefore.Rect.Width * scale);
+            int newHeight = (int)(roiBefore.Rect.Height * scale);
+            int newLeft = centerX - newWidth / 2;
+            int newTop = centerY - newHeight / 2;
+
+            int n_channels = nChannels;
+            var newRoi = new ROI(ROI_type, new Rectangle(newLeft, newTop, newWidth, newHeight), n_channels, ID, Roi3d, (int[])Z.Clone());
+            return newRoi;
         }
 
         public ROI MovePoint(Point P, int loc)
@@ -294,15 +312,31 @@ namespace FLIMage.Analysis
             bool c = false;
             int winSize = 2;
             loc = 0;
-            for (int i = 0; i < X.Length; i++)
+            if (ROI_type.Equals(ROItype.Elipsoid))
             {
-                int x = X[i];
-                int y = Y[i];
-                if (P.X <= x + winSize && P.X >= x - winSize && P.Y <= y + winSize && P.Y >= y - winSize)
-                {
+                double a = (double)Rect.Width / 2.0;
+                double b = (double)Rect.Height / 2.0;
+                double CenterX = Rect.Left + a;
+                double CenterY = Rect.Top + b;
+                double Dist_sq = Math.Pow((P.X - CenterX) / a, 2) + Math.Pow((P.Y - CenterY) / b, 2);
+
+                if (Dist_sq <= 1.21 && Dist_sq >= 0.81 )
                     c = true;
-                    loc = i;
-                    return c;
+
+                return c;
+            }
+            else
+            {
+                for (int i = 0; i < X.Length; i++)
+                {
+                    int x = X[i];
+                    int y = Y[i];
+                    if (P.X <= x + winSize && P.X >= x - winSize && P.Y <= y + winSize && P.Y >= y - winSize)
+                    {
+                        c = true;
+                        loc = i;
+                        return c;
+                    }
                 }
             }
 

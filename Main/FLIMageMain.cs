@@ -90,6 +90,12 @@ namespace FLIMage
         public RemoteControl script;
         public String versionText;
 
+        //File watcher for method
+        private FileSystemWatcher watcher;
+        private String watchFile = "COM_method.txt";
+        private String watchDirName = "COM";
+        private String watchDir;
+        private bool busyFile = false;
 
         //// Setting manager
         String settingName = "FLIMageWindow";
@@ -252,7 +258,7 @@ namespace FLIMage
                         FillGUIMotor();
                         motorCtrl.MotH += new MotorCtrl.MotorHandler(MotorListener);
 
-                        if (State.Init.MotorHWName.Equals("MP-285") || State.Init.MotorHWName.Equals("MP285"))
+                        if (State.Init.MotorHWName.Equals("MP-285A") || State.Init.MotorHWName.Equals("MP285A"))
                         {
                             motorCtrl.continuousRead(false);
                             ContRead.Checked = false;
@@ -326,11 +332,48 @@ namespace FLIMage
 
             flimage_io.PostFLIMageShowInitialization(this);
 
+            StartNewFileWatcher();
+
             flimage_io.Notify(new ProcessEventArgs("FLIMageStarted", null));
             flimage_io.Notify(new ProcessEventArgs("ParametersChanged", null));
         }
 
+        public void StartNewFileWatcher()
+        {
+            watchDir = Path.Combine(State.Files.initFolderPath, watchDirName);
+            Directory.CreateDirectory(watchDir);
+            watcher = new FileSystemWatcher();
+            watcher.Path = watchDir;
+            watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName;
+            watcher.Filter = watchFile; // "*.txt";
+            watcher.Changed += new FileSystemEventHandler(OnChanged);
+            watcher.EnableRaisingEvents = true;
+        }
 
+        public void OnChanged(object source, FileSystemEventArgs e)
+        {
+            if (!busyFile)
+            {
+                busyFile = true;
+                try
+                {
+                    String commandMethod = File.ReadAllText(Path.Combine(watchDir, watchFile));
+                    if (commandMethod.Contains("PIPE"))
+                    {
+                        Invoke((Action)delegate
+                        {
+                            remoteControlToolStripMenuItem1_Click(remoteControlToolStripMenuItem1, null);
+                            script.TurnOnServer(true);
+                        });
+                    }
+                }
+                catch
+                {
+
+                }
+                busyFile = false;
+            }
+        }
 
         void binningSettingChange()
         {
@@ -420,10 +463,16 @@ namespace FLIMage
                     script.Show();
                 }
 
-                if (readText.Contains("pmt_control") && State.Init.MicroscopeSystem == "Thor")
+                if (readText.Contains("pmt_control") && State.Init.MicroscopeSystem.Contains("Thor"))
                 {
                     pmt_control = new PMTControl(State);
                     pmt_control.Show();
+                }
+
+                if (readText.Contains("physiology"))
+                {
+                    physiology = new StimPanel(true);
+                    physiology.Show();
                 }
 
                 if (!readText.Contains("plot_realtime"))
@@ -485,6 +534,12 @@ namespace FLIMage
             {
                 pmt_control.Close();
                 pmt_control = new PMTControl(State);
+            }
+
+            if (physiology != null && !physiology.IsDisposed)
+            {
+                physiology.Close();
+                physiology = new StimPanel(true);
             }
 
             if (image_display != null && !image_display.IsDisposed)
@@ -549,6 +604,13 @@ namespace FLIMage
                 sb.Append(",");
             }
 
+            if (physiology != null && physiology.Visible)
+            {
+                physiology.CloseCommand();
+                sb.Append("physiology");
+                sb.Append(",");
+            }
+
             //Plot windows.
             if (image_display.plot_realtime != null && image_display.plot_realtime.Visible)
             {
@@ -599,7 +661,7 @@ namespace FLIMage
             dIOPanelToolStripMenuItem.Checked = (DIO_panel != null && DIO_panel.Visible);
             pMTControlToolStripMenuItem.Checked = pmt_control != null && pmt_control.Visible;
 
-            pMTControlToolStripMenuItem.Visible = State.Init.MicroscopeSystem == "Thor";
+            pMTControlToolStripMenuItem.Visible = State.Init.MicroscopeSystem.Contains("Thor");
         }
 
         string WindowsInfoFileName()
@@ -792,7 +854,7 @@ namespace FLIMage
 
             laserWarningButton.Visible = badrate;
 
-            if (!flimage_io.runningImgAcq)
+            //if (!flimage_io.runningImgAcq)
             {
                 if (flimage_io.shading != null && flimage_io.shading.calibration != null)
                 {
@@ -1343,8 +1405,11 @@ namespace FLIMage
                     {
                         if (!Double.TryParse(ScanFraction.Text, out scanFraction1)) scanFraction1 = State.Acq.scanFraction;
 
-                        if (scanFraction1 > State.Acq.fillFraction && scanFraction1 > 0.5 && scanFraction1 <= 0.99)
+                        if (scanFraction1 > State.Acq.fillFraction && scanFraction1 > 0.7 && scanFraction1 <= 0.99)
                         {
+                            if (State.Init.MicroscopeSystem == "ThorBScopeGG" && scanFraction1 > 0.86)
+                                scanFraction1 = 0.86;
+
                             State.Acq.scanFraction = scanFraction1;
                         }
                     }
@@ -1363,8 +1428,11 @@ namespace FLIMage
                     else if (sdr.Equals(FillFraction))
                     {
                         if (!Double.TryParse(FillFraction.Text, out fillFraction1)) fillFraction1 = State.Acq.fillFraction;
-                        if (fillFraction1 <= 0.99 && fillFraction1 > 0.5 && fillFraction1 < State.Acq.scanFraction)
+                        if (fillFraction1 <= 0.99 && fillFraction1 > 0.65 && fillFraction1 < State.Acq.scanFraction)
                         {
+                            if (State.Init.MicroscopeSystem == "ThorBScopeGG" && fillFraction1 < 0.7)
+                                fillFraction1 = 0.7;
+
                             State.Acq.fillFraction = fillFraction1;
                             //State.Acq.ScanDelay = State.Acq.msPerLine * (State.Acq.scanFraction - State.Acq.fillFraction);
                         }
@@ -1375,8 +1443,14 @@ namespace FLIMage
                     double maxX = State.Acq.XMaxVoltage;
                     double maxY = State.Acq.YMaxVoltage;
 
-                    if (!Double.TryParse(MaxRangeX.Text, out maxX)) maxX = State.Acq.XMaxVoltage;
-                    if (!Double.TryParse(MaxRangeY.Text, out maxY)) maxY = State.Acq.YMaxVoltage;
+                    Double.TryParse(MaxRangeX.Text, out maxX);
+                    Double.TryParse(MaxRangeY.Text, out maxY);
+
+                    if (State.Init.MicroscopeSystem == "ThorBScopeGG" && maxX > 5)
+                        maxX = 5;
+
+                    if (State.Init.MicroscopeSystem == "ThorBScopeGG" && maxY > 5)
+                        maxY = 5;
 
                     if (maxX <= State.Init.AbsoluteMaxVoltageScan && maxX >= 0)
                         State.Acq.XMaxVoltage = maxX;
@@ -1402,10 +1476,10 @@ namespace FLIMage
                     if (!Double.TryParse(XOffset.Text, out xOffset)) xOffset = State.Acq.XOffset;
                     if (!Double.TryParse(YOffset.Text, out yOffset)) yOffset = State.Acq.YOffset;
 
-                    if (xOffset < maxVoltage && xOffset > -maxVoltage)
+                    if (xOffset < State.Acq.XMaxVoltage && xOffset > -State.Acq.XMaxVoltage)
                         State.Acq.XOffset = xOffset;
 
-                    if (yOffset < maxVoltage && yOffset > -maxVoltage)
+                    if (yOffset < State.Acq.YMaxVoltage && yOffset > -State.Acq.YMaxVoltage)
                         State.Acq.YOffset = yOffset;
 
                     if (Int32.TryParse(pixelsPerLine.Text, out valI)) State.Acq.pixelsPerLine = valI;
@@ -2550,6 +2624,12 @@ namespace FLIMage
             }
             else if (command == "StartUncaging")
             {
+                if (uncaging_panel == null)
+                    uncaging_panel = new Uncaging_Trigger_Panel(this);
+
+                uncaging_panel.Show();
+                uncaging_panel.Activate();
+
                 this.Invoke((Action)delegate
                 {
                     image_display.uncaging_on = true;
@@ -2559,13 +2639,24 @@ namespace FLIMage
                         uncaging_panel.StartUncaging_button_Click(uncaging_panel, null);
                 });
             }
+            else if (command == "StopUncaging")
+            {
+                if (uncaging_panel != null && !uncaging_panel.IsDisposed)
+                {
+                    this.Invoke((Action)delegate
+                    {
+                        if (uncaging_panel.uncaging_running)
+                            uncaging_panel.StopUncaging();
+                    });
+                }
+            }
             else if (command == "UncagingStart")
             {
-                //EventNotify(this, new ProcessEventArgs("UncagingStart", null));
+                flimage_io.NotifyEventExternal("UncagingStart");
             }
             else if (command == "UncagingDone")
             {
-                //EventNotify(this, new ProcessEventArgs("UncagingDone", null));
+                flimage_io.NotifyEventExternal("UncagingDone");
             }
             else if (command == "LoadSettingWithNumber")
             {
@@ -2574,17 +2665,191 @@ namespace FLIMage
                 if (!Int32.TryParse(argument, out argnumber)) argnumber = defaultVal;
                 LoadSettingAsNumber(argnumber);
             }
+            else if (command == "LoadSettingFile")
+            {
+                if (File.Exists(argument))
+                {
+                    LoadSettingFile(argument, false);
+                }
+                else
+                {
+                    var fileName = Path.Combine(State.Files.initFolderPath, argument);
+                    LoadSettingFile(fileName, false);
+                }
+            }
             else if (command == "Focus")
             {
                 FocusButton_Click(this, null);
             }
             else if (command == "SetMotorPosition")
             {
-                SetMotorPosition(false, true);
+                SetMotorPosition(false, true); //Block the thread until movement done.
             }
             else if (command == "UpdateGUI")
             {
                 ReSetupValues(true);
+            }
+            else if (command == "OpenFile")
+            {
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.OpenFLIM(argument, true);
+                });
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "BinFrames")
+            {
+                int defaultVal = 1;
+                int argnumber = 1;
+                if (!Int32.TryParse(argument, out argnumber)) argnumber = defaultVal;
+
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.BinFrames(argnumber);
+                });
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "AlignFrames")
+            {
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.AlignFrames();
+                });
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "FitData")
+            {
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.FitData(false, true);
+                });
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "FitEachFrame")
+            {
+                int defaultVal = 1;
+                int argnumber = 1;
+                if (!Int32.TryParse(argument, out argnumber)) argnumber = defaultVal;
+
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.plot_regular.TurnOnCalcFit(argnumber != 0);
+                });
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "ReadImageJROI")
+            {
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.ReadImageJROI(argument);
+                });
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "CalcTimeCourse")
+            {
+                image_display.Invoke((Action)delegate
+                {
+                    if (image_display.TC != null)
+                        image_display.TC.ImInfos.Clear();
+                    image_display.CalculateTimecourse(true);
+                    image_display.plot_regular.updatePlot();
+                });
+
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "SetFLIMIntensityOffset")
+            {
+                double[] defaultVals = new double[] { 100, 1000 };
+                String[] sP = argument.Split(',');
+                if (sP.Length != 2)
+                    return false;
+
+                double[] argnumbers = new double[sP.Length];
+                for (int i = 0; i < sP.Length; i++)
+                    if (!double.TryParse(sP[i], out argnumbers[i])) argnumbers[i] = defaultVals[i];
+
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.SetFLIMIntensityOffset(argnumbers);
+                });
+
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "ApplyFitOffset")
+            {
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.ApplyOffset();
+                });
+
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+
+            }
+            else if (command == "FixTauAll")
+            {
+                int defaultVal = 1;
+                int argnumber = 1;
+                if (!Int32.TryParse(argument, out argnumber)) argnumber = defaultVal;
+
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.FixTauAll(argnumber != 0);
+                });
+
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "FixTau")
+            {
+                double[] defaultVals = new double[] { 2.6, 1.1 };
+                String[] sP = argument.Split(',');
+                if (sP.Length != 2)
+                    return false;
+
+                double[] argnumbers = new double[sP.Length];
+                for (int i = 0; i < sP.Length; i++)
+                    if (!double.TryParse(sP[i], out argnumbers[i])) argnumbers[i] = defaultVals[i];
+
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.FixTau(argnumbers);
+                });
+
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "SetFitRange")
+            {
+                int[] defaultVals = new int[] { 10, 50 };
+                String[] sP = argument.Split(',');
+                if (sP.Length != 2)
+                    return false;
+
+                int[] argnumbers = new int[sP.Length];
+                for (int i = 0; i < sP.Length; i++)
+                    if (!int.TryParse(sP[i], out argnumbers[i])) argnumbers[i] = defaultVals[i];
+
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.SetFitRange(argnumbers);
+                });
+
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "SetChannel")
+            {
+                int defaultVal = 1;
+                int argnumber = 1;
+                if (!Int32.TryParse(argument, out argnumber)) argnumber = defaultVal;
+
+                image_display.Invoke((Action)delegate
+                {
+                    image_display.SetChannel(argnumber);
+                });
+
+                flimage_io.Notify(new ProcessEventArgs("ExtCommandExecuted", null));
+            }
+            else if (command == "GetParametersOfImageFile")
+            {
+                State = image_display.FLIM_ImgData.State;
             }
             else
             {
@@ -2976,15 +3241,15 @@ namespace FLIMage
             double[] current = motorCtrl.CurrentUncalibratedPosition();
             if (current[2] != 0)
             {
-                motorCtrl.ZStackStart = (int)(current[2] - ZStackHalfStroke());
-                motorCtrl.ZStackCenter = (int)current[2];
-                motorCtrl.ZStackEnd = (int)(current[2] + ZStackHalfStroke());
+                motorCtrl.ZStackStart = current[2] - ZStackHalfStroke();
+                motorCtrl.ZStackCenter = current[2];
+                motorCtrl.ZStackEnd = current[2] + ZStackHalfStroke();
             }
         }
 
-        int ZStackHalfStroke()
+        double ZStackHalfStroke()
         {
-            return (int)((double)(State.Acq.nSlices - 1) * (double)State.Acq.sliceStep / motorCtrl.resolutionZ / 2.0);
+            return (double)(State.Acq.nSlices - 1) * State.Acq.sliceStep / motorCtrl.resolutionZ / 2.0;
         }
 
         /// <summary>
@@ -3143,7 +3408,7 @@ namespace FLIMage
         {
             motorCtrl.GetPosition();
             double[] position = motorCtrl.CurrentUncalibratedPosition();
-            motorCtrl.ZStackStart = (int)position[2];
+            motorCtrl.ZStackStart = position[2];
             motorCtrl.ZStackCenter = motorCtrl.ZStackStart + ZStackHalfStroke();
             motorCtrl.ZStackEnd = motorCtrl.ZStackStart + 2 * ZStackHalfStroke();
             motorCtrl.stack_Position = MotorCtrl.StackPosition.Start;
@@ -3166,7 +3431,7 @@ namespace FLIMage
             {
                 motorCtrl.GetPosition();
                 double[] position = motorCtrl.CurrentUncalibratedPosition();
-                motorCtrl.ZStackEnd = (int)position[2];
+                motorCtrl.ZStackEnd = position[2];
                 motorCtrl.stack_Position = MotorCtrl.StackPosition.End;
                 CalcStackSize();
 
@@ -3381,7 +3646,7 @@ namespace FLIMage
 
         public void UpdateUncagingFromDisplay()
         {
-            if (uncaging_panel.InvokeRequired && uncaging_panel.Visible)
+            if (uncaging_panel != null && uncaging_panel.InvokeRequired && uncaging_panel.Visible)
             {
                 uncaging_panel.Invoke((Action)delegate
                 {

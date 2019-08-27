@@ -433,7 +433,7 @@ namespace FLIMage
         /// This is for backward compatibility with Matlab version.
         /// </summary>
         /// <param name="Description"></param>
-        public void decodeHeader(String Description)
+        public void decodeHeader(String Description, String fullFilename)
         {
             FileIO fileIO = new FileIO(State);
             ScanParameters allState = fileIO.CopyState();
@@ -580,10 +580,15 @@ namespace FLIMage
                 loadFittingParamFromState();
 
             }
-            else
+            else //not FLIMage
             {
                 bool FLIM_on1 = true;
-                /// This is for backward compatibility with Matlab version.
+                // This is for backward compatibility with Matlab version.
+
+                double[] multiPage = null;
+                int pageIndex = 0;
+                DateTime acquiredTime_d = DateTime.Now;
+
                 foreach (String s in headerstr)
                 {
                     //Debug.WriteLine(s);
@@ -591,11 +596,13 @@ namespace FLIMage
                     if (pS.Length > 1)
                     {
                         String s1 = pS[0].Replace(" ", "");
-                        String strA = pS[1].Replace(";", "").Replace("\n", "").Replace(" ", "").Replace("\r", "");
+                        //String strA = pS[1].Replace(";", "").Replace("\n", "").Replace(" ", "").Replace("\r", "");
+                        String strA = pS[1].Replace(";", "").Replace("'", "").Replace("\n", "").Replace("\r", "");
+                        strA = strA.Trim();
+
                         if (s.Contains(".n_dataPoint") || s.Contains("datainfo.adc_re"))
                         {
-                            n_time = new int[] { Convert.ToInt32(strA)
-        };
+                            n_time = new int[] { Convert.ToInt32(strA) };
                         }
                         else if (s.Contains("spcData.resolution") || s.Contains("psPerUnit"))
                         {
@@ -630,7 +637,7 @@ namespace FLIMage
                             strA = strA.Replace("[", "").Replace("]", "");
                             String[] StrB = strA.Split(',');
                             countRate = new int[StrB.Length];
-                            for (int j = 0; j < countRate.Length; j++)
+                            for (int j = 0; j < StrB.Length; j++)
                                 countRate[j] = Convert.ToInt32(StrB[j]);
                         }
                         else if (s.Contains(".nAveFrame") || s.Contains(".numAvgFramesSaveGUI"))
@@ -653,28 +660,41 @@ namespace FLIMage
                         {
                             FLIM_on1 = Convert.ToBoolean(strA);
                         }
-                        else if (s.Contains("Acquired_Time"))
+                        else if (s.Contains("triggerTimeString"))
                         {
-                            acquiredTime = DateTime.ParseExact(strA, "yyyy-MM-ddTHH:mm:ss.fff", null);
+                            acquiredTime = DateTime.ParseExact(strA, "M/d/yyyy HH:mm:ss.fff", new System.Globalization.CultureInfo("en-US"));
                         }
-                        //else if (s.Contains("fit_range"))
-                        //{
-                        //    int ch = Convert.ToInt32(s1.Substring(s1.Length - 1)) - 1;
-                        //    strA = strA.Replace("[", "").Replace("]", "").Replace("{", "").Replace("}", "");
-                        //    String[] StrB = strA.Split(',');
-                        //    fit_range[ch] = new int[2];
-                        //    for (int i = 0; i < 2; i++)
-                        //        fit_range[ch][i] = Convert.ToInt32(StrB[i]);
-                        //}
-                        //else if (s.Contains("analysis.offset"))
-                        //{
-                        //    strA = strA.Replace("[", "").Replace("]", "").Replace("{", "").Replace("}", ""); ;
-                        //    String[] StrB = strA.Split(',');
-                        //    offset = new double[2];
-                        //    offset[0] = Convert.ToDouble(StrB[0]);
-                        //    offset[1] = Convert.ToDouble(StrB[1]);
-                        //}
+                        else if (s.Contains("datainfo.triggerTime"))
+                        {
+                            var strB = strA.Split('.');
+                            if (strB.Length == 1)
+                                acquiredTime_d = DateTime.ParseExact(strA, "yyyy/MM/dd HH:mm:ss", new System.Globalization.CultureInfo("en-US"));
+                            else if (strB[1].Length == 3)
+                                acquiredTime_d = DateTime.ParseExact(strA, "yyyy/MM/dd HH:mm:ss.fff", new System.Globalization.CultureInfo("en-US"));
+                            else if (strB[1].Length == 2)
+                                acquiredTime_d = DateTime.ParseExact(strA, "yyyy/MM/dd HH:mm:ss.ff", new System.Globalization.CultureInfo("en-US"));
+                            else if (strB[1].Length == 1)
+                                acquiredTime_d = DateTime.ParseExact(strA, "yyyy/MM/dd HH:mm:ss.f", new System.Globalization.CultureInfo("en-US"));
+                        }
+                        else if (s.Contains("multiPages.page"))
+                        {
+                            pageIndex = Convert.ToInt32(strA);
+                        }
+                        else if (s.Contains("multiPages.timing"))
+                        {
+                            strA = strA.Replace("[", "").Replace("]", "");
+                            String[] StrB = strA.Split(' ');
+                            multiPage = new Double[StrB.Length];
+                            for (int j = 0; j < StrB.Length; j++)
+                                multiPage[j] = Convert.ToDouble(StrB[j]);
+                        }
                     }
+
+                }
+
+                if (multiPage != null && pageIndex < multiPage.Length)
+                {
+                    acquiredTime = acquiredTime_d;
                 }
 
                 //DELETE??
@@ -685,17 +705,25 @@ namespace FLIMage
 
                 FLIM_on = Enumerable.Repeat<bool>(FLIM_on1, nChannels).ToArray();
 
-                if (!FLIM_on1)
+                if (FLIM_on1)
                     n_time = Enumerable.Repeat<int>(State.Spc.spcData.n_dataPoint, nChannels).ToArray();
                 else
                     n_time = Enumerable.Repeat<int>(1, nChannels).ToArray();
+
                 State.Acq.nFrames = nFrames;
                 State.Acq.nSlices = nSlices;
                 State.Acq.nAveFrame = nAveFrame;
                 State.Spc.spcData.resolution[0] = psPerUnit;
 
+                if (nSlices > 1)
+                {
+                    State.Acq.ZStack = true;
+                    ZStack = true;
+                    nFastZ = 0;
+                }
                 nAveragedFrame = Enumerable.Repeat<int>(State.Acq.nAveFrame, nChannels).ToArray();
 
+                State.Files.fullNameTofileNames(fullFilename);
 
             } //Matlab compatible
 
@@ -831,12 +859,17 @@ namespace FLIMage
             {
                 for (int i = page_position; i < n_pages5D - 1; i++)
                 {
-                    FLIM_Pages5D[i + 1] = FLIM_Pages5D[i];
-                    acquiredTime_Pages5D[i + 1] = acquiredTime_Pages5D[i];
+                    FLIM_Pages5D[i] = FLIM_Pages5D[i + 1];
+                    acquiredTime_Pages5D[i] = acquiredTime_Pages5D[i + 1];
                 }
                 Array.Resize(ref FLIM_Pages5D, n_pages5D - 1);
                 Array.Resize(ref acquiredTime_Pages5D, n_pages5D - 1);
                 n_pages5D -= 1;
+
+                if (page_position >= n_pages5D)
+                    page_position = n_pages5D - 1;
+
+                gotoPage5D(page_position);
             }
         }
 
@@ -846,23 +879,19 @@ namespace FLIMage
             {
                 for (int i = page_position; i < n_pages - 1; i++)
                 {
-                    FLIM_Pages[i + 1] = FLIM_Pages[i];
-                    acquiredTime_Pages[i + 1] = acquiredTime_Pages[i];
-                    Project_Pages[i + 1] = Project_Pages[i];
-                    LifetimeMapBase_Pages[i + 1] = LifetimeMapBase_Pages[i];
-                    ProjectCalculated[i + 1] = ProjectCalculated[i];
-                    FLIMMapCalculated[i + 1] = FLIMMapCalculated[i];
+                    FLIM_Pages[i] = FLIM_Pages[i + 1];
+                    acquiredTime_Pages[i + 1] = acquiredTime_Pages[i + 1];
+                    Project_Pages[i] = Project_Pages[i + 1];
+                    LifetimeMapBase_Pages[i] = LifetimeMapBase_Pages[i + 1];
+                    ProjectCalculated[i] = ProjectCalculated[i + 1];
+                    FLIMMapCalculated[i] = FLIMMapCalculated[i + 1];
                 }
 
                 resizePage(n_pages - 1);
+                if (page_position >= n_pages)
+                    page_position = n_pages - 1;
 
-                //n_pages -= 1;
-                //Array.Resize(ref Project_Pages, n_pages);
-                //Array.Resize(ref LifetimeMapBase_Pages, n_pages);
-                //Array.Resize(ref acquiredTime_Pages, n_pages);
-                //Array.Resize(ref FLIM_Pages, n_pages);
-                //Array.Resize(ref ProjectCalculated, n_pages);
-                //Array.Resize(ref FLIMMapCalculated, n_pages);
+                gotoPage(page_position);
             }
         }
 
@@ -2060,7 +2089,7 @@ namespace FLIMage
 
         public void calculateLifetimeMapCh(int ch)
         {
-            if (FLIMRaw == null || FLIMRaw[ch] == null)
+            if (FLIMRaw == null || ch >= nChannels || FLIMRaw[ch] == null)
                 return;
 
             if (LifetimeMapBase == null || LifetimeMapBase.Length != nChannels)

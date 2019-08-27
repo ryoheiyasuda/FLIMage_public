@@ -55,6 +55,8 @@ namespace FLIMage.Analysis
         public ROI imageRoi = new ROI();
         ROI imageRoiSave = new ROI();
         ROI imageRoiOld = new ROI();
+        ROI CurrentROIBeforeMove = new ROI();
+
         bool ThreeDRoi = false;
         int[] RoiZ = new int[] { 0 };
         bool drawing_ROI = false;
@@ -62,7 +64,6 @@ namespace FLIMage.Analysis
         bool drag_ROICorner = false;
         int drag_ROI_whichCorner = 0;
         bool move_currentROI = false;
-        ROI CurrentROIBeforeMove = new ROI();
         Point startPos_FLIM, currentPos_FLIM, diffPos_FLIM;
         //int currentRoi = 0;
         //List<Rectangle> ROIs = new List<Rectangle>();
@@ -84,6 +85,10 @@ namespace FLIMage.Analysis
 
         Font drawFont = new Font("Times", 10);
         Font fontTop = new Font("Times", 8);
+
+        // Dialog parameters
+        int binning = 2;
+        int[] averagePages = new int[] { 1, 2 };
 
         // fitting parameters
         int[][] fit_range;
@@ -157,8 +162,8 @@ namespace FLIMage.Analysis
         public plot_timeCourse plot_realtime;
         public plot_timeCourse plot_regular;
         //
-        TimeCourse TC = new TimeCourse();
-        TimeCourse_Files TCF = new TimeCourse_Files();
+        public TimeCourse TC = new TimeCourse();
+        public TimeCourse_Files TCF = new TimeCourse_Files();
         //
         int panelMerginY, imageMerginY, st_MerginY;
         public FLIMageMain FLIMage;
@@ -273,6 +278,8 @@ namespace FLIMage.Analysis
             SetFastZModeDisplay(false);
             plot_realtime = new plot_timeCourse(true, this);
             plot_regular = new plot_timeCourse(false, this);
+            if (AutoApplyOffset.Checked)
+                plot_regular.TurnOnCalcUponOpen(true);
             InitializeSetting();
         }
 
@@ -284,6 +291,11 @@ namespace FLIMage.Analysis
             settingManager.AddToDict(MinIntensity3);
             settingManager.AddToDict(fit_start);
             settingManager.AddToDict(fit_end);
+            settingManager.AddToDict(tau1);
+            settingManager.AddToDict(tau2);
+            settingManager.AddToDict(cb_tau1Fix);
+            settingManager.AddToDict(cb_tau2Fix);
+            settingManager.AddToDict(AutoApplyOffset);
             settingManager.AddToDict("lastFilePath", lastFilePath);
             settingManager.AddToDict("PythonPath", PythonPath);
             settingManager.AddToDict("ScriptPath", ScriptPath);
@@ -436,7 +448,7 @@ namespace FLIMage.Analysis
 
             if (FLIM_ImgData.Fit_type.Equals(FLIMData.FitType.GlobalRois) && Values_selectedROI.Checked && FLIM_ImgData.ROIs.Count > FLIM_ImgData.currentRoi)
             {
-                if (FLIM_ImgData.ROIs[FLIM_ImgData.currentRoi].beta.Count > c)
+                if (FLIM_ImgData.currentRoi >= 0 && FLIM_ImgData.ROIs[FLIM_ImgData.currentRoi].beta.Count > c)
                     betahat = FLIM_ImgData.ROIs[FLIM_ImgData.currentRoi].beta[c];
                 else
                     return;
@@ -1052,8 +1064,10 @@ namespace FLIMage.Analysis
                 }
                 else if (drag_ROICorner)
                 {
-                    if (imageRoi.ROI_type.Equals(ROI.ROItype.Rectangle) || imageRoi.ROI_type.Equals(ROI.ROItype.Elipsoid))
+                    if (imageRoi.ROI_type.Equals(ROI.ROItype.Rectangle))
                         imageRoi = new ROI(imageRoi.ROI_type, rc, FLIM_ImgData.nChannels, 0, imageRoi.Roi3d, imageRoi.Z);
+                    else if (imageRoi.ROI_type.Equals(ROI.ROItype.Elipsoid))
+                        imageRoi = imageRoi.changeSizeOfCircle(currentPos_FLIM, startPos_FLIM, imageRoiSave);
                     else
                         imageRoi = imageRoi.MovePoint(currentPos_FLIM, drag_ROI_whichCorner);
                 }
@@ -1109,8 +1123,10 @@ namespace FLIMage.Analysis
                         }
                         else if (drag_ROICorner)
                         {
-                            if (imageRoi.ROI_type.Equals(ROI.ROItype.Rectangle) || imageRoi.ROI_type.Equals(ROI.ROItype.Elipsoid))
+                            if (imageRoi.ROI_type.Equals(ROI.ROItype.Rectangle))
                                 imageRoi = roi0;
+                            else if (imageRoi.ROI_type.Equals(ROI.ROItype.Elipsoid))
+                                imageRoi = imageRoi.changeSizeOfCircle(currentPos_FLIM, startPos_FLIM, imageRoiSave);
                             else
                                 imageRoi = imageRoi.MovePoint(currentPos_FLIM, drag_ROI_whichCorner);
                         }
@@ -2081,11 +2097,16 @@ namespace FLIMage.Analysis
         private void Fit_Click(object sender, EventArgs e)
         {
             if (FLIM_ImgData.State.Acq.acqFLIMA.Any(x => x == true))
-                FitData(false, true);
+            {
+                if (AutoApplyOffset.Checked)
+                    ApplyOffset();
+                else
+                    FitData(false, true);
+            }
         }
 
 
-        private void FitData(bool fixAll, bool saveEvent)
+        public void FitData(bool fixAll, bool saveEvent)
         {
             if (realtime || !FLIM_ImgData.State.Acq.acqFLIMA.Any(x => x == true))
                 return;
@@ -2195,7 +2216,6 @@ namespace FLIMage.Analysis
                 SaveFittingData();
 
             } //If (SaveEvent)
-
         } //FitData end.
 
 
@@ -2251,7 +2271,7 @@ namespace FLIMage.Analysis
                 }
                 else
                 {
-                    if (Channel1.Checked || Ch12.Checked)
+                    if (Channel1.Checked || Channel12.Checked)
                     {
                         lock (syncBmp[0])
                         {
@@ -2286,7 +2306,7 @@ namespace FLIMage.Analysis
             else if (sender.Equals(Image2))
             {
                 sync = sync_disp2;
-                if (Ch12.Checked)
+                if (Channel12.Checked)
                 {
                     lock (syncBmp[1])
                     {
@@ -2525,7 +2545,7 @@ namespace FLIMage.Analysis
                 LifetimeCh_panel.Enabled = false;
                 Ch2.Checked = true;
             }
-            else if (Ch12.Checked)
+            else if (Channel12.Checked)
             {
                 st_im1.Text = "Intensity 1";
                 st_im2.Text = "Intensity 2";
@@ -2605,6 +2625,88 @@ namespace FLIMage.Analysis
             }
         }
 
+        /// <summary>
+        /// For external command
+        /// </summary>
+        /// <param name="channel"></param>
+        public void SetChannel(int channel)
+        {
+            Channel1.Checked = false;
+            Channel2.Checked = false;
+            Channel12.Checked = false;
+            var sdr = Channel1;
+            if (channel == 1)
+            {
+                Channel1.Checked = true;
+            }
+            else if (channel == 12)
+            {
+                Channel12.Checked = true;
+                sdr = Channel12;
+            }
+            else if (channel == 2)
+            {
+                Channel2.Checked = true;
+                sdr = Channel2;
+            }
+
+            Channel1_CheckedChanged(sdr, null);
+        }
+
+        /// <summary>
+        /// For external command.
+        /// Set Fit Range. [fit1, fit2]
+        /// </summary>
+        /// <param name="values"></param>
+        public void SetFitRange(int[] values)
+        {
+            fit_start.Text = values[0].ToString();
+            fit_end.Text = values[1].ToString();
+            SetFitting_Param(true);
+            FLIM_ImgData.fitRangeChanged();
+            UpdateImages(true, realtime, focusing, true);
+        }
+
+
+        /// <summary>
+        /// For external command.
+        /// </summary>
+        /// Fix tau to a certain value. tau1, tau2
+        /// <param name="values"></param>
+        public void FixTau(double[] values)
+        {
+            tau1.Text = values[0].ToString();
+            tau2.Text = values[1].ToString();
+            cb_tau1Fix.Checked = true;
+            cb_tau2Fix.Checked = true;
+            SetFitting_Param(true);
+            UpdateImages(true, realtime, focusing, true);
+        }
+
+        public void FixTauAll(bool ON)
+        {
+            cb_tau1Fix.Checked = ON;
+            cb_tau2Fix.Checked = ON;
+            cb_tauGFix.Checked = ON;
+            cb_T0Fix.Checked = ON;
+        }
+
+        /// <summary>
+        /// For external command. Set Intensity Ranges.
+        /// Input = {min, max}
+        /// </summary>
+        /// <param name="values"></param>
+        public void SetFLIMIntensityOffset(double[] values)
+        {
+            MinIntensity1.Text = values[0].ToString();
+            MaxIntensity1.Text = values[1].ToString();
+            MinIntensity2.Text = values[0].ToString();
+            MaxIntensity2.Text = values[1].ToString();
+
+            ApplyTextToRange(true);
+            UpdateImages(true, realtime, focusing, true);
+        }
+
         private void Analysis_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -2647,6 +2749,13 @@ namespace FLIMage.Analysis
 
         private void Apply_Offset_Click(object sender, EventArgs e)
         {
+            ApplyOffset();
+        }
+
+        public void ApplyOffset()
+        {
+            FitData(false, true);
+
             int c = 0;
             if (Ch1.Checked)
                 c = 0;
@@ -2659,7 +2768,6 @@ namespace FLIMage.Analysis
             UpdateFittingParam(c);
             UpdateImages(true, realtime, focusing, true);
         }
-
 
         private void PageEnableControl()
         {
@@ -2798,16 +2906,21 @@ namespace FLIMage.Analysis
                 AssurePageRange();
                 calcZProjection();
             }
+
             UpdateImages(true, realtime, focusing, true);
 
-            if (plot_regular.calc_upon_open && !ZStack && !FastZStack)
+            if ((plot_regular.calc_upon_open || AutoApplyOffset.Checked) && !ZStack && !FastZStack)
                 CalculateCurrentPage(false);
         }
 
         private void AlignSlicesframesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            int refChannel = currentChannel;
+            AlignFrames();
+        }
 
+        public void AlignFrames()
+        {
+            int refChannel = currentChannel;
             ushort[][] saveProject = FLIM_ImgData.Project[refChannel];
             for (int i = 0; i < FLIM_ImgData.n_pages; i++)
             {
@@ -2952,7 +3065,7 @@ namespace FLIMage.Analysis
             currentChannel = channel;
         }
 
-        public void SaveCurrentIntensityImage(bool[] saveFormat, bool[] saveChannels, int[] FastZFormat, bool openprocCtrl)
+        public void SaveCurrentIntensityImage(bool[] saveFormat, bool[] saveChannels, int[] FastZFormat, bool correctT0Each, bool openprocCtrl)
         {
             bool saveZProjection = saveFormat[1];
             bool saveNormalFile = saveFormat[0];
@@ -3057,6 +3170,11 @@ namespace FLIMage.Analysis
                                 {
                                     GotoPage4D(i);
                                     UpdateImages(true, false, false, false, true);
+
+                                    if (correctT0Each && FLIM_ImgData.State.Acq.acqFLIMA.Any(x => x == true))
+                                    {
+                                        ApplyOffset();
+                                    }
 
                                     bool overwrite = p == 0 && i == 0;
                                     fileIO.Save2DImageInTiff(filePathIntensity, FLIM_ImgData.Project[ch], FLIM_ImgData.acquiredTime, overwrite, saveCh);
@@ -3177,11 +3295,11 @@ namespace FLIMage.Analysis
             CheckFolder(fileIO, openFolders, openFolders);
 
             DirectoryInfo dinfo = new DirectoryInfo(FLIM_ImgData.pathName);
-            String[] fileNames = Directory.GetFiles(FLIM_ImgData.pathName, FLIM_ImgData.baseName + "*.flim");
+            String[] fileNames = Directory.GetFiles(FLIM_ImgData.pathName, FLIM_ImgData.baseName + "*" + FLIM_ImgData.State.Files.extension);
 
             if (fileNames.Length == 0)
             {
-                MessageBox.Show("No file matches to: \"" + FLIM_ImgData.pathName + "\\" + FLIM_ImgData.baseName + "*.flim\"");
+                MessageBox.Show("No file matches to: \"" + FLIM_ImgData.pathName + "\\" + FLIM_ImgData.baseName + "*" + FLIM_ImgData.State.Files.extension + "\"");
                 return null;
             }
 
@@ -3190,7 +3308,7 @@ namespace FLIMage.Analysis
             return fileNames;
         }
 
-        public void BatchExporting(bool[] saveFormat, bool[] channelToSave, int[] FastZFormat)
+        public void BatchExporting(bool[] saveFormat, bool[] channelToSave, int[] FastZFormat, bool correctT0EachPage)
         {
 
             if (saveFormat.All(x => x == false))
@@ -3210,7 +3328,7 @@ namespace FLIMage.Analysis
                     //if (!plot_regular.calc_upon_open) //Not yet calculated.
                     //    CalculateTimecourse(false);
 
-                    SaveCurrentIntensityImage(saveFormat, channelToSave, FastZFormat, false);
+                    SaveCurrentIntensityImage(saveFormat, channelToSave, FastZFormat, correctT0EachPage, false);
                     //SaveCurrentIntensityImage();
 
                     Application.DoEvents();
@@ -3263,7 +3381,7 @@ namespace FLIMage.Analysis
 
             FLIMData.FileType file_type = FLIMData.FileType.TimeCourse;
 
-            if (FLIM_ImgData.nFastZ > 1 || FLIM_ImgData.ZStack)
+            if ((FLIM_ImgData.nFastZ > 1 || FLIM_ImgData.ZStack) && !displayZProjection)
                 file_type = FLIMData.FileType.TimeCourse_ZStack;
 
             FLIM_ImgData.KeepPagesInMemory = true;
@@ -3315,6 +3433,7 @@ namespace FLIMage.Analysis
                         }
                         else if (file_type == FLIMData.FileType.TimeCourse && !fast_zThis && !z_stackThis)
                         {
+
                             var flim_pages = MatrixCalc.MatrixCopy3D<ushort>(FLIM_ImgData.FLIM_Pages);
                             var acquiredTime_page = (DateTime[])FLIM_ImgData.acquiredTime_Pages.Clone();
 
@@ -3324,13 +3443,23 @@ namespace FLIMage.Analysis
                                 FileN++;
                             }
                         }
+                        else if (file_type == FLIMData.FileType.TimeCourse && ZStack && displayZProjection)
+                        {
+                            flim_data.FLIMRaw = FLIM_ImgData.FLIMRaw;
+                            flim_data.acquiredTime = FLIM_ImgData.acquiredTime;
+                            flim_data.addCurrentFLIMRawToPage4D(true, true, FileN);
+                            flim_data.ZStack = false;
+                            flim_data.State.Acq.ZStack = false;
+                            flim_data.State.Acq.fastZScan = false;
+                            ZStack = false;
+                            FileN++;
+                        }
                         Application.DoEvents();
                     }
                     else
                         break;
                 }
             }
-
             FLIM_ImgData = flim_data;
             displayZProjection = false;
             cb_projectionYes.Checked = false;
@@ -3355,21 +3484,23 @@ namespace FLIMage.Analysis
 
         private void timeBinningToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            int binning = 5;
-
-            var h = Microsoft.VisualBasic.Interaction.InputBox("Time binning factor", "Binning", "4");
+            var h = Microsoft.VisualBasic.Interaction.InputBox("Time binning factor", "Binning", binning.ToString());
 
             if (!Int32.TryParse(h, out binning))
             {
                 return;
             }
+            BinFrames(binning);
+        }
+
+        public void BinFrames(int binning)
+        {
 
             if (binning < 1 || binning > FLIM_ImgData.n_pages)
             {
                 MessageBox.Show("Binnig factor needs to be > 0 and < #pages (" + FLIM_ImgData.n_pages + ")");
                 return;
             }
-
 
 
             TurnOffDuringOpeningProc(false);
@@ -3439,7 +3570,7 @@ namespace FLIMage.Analysis
         {
 
             int page_to_delete = (FLIM_ImgData.nFastZ > 1) ? FLIM_ImgData.currentPage5D : FLIM_ImgData.currentPage;
-            int n_pages = (FLIM_ImgData.nFastZ > 1) ? FLIM_ImgData.n_pages5D : FLIM_ImgData.n_pages5D;
+            int n_pages = (FLIM_ImgData.nFastZ > 1) ? FLIM_ImgData.n_pages5D : FLIM_ImgData.n_pages;
 
             if (0 <= page_to_delete && page_to_delete < n_pages && n_pages > 2)
             {
@@ -3646,6 +3777,7 @@ namespace FLIMage.Analysis
             SetupOpenedFile();
 
             ReadTimeCourse();
+
             if (FLIM_ImgData.ROIs.Count == 0 || oldBaseName != FLIM_ImgData.baseName)
             {
                 ReadRois();
@@ -3846,7 +3978,9 @@ namespace FLIMage.Analysis
 
 
             if (ZStack && plot_regular.calc_upon_open)
+            {
                 CalculateTimecourse(false); //Include the saving.
+            }
 
             displayFastZParam(); //only if FastZStack == true. Included in the function.
 
@@ -4082,18 +4216,30 @@ namespace FLIMage.Analysis
                 if (FLIM_ImgData.ROIs.Count > 0)
                 {
                     TurnOnMultiROI(true);
+                    if (FLIM_ImgData.State.Acq.acqFLIMA.Any(x => x == true))
+                    {
+                        if (AutoApplyOffset.Checked)
+                            ApplyOffset();
+                        else
+                            FitData(false, true);
+                    }
                     FLIM_ImgData.Fit_type = FLIMData.FitType.GlobalRois;
                     FLIM_ImgData.calculateLifetime();
-                    if (FLIM_ImgData.State.Acq.acqFLIMA.Any(x => x == true))
-                        FitData(false, true);
+
                 }
                 else
                 {
                     TurnOnMultiROI(false);
+                    if (FLIM_ImgData.State.Acq.acqFLIMA.Any(x => x == true))
+                    {
+                        if (AutoApplyOffset.Checked)
+                            ApplyOffset();
+                        else
+                            FitData(false, true);
+                    }
+
                     FLIM_ImgData.Fit_type = FLIMData.FitType.SelectedRoi;
                     FLIM_ImgData.calculateLifetime();
-                    if (FLIM_ImgData.State.Acq.acqFLIMA.Any(x => x == true))
-                        FitData(false, true);
                 }
 
                 FLIM_ImgData.Fit_type = ft;
@@ -4113,7 +4259,6 @@ namespace FLIMage.Analysis
             {
                 TCF.AddFile(TC);
                 TCF.calculate();
-                //realtime_plot.Invalidate();
                 plot_regular.plotNow_noRealtime(TCF, TC, this, currentChannel);
             }
 
@@ -4124,7 +4269,6 @@ namespace FLIMage.Analysis
         /// </summary>
         public void CalculateTimecourse(bool turning_onoff_stop)
         {
-            //TC = new TimeCourse(TC);
 
             FastZStack = FLIM_ImgData.nFastZ > 1;
 
@@ -4187,8 +4331,12 @@ namespace FLIMage.Analysis
 
 
             if (plot_regular.calc_Fit && FLIM_ImgData.State.Acq.acqFLIMA.Any(x => x == true))
-                FitData(false, true);
-
+            {
+                if (AutoApplyOffset.Checked)
+                    ApplyOffset();
+                else
+                    FitData(false, true);
+            }
 
             TCF.AddFile(TC);
             TCF.calculate();
@@ -4414,7 +4562,7 @@ namespace FLIMage.Analysis
             intensity_rangeA[1] = State_FLIM_intensity_range[currentChannel];
             intensity_rangeA[2] = State_FLIM_lifetime_range[currentChannel];
 
-            if (Ch12.Checked)
+            if (Channel12.Checked)
             {
                 intensity_rangeA[0] = State_intensity_range[0];
                 intensity_rangeA[1] = State_intensity_range[1];
@@ -4436,7 +4584,7 @@ namespace FLIMage.Analysis
 
                 bool ChangeSldrMax = false;
 
-                if (cl == 0 || cl == 1) //only if intensity. 
+                if ((cl == 0 || cl == 1) && cl < FLIM_ImgData.nChannels) //only if intensity. 
                     if (SldrMaxDefault * aveNFrame[cl] > maxVal1[cl])
                     {
                         ChangeSldrMax = true;
@@ -4768,12 +4916,12 @@ namespace FLIMage.Analysis
                     }
                 }
 
-                if ((Ch12.Checked && ch == 0) || (!Ch12.Checked && ch == currentChannel))
+                if ((Channel12.Checked && ch == 0) || (!Channel12.Checked && ch == currentChannel))
                 {
                     Image1.Invalidate();
 
                 }
-                else if (Ch12.Checked && ch == 1)
+                else if (Channel12.Checked && ch == 1)
                 {
                     Image2.Invalidate();
                 }
@@ -4880,7 +5028,7 @@ namespace FLIMage.Analysis
 
 
             ////FLIM channels
-            if (!Ch12.Checked)
+            if (!Channel12.Checked)
             {
                 for (int j = 0; j < N_RANGE; j++)
                 {
@@ -4913,7 +5061,7 @@ namespace FLIMage.Analysis
             MapStateIntensityRange();
 
             ScanParameters State = FLIM_ImgData.State;
-            if (!Ch12.Checked)
+            if (!Channel12.Checked)
             {
                 for (int j = 0; j < N_RANGE; j++)
                 {
@@ -5135,11 +5283,21 @@ namespace FLIMage.Analysis
             if (filename == "")
                 return;
 
+            ReadImageJROI(filename);
+        }
+
+        public void ReadImageJROI(String filename)
+        {
+            if (!File.Exists(filename))
+                return;
+
             using (ZipArchive archive = ZipFile.OpenRead(filename))
             {
                 FLIM_ImgData.ROIs.Clear();
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {
+                    if (!entry.Name.StartsWith("ROI-"))
+                        break;
                     var stream = entry.Open();
                     int nBytes = 512;
                     byte[] ByteArray = new byte[nBytes];
@@ -5686,6 +5844,12 @@ namespace FLIMage.Analysis
             return filename;
         }
 
+        private void AutoApplyOffset_CheckedChanged(object sender, EventArgs e)
+        {
+            if (AutoApplyOffset.Checked)
+                plot_regular.TurnOnCalcUponOpen(true);
+        }
+
         public void PostImageUserFunction()
         {
             if (FLIMage.drift_correction != null && FLIMage.drift_correction.Visible)
@@ -5729,13 +5893,13 @@ namespace FLIMage.Analysis
             int nChannels = FLIM_ImgData.nChannels;
 
             int c = currentChannel;
-            bool ch12_checked = Ch12.Checked; //When Ch12 is clicked.
+            bool ch12_checked = Channel12.Checked; //When Ch12 is clicked.
 
             if (Channel1.Checked)
                 c = 0;
             else if (Channel2.Checked)
                 c = 1;
-            else if (Ch12.Checked)
+            else if (Channel12.Checked)
             {
                 if (Ch1.Checked)
                     c = 0;
@@ -5840,7 +6004,7 @@ namespace FLIMage.Analysis
                     else
                         realtimeData.Add(FLIM_ImgData.Roi.tau_m_fromMAP[currentChannel]);
 
-                    if (!Ch12.Checked)
+                    if (!Channel12.Checked)
                         LifetimeCurvePlot.Invalidate();
 
                 }
@@ -5861,7 +6025,7 @@ namespace FLIMage.Analysis
 
             }
 
-            if (!Ch12.Checked)
+            if (!Channel12.Checked)
             {
                 if (!focusing || !FLIMage.flimage_io.parameters.StripeDuringFocus)
                 {
@@ -5918,7 +6082,7 @@ namespace FLIMage.Analysis
 
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            bool Ch12_checked = Ch12.Checked;
+            bool Ch12_checked = Channel12.Checked;
             bool showFLIM = ShowFLIM.Checked; //For now.
             int nChannels = FLIM_ImgData.nChannels;
 

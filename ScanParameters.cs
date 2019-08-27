@@ -71,7 +71,7 @@ namespace FLIMage
             public bool AO_uncagingShutter = true;
             public bool DO_uncagingShutter = false;
             public bool DO_uncagingShutter_useForPMTsignal = false;
-            public double[] mirrorParkPosition = { 5, 5 };
+            public double[] mirrorParkPosition = { -1, -1 };
 
             public String MotorComPort = "COM1";
             public String MotorHWName = "MP-285A"; //or "MP-285" or "ThorlabMCM3000"
@@ -79,7 +79,7 @@ namespace FLIMage
             public int MotorDisplayUpdateTime_ms = 1000;
             public double[] MotorConversionFactor = { 0, 0, 0 };
 
-            public String MicroscopeSystem = "Thor"; //or None
+            public String MicroscopeSystem = ""; //"ThorBScopeGG"; //or None
             public String ThorPMTModule = "ThorECU"; //or ThorPMT21000
             public String ThorFlipper = "ThorBCA"; // or ThorBScope
             public bool Use_EPhys = true;
@@ -87,7 +87,7 @@ namespace FLIMage
             public int FLIMserial = 0;
             public int ComputerID = 0;
 
-            public double AbsoluteMaxVoltageScan = 10;
+            public double AbsoluteMaxVoltageScan = 9;
 
             public bool[] imagingLasers = { true, false, false, false, false }; //Up to 5 channels
             public bool[] uncagingLasers = { false, true, false, false, false };
@@ -126,8 +126,8 @@ namespace FLIMage
             public double LineClockDelay = 0.1;
             public int nStripes = 4;
             public bool fastZScan = false;
-            public double fillFraction = 0.8;
-            public double scanFraction = 0.9;
+            public double fillFraction = 0.75; //Minimum is 0.7.
+            public double scanFraction = 0.85;
             public double ScanDelay = 0.074;
             public double ScanDelay2 = 0; //not used now.
             public double ScanDelay4 = 0; //not used now.
@@ -140,8 +140,8 @@ namespace FLIMage
             public double object_magnification = 60;
             public double[] scanVoltageMultiplier = new double[] { 1.0, 1.0 };
             public double zoom = 3;
-            public double XMaxVoltage = 5;
-            public double YMaxVoltage = 5.5;
+            public double XMaxVoltage = 4.5;
+            public double YMaxVoltage = 4.5;
             public double Rotation = 0.0;
             public double XOffset = 0.0;
             public double YOffset = 0.0;

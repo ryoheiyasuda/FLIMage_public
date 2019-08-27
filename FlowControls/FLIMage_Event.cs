@@ -1,4 +1,4 @@
-﻿using TCSPC_controls;
+﻿using FLIMage.HardwareControls.StageControls;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -9,7 +9,8 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using FLIMage.HardwareControls.StageControls;
+using System.Windows.Forms;
+using TCSPC_controls;
 
 namespace FLIMage.FlowControls
 {
@@ -63,6 +64,7 @@ namespace FLIMage.FlowControls
             eventNotifyTable.Rows.Add(13, "StageMoveDone", true);
             eventNotifyTable.Rows.Add(14, "ParametersChanged", false);
             eventNotifyTable.Rows.Add(15, "SaveImageDone", false);
+            eventNotifyTable.Rows.Add(16, "ExtCommandExecuted", false);
 
             saveFileParameterTable.Columns.Add("CommandName", typeof(string));
             saveFileParameterTable.Columns.Add("NArguments", typeof(int));
@@ -204,10 +206,16 @@ namespace FLIMage.FlowControls
             if (FLIMage.script != null)
             {
                 if (!com_server.connectedR)
-                    FLIMage.script.displayStatusText("PIPE not communicating (FLIMage out) ...", CommandReceivedFrom.FLIMage);
+                {
+                    FLIMage.script.displayStatusText("PIPE not communicating (FLIMage to Client) ...", CommandReceivedFrom.FLIMage);
+                    com_server.Close();
+                }
 
                 if (!com_server.connected)
-                    FLIMage.script.displayStatusText("PIPE not communicating (Client out) ...", CommandReceivedFrom.Client);
+                {
+                    FLIMage.script.displayStatusText("PIPE not communicating (Client to FLIMage) ...", CommandReceivedFrom.Client);
+                    com_server.Close();
+                }
             }
         }
 
@@ -265,8 +273,9 @@ namespace FLIMage.FlowControls
             State = FLIMage.State;
 
             String replyMessage = receivedMessage;
-            String s = Regex.Replace(receivedMessage, @"\s+", ""); //Remove space etc.
-            s = s.Replace(";", "");
+            //String s = Regex.Replace(receivedMessage, @"\s+", ""); //Remove space etc.
+            //s = s.Replace(";", "");
+            String s = receivedMessage.Replace(";", "");
 
             cm = CommandMode.None;
 
@@ -383,7 +392,7 @@ namespace FLIMage.FlowControls
                         cm = CommandMode.None;
                     }
                 }
-            }
+            } //.State
 
             if (cm == CommandMode.Set_Parameter && issueUpdateFile)
                 FLIMage.ReSetupValues(false);
@@ -592,26 +601,33 @@ namespace FLIMage.FlowControls
         {
             State = FLIMage.State;
 
-            int MaxNumArg = 3;
+            // int MaxNumArg = 10;
             String[] sP = CommandString.Split(',');
             String CommandInput = sP[0];
-            double[] valueStack = new double[MaxNumArg];
+            CommandInput = Regex.Replace(CommandInput, @"[\s+]", "");
+            //double[] valueStack = new double[MaxNumArg];
+            String[] valueStack = new String[sP.Length - 1];
 
             if (sP.Length > 1)
             {
                 for (int i = 1; i < sP.Length; i++)
                 {
-                    valueStack[i - 1] = Convert.ToDouble(sP[i]);
+                    valueStack[i - 1] = sP[i]; // Convert.ToDouble(sP[i]);
                 }
             }
 
+            String writeString = CommandInput + " processed.";
 
-            String writeString = "";
+            int wait_interval = 100;
+
             switch (CommandInput)
             {
                 case "SetMotorPosition":
                     {
-                        double[] XYZ = motorCtrl.convertToUncalibratedPosition(valueStack, true);
+                        double[] values = new double[valueStack.Length];
+                        for (int i = 0; i < valueStack.Length; i++)
+                            values[i] = Convert.ToDouble(valueStack[i]);
+                        double[] XYZ = motorCtrl.convertToUncalibratedPosition(values, true);
                         motorCtrl.SetNewPosition(XYZ);
                         FLIMage.ExternalCommand("SetMotorPosition");
                         cm = CommandMode.Execution; //It is execution and set parameter.
@@ -621,6 +637,11 @@ namespace FLIMage.FlowControls
                     {
                         FLIMage.ExternalCommand("StartLoop");
                         cm = CommandMode.Execution;
+                        //while (FLIMage.flimage_io.looping)
+                        //{
+                        //    System.Threading.Thread.Sleep(wait_interval);
+                        //    Application.DoEvents();
+                        //}
                         break;
                     }
                 case "StopLoop":
@@ -633,12 +654,56 @@ namespace FLIMage.FlowControls
                     {
                         FLIMage.ExternalCommand("StartGrab");
                         cm = CommandMode.Execution;
+
+                        //var totalFrameTime = State.Acq.msPerLine * State.Acq.linesPerFrame * State.Acq.nFrames; //in milliseconds.
+                        //double totalTime = totalFrameTime;
+
+                        //if (State.Acq.nSlices > 1)
+                        //{
+                        //    if (State.Acq.ZStack)
+                        //        totalTime = (totalFrameTime + 1000) * State.Acq.nSlices;
+                        //    else
+                        //        totalTime = Math.Max(totalFrameTime + 1000, State.Acq.sliceInterval) * State.Acq.nSlices;
+                        //}
+                        //for (int i = 0; i < (totalTime + 1000) / wait_interval; i++) //total time + 1 s.
+                        //{
+                        //    System.Threading.Thread.Sleep(wait_interval);
+                        //    Application.DoEvents();
+                        //    if (!FLIMage.flimage_io.grabbing)
+                        //        break;
+                        //}
+                        break;
+                    }
+                case "IsUncaging":
+                    {
+                        int value = 0;
+                        if (FLIMage.uncaging_panel != null)
+                            value = FLIMage.uncaging_panel.uncaging_running ? 1 : 0;
+                        writeString = String.Format("IsUncaging, {0}", value);
+                        cm = CommandMode.Get_Parameter;
+                        break;
+                    }
+                case "IsGrabbing":
+                    {
+                        int value = (FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process == false) ? 1 : 0;
+                        writeString = String.Format("IsGrabbing, {0}", value);
+                        cm = CommandMode.Get_Parameter;
+                        break;
+                    }
+                case "StopGrab":
+                    {
+                        FLIMage.ExternalCommand("AbortGrab");
+                        cm = CommandMode.Execution;
                         break;
                     }
                 case "SetUncagingLocation":
                     {
-                        double x = valueStack[0];
-                        double y = valueStack[1];
+                        double[] values = new double[valueStack.Length];
+                        for (int i = 0; i < valueStack.Length; i++)
+                            values[i] = Convert.ToDouble(valueStack[i]);
+
+                        double x = values[0];
+                        double y = values[1];
 
                         FLIMage.image_display.uncagingLocFrac = IOControls.PixelsToFracOnScreen(new double[] { x, y }, State);
 
@@ -651,8 +716,12 @@ namespace FLIMage.FlowControls
                     }
                 case "StartUncaging":
                     {
-                        double x = valueStack[0];
-                        double y = valueStack[1];
+                        double[] values = new double[valueStack.Length];
+                        for (int i = 0; i < valueStack.Length; i++)
+                            values[i] = Convert.ToDouble(valueStack[i]);
+
+                        double x = values[0];
+                        double y = values[1];
 
                         FLIMage.image_display.uncagingLocFrac = IOControls.PixelsToFracOnScreen(new double[] { x, y }, State);
 
@@ -661,11 +730,33 @@ namespace FLIMage.FlowControls
                         FLIMage.UpdateUncagingFromDisplay();
                         FLIMage.ExternalCommand("StartUncaging");
                         cm = CommandMode.Execution;
+
+                        //double totalTime;
+                        //if (State.Uncaging.trainRepeat > 1)
+                        //    totalTime = Math.Max(State.Uncaging.trainInterval, State.Uncaging.sampleLength) * State.Uncaging.trainRepeat;
+                        //else
+                        //    totalTime = State.Uncaging.sampleLength * State.Uncaging.trainRepeat;
+                        //
+                        //for (int i = 0; i < (totalTime + 1000) / wait_interval; i++) //total time + 1 s.
+                        //{
+                        //    System.Threading.Thread.Sleep(wait_interval);
+                        //    Application.DoEvents();
+                        //    if (!FLIMage.uncaging_panel.uncaging_running)
+                        //        break;
+                        //}
+
+                        break;
+                    }
+                case "StopUncaging":
+                    {
+                        FLIMage.ExternalCommand("StopUncaging");
+                        cm = CommandMode.Execution;
                         break;
                     }
                 case "SetChannelsToBeSaved":
                     {
-                        int channel = (int)valueStack[0];
+
+                        int channel = Convert.ToInt32(valueStack[0]);
                         if (channel > 0 && State.Acq.nChannels >= channel)
                         {
                             RequestedChannel = channel;
@@ -682,7 +773,7 @@ namespace FLIMage.FlowControls
                     }
                 case "SetIntensitySaving":
                     {
-                        int onoff = (int)valueStack[0];
+                        int onoff = Convert.ToInt32(valueStack[0]);
                         FLIMage.saveIntensityImage = onoff != 0;
                         cm = CommandMode.Set_Parameter;
                         writeString = String.Format("IntensitySaving, {0}", onoff);
@@ -690,16 +781,23 @@ namespace FLIMage.FlowControls
                     }
                 case "SetZoom":
                     {
-                        State.Acq.zoom = valueStack[0];
+                        State.Acq.zoom = Convert.ToDouble(valueStack[0]);
                         writeString = String.Format("Zoom, {0}", State.Acq.zoom);
                         cm = CommandMode.Set_Parameter;
                         break;
                     }
                 case "LoadSetting":
                     {
-                        FLIMage.ExternalCommand("LoadSettingWithNumber", Math.Round(valueStack[0]).ToString());
+                        FLIMage.Invoke((Action)delegate
+                        {
+                            if (int.TryParse(valueStack[0], out int settingN))
+                                FLIMage.ExternalCommand("LoadSettingWithNumber", settingN.ToString());
+                            else
+                                FLIMage.ExternalCommand("LoadSettingFile", valueStack[0]);
+                        });
                         writeString = String.Format("Setting, {0}", valueStack[0]);
                         break;
+
                     }
                 case "GetIntensityFilePath":
                     {
@@ -723,16 +821,24 @@ namespace FLIMage.FlowControls
                     }
                 case "SetFOVXY":
                     {
-                        State.Acq.field_of_view[0] = valueStack[0];
-                        State.Acq.field_of_view[1] = valueStack[1];
+                        double[] values = new double[valueStack.Length];
+                        for (int i = 0; i < valueStack.Length; i++)
+                            values[i] = Convert.ToDouble(valueStack[i]);
+
+                        State.Acq.field_of_view[0] = values[0];
+                        State.Acq.field_of_view[1] = values[1];
                         writeString = String.Format("FovXYum, {0}, {1}", State.Acq.field_of_view[0], State.Acq.field_of_view[1]);
                         cm = CommandMode.Set_Parameter;
                         break;
                     }
                 case "SetScanVoltageXY":
                     {
-                        State.Acq.XOffset = valueStack[0];
-                        State.Acq.YOffset = valueStack[1];
+                        double[] values = new double[valueStack.Length];
+                        for (int i = 0; i < valueStack.Length; i++)
+                            values[i] = Convert.ToDouble(valueStack[i]);
+
+                        State.Acq.XOffset = values[0];
+                        State.Acq.YOffset = values[1];
                         writeString = String.Format("ScanVoltageXY, {0}, {1}", State.Acq.XOffset, State.Acq.YOffset);
                         cm = CommandMode.Set_Parameter;
                         break;
@@ -757,7 +863,7 @@ namespace FLIMage.FlowControls
                     }
                 case "SetZSliceNum":
                     {
-                        State.Acq.nSlices = (int)valueStack[0];
+                        State.Acq.nSlices = Convert.ToInt32(valueStack[0]);
                         State.Acq.ZStack = true;
                         writeString = String.Format("ZSliceNum, {0}", State.Acq.nSlices);
                         cm = CommandMode.Set_Parameter;
@@ -765,8 +871,12 @@ namespace FLIMage.FlowControls
                     }
                 case "SetResolutionXY":
                     {
-                        State.Acq.pixelsPerLine = (int)valueStack[0];
-                        State.Acq.linesPerFrame = (int)valueStack[1];
+                        int[] values = new int[valueStack.Length];
+                        for (int i = 0; i < valueStack.Length; i++)
+                            values[i] = Convert.ToInt32(valueStack[i]);
+
+                        State.Acq.pixelsPerLine = (int)values[0];
+                        State.Acq.linesPerFrame = (int)values[1];
                         writeString = String.Format("ResolutionXY, {0}, {1}", State.Acq.pixelsPerLine, State.Acq.linesPerFrame);
                         cm = CommandMode.Set_Parameter;
                         break;
@@ -775,6 +885,44 @@ namespace FLIMage.FlowControls
                     {
                         writeString = String.Format("ResolutionXY, {0}, {1}", State.Acq.pixelsPerLine, State.Acq.linesPerFrame);
                         cm = CommandMode.Get_Parameter;
+                        break;
+                    }
+                case "Disconnect":
+                    {
+                        FLIMage.script.TurnOnServer(false);
+                        cm = CommandMode.None;
+                        break;
+                    }
+                case "GetNPages":
+                    {
+                        writeString = String.Format("NPages, {0}", FLIMage.image_display.FLIM_ImgData.n_pages);
+                        cm = CommandMode.None;
+                        break;
+                    }
+                case "OpenFile":
+                case "ReadImageJROI":
+                case "BinFrames":
+                case "CalcTimeCourse":
+                case "SetFLIMIntensityOffset":
+                case "FixTau":
+                case "FixTauAll":
+                case "SetChannel":
+                case "SetFitRange":
+                case "AlignFrames":
+                case "ApplyFitOffset":
+                case "FitEachFrame":
+                case "FitData":
+                    {
+                        String arg;
+                        for (int i = 0; i < valueStack.Length; i++)
+                            if (valueStack[i] == null)
+                            {
+                                Array.Resize(ref valueStack, i);
+                                break;
+                            }
+                        arg = String.Join(",", valueStack);
+                        FLIMage.ExternalCommand(CommandInput, arg);
+                        cm = CommandMode.Execution;
                         break;
                     }
                 default:

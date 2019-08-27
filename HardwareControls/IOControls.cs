@@ -532,8 +532,12 @@ namespace FLIMage
                 double returnValue;
                 if ((shading_on && !uncaging) || (shading_uncaging && uncaging) && calibration_exist)
                 {
-                    int xpixel = (int)((Xvol / State.Acq.XMaxVoltage + 0.5) * width);
-                    int ypixel = (int)((Yvol / State.Acq.YMaxVoltage + 0.5) * height);
+                    //Think about it!!
+                    double maxX = State.Acq.XMaxVoltage; // It should be from the entire image. So, multiplicator is not necessary.
+                    double maxY = State.Acq.YMaxVoltage; // It should be from the entire image. So, multiplicator is not necessary.
+
+                    int xpixel = (int)((Xvol / maxX + 0.5) * width);
+                    int ypixel = (int)((Yvol / maxY + 0.5) * height);
                     if (ShadingImages[LaserN] != null && ypixel >= 0 && xpixel >= 0 && ypixel < height && xpixel < width)
                         val = ShadingImages[LaserN][ypixel][xpixel];
                     if (val > 3)
@@ -551,21 +555,21 @@ namespace FLIMage
                 return returnValue;
             }
 
-            public double getEOMVoltage_Old(double X, double Y, int LaserN, double power, bool uncaging)
-            {
-                double val = 1;
-                double returnValue;
-                if ((shading_on && !uncaging) || (shading_uncaging && uncaging) && calibration_exist)
-                {
-                    int xpixel = (int)((X / State.Acq.XMaxVoltage + 0.5) * width);
-                    int ypixel = (int)((Y / State.Acq.XMaxVoltage + 0.5) * height);
-                    if (ShadingImages[LaserN] != null && shading_on)
-                        val = ShadingImages[LaserN][ypixel][xpixel];
-                }
+            //public double getEOMVoltage_Old(double X, double Y, int LaserN, double power, bool uncaging)
+            //{
+            //    double val = 1;
+            //    double returnValue;
+            //    if ((shading_on && !uncaging) || (shading_uncaging && uncaging) && calibration_exist)
+            //    {
+            //        int xpixel = (int)((X / State.Acq.XMaxVoltage + 0.5) * width);
+            //        int ypixel = (int)((Y / State.Acq.YMaxVoltage + 0.5) * height);
+            //        if (ShadingImages[LaserN] != null && shading_on)
+            //            val = ShadingImages[LaserN][ypixel][xpixel];
+            //    }
 
-                returnValue = calib1[LaserN][(int)(val * power)];
-                return returnValue;
-            }
+            //    returnValue = calib1[LaserN][(int)(val * power)];
+            //    return returnValue;
+            //}
         }
 
         //This class is to see if digital channel is on or off
@@ -1062,9 +1066,14 @@ namespace FLIMage
         public class MirrorAO
         {
             public Task hAOXY;
-            public Task hAOXY_S;
+            //public Task hAOXY_S;
+            public Task hAOX_S;
+            public Task hAOY_S;
+
             public AnalogMultiChannelWriter writerXY;
-            public AnalogMultiChannelWriter writerXY_S;
+            //public AnalogMultiChannelWriter writerXY_S;
+            public AnalogMultiChannelWriter writerX_S;
+            public AnalogMultiChannelWriter writerY_S;
 
             public double outputRate;
             public double msPerLine;
@@ -1092,7 +1101,9 @@ namespace FLIMage
                 shading = shading_in;
 
                 hAOXY = new Task();
-                hAOXY_S = new Task();
+                //hAOXY_S = new Task();
+                hAOX_S = new Task();
+                hAOY_S = new Task();
 
                 double maxV = 10;
                 double minV = -10;
@@ -1103,8 +1114,11 @@ namespace FLIMage
                 hAOXY.AOChannels.CreateVoltageChannel(portX, "aoChannelX", minV, maxV, AOVoltageUnits.Volts);
                 hAOXY.AOChannels.CreateVoltageChannel(portY, "aoChannelY", minV, maxV, AOVoltageUnits.Volts);
 
-                hAOXY_S.AOChannels.CreateVoltageChannel(portX, "aoChannelXS", minV, maxV, AOVoltageUnits.Volts);
-                hAOXY_S.AOChannels.CreateVoltageChannel(portY, "aoChannelYS", minV, maxV, AOVoltageUnits.Volts);
+                //hAOXY_S.AOChannels.CreateVoltageChannel(portX, "aoChannelXS", minV, maxV, AOVoltageUnits.Volts);
+                //hAOXY_S.AOChannels.CreateVoltageChannel(portY, "aoChannelYS", minV, maxV, AOVoltageUnits.Volts);
+
+                hAOX_S.AOChannels.CreateVoltageChannel(portX, "aoChannelXS", minV, maxV, AOVoltageUnits.Volts);
+                hAOY_S.AOChannels.CreateVoltageChannel(portY, "aoChannelYS", minV, maxV, AOVoltageUnits.Volts);
 
                 GetTriggerPortName(portX, State, ref Board, ref triggerPort, ref ExternalTriggerInputPort, ref sampleClockPort);
                 State.Init.MirrorAOBoard = Board;
@@ -1145,7 +1159,9 @@ namespace FLIMage
                 }
 
                 hAOXY.Control(TaskAction.Verify);
-                hAOXY_S.Control(TaskAction.Verify);
+                //hAOXY_S.Control(TaskAction.Verify);
+                hAOX_S.Control(TaskAction.Verify);
+                hAOY_S.Control(TaskAction.Verify);
 
 
                 //
@@ -1278,6 +1294,23 @@ namespace FLIMage
                 return DataXY;
             }
 
+
+            public void putValue_S_ToStartPos()
+            {
+                double[,] values = new double[2, 1];
+
+                double maxX = State.Acq.XMaxVoltage * State.Acq.scanVoltageMultiplier[0] / State.Acq.zoom / State.Acq.fillFraction;
+                double maxY = State.Acq.YMaxVoltage * State.Acq.scanVoltageMultiplier[1] / State.Acq.zoom;
+                values[0, 0] = -0.5 * maxX; //Default position.
+                values[1, 0] = -0.5 * maxY;
+
+                RotateAndOffset(values, State);
+                double[] setValue = new double[] { values[0, 0], values[1, 0] };
+
+                putValue_S(setValue);
+            }
+
+
             /// <summary>
             /// Put Single Values to Mirror channels. 
             /// double[] values: {X, Y};
@@ -1287,9 +1320,18 @@ namespace FLIMage
             {
                 try
                 {
-                    writerXY_S = new AnalogMultiChannelWriter(hAOXY_S.Stream);
-                    writerXY_S.WriteSingleSample(true, values);
-                    hAOXY_S.WaitUntilDone();
+                    //writerXY_S = new AnalogMultiChannelWriter(hAOXY_S.Stream);
+                    //writerXY_S.WriteSingleSample(true, values);
+
+                    writerX_S = new AnalogMultiChannelWriter(hAOX_S.Stream);
+                    writerX_S.WriteSingleSample(true, new double[] { values[0] });
+                    hAOX_S.WaitUntilDone();
+                    System.Threading.Thread.Sleep(10);
+
+                    writerY_S = new AnalogMultiChannelWriter(hAOY_S.Stream);
+                    writerY_S.WriteSingleSample(true, new double[] { values[1] });
+                    hAOX_S.WaitUntilDone();
+                    System.Threading.Thread.Sleep(10);
                 }
                 catch (Exception EX)
                 {
@@ -1345,13 +1387,17 @@ namespace FLIMage
 
             public void dispose()
             {
-                //stop();
-
                 if (hAOXY != null)
                     hAOXY.Dispose();
 
-                if (hAOXY_S != null)
-                    hAOXY_S.Dispose();
+                if (hAOX_S != null)
+                    hAOX_S.Dispose();
+
+                if (hAOY_S != null)
+                    hAOY_S.Dispose();
+
+                //if (hAOXY_S != null)
+                //    hAOXY_S.Dispose();
             }
         }
 
@@ -1586,7 +1632,7 @@ namespace FLIMage
 
             for (int ch = 0; ch < nChannels + addUncaging; ch++)
             {
-                if (!State.Init.uncagingShutter[ch])
+                if (!State.Init.uncagingShutter[ch] && shading != null)
                 {
                     for (int i = 0; i < repeatTotalSamplesPerChannel; i++)
                         DataEOM[ch, i] = shading.getZeroEOMVoltage(ch); // calib1[ch][0]; //First put minimum to all of them.
@@ -1631,7 +1677,7 @@ namespace FLIMage
                                 }
                             }
 
-                            if (State.Init.uncagingLasers[ch])
+                            if (State.Init.uncagingLasers[ch] && shading != null)
                             {
                                 for (int i = pulseStart; i < pulseEnd; i++)
                                 {
@@ -1645,7 +1691,7 @@ namespace FLIMage
                         }
                     }
 
-                    else if (State.Init.imagingLasers[ch] && !State.Init.uncagingLasers[ch])
+                    else if (State.Init.imagingLasers[ch] && !State.Init.uncagingLasers[ch] && shading != null)
                     {
                         for (int i = 0; i < repeatTotalSamplesPerChannel; i++)
                         {
@@ -2078,6 +2124,7 @@ namespace FLIMage
                 writerEOM.WriteMultiSample(false, values);
             }
 
+
             public int putValue_S(double[] values)
             {
                 int error = 0;
@@ -2507,8 +2554,9 @@ namespace FLIMage
             int pulse_intervalCount = (int)(State.Uncaging.pulseISI * OutputRate / 1000.0);
             int train_intervalCount = (int)(State.Uncaging.Uncage_FrameInterval * frameInterval * OutputRate);
 
+            int uncagingMoveCount = (int)(State.Uncaging.Mirror_delay / 2.0 * OutputRate / 1000.0); //Take some time for moving?
             int uncagingWidthCount = (int)((State.Uncaging.pulseWidth + State.Uncaging.Mirror_delay) * OutputRate / 1000.0);
-
+            int PostUncagingCount = (int)(State.Acq.msPerLine / 2.0 * OutputRate / 1000.0); //Half of msPerLine.
 
             bool anyUncaging = State.Init.uncagingLasers.Any(item => item == true);
 
@@ -2519,13 +2567,51 @@ namespace FLIMage
                 for (int ch = 0; ch < nChannels; ch++) //pulse On.
                     for (int train = 0; train < nTrain; train++)
                         for (int pulse = 0; pulse < nUncaging; pulse++)
-                            for (int j = 0; j < uncagingWidthCount; j++)
+                        {
+                            int baseCount = baseLineCount + train * train_intervalCount + pulse * pulse_intervalCount;
+
+                            if (baseCount < nSamples)
                             {
-                                int loc = baseLineCount + train * train_intervalCount + pulse * pulse_intervalCount + j;
-                                if (loc >= 0 && loc < nSamples)
-                                    OutputFrame[ch, loc] = uncagingPos[ch, pulse];
-                                //                                OutputFrame[ch, loc] = State.Uncaging.PositionV[ch];
+                                double uncagePos1 = uncagingPos[ch, pulse];
+                                double initialPos = OutputFrame[ch, baseCount];
+                                int procEnd = baseCount + uncagingWidthCount + PostUncagingCount;
+
+                                if (procEnd > nSamples)
+                                    procEnd = nSamples;
+
+                                PostUncagingCount = procEnd - uncagingWidthCount - baseCount;
+
+                                double endPos = OutputFrame[ch, procEnd - 1];
+
+                                double movIncrement = (uncagePos1 - initialPos) / uncagingMoveCount;
+                                double postIncrement = (endPos - uncagePos1) / PostUncagingCount;
+
+
+                                for (int j = 0; j < uncagingMoveCount; j++) //use 0.5 * mirror_delay to move.
+                                {
+                                    int loc = baseCount + j;
+                                    if (loc >= 0 && loc < nSamples)
+                                        OutputFrame[ch, loc] = initialPos + j * movIncrement;
+                                }
+                                for (int j = uncagingMoveCount; j < uncagingWidthCount; j++)
+                                {
+                                    int loc = baseCount + j;
+                                    if (loc >= 0 && loc < nSamples)
+                                        OutputFrame[ch, loc] = uncagePos1;
+                                    //                                OutputFrame[ch, loc] = State.Uncaging.PositionV[ch];
+                                }
+
+                                if (PostUncagingCount > 0)
+                                {
+                                    for (int j = 0; j < PostUncagingCount; j++)
+                                    {
+                                        int loc = baseCount + uncagingWidthCount + j;
+                                        if (loc < nSamples) //will be always >0
+                                            OutputFrame[ch, loc] = uncagePos1 + j * postIncrement;
+                                    }
+                                }
                             }
+                        }
             }
 
             return OutputFrame;
@@ -2575,7 +2661,7 @@ namespace FLIMage
             int nSamplesXScan = (int)(nSamplesX * ScanFraction);
             int nSamplesXFB = nSamplesX - nSamplesXScan;
 
-            int nSamplesYScan = nSamples_All - nSamplesXFB;
+            int nSamplesYScan = nSamples_All - nSamplesX; // nSamplesXFB; Last Line?
             int nSamplesYFB = nSamples_All - nSamplesYScan;
 
             double[,] mirrorOutput = new double[2, nSamples_All];
@@ -2613,27 +2699,32 @@ namespace FLIMage
             {
                 nSamplesXScan = (int)(nSamplesX * State.Acq.scanFraction);
 
-                for (int j = 0; j < NLines; j++)
+                double[] singleLineX = new double[nSamplesX];
+                for (int i = 0; i < nSamplesXScan; i++)
                 {
-                    for (int i = 0; i < nSamplesXScan; i++)
-                    {
-                        mirrorOutput[0, i + j * nSamplesX] = ((double)i / (double)nSamplesXScan - 0.5) * MaxVX;
-                    }
-                    for (int i = nSamplesXScan; i < nSamplesX; i++)
-                    {
-                        mirrorOutput[0, i + j * nSamplesX] = ((double)(nSamplesX - i) / (double)nSamplesXFB - 0.5) * MaxVX;
-
-
-                        //mirrorOutput[0, i + j * nSamplesX] = ((double)(i - nSamplesX) / (double)nSamplesXScan - 0.5) * MaxVX;
-                        //This protocol jumps to -0.5, and then move forward just like scanning. Maybe not good.....
-                    }
+                    singleLineX[i] = ((double)i / (double)nSamplesXScan - 0.5) * MaxVX;
                 }
+                for (int i = nSamplesXScan; i < nSamplesX; i++)
+                {
+                    //Fly back.
+                    //singleLineX[i] = ((double)(nSamplesX - i) / (double)nSamplesXFB - 0.5) * MaxVX; Usual.
+
+                    singleLineX[i] = MaxVX * 0.5 * Math.Cos((double)(i - nSamplesXScan) * Math.PI / (double)nSamplesXFB); //Sinusoidal wave.
+
+                    //singleLineX[i] = ((double)(i - nSamplesX) / (double)nSamplesXScan - 0.5) * MaxVX; Very fast.
+                }
+
+
+                for (int j = 0; j < NLines; j++)
+                    Buffer.BlockCopy(singleLineX, 0, mirrorOutput, j * nSamplesX * sizeof(double), nSamplesX * sizeof(double));
+
             }//Bidirectional
 
             for (int i = 0; i < nSamplesYScan; i++)
             {
                 mirrorOutput[1, i] = ((double)i / (double)nSamplesYScan - 0.5) * MaxVY;
             }
+
             for (int i = nSamplesYScan; i < nSamples_All; i++)
             {
                 mirrorOutput[1, i] = ((double)(nSamples_All - i) / (double)nSamplesYFB - 0.5) * MaxVY;
@@ -2697,8 +2788,11 @@ namespace FLIMage
             double[,] voltagePosition = new double[2, 1];
             double[] voltagePosition_final = new double[2];
 
-            voltagePosition[0, 0] = (FracPosition[0] - 0.5) * State.Acq.XMaxVoltage / State.Acq.zoom; //for disaply, multiplicator is not necessary.
-            voltagePosition[1, 0] = (FracPosition[1] - 0.5) * State.Acq.YMaxVoltage / State.Acq.zoom;
+            double maxX = State.Acq.XMaxVoltage / State.Acq.zoom; // * State.Acq.scanVoltageMultiplier[0] It is already included.... pixels/wdith etc.
+            double maxY = State.Acq.YMaxVoltage / State.Acq.zoom; // * State.Acq.scanVoltageMultiplier[1] 
+
+            voltagePosition[0, 0] = (FracPosition[0] - 0.5) * maxX; //for disaply, multiplicator is not necessary.
+            voltagePosition[1, 0] = (FracPosition[1] - 0.5) * maxY;
 
             RotateAndOffset(voltagePosition, State);
 

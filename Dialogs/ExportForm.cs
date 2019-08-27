@@ -21,6 +21,7 @@ namespace FLIMage.Dialogs
         bool[] SaveChannels;
         int[] ZStackFormat = new int[4];
         CheckBox[] SaveChannelCheckbox = new CheckBox[MaxChannel];
+        bool correctT0EachPage = true;
 
         SettingManager settingManager;
         String settingName = "ExportForm";
@@ -70,6 +71,7 @@ namespace FLIMage.Dialogs
             settingManager.AddToDict(AllFiles);
             settingManager.AddToDict(ZProjectionCheckBox);
             settingManager.AddToDict(NoProjection);
+            settingManager.AddToDict(CorrectT0EachPageCheck);
             settingManager.LoadToObject();
         }
 
@@ -117,10 +119,12 @@ namespace FLIMage.Dialogs
                 DefaultZStackSetting();
             }
 
+            correctT0EachPage = CorrectT0EachPageCheck.Checked;
+
             if (!AllFiles.Checked)
-                image_display.SaveCurrentIntensityImage(saveFormat, SaveChannels, ZStackFormat, true);
+                image_display.SaveCurrentIntensityImage(saveFormat, SaveChannels, ZStackFormat, correctT0EachPage, true);
             else
-                image_display.BatchExporting(saveFormat, SaveChannels, ZStackFormat);
+                image_display.BatchExporting(saveFormat, SaveChannels, ZStackFormat, correctT0EachPage);
 
             this.Close();
         }

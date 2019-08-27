@@ -10,9 +10,7 @@ namespace FLIMage.Analysis
 {
     public class ImageInfo
     {
-
         public double time_milliseconds; // in millisecond
-        public String dateStr;
         public DateTime acquiredTime;
         public String BaseName;
         public String FileName;
@@ -42,12 +40,14 @@ namespace FLIMage.Analysis
         public double[][] nPixels_ROI;
         public int[] roiID;
 
+        public ImageInfo()
+        {
+        }
+
         public ImageInfo(FLIMData FLIM)
         {
-            ScanParameters State;
-            State = FLIM.State;
+            ScanParameters State = FLIM.State;
             acquiredTime = FLIM.acquiredTime;
-            dateStr = State.Acq.triggerTime;
             Res = State.Spc.spcData.resolution[0] / 1000;
             ROI Roi = FLIM.Roi;
             List<ROI> ROI_Multi = FLIM.ROIs;
@@ -103,7 +103,7 @@ namespace FLIMage.Analysis
             }
             else
             {
-                DateTime dt = DateTime.ParseExact(dateStr, "yyyy-MM-ddTHH:mm:ss.fff", null);
+                DateTime dt = acquiredTime;
                 double time_milliseconds_base = (dt - new DateTime(2000, 1, 1)).TotalMilliseconds;
 
                 if (FLIM.n_pages > 1)
@@ -157,6 +157,46 @@ namespace FLIMage.Analysis
                 }
             }
         }
+
+        public ImageInfo DeepCopy()
+        {
+            ImageInfo iminfo1 = new ImageInfo();
+            var members = this.GetType().GetFields();
+            object ValB;
+
+            foreach (var member in members)
+            {
+                var value = member.GetValue(this);
+                var valType = member.FieldType;
+                var memberName = member.Name;
+
+                if (value != null)
+                {
+                    if (valType == typeof(double[][]))
+                    {
+                        var orgVal = (double[][])value;
+                        var valA = new double[orgVal.Length][];
+                        for (int ch = 0; ch < orgVal.Length; ch++)
+                        {
+                            valA[ch] = (double[])orgVal[ch].Clone();
+                        }
+                        ValB = (object)valA;
+                    }
+                    else if (valType == typeof(double[]))
+                    {
+                        var orgVal = (double[])value;
+                        ValB = orgVal.Clone();
+                    }
+                    else
+                        ValB = (object)value;
+
+                    iminfo1.GetType().GetField(memberName).SetValue(iminfo1, ValB);
+                }
+            }
+
+            return iminfo1;
+        }
+
     }
 
     /// <summary>
@@ -511,6 +551,92 @@ namespace FLIMage.Analysis
                 }
             }
         }//calculate()
+
+        public TimeCourse DeepCopy()
+        {
+            TimeCourse TC1 = new TimeCourse();
+            var members = this.GetType().GetFields();
+            object ValB;
+
+            foreach (var member in members)
+            {
+                var memberName = member.Name;
+                var newField = TC1.GetType().GetField(memberName);
+
+                var value = member.GetValue(this);
+                var valType = member.FieldType;
+
+                if (value != null)
+                {
+                    if (valType == typeof(double[][]))
+                    {
+                        var orgVal = (double[][])value;
+                        var valA = new double[orgVal.Length][];
+                        for (int ch = 0; ch < orgVal.Length; ch++)
+                        {
+                            if (orgVal[ch] != null)
+                                valA[ch] = (double[])orgVal[ch].Clone();
+                            else
+                                valA[ch] = null;
+                        }
+
+                        ValB = (object)valA;
+                    }
+                    else if (valType == typeof(double[,][]))
+                    {
+                        var orgVal = (double[,][])value;
+                        var valA = new double[orgVal.GetLength(0), orgVal.GetLength(1)][];
+                        for (int ro = 0; ro < orgVal.GetLength(0); ro++)
+                            for (int ch = 0; ch < orgVal.GetLength(1); ch++)
+                            {
+                                if (orgVal[ro, ch] != null)
+                                    valA[ro, ch] = (double[])orgVal[ro, ch].Clone();
+                            }
+
+                        ValB = (object)valA;
+                    }
+                    else if (valType == typeof(double[][][]))
+                    {
+                        var orgVal = (double[][][])value;
+                        var valA = new double[orgVal.Length][][];
+                        for (int i = 0; i < orgVal.Length; i++)
+                        {
+                            valA[i] = new double[orgVal[i].Length][];
+                            for (int j = 0; j < orgVal[i].Length; j++)
+                            {
+                                valA[i][j] = (double[])orgVal[i][j].Clone();
+                            }
+                        }
+                        ValB = (object)valA;
+                    }
+                    else if (valType == typeof(List<ImageInfo>))
+                    {
+                        var orgVal = (List<ImageInfo>)value;
+                        var valA = new List<ImageInfo>();
+
+                        foreach (var val in orgVal)
+                        {
+                            valA.Add(val.DeepCopy());
+                        }
+                        ValB = (object)valA;
+                    }
+                    else if (valType == typeof(double[]))
+                    {
+                        var orgVal = (double[])value;
+                        ValB = orgVal.Clone();
+                    }
+                    else
+                        ValB = (object)value;
+
+                    TC1.GetType().GetField(memberName).SetValue(TC1, ValB);
+                }
+            }
+
+
+
+            return TC1;
+        }
+
     } //Time course
 
 
@@ -583,7 +709,7 @@ namespace FLIMage.Analysis
             {
                 if (TCF[i].FileNumber == TC1.FileNumber) //Found a file!!
                 {
-                    TCF[i] = TC1; //Copy the data.
+                    TCF[i] = TC1.DeepCopy(); //Copy the data.
                     found = true;
                     break;
                 }
@@ -591,7 +717,7 @@ namespace FLIMage.Analysis
 
             if (!found)
             {
-                TCF.Add(TC1);
+                TCF.Add(TC1.DeepCopy());
                 currentFileNumber = TCF.Count - 1;
             }
 
@@ -786,5 +912,83 @@ namespace FLIMage.Analysis
                 }
             }
         }//calculate()
+
+
+        public TimeCourse_Files DeepCopy()
+        {
+            TimeCourse_Files TCF1 = new TimeCourse_Files();
+            var members = this.GetType().GetFields();
+            object ValB;
+
+            foreach (var member in members)
+            {
+                var value = member.GetValue(this);
+                var valType = member.FieldType;
+                var memberName = member.Name;
+
+                if (value != null)
+                {
+                    if (valType == typeof(double[][]))
+                    {
+                        var orgVal = (double[][])value;
+                        var valA = new double[orgVal.Length][];
+                        for (int ch = 0; ch < orgVal.Length; ch++)
+                        {
+                            valA[ch] = (double[])orgVal[ch].Clone();
+                        }
+
+                        ValB = (object)valA;
+                    }
+                    else if (valType == typeof(double[,][]))
+                    {
+                        var orgVal = (double[,][])value;
+                        var valA = new double[orgVal.GetLength(0), orgVal.GetLength(1)][];
+                        for (int ro = 0; ro < orgVal.GetLength(0); ro++)
+                            for (int ch = 0; ch < orgVal.GetLength(1); ch++)
+                            {
+                                valA[ro, ch] = (double[])orgVal[ro, ch].Clone();
+                            }
+
+                        ValB = (object)valA;
+                    }
+                    else if (valType == typeof(double[][][]))
+                    {
+                        var orgVal = (double[][][])value;
+                        var valA = new double[orgVal.Length][][];
+                        for (int i = 0; i < orgVal.Length; i++)
+                        {
+                            valA[i] = new double[orgVal[i].Length][];
+                            for (int j = 0; j < orgVal[i].Length; j++)
+                            {
+                                valA[i][j] = (double[])orgVal[i][j].Clone();
+                            }
+                        }
+                        ValB = (object)valA;
+                    }
+                    else if (valType == typeof(List<TimeCourse>))
+                    {
+                        var orgVal = (List<TimeCourse>)value;
+                        var valA = new List<TimeCourse>();
+
+                        foreach (var val in orgVal)
+                        {
+                            valA.Add(val.DeepCopy());
+                        }
+                        ValB = (object)valA;
+                    }
+                    else if (valType == typeof(double[]))
+                    {
+                        var orgVal = (double[])value;
+                        ValB = orgVal.Clone(); 
+                    }
+                    else
+                        ValB = (object)value;
+
+                    TCF1.GetType().GetField(memberName).SetValue(TCF1, ValB);
+                }
+            }
+
+            return TCF1;
+        }
     }
 }

@@ -160,7 +160,13 @@ namespace FLIMage.Uncaging
                     State.Uncaging.rotatePosition = true;
                 else
                 {
-                    State.Uncaging.currentPosition = UncageMultiRoi.SelectedIndex;
+                    if (this.InvokeRequired)
+                        this.Invoke((Action)delegate
+                        {
+                            State.Uncaging.currentPosition = UncageMultiRoi.SelectedIndex;
+                        });
+                    else
+                        State.Uncaging.currentPosition = UncageMultiRoi.SelectedIndex;
                     State.Uncaging.rotatePosition = false;
                 }
             }
@@ -169,7 +175,13 @@ namespace FLIMage.Uncaging
                 Debug.WriteLine("Problem in UncagingSelection" + e.Message);
             }
 
-            UpdateUncaging(sender);
+            if (this.InvokeRequired)
+                this.Invoke((Action)delegate
+                {
+                    UpdateUncaging(sender);
+                });
+            else
+                UpdateUncaging(sender);
         }
 
         public void UncageMultiRoi_SelectedIndexChanged(object sender, EventArgs e)
@@ -442,7 +454,9 @@ namespace FLIMage.Uncaging
             if (FLIMage.flimage_io.uc != null && !FLIMage.flimage_io.uc.IsDisposed)
                 FLIMage.flimage_io.uc.updateWindow();
 
-            FLIMage.flimage_io.shading.applyCalibration(State);
+            if (FLIMage.flimage_io.shading != null)
+                FLIMage.flimage_io.shading.applyCalibration(State);
+
             DataXY = IOControls.MakeUncagePulses_MirrorAO(State, State.Uncaging.outputRate);
             DataEOM = IOControls.MakePockelsPulses_PockelsAO(State, State.Uncaging.outputRate, ShowShutter.Checked, ShowRepeat.Checked, FLIMage.flimage_io.shading);
 
@@ -476,14 +490,12 @@ namespace FLIMage.Uncaging
 
             FLIMage.ExternalCommand("UncagingStart");
 
-            Button button = StartUncaging_button;
-
             SetupUncage(sender);
 
-            if (button.Text.Equals("Start"))
+            if (StartUncaging_button.Text.Equals("Start"))
             {
                 uncaging_count = 0;
-                button.Text = "Stop";
+                StartUncaging_button.Text = "Stop";
                 UpdateUncagingCounter();
 
                 if (State.Uncaging.trainRepeat > 1)
@@ -498,19 +510,24 @@ namespace FLIMage.Uncaging
 
                 if (State.Uncaging.trainRepeat <= 1)
                 {
-                    button.Text = "Start";
+                    StartUncaging_button.Text = "Start";
                     State.Uncaging.trainRepeat = 1;
 
                 }
             }
             else
             {
-                button.Text = "Start";
-                UncagingTimer.Stop();
-                UncagingTimer.Dispose();
-                abort_uncaging = true;
-                uncaging_running = false;
+                StopUncaging();
             }
+        }
+
+        public void StopUncaging()
+        {
+            StartUncaging_button.Text = "Start";
+            UncagingTimer.Stop();
+            UncagingTimer.Dispose();
+            abort_uncaging = true;
+            uncaging_running = false;
         }
 
         public void UpdateUncagingCounter()
@@ -594,7 +611,7 @@ namespace FLIMage.Uncaging
                         break;
                     }
                 }
-            }           
+            }
 
             if (!forcestop)
             {

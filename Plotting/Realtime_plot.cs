@@ -92,6 +92,7 @@ namespace FLIMage.Plotting
 
         public void updatePlot()
         {
+            calcFitCheck.Checked = calc_Fit;
             plot.ClearData();
 
             if (real_time)
@@ -308,7 +309,6 @@ namespace FLIMage.Plotting
                 TC.ImInfos.Clear();
 
             image_display.CalculateTimecourse(true);
-            calcFitCheck.Checked = calc_Fit;
             updatePlot();
         }
 
@@ -318,6 +318,17 @@ namespace FLIMage.Plotting
             calc_Fit = calcFitCheck.Checked;
         }
 
+        public void TurnOnCalcFit(bool ON)
+        {
+            calc_Fit = ON;
+            calcFitCheck.Checked = calc_Fit;
+        }
+
+        public void TurnOnCalcUponOpen(bool ON)
+        {
+            //calc_upon_open = ON; Automatic.
+            CalculateUponOpen.Checked = ON;
+        }
         //////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////
 

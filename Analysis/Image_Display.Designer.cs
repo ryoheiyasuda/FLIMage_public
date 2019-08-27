@@ -92,6 +92,7 @@
             this.MaxSldr3 = new System.Windows.Forms.TrackBar();
             this.MaxIntensity3 = new System.Windows.Forms.TextBox();
             this.Fitting_Group = new System.Windows.Forms.GroupBox();
+            this.AutoApplyOffset = new System.Windows.Forms.CheckBox();
             this.Roi_SelectA = new System.Windows.Forms.ComboBox();
             this.psPerUnit = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
@@ -138,9 +139,9 @@
             this.uncagingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.setUncagingPositionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.analysisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.alignSlicesframesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.timeBinningToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.makeSinlgeFileMovieFromFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.alignSlicesframesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.getFocusFrameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.fastZCalibrationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -169,7 +170,7 @@
             this.label8 = new System.Windows.Forms.Label();
             this.Ch1 = new System.Windows.Forms.RadioButton();
             this.Ch2 = new System.Windows.Forms.RadioButton();
-            this.Ch12 = new System.Windows.Forms.RadioButton();
+            this.Channel12 = new System.Windows.Forms.RadioButton();
             this.st_im1 = new System.Windows.Forms.Label();
             this.st_im2 = new System.Windows.Forms.Label();
             this.LifetimeCurvePlot = new System.Windows.Forms.PictureBox();
@@ -315,11 +316,11 @@
             // Apply_Offset
             // 
             this.Apply_Offset.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Apply_Offset.Location = new System.Drawing.Point(195, 142);
+            this.Apply_Offset.Location = new System.Drawing.Point(179, 141);
             this.Apply_Offset.Name = "Apply_Offset";
-            this.Apply_Offset.Size = new System.Drawing.Size(48, 23);
+            this.Apply_Offset.Size = new System.Drawing.Size(84, 23);
             this.Apply_Offset.TabIndex = 430;
-            this.Apply_Offset.Text = "Apply";
+            this.Apply_Offset.Text = "Apply offset";
             this.Apply_Offset.UseVisualStyleBackColor = true;
             this.Apply_Offset.Click += new System.EventHandler(this.Apply_Offset_Click);
             // 
@@ -399,9 +400,9 @@
             this.label67.Location = new System.Drawing.Point(158, 90);
             this.label67.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label67.Name = "label67";
-            this.label67.Size = new System.Drawing.Size(85, 14);
+            this.label67.Size = new System.Drawing.Size(90, 14);
             this.label67.TabIndex = 402;
-            this.label67.Text = "T0 (Image color)";
+            this.label67.Text = "T0 (Image offset)";
             // 
             // t0_Img
             // 
@@ -1010,6 +1011,7 @@
             // 
             // Fitting_Group
             // 
+            this.Fitting_Group.Controls.Add(this.AutoApplyOffset);
             this.Fitting_Group.Controls.Add(this.Roi_SelectA);
             this.Fitting_Group.Controls.Add(this.psPerUnit);
             this.Fitting_Group.Controls.Add(this.label10);
@@ -1056,6 +1058,18 @@
             this.Fitting_Group.TabStop = false;
             this.Fitting_Group.Text = "Fitting";
             // 
+            // AutoApplyOffset
+            // 
+            this.AutoApplyOffset.AutoSize = true;
+            this.AutoApplyOffset.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.AutoApplyOffset.Location = new System.Drawing.Point(181, 163);
+            this.AutoApplyOffset.Name = "AutoApplyOffset";
+            this.AutoApplyOffset.Size = new System.Drawing.Size(81, 18);
+            this.AutoApplyOffset.TabIndex = 440;
+            this.AutoApplyOffset.Text = "Auto offset";
+            this.AutoApplyOffset.UseVisualStyleBackColor = true;
+            this.AutoApplyOffset.CheckedChanged += new System.EventHandler(this.AutoApplyOffset_CheckedChanged);
+            // 
             // Roi_SelectA
             // 
             this.Roi_SelectA.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
@@ -1071,7 +1085,7 @@
             // 
             this.psPerUnit.AutoSize = true;
             this.psPerUnit.Font = new System.Drawing.Font("Arial", 8.25F);
-            this.psPerUnit.Location = new System.Drawing.Point(195, 183);
+            this.psPerUnit.Location = new System.Drawing.Point(184, 185);
             this.psPerUnit.Name = "psPerUnit";
             this.psPerUnit.Size = new System.Drawing.Size(19, 14);
             this.psPerUnit.TabIndex = 438;
@@ -1081,7 +1095,7 @@
             // 
             this.label10.AutoSize = true;
             this.label10.Font = new System.Drawing.Font("Arial", 8.25F);
-            this.label10.Location = new System.Drawing.Point(133, 183);
+            this.label10.Location = new System.Drawing.Point(122, 185);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(67, 14);
             this.label10.TabIndex = 437;
@@ -1534,13 +1548,6 @@
             this.analysisToolStripMenuItem.Size = new System.Drawing.Size(62, 22);
             this.analysisToolStripMenuItem.Text = "Analysis";
             // 
-            // alignSlicesframesToolStripMenuItem
-            // 
-            this.alignSlicesframesToolStripMenuItem.Name = "alignSlicesframesToolStripMenuItem";
-            this.alignSlicesframesToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
-            this.alignSlicesframesToolStripMenuItem.Text = "Align frames";
-            this.alignSlicesframesToolStripMenuItem.Click += new System.EventHandler(this.AlignSlicesframesToolStripMenuItem_Click);
-            // 
             // timeBinningToolStripMenuItem
             // 
             this.timeBinningToolStripMenuItem.Name = "timeBinningToolStripMenuItem";
@@ -1554,6 +1561,13 @@
             this.makeSinlgeFileMovieFromFilesToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
             this.makeSinlgeFileMovieFromFilesToolStripMenuItem.Text = "Concatenate files with same basename";
             this.makeSinlgeFileMovieFromFilesToolStripMenuItem.Click += new System.EventHandler(this.makeMoviesWithTheSameBaseNameToolStripMenuItem_Click);
+            // 
+            // alignSlicesframesToolStripMenuItem
+            // 
+            this.alignSlicesframesToolStripMenuItem.Name = "alignSlicesframesToolStripMenuItem";
+            this.alignSlicesframesToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
+            this.alignSlicesframesToolStripMenuItem.Text = "Align frames";
+            this.alignSlicesframesToolStripMenuItem.Click += new System.EventHandler(this.AlignSlicesframesToolStripMenuItem_Click);
             // 
             // getFocusFrameToolStripMenuItem
             // 
@@ -1598,14 +1612,14 @@
             // timeCoursePlotToolStripMenuItem
             // 
             this.timeCoursePlotToolStripMenuItem.Name = "timeCoursePlotToolStripMenuItem";
-            this.timeCoursePlotToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.timeCoursePlotToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.timeCoursePlotToolStripMenuItem.Text = "Time course plot";
             this.timeCoursePlotToolStripMenuItem.Click += new System.EventHandler(this.TimeCoursePlotToolStripMenuItem_Click);
             // 
             // driftMeasurementToolStripMenuItem
             // 
             this.driftMeasurementToolStripMenuItem.Name = "driftMeasurementToolStripMenuItem";
-            this.driftMeasurementToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.driftMeasurementToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.driftMeasurementToolStripMenuItem.Text = "Drift measurement";
             this.driftMeasurementToolStripMenuItem.Click += new System.EventHandler(this.driftMeasurementToolStripMenuItem_Click);
             // 
@@ -1759,7 +1773,7 @@
             // groupBox3
             // 
             this.groupBox3.Controls.Add(this.LifetimeCh_panel);
-            this.groupBox3.Controls.Add(this.Ch12);
+            this.groupBox3.Controls.Add(this.Channel12);
             this.groupBox3.Controls.Add(this.Channel2);
             this.groupBox3.Controls.Add(this.Channel1);
             this.groupBox3.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -1818,17 +1832,17 @@
             this.Ch2.UseVisualStyleBackColor = true;
             this.Ch2.Click += new System.EventHandler(this.Ch1_Click);
             // 
-            // Ch12
+            // Channel12
             // 
-            this.Ch12.AutoSize = true;
-            this.Ch12.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Ch12.Location = new System.Drawing.Point(11, 78);
-            this.Ch12.Name = "Ch12";
-            this.Ch12.Size = new System.Drawing.Size(143, 20);
-            this.Ch12.TabIndex = 302;
-            this.Ch12.Text = "Ch1/Ch2 (Intensity)";
-            this.Ch12.UseVisualStyleBackColor = true;
-            this.Ch12.Click += new System.EventHandler(this.Channel1_CheckedChanged);
+            this.Channel12.AutoSize = true;
+            this.Channel12.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Channel12.Location = new System.Drawing.Point(11, 78);
+            this.Channel12.Name = "Channel12";
+            this.Channel12.Size = new System.Drawing.Size(143, 20);
+            this.Channel12.TabIndex = 302;
+            this.Channel12.Text = "Ch1/Ch2 (Intensity)";
+            this.Channel12.UseVisualStyleBackColor = true;
+            this.Channel12.Click += new System.EventHandler(this.Channel1_CheckedChanged);
             // 
             // st_im1
             // 
@@ -2501,7 +2515,7 @@
         public System.Windows.Forms.ToolStripMenuItem timeCoursePlotToolStripMenuItem;
         public System.Windows.Forms.Panel ctrlPanel;
         public System.Windows.Forms.Panel st_im3;
-        public System.Windows.Forms.RadioButton Ch12;
+        public System.Windows.Forms.RadioButton Channel12;
         public System.Windows.Forms.Panel LifetimeCh_panel;
         public System.Windows.Forms.Label label8;
         public System.Windows.Forms.RadioButton Ch1;
@@ -2583,5 +2597,6 @@
         public System.Windows.Forms.ToolStripMenuItem runPythonScriptToolStripMenuItem;
         private System.ComponentModel.IContainer components;
         private System.Windows.Forms.ToolStripMenuItem timeBinningToolStripMenuItem;
+        public System.Windows.Forms.CheckBox AutoApplyOffset;
     }
 }

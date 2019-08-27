@@ -133,6 +133,8 @@ namespace FLIMage
             use_pq = State.Init.FLIM_on && (String.Equals(State.Init.FLIM_mode, "PQ") || String.Equals(State.Init.FLIM_mode, "MH"));
             use_bh = State.Init.FLIM_on && (String.Equals(State.Init.FLIM_mode, "BH"));
 
+            SafetyFeature();
+
             if (use_nidaq)
             {
                 try
@@ -213,6 +215,26 @@ namespace FLIMage
             }
         }
 
+        public void SafetyFeature()
+        {
+            if (State.Init.MicroscopeSystem == "ThorBScopeGG")
+            {
+                if (State.Acq.scanFraction > 0.86)
+                    State.Acq.scanFraction = 0.86;
+                if (State.Acq.fillFraction < 0.7)
+                    State.Acq.scanFraction = 0.7;
+                if (State.Acq.XMaxVoltage > 5)
+                    State.Acq.XMaxVoltage = 5;
+                if (State.Acq.YMaxVoltage > 5)
+                    State.Acq.YMaxVoltage = 5;
+
+                //State.Acq.BiDirectionalScan = true;
+            }
+
+            if (State.Init.AbsoluteMaxVoltageScan > 10)
+                State.Init.AbsoluteMaxVoltageScan = 10;
+        }
+
         public void PostFLIMageShowInitialization(FLIMageMain flim_in)
         {
             FLIMage = flim_in;
@@ -284,12 +306,21 @@ namespace FLIMage
         public void updateState(ScanParameters State_in)
         {
             State = State_in;
+
+            if (use_nidaq && mirrorAO_S != null)
+                mirrorAO_S.putValue_S_ToStartPos();
+
             EventNotify?.Invoke(this, new ProcessEventArgs("ParametersChanged", null));
         }
 
         public void Notify(ProcessEventArgs e)
         {
             EventNotify?.Invoke(this, e);
+        }
+
+        public void NotifyEventExternal(String eventName)
+        {
+            EventNotify?.Invoke(this, new ProcessEventArgs(eventName, null));
         }
 
         /// <summary>
@@ -416,7 +447,9 @@ namespace FLIMage
         public void TCSPC_Close()
         {
             StopRateTimer();
-            FiFo_acquire.closeDevice();
+
+            if (FiFo_acquire != null && FiFo_acquire.nDevices > 1)
+                FiFo_acquire.closeDevice();
         }
 
         void waitForAcquisitionTaskCompleted()
@@ -779,29 +812,19 @@ namespace FLIMage
 
             if (focusStop)
             {
-                if (FLIMage.InvokeRequired)
+                FLIMage.Invoke((Action)delegate
                 {
-                    FLIMage.Invoke((Action)delegate
-                    {
-                        FLIMage.StopFocus_GUI_Update();
-                    });
-                }
-                else
                     FLIMage.StopFocus_GUI_Update();
+                });
 
                 focusing = false;
             }
             else
             {
-                if (FLIMage.InvokeRequired)
+                FLIMage.Invoke((Action)delegate
                 {
-                    FLIMage.Invoke((Action)delegate
-                    {
-                        FLIMage.StopGrab_GUI_Update();
-                    });
-                }
-                else
                     FLIMage.StopGrab_GUI_Update();
+                });
 
                 grabbing = false;
                 looping = false;
@@ -813,8 +836,9 @@ namespace FLIMage
         /// </summary>
         void ParkMirrors()
         {
-            double[] values = State.Init.mirrorParkPosition;
-            mirrorAO_S.putValue_S(values);
+            //double[] values = State.Init.mirrorParkPosition;
+            //mirrorAO_S.putValue_S(values);
+            mirrorAO_S.putValue_S_ToStartPos();
             Power_putEOMValues(true);
         }
 
@@ -825,16 +849,18 @@ namespace FLIMage
             if (State.Init.AO_uncagingShutter)
                 addUncaging = 1;
             double[] powerArray = new double[State.Init.EOM_nChannels + addUncaging];
-            for (int i = 0; i < State.Init.EOM_nChannels; i++)
-            {
-                //if (calib.success[i])
-                //{
-                if (zero)
-                    powerArray[i] = shading.calibration.GetEOMVoltageByFitting(0, i);   //calibration.calibrationCurve[i][State.Acq.power[0]];
-                else
-                    powerArray[i] = shading.calibration.GetEOMVoltageByFitting(State.Acq.power[i], i);//calibrationCurve[i][State.Acq.power[i]];
-                //}
-            }
+
+            if (shading != null)
+                for (int i = 0; i < State.Init.EOM_nChannels; i++)
+                {
+                    //if (calib.success[i])
+                    //{
+                    if (zero)
+                        powerArray[i] = shading.calibration.GetEOMVoltageByFitting(0, i);   //calibration.calibrationCurve[i][State.Acq.power[0]];
+                    else
+                        powerArray[i] = shading.calibration.GetEOMVoltageByFitting(State.Acq.power[i], i);//calibrationCurve[i][State.Acq.power[i]];
+                                                                                                          //}
+                }
 
             if (FLIMage.uncaging_panel != null && FLIMage.uncaging_panel.UncagingShutter && addUncaging == 1)
                 powerArray[powerArray.Length - 1] = 5.0;
@@ -1829,7 +1855,8 @@ namespace FLIMage
                     }
                     else
                     {
-                        FLIMage.StopLoop();
+                        if (looping)
+                            FLIMage.StopLoop();
                     }
 
                 }

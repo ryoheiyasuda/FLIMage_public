@@ -182,25 +182,51 @@ namespace FLIMage.FlowControls
                 str = "Searching client...";
             else
                 str = "Connected";
+            if (wr == FLIMage_Event.CommandReceivedFrom.Client)
+                str = str + ": (from Client to FLIMage)";
+            else
+                str = str + ": (from FLIMage to Client)";
             displayStatusText(str, wr);
         }
 
-        private void ServerOn_Click(object sender, EventArgs e)
+        public void TurnOnServer(bool ON)
         {
-            COM_server.Close();
-            //FLIM_event.unSubscribe();
-            if (ServerOn.Checked && !COM_server.connected)
+            if (ON && !COM_server.connected)
             {
-                //FLIMage.FLIM_EventHandling_Init();
                 COM_server.start();
                 status_ComServer(COM_server.connected, FLIMage_Event.CommandReceivedFrom.Client);
                 status_ComServer(COM_server.connectedR, FLIMage_Event.CommandReceivedFrom.FLIMage);
             }
-            else
+            else if (!ON)
             {
+                COM_server.Close();
                 displayStatusText("", FLIMage_Event.CommandReceivedFrom.Client);
                 displayStatusText("", FLIMage_Event.CommandReceivedFrom.FLIMage);
             }
+
+            if (this.InvokeRequired)
+                this.Invoke((Action)delegate { ServerOn.Checked = ON; });
+            else
+                ServerOn.Checked = ON;
+        }
+
+        private void ServerOn_Click(object sender, EventArgs e)
+        {
+            TurnOnServer(ServerOn.Checked);
+            //COM_server.Close();
+            ////FLIM_event.unSubscribe();
+            //if (ServerOn.Checked && !COM_server.connected)
+            //{
+            //    //FLIMage.FLIM_EventHandling_Init();
+            //    COM_server.start();
+            //    status_ComServer(COM_server.connected, FLIMage_Event.CommandReceivedFrom.Client);
+            //    status_ComServer(COM_server.connectedR, FLIMage_Event.CommandReceivedFrom.FLIMage);
+            //}
+            //else
+            //{
+            //    displayStatusText("", FLIMage_Event.CommandReceivedFrom.Client);
+            //    displayStatusText("", FLIMage_Event.CommandReceivedFrom.FLIMage);
+            //}
         }
 
         private void Script_Shown(object sender, EventArgs e)
