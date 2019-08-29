@@ -63,6 +63,8 @@ namespace FLIMage.Dialogs
             }
 
             InitializeSetting();
+
+            ProjectionTypePanel.Enabled = ZProjectionCheckBox.Checked;
         }
 
         void InitializeSetting()
@@ -99,15 +101,27 @@ namespace FLIMage.Dialogs
 
         private void SaveButton_Click(object sender, EventArgs e)
         {
-            this.Hide();
-
             for (int i = 0; i < State.Acq.nChannels; i++)
             {
                 SaveChannels[i] = SaveChannelCheckbox[i].Checked;
             }
 
-            bool[] saveFormat = new bool[] { NoProjection.Checked, ZProjectionCheckBox.Checked };
+            if (SaveChannels.All(x => x == false))
+            {
+                Message.Text = "Choose at least one channel!";
+                return;
+            }
             
+            bool[] saveFormat = new bool[] { NoProjection.Checked, ZProjectionCheckBox.Checked };
+
+            if (saveFormat.All(x => x == false))
+            {
+                Message_Projection.Text = "Choose at least one option!";
+                return;
+            }
+
+            this.Hide();
+
             Int32.TryParse(Column.Text, out ZStackFormat[0]);
             Int32.TryParse(Row.Text, out ZStackFormat[1]);
             Int32.TryParse(StartSlice.Text, out ZStackFormat[2]);
@@ -132,6 +146,11 @@ namespace FLIMage.Dialogs
         private void ExportForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             settingManager.SaveFromObject();
+        }
+
+        private void ZProjectionCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            ProjectionTypePanel.Enabled = ZProjectionCheckBox.Checked;
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TCSPC_controls;
 using MathLibrary;
+using Utilities;
 
 namespace FLIMage.Analysis
 {
@@ -161,39 +162,7 @@ namespace FLIMage.Analysis
         public ImageInfo DeepCopy()
         {
             ImageInfo iminfo1 = new ImageInfo();
-            var members = this.GetType().GetFields();
-            object ValB;
-
-            foreach (var member in members)
-            {
-                var value = member.GetValue(this);
-                var valType = member.FieldType;
-                var memberName = member.Name;
-
-                if (value != null)
-                {
-                    if (valType == typeof(double[][]))
-                    {
-                        var orgVal = (double[][])value;
-                        var valA = new double[orgVal.Length][];
-                        for (int ch = 0; ch < orgVal.Length; ch++)
-                        {
-                            valA[ch] = (double[])orgVal[ch].Clone();
-                        }
-                        ValB = (object)valA;
-                    }
-                    else if (valType == typeof(double[]))
-                    {
-                        var orgVal = (double[])value;
-                        ValB = orgVal.Clone();
-                    }
-                    else
-                        ValB = (object)value;
-
-                    iminfo1.GetType().GetField(memberName).SetValue(iminfo1, ValB);
-                }
-            }
-
+            Copier.DeepCopyClass(this, iminfo1);
             return iminfo1;
         }
 
@@ -229,7 +198,7 @@ namespace FLIMage.Analysis
         public int nROI = 0;
         public int nData = 0;
         public int nChannels = 1;
-        double[][][] fitting_param;
+        public double[][][] fitting_param;
 
         public TimeCourse()
         {
@@ -555,85 +524,13 @@ namespace FLIMage.Analysis
         public TimeCourse DeepCopy()
         {
             TimeCourse TC1 = new TimeCourse();
-            var members = this.GetType().GetFields();
-            object ValB;
+            Copier.DeepCopyClass(this, TC1);
 
-            foreach (var member in members)
+            TC1.ImInfos = new List<ImageInfo>();
+            foreach (var iminfo in ImInfos)
             {
-                var memberName = member.Name;
-                var newField = TC1.GetType().GetField(memberName);
-
-                var value = member.GetValue(this);
-                var valType = member.FieldType;
-
-                if (value != null)
-                {
-                    if (valType == typeof(double[][]))
-                    {
-                        var orgVal = (double[][])value;
-                        var valA = new double[orgVal.Length][];
-                        for (int ch = 0; ch < orgVal.Length; ch++)
-                        {
-                            if (orgVal[ch] != null)
-                                valA[ch] = (double[])orgVal[ch].Clone();
-                            else
-                                valA[ch] = null;
-                        }
-
-                        ValB = (object)valA;
-                    }
-                    else if (valType == typeof(double[,][]))
-                    {
-                        var orgVal = (double[,][])value;
-                        var valA = new double[orgVal.GetLength(0), orgVal.GetLength(1)][];
-                        for (int ro = 0; ro < orgVal.GetLength(0); ro++)
-                            for (int ch = 0; ch < orgVal.GetLength(1); ch++)
-                            {
-                                if (orgVal[ro, ch] != null)
-                                    valA[ro, ch] = (double[])orgVal[ro, ch].Clone();
-                            }
-
-                        ValB = (object)valA;
-                    }
-                    else if (valType == typeof(double[][][]))
-                    {
-                        var orgVal = (double[][][])value;
-                        var valA = new double[orgVal.Length][][];
-                        for (int i = 0; i < orgVal.Length; i++)
-                        {
-                            valA[i] = new double[orgVal[i].Length][];
-                            for (int j = 0; j < orgVal[i].Length; j++)
-                            {
-                                valA[i][j] = (double[])orgVal[i][j].Clone();
-                            }
-                        }
-                        ValB = (object)valA;
-                    }
-                    else if (valType == typeof(List<ImageInfo>))
-                    {
-                        var orgVal = (List<ImageInfo>)value;
-                        var valA = new List<ImageInfo>();
-
-                        foreach (var val in orgVal)
-                        {
-                            valA.Add(val.DeepCopy());
-                        }
-                        ValB = (object)valA;
-                    }
-                    else if (valType == typeof(double[]))
-                    {
-                        var orgVal = (double[])value;
-                        ValB = orgVal.Clone();
-                    }
-                    else
-                        ValB = (object)value;
-
-                    TC1.GetType().GetField(memberName).SetValue(TC1, ValB);
-                }
-            }
-
-
-
+                TC1.ImInfos.Add(iminfo.DeepCopy());
+            }            
             return TC1;
         }
 
@@ -917,75 +814,12 @@ namespace FLIMage.Analysis
         public TimeCourse_Files DeepCopy()
         {
             TimeCourse_Files TCF1 = new TimeCourse_Files();
-            var members = this.GetType().GetFields();
-            object ValB;
+            Copier.DeepCopyClass(this, TCF1);
 
-            foreach (var member in members)
+            TCF1.TCF = new List<TimeCourse>();
+            foreach (var tcf in TCF)
             {
-                var value = member.GetValue(this);
-                var valType = member.FieldType;
-                var memberName = member.Name;
-
-                if (value != null)
-                {
-                    if (valType == typeof(double[][]))
-                    {
-                        var orgVal = (double[][])value;
-                        var valA = new double[orgVal.Length][];
-                        for (int ch = 0; ch < orgVal.Length; ch++)
-                        {
-                            valA[ch] = (double[])orgVal[ch].Clone();
-                        }
-
-                        ValB = (object)valA;
-                    }
-                    else if (valType == typeof(double[,][]))
-                    {
-                        var orgVal = (double[,][])value;
-                        var valA = new double[orgVal.GetLength(0), orgVal.GetLength(1)][];
-                        for (int ro = 0; ro < orgVal.GetLength(0); ro++)
-                            for (int ch = 0; ch < orgVal.GetLength(1); ch++)
-                            {
-                                valA[ro, ch] = (double[])orgVal[ro, ch].Clone();
-                            }
-
-                        ValB = (object)valA;
-                    }
-                    else if (valType == typeof(double[][][]))
-                    {
-                        var orgVal = (double[][][])value;
-                        var valA = new double[orgVal.Length][][];
-                        for (int i = 0; i < orgVal.Length; i++)
-                        {
-                            valA[i] = new double[orgVal[i].Length][];
-                            for (int j = 0; j < orgVal[i].Length; j++)
-                            {
-                                valA[i][j] = (double[])orgVal[i][j].Clone();
-                            }
-                        }
-                        ValB = (object)valA;
-                    }
-                    else if (valType == typeof(List<TimeCourse>))
-                    {
-                        var orgVal = (List<TimeCourse>)value;
-                        var valA = new List<TimeCourse>();
-
-                        foreach (var val in orgVal)
-                        {
-                            valA.Add(val.DeepCopy());
-                        }
-                        ValB = (object)valA;
-                    }
-                    else if (valType == typeof(double[]))
-                    {
-                        var orgVal = (double[])value;
-                        ValB = orgVal.Clone(); 
-                    }
-                    else
-                        ValB = (object)value;
-
-                    TCF1.GetType().GetField(memberName).SetValue(TCF1, ValB);
-                }
+                TCF1.TCF.Add(tcf.DeepCopy());
             }
 
             return TCF1;

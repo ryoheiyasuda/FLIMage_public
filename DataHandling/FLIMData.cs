@@ -1,4 +1,5 @@
 ﻿using MathLibrary;
+using Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -26,11 +27,11 @@ namespace FLIMage
         public int n_pages = 1;
         public int n_pages5D = 1;
 
-        public UInt16[][][] FLIMRaw5D;
-        public UInt16[][,,] FLIMRaw;
-        public UInt16[][,,] FLIMRawZProjection;
-        public UInt16[][][] Project;
-        public UInt16[][][] ProjectF;
+        public UInt16[][][,,] FLIMRaw5D; //[channel][z][y,x,t]
+        public UInt16[][,,] FLIMRaw; //[channel][y,x,t]
+        public UInt16[][,,] FLIMRawZProjection; //[channel][y,x,t]
+        public UInt16[][,] Project; //[ch][y][x]
+        public UInt16[][,] ProjectF; //[ch][y][x]
 
         //public int[][] Lifetime;
 
@@ -38,14 +39,14 @@ namespace FLIMage
         public List<double[]> Lifetime_Y;
 
 
-        public float[][][] LifetimeMapBase;
-        public float[][][] LifetimeMap;
-        public float[][][] LifetimeMapF;
+        public float[][,] LifetimeMapBase; //[channel][y][x]
+        public float[][,] LifetimeMap; //[channel][y][x]
+        public float[][,] LifetimeMapF; //[channel][y][x]
 
-        public UInt16[][][][] FLIM_Pages5D;
-        public UInt16[][][] FLIM_Pages;
-        public UInt16[][][][] Project_Pages;
-        public float[][][][] LifetimeMapBase_Pages;
+        public UInt16[][][][,,] FLIM_Pages5D; //[page][c][z][data]
+        public UInt16[][][,,] FLIM_Pages; //[page][c][data]
+        public UInt16[][][,] Project_Pages; //[page][c][y][x]
+        public float[][][,] LifetimeMapBase_Pages;
         public bool[] ProjectCalculated;
         public bool[] FLIMMapCalculated;
 
@@ -195,17 +196,11 @@ namespace FLIMage
                     n_time[i] = 0;
             }
 
-            FLIMRaw5D = new UInt16[nChannels][][];
+            FLIMRaw5D = new UInt16[nChannels][][,,];
 
             FLIMRaw = new UInt16[nChannels][,,];
-            //Project = new UInt16[nChannels][][];
-            //ProjectF = new UInt16[nChannels][][];
 
             fit_range = new int[nChannels][];
-
-            //LifetimeMapBase = new float[nChannels][][];
-            //LifetimeMap = new float[nChannels][][];
-            //LifetimeMapF = new float[nChannels][][];
 
             low_threshold = new double[nChannels];
 
@@ -226,12 +221,6 @@ namespace FLIMage
             for (int i = 0; i < nChannels; i++)
             {
                 FLIMRaw[i] = new ushort[height, width, n_time[i]];
-                //Project[i] = MatrixCalc.MatrixCreate2D<UInt16>(height, width);
-                //ProjectF[i] = MatrixCalc.MatrixCreate2D<UInt16>(height, width);
-                //LifetimeMapBase[i] = MatrixCalc.MatrixCreate2D<float>(height, width);
-                //LifetimeMap[i] = MatrixCalc.MatrixCreate2D<float>(height, width);
-                //LifetimeMapF[i] = MatrixCalc.MatrixCreate2D<float>(height, width);
-
                 double[] X1 = new double[n_time[i]];
                 Lifetime_X.Add(X1);
                 Lifetime_Y.Add(X1);
@@ -242,9 +231,9 @@ namespace FLIMage
             if (State.Acq.fastZScan && State.Acq.FastZ_nSlices > 1)
             {
                 nFastZ = State.Acq.FastZ_nSlices;
-                FLIM_Pages = new ushort[nFastZ][][];
+                FLIM_Pages = new ushort[nFastZ][][,,];
                 for (int z = 0; z < nFastZ; z++)
-                    FLIM_Pages[z] = new ushort[nChannels][];
+                    FLIM_Pages[z] = new ushort[nChannels][,,];
                 if (currentPage >= 0 && currentPage < nFastZ)
                     ;
                 else
@@ -779,16 +768,17 @@ namespace FLIMage
 
         public void create_SimulatedFLIM()
         {
-            FLIMRaw5D = new ushort[nChannels][][];
+            FLIMRaw5D = new ushort[nChannels][][,,];
 
             for (int i = 0; i < nChannels; i++)
             {
-                FLIMRaw5D[i] = new ushort[nFastZ][];
+                FLIMRaw5D[i] = new ushort[nFastZ][,,];
                 ushort[,,] tempImage;
                 for (int z = 0; z < nFastZ; z++)
                 {
                     tempImage = CreateFLIM_Sim(n_time[0], height, width);
-                    MatrixCalc.CopyFrom3DToLinear(tempImage, out FLIMRaw5D[i][z]);
+                    //MatrixCalc.CopyFrom3DToLinear(tempImage, out FLIMRaw5D[i][z]);
+                    FLIMRaw5D[i][z] = (ushort[,,])tempImage.Clone();
                     FLIMRaw[i] = tempImage;
                 }
             }
@@ -798,59 +788,9 @@ namespace FLIMage
             addCurrentToPage5D(true, true, 0);
         }
 
-        //public void loadFLIM(UInt16[][][][] FLIMData)
-        //{
-        //    //if (nChannels != FLIMData.GetLength(0))
-        //    //    return;
-
-        //    //if (n_time != FLIMData[0].GetLength(0))
-        //    //    return;
-
-        //    //width = FLIMData[0].GetLength(1);
-        //    //height = FLIMData[0].GetLength(2);
-
-        //    for (int i = 0; i < nChannels; i++)
-        //    {
-        //        fittingList[i] = Enumerable.Repeat<double>(0.0, 6).ToArray(); //Reset fittingList...
-        //    }
-
-        //    FLIMRaw = FLIMData;
-        //    ZProjection = false;
-        //    ZProjectionCalculated = false;
-        //    //State.Spc.spcData.resolution = psPerUnit;
-        //    //State.Acq.nChannels = nChannels;
-        //    //State.Acq.linesPerFrame = height;
-        //    //State.Acq.pixelsPerLine = width;
-        //}
-
         public void LoadFLIMdata5D_Realtime(ushort[][][,,] FLIMData5D)
         {
-            nChannels = FLIMData5D.Length;
-            for (int ch = 0; ch < nChannels; ch++)
-                if (FLIMData5D[ch] != null)
-                    nFastZ = FLIMData5D[ch].Length;
-
-            FLIMRaw5D = CreateLinear5D(FLIMData5D);
-        }
-
-        public ushort[][][] CreateLinear5D(ushort[][][,,] FLIM5D)
-        {
-            int nCh = FLIM5D.Length;
-            var flimData = new ushort[nCh][][];
-            for (int ch = 0; ch < nCh; ch++)
-            {
-                if (FLIM5D[ch] != null)
-                {
-                    int nZ = FLIM5D[ch].Length;
-                    flimData[ch] = new ushort[nZ][];
-                    for (int z = 0; z < nZ; z++)
-                    {
-                        MatrixCalc.CopyFrom3DToLinear<ushort>(FLIM5D[ch][z], out flimData[ch][z]);
-                    }
-                }
-            }
-
-            return flimData;
+            FLIMRaw5D = (ushort[][][,,])Copier.DeepCopyArray(FLIMData5D);
         }
 
         public void Delete5DFLIM(int page_position)
@@ -895,7 +835,6 @@ namespace FLIMage
             }
         }
 
-
         public void Add_AllFLIM_PageFormat_To_FLIM_Pages5D(ushort[][][] FLIM_i, DateTime acqTime, int page_position)
         {
             expandArray5D(page_position);
@@ -908,11 +847,23 @@ namespace FLIMage
             n_pages5D = FLIM_Pages5D.Length;
         }
 
-        public void Add5DFLIM(ushort[][][] FLIM_i, DateTime acqTime, int page_position, bool deepCopy)
+        public void Add_AllFLIM_PageFormat_To_FLIM_Pages5D(ushort[][][,,] FLIM_i, DateTime acqTime, int page_position)
+        {
+            expandArray5D(page_position);
+            FLIM_Pages5D[page_position] = ImageProcessing.FLIM_Pages2FLIMRaw5D(FLIM_i);
+
+            n_pages5D = FLIM_Pages5D.Length;
+
+            acquiredTime_Pages5D[page_position] = acqTime;
+            currentPage5D = page_position;
+            n_pages5D = FLIM_Pages5D.Length;
+        }
+
+        public void Add5DFLIM(ushort[][][,,] FLIM_i, DateTime acqTime, int page_position, bool deepCopy)
         {
             expandArray5D(page_position);
             if (deepCopy)
-                FLIM_Pages5D[page_position] = MatrixCalc.MatrixCopy3D<ushort>(FLIM_i);
+                FLIM_Pages5D[page_position] = (ushort[][][,,])Copier.DeepCopyArray(FLIM_i);
             else
                 FLIM_Pages5D[page_position] = FLIM_i;
 
@@ -932,15 +883,13 @@ namespace FLIMage
                 Array.Resize(ref acquiredTime_Pages5D, page_position + 1);
         }
 
-        public void LoadFLIMRawFromLinearAllChannels(ushort[][] FLIM_Linear)
+        public void LoadFLIMRawFromDataAllChannels(ushort[][,,] FLIM_data)
         {
             AssureFLIMRawSize();
-            for (int ch = 0; ch < nChannels; ch++)
-                MatrixCalc.CopyFromLinearTo3D(FLIM_Linear[ch], FLIMRaw[ch]);
+            FLIMRaw = (ushort[][,,])Copier.DeepCopyArray(FLIM_data);
         }
 
-
-        public void addToPageAndCalculate5D(ushort[][][] FLIM_5D, DateTime acqTime, bool calcProjection, bool calcLifetime1, int page_position, bool deepCopy)
+        public void addToPageAndCalculate5D(ushort[][][,,] FLIM_5D, DateTime acqTime, bool calcProjection, bool calcLifetime1, int page_position, bool deepCopy)
         {
 
             int n_c = FLIM_5D.Length;
@@ -960,7 +909,7 @@ namespace FLIMage
                 Add5DFLIM(FLIM_5D, acqTime, page_position, deepCopy);
             }
 
-            var FLIM5D = ImageProcessing.PermuteFLIM5D(FLIM_5D); //it is copied.
+            var FLIM5D = ImageProcessing.PermuteFLIM5D(FLIM_5D, true);
             for (int z = 0; z < n_z; z++)
             {
                 n_pages++;
@@ -990,14 +939,14 @@ namespace FLIMage
                 }
             }
 
-            var FLIM5D = ImageProcessing.PermuteFLIM5D(FLIMRaw5D); //copied.
+            var FLIM5D = ImageProcessing.PermuteFLIM5D(FLIMRaw5D, true); //copied.
 
             FLIM_Pages = FLIM5D;
             acquiredTime_Pages = new DateTime[n_z];
             ProjectCalculated = new bool[n_z];
             FLIMMapCalculated = new bool[n_z];
-            Project_Pages = new ushort[n_z][][][];
-            LifetimeMapBase_Pages = new float[n_z][][][];
+            Project_Pages = new ushort[n_z][][,];
+            LifetimeMapBase_Pages = new float[n_z][][,];
 
             for (int z = 0; z < n_z; z++)
             {
@@ -1059,26 +1008,13 @@ namespace FLIMage
                     if (FLIM_Pages[page][ch].Length != n_time[ch] * width * height)
                         FLIMRaw[ch] = new ushort[height, width, n_time[ch]];
 
-                    MatrixCalc.CopyFromLinearTo3D(FLIM_Pages[page][ch], FLIMRaw[ch]);
+                    FLIMRaw[ch] = (ushort[,,])FLIM_Pages[page][ch].Clone();
                 }
                 else
                 {
                     Debug.WriteLine("FLIMData CopyFromFLIM_PagesToFLIMRaw error");
                 }
             }
-        }
-
-        public ushort[][] CopyFrom3DToLinearChannels(ushort[][][][] FLIM4D)
-        {
-            var linear = new ushort[nChannels][];
-            for (int i = 0; i < nChannels; i++)
-            {
-                if (FLIM4D[i] != null)
-                    MatrixCalc.CopyFrom3DToLinear<ushort>(FLIM4D[i], out linear[i]);
-                else
-                    linear[i] = null;
-            }
-            return linear;
         }
 
         public ushort[][] CopyFrom3DToLinearChannels(ushort[][,,] FLIM4D)
@@ -1119,7 +1055,22 @@ namespace FLIMage
                 FLIMRaw = makeFLIMRawTypeArray(nChannels, height, width, n_time);
         }
 
-        public void PutToPageOnly(ushort[][] FLIM_page, DateTime acqTime, int page)
+        public void PutToPageOnly_Linear(ushort[][] FLIM_page, DateTime acqTime, int page)
+        {
+            var flim3d = new ushort[FLIM_page.Length][,,];
+            for (int ch = 0; ch < FLIM_page.Length; ch++)
+            {
+                if (FLIM_page[ch] != null)
+                {
+                    flim3d[ch] = new ushort[height, width, n_time[ch]];
+                    Buffer.BlockCopy(FLIM_page[ch], 0, flim3d[ch], 0, FLIM_page[ch].Length * sizeof(ushort));
+                }
+            }
+            PutToPageOnly(flim3d, acqTime, page);
+        }
+
+
+        public void PutToPageOnly(ushort[][,,] FLIM_page, DateTime acqTime, int page)
         {
             expandPage(page + 1);
             FLIM_Pages[page] = FLIM_page;
@@ -1130,7 +1081,7 @@ namespace FLIMage
 
         public void CalculateZProjectionImageOnly(int channel)
         {
-            var ZProc1 = new ushort[Project_Pages.Length][][];
+            var ZProc1 = new ushort[Project_Pages.Length][,];
             for (int z = 0; z < Project_Pages.Length; z++)
                 ZProc1[z] = Project_Pages[z][channel];
 
@@ -1155,9 +1106,9 @@ namespace FLIMage
         {
             if (ProjectCalculated.Length > page && !ProjectCalculated[page] && FLIM_Pages[page] != null)
             {
-                ushort[][][] prjct = new ushort[nChannels][][];
+                ushort[][,] prjct = new ushort[nChannels][,];
                 for (int ch = 0; ch < nChannels; ch++)
-                    prjct[ch] = ImageProcessing.GetProjectFromFLIM_Linear(FLIM_Pages[page][ch], dimensionYXT(ch));
+                    prjct[ch] = ImageProcessing.GetProjectFromFLIM(FLIM_Pages[page][ch]);
 
                 Project_Pages[page] = prjct;
                 ProjectCalculated[page] = true;
@@ -1165,9 +1116,9 @@ namespace FLIMage
 
             if (calculateLifetimeMap && !FLIMMapCalculated[page])
             {
-                var lifetime_map = new float[nChannels][][];
+                var lifetime_map = new float[nChannels][,];
                 for (int ch = 0; ch < nChannels; ch++)
-                    lifetime_map[ch] = ImageProcessing.GetLifetimeMapFromFLIM_Linear(FLIM_Pages[page][ch], fit_range[ch], (float)psPerUnit, 0, dimensionYXT(ch));
+                    lifetime_map[ch] = ImageProcessing.GetLifetimeMapFromFLIM(FLIM_Pages[page][ch], fit_range[ch], (float)psPerUnit, 0);
 
                 LifetimeMapBase_Pages[page] = lifetime_map;
                 FLIMMapCalculated[page] = true;
@@ -1183,7 +1134,7 @@ namespace FLIMage
         /// <param name="calcProjection"></param>
         /// <param name="calcLifetime1"></param>
         /// <param name="page"></param>
-        public void PutToPageAndCalculate(ushort[][] FLIM_i, DateTime acqTime, bool calcProjection, bool calcLifetime1, int page)
+        public void PutToPageAndCalculate(ushort[][,,] FLIM_i, DateTime acqTime, bool calcProjection, bool calcLifetime1, int page)
         {
             expandPage(page + 1);
 
@@ -1192,8 +1143,6 @@ namespace FLIMage
             CalculatePage_Direct(page, true);
 
             acquiredTime_Pages[page] = acqTime;
-            //FLIMMapCalculated[page] = FLIMMapCalculated[page] || calcLifetime1;
-            //ProjectCalculated[page] = ProjectCalculated[page] || calcProjection;
             currentPage = page;
         }
 
@@ -1216,8 +1165,8 @@ namespace FLIMage
 
         public void calculateProject()
         {
-            Project = new UInt16[nChannels][][];
-            ProjectF = new UInt16[nChannels][][];
+            Project = new UInt16[nChannels][,];
+            ProjectF = new UInt16[nChannels][,];
             for (int ch = 0; ch < nChannels; ch++)
             {
                 calculateProjectCh(ch);
@@ -1508,12 +1457,6 @@ namespace FLIMage
             object obj = State.Spc.analysis;
 
             obj.GetType().GetField("fit_param" + (c + 1)).SetValue(obj, fit_param1);
-
-
-            //if (c == 0)
-            //    State.Spc.analysis.fit_param1 = fit_param1;
-            //else if (c == 1)
-            //    State.Spc.analysis.fit_param2 = fit_param1;
         }
 
         public bool IsRoiInFocus(ROI roi)
@@ -1545,15 +1488,7 @@ namespace FLIMage
             return b;
         }
 
-        /// <summary>
-        /// Projection type is enumerated.
-        /// </summary>
-        public enum projectionType
-        {
-            Sum = 1,
-            Max = 2,
-            Min = 3,
-        }
+
 
         /// <summary>
         /// Calculate Z projection.
@@ -1585,21 +1520,8 @@ namespace FLIMage
             }
 
             gotoPage(startPage);
-            FLIMRawZProjection = new ushort[nChannels][,,];
-            for (int ch = 0; ch < nChannels; ch++)
-            {
-                if (FLIMRaw[ch] != null)
-                    FLIMRawZProjection[ch] = (ushort[,,])FLIMRaw[ch].Clone();
-                else
-                    FLIMRawZProjection[ch] = null;
-            }
-
-            ushort[][] FLIMRawZPro = new ushort[nChannels][];
-            for (int ch = 0; ch < nChannels; ch++)
-            {
-                if (FLIM_Pages[startPage][ch] != null)
-                    FLIMRawZPro[ch] = (ushort[])FLIM_Pages[startPage][ch].Clone();
-            }
+            FLIMRawZProjection = (ushort[][,,])Copier.DeepCopyArray(FLIM_Pages[startPage]);
+            //ushort[][,,] FLIMRawZPro = (ushort[][,,])Copier.DeepCopyArray(FLIM_Pages[startPage]);
 
             if (procType == projectionType.Sum)
             {
@@ -1608,10 +1530,12 @@ namespace FLIMage
                     for (int ch = 0; ch < nChannels; ch++)
                     {
                         if (FLIM_Pages[page][ch] != null)
-                            MatrixCalc.ArrayCalc(FLIMRawZPro[ch], FLIM_Pages[page][ch], "Add");
+                        {
+                            MatrixCalc.ArrayCalc(FLIMRawZProjection[ch], FLIM_Pages[page][ch], "Add");
+                        }
                         else
                         {
-                            FLIMRawZPro[ch] = null;
+                            FLIMRawZProjection[ch] = null;
                             break;
                         }
                     }
@@ -1619,7 +1543,7 @@ namespace FLIMage
             }
             else if (procType == projectionType.Max || procType == projectionType.Min)
             {
-                UInt16[][] ProjectAMax = MatrixCalc.MatrixCreate2D<UInt16>(height, width);
+                UInt16[,] ProjectAMax = new ushort[height, width];
 
                 CalculateAllPages_Direct(false);
 
@@ -1630,30 +1554,30 @@ namespace FLIMage
                         if (Project_Pages[page] == null)
                             return;
 
-                        UInt16[][] ProjectA = Project_Pages[page][ch];
+                        UInt16[,] ProjectA = Project_Pages[page][ch];
 
                         if (page == startPage)
-                            ProjectAMax = MatrixCalc.MatrixCopy2D(ProjectA);
+                            ProjectAMax = (ushort[,])Utilities.Copier.DeepCopyArray(ProjectA);
                         else
                         {
                             if (procType == projectionType.Max)
                             {
                                 for (int y = 0; y < height; y++)
                                     for (int x = 0; x < width; x++)
-                                        if (ProjectAMax[y][x] < ProjectA[y][x])
+                                        if (ProjectAMax[y, x] < ProjectA[y, x])
                                         {
-                                            Array.Copy(FLIM_Pages[page][ch], (y * width + x) * n_time[ch], FLIMRawZPro[ch], (y * width + x) * n_time[ch], n_time[ch]);
-                                            ProjectAMax[y][x] = ProjectA[y][x];
+                                            Array.Copy(FLIM_Pages[page][ch], (y * width + x) * n_time[ch], FLIMRawZProjection[ch], (y * width + x) * n_time[ch], n_time[ch]);
+                                            ProjectAMax[y, x] = ProjectA[y, x];
                                         }
                             }
                             else
                             {
                                 for (int y = 0; y < width; y++)
                                     for (int x = 0; x < width; x++)
-                                        if (ProjectAMax[y][x] > ProjectA[y][x])
+                                        if (ProjectAMax[y, x] > ProjectA[y, x])
                                         {
-                                            Array.Copy(FLIM_Pages[page][ch], (y * width + x) * n_time[ch], FLIMRawZPro[ch], (y * width + x) * n_time[ch], n_time[ch]);
-                                            ProjectAMax[y][x] = ProjectA[y][x];
+                                            Array.Copy(FLIM_Pages[page][ch], (y * width + x) * n_time[ch], FLIMRawZProjection[ch], (y * width + x) * n_time[ch], n_time[ch]);
+                                            ProjectAMax[y, x] = ProjectA[y, x];
                                         }
                             }
                         }
@@ -1661,15 +1585,12 @@ namespace FLIMage
                 } //channel
             } //max or min
 
-            for (int ch = 0; ch < nChannels; ch++)
-                MatrixCalc.CopyFromLinearTo3D(FLIMRawZPro[ch], FLIMRawZProjection[ch]);
-
             //currentPage = page_range[0];
 
             Debug.WriteLine("elapsed time (calculaton) - page" + n + " = " + sw.ElapsedMilliseconds);
             ZProjectionCalculated = true;
 
-            FLIMRaw = FLIMRawZProjection;
+            FLIMRaw = (ushort[][,,])Copier.DeepCopyArray(FLIMRawZProjection);
             ZProjection = true;
 
             calculateAll();
@@ -1680,7 +1601,7 @@ namespace FLIMage
             if (FLIM_on[ch])
             {
                 if (LifetimeMap == null)
-                    LifetimeMap = new float[nChannels][][];
+                    LifetimeMap = new float[nChannels][,];
                 LifetimeMap[ch] = MatrixCalc.SubtractConstantFromMatrix(LifetimeMapBase[ch], (float)offset[ch]);
                 if (LifetimeMap[ch] == null)
                     return;
@@ -1697,21 +1618,21 @@ namespace FLIMage
                 if (FLIM_on[ch])
                 {
                     if (LifetimeMapF == null)
-                        LifetimeMapF = new float[nChannels][][];
-                    LifetimeMapF[ch] = MatrixCalc.MatrixCopy2D<float>(LifetimeMap[ch]);
+                        LifetimeMapF = new float[nChannels][,];
+                    LifetimeMapF[ch] = (float[,])Utilities.Copier.DeepCopyArray(LifetimeMap[ch]);
                 }
 
                 if (ProjectF == null)
-                    ProjectF = new ushort[nChannels][][];
-                ProjectF[ch] = MatrixCalc.MatrixCopy2D<UInt16>(Project[ch]);
+                    ProjectF = new ushort[nChannels][,];
+                ProjectF[ch] = (ushort[,])Utilities.Copier.DeepCopyArray(Project[ch]);
             }
 
             else
             {
                 State.Display.filterWindow_FLIM = fw;
 
-                var temp = MatrixCalc.MatrixCreate2D<float>(height, width);
-                var tempI = MatrixCalc.MatrixCreate2D<UInt16>(height, width); //new UInt16[height, width];
+                var temp = new float[height, width];
+                var tempI = new ushort[height, width]; //new UInt16[height, width];
 
                 for (int y = 0; y < height; y++)
                     for (int x = 0; x < width; x++)
@@ -1727,8 +1648,8 @@ namespace FLIMage
                                 if (posX >= 0 && posX < width && posY >= 0 && posY < height)
                                 {
                                     if (FLIM_on[ch])
-                                        sum = sum + LifetimeMap[ch][posY][posX];
-                                    sum1 = sum1 + Project[ch][posY][posX];
+                                        sum = sum + LifetimeMap[ch][posY, posX];
+                                    sum1 = sum1 + Project[ch][posY, posX];
                                     pix = pix + 1.0f;
                                 }
 
@@ -1736,8 +1657,8 @@ namespace FLIMage
                         if (pix > 0)
                         {
                             if (FLIM_on[ch])
-                                temp[y][x] = sum / pix;
-                            tempI[y][x] = (UInt16)(sum1 / pix);
+                                temp[y, x] = sum / pix;
+                            tempI[y, x] = (UInt16)(sum1 / pix);
                         }
                     }
 
@@ -1774,8 +1695,8 @@ namespace FLIMage
             {
                 if (!threeD || roi.Z.Any(z => z == page))
                 {
-                    ushort[][] img;
-                    float[][] lf_img;
+                    ushort[,] img;
+                    float[,] lf_img;
 
                     if (threeD)
                     {
@@ -1795,23 +1716,23 @@ namespace FLIMage
                     if (img == null)
                         return;
 
-                    int height1 = img.Length;
-                    int width1 = img[0].Length;
+                    int height1 = img.GetLength(0);
+                    int width1 = img.GetLength(1);
 
                     //Check if they have the same size. If different size, just calculate intensity.
-                    if (lf_img == null || height1 != lf_img.Length || width1 != lf_img[0].Length)
+                    if (lf_img == null || height1 != lf_img.GetLength(0) || width1 != lf_img.GetLength(1))
                         lf_img = null;
 
                     for (int y = roi.Rect.Top; y < roi.Rect.Bottom; y++)
                         for (int x = roi.Rect.Left; x < roi.Rect.Right; x++)
                             if (x < width1 && y < height1 && x >= 0 && y >= 0)
                             {
-                                intensity = img[y][x];
+                                intensity = img[y,x];
 
                                 Point P = new Point(x, y);
 
                                 if (lf_img != null)
-                                    val = lf_img[y][x] - offset[ch];
+                                    val = lf_img[y,x] - offset[ch];
                                 else
                                     val = 0;
 
@@ -1897,7 +1818,7 @@ namespace FLIMage
             int nPages = 1;
             int savePage = currentPage;
 
-            ushort[][] Img = Project[ch];
+            ushort[,] Img = Project[ch];
             ushort[,,] lifetimeImg = FLIMRaw[ch];
 
             if (threeD)
@@ -1913,7 +1834,7 @@ namespace FLIMage
                     if (threeD)
                     {
                         Img = Project_Pages[page][ch];
-                        MatrixCalc.CopyFromLinearTo3D(FLIM_Pages[page][ch], lifetimeImg);
+                        lifetimeImg = FLIM_Pages[page][ch];
                     }
 
                     if (Img == null || lifetimeImg == null)
@@ -1924,7 +1845,7 @@ namespace FLIMage
                         for (int x = xstart; x < xend; ++x)
                         {
                             int val, intensity;
-                            intensity = Img[y][x];
+                            intensity = Img[y,x];
                             MatrixCalc.extract3rdAxis(lifetimeImg, ref FLIMRawT, y, x);
                             Point P = new Point(x, y);
 
@@ -2093,14 +2014,14 @@ namespace FLIMage
                 return;
 
             if (LifetimeMapBase == null || LifetimeMapBase.Length != nChannels)
-                LifetimeMapBase = new float[nChannels][][];
+                LifetimeMapBase = new float[nChannels][,];
 
             LifetimeMapBase[ch] = ImageProcessing.GetLifetimeMapFromFLIM(FLIMRaw[ch], fit_range[ch], (float)psPerUnit, 0);
 
             if (LifetimeMap == null || LifetimeMap.Length != nChannels)
             {
-                LifetimeMap = new float[nChannels][][];
-                LifetimeMapF = new float[nChannels][][];
+                LifetimeMap = new float[nChannels][,];
+                LifetimeMapF = new float[nChannels][,];
             }
 
             if (LifetimeMapBase != null && LifetimeMapBase[ch] != null)
@@ -2117,9 +2038,9 @@ namespace FLIMage
             if (!FLIM_on.Any(x => x == true))
                 return;
 
-            LifetimeMapBase = new float[nChannels][][];
-            LifetimeMap = new float[nChannels][][];
-            LifetimeMapF = new float[nChannels][][];
+            LifetimeMapBase = new float[nChannels][,];
+            LifetimeMap = new float[nChannels][,];
+            LifetimeMapF = new float[nChannels][,];
 
             for (int i = 0; i < nChannels; i++)
             {
@@ -2137,15 +2058,6 @@ namespace FLIMage
         }
 
         //PAGES////////////////////
-        public void preAllocPages(int num_pages)
-        {
-            clearMemory();
-            for (int i = 0; i < num_pages; i++)
-            {
-                PutToPageAndCalculate(MatrixCalc.MatrixCreate2D<ushort>(nChannels, height * width * n_time.Max()), DateTime.Now, false, false, i);
-            }
-        }
-
         public void RemovePageRange5D(int initialPage, int NPages)
         {
             if (initialPage < 0)
@@ -2252,7 +2164,7 @@ namespace FLIMage
         public void clearPages5D()
         {
             //MatrixCalc.MatrixNull6D(FLIM_Pages5D);
-            FLIM_Pages5D = new ushort[1][][][];
+            FLIM_Pages5D = new ushort[1][][][,,];
             acquiredTime_Pages5D = new DateTime[1];
             n_pages5D = 0;
         }
@@ -2263,10 +2175,10 @@ namespace FLIMage
             //MatrixCalc.MatrixNull4D(Project_Pages);
             //MatrixCalc.MatrixNull4D(LifetimeMapBase_Pages);
 
-            FLIM_Pages = new ushort[1][][];
+            FLIM_Pages = new ushort[1][][,,];
             //
-            Project_Pages = new ushort[1][][][];
-            LifetimeMapBase_Pages = new float[1][][][];
+            Project_Pages = new ushort[1][][,];
+            LifetimeMapBase_Pages = new float[1][][,];
             acquiredTime_Pages = new DateTime[1];
             FLIMMapCalculated = new bool[1];
             ProjectCalculated = new bool[1];
@@ -2278,18 +2190,18 @@ namespace FLIMage
         }
 
 
-        public void addMAPAtPage(int page)
-        {
-            if (page > Project_Pages.Length)
-                expandPage(page + 1);
+        //public void addMAPAtPage(int page)
+        //{
+        //    if (page > Project_Pages.Length)
+        //        expandPage(page + 1);
 
-            //Debug.WriteLine("Added to Page");
+        //    //Debug.WriteLine("Added to Page");
 
-            Project_Pages[page] = MatrixCalc.MatrixCopy3D<UInt16>(Project);
-            ProjectCalculated[page] = true;
-            LifetimeMapBase_Pages[page] = MatrixCalc.MatrixCopy3D<float>(LifetimeMapBase);
-            FLIMMapCalculated[page] = true;
-        }
+        //    Project_Pages[page] = MatrixCalc.MatrixCopy3D<UInt16>(Project);
+        //    ProjectCalculated[page] = true;
+        //    LifetimeMapBase_Pages[page] = MatrixCalc.MatrixCopy3D<float>(LifetimeMapBase);
+        //    FLIMMapCalculated[page] = true;
+        //}
 
         public void addCurrentFLIMRawToPage4D(bool addMAP, bool AddToFLIM_Pages, int page)
         {
@@ -2298,20 +2210,20 @@ namespace FLIMage
 
             if (AddToFLIM_Pages)
             {
-                FLIM_Pages[page] = CopyFrom3DToLinearChannels(FLIMRaw);
+                FLIM_Pages[page] = (ushort[][,,])Copier.DeepCopyArray(FLIMRaw);
                 Debug.WriteLine("Added to page" + page);
             }
 
-            ushort[][][] newImage;
-            float[][][] newFLIM;
+            ushort[][,] newImage;
+            float[][,] newFLIM;
 
             if (addMAP)
             {
                 calculateAll();
-                newImage = MatrixCalc.MatrixCopy3D<UInt16>(Project);
+                newImage = (ushort[][,])Utilities.Copier.DeepCopyArray(Project);
                 if (FLIM_on.Any(x => x == true))
                 {
-                    newFLIM = MatrixCalc.MatrixCopy3D<float>(LifetimeMapBase);
+                    newFLIM = (float[][,])Utilities.Copier.DeepCopyArray(LifetimeMapBase);
                     FLIMMapCalculated[page] = true;
                 }
                 else
@@ -2344,12 +2256,12 @@ namespace FLIMage
             n_pages = FLIM_Pages.Length;
         }
 
-        public void SetupPagesFromZProject(ushort[][][] flim_pages, DateTime dt)
+        public void SetupPagesFromZProject(ushort[][][,,] flim_pages, DateTime dt)
         {
-            FLIM_Pages = flim_pages; // MatrixCalc.MatrixCopy3D(flim_pages);
+            FLIM_Pages = flim_pages;
             n_pages = FLIM_Pages.Length;
-            Project_Pages = new ushort[n_pages][][][];
-            LifetimeMapBase_Pages = new float[n_pages][][][];
+            Project_Pages = new ushort[n_pages][][,];
+            LifetimeMapBase_Pages = new float[n_pages][][,];
             ProjectCalculated = new bool[n_pages];
             FLIMMapCalculated = new bool[n_pages];
             ZProjectionCalculated = false;
@@ -2367,7 +2279,7 @@ namespace FLIMage
 
             if (AddToFLIM_Pages)
             {
-                FLIM_Pages5D[page] = MatrixCalc.MatrixCopy3D<UInt16>(FLIMRaw5D);
+                FLIM_Pages5D[page] = (ushort[][][,,])Utilities.Copier.DeepCopyArray(FLIMRaw5D);
                 acquiredTime_Pages5D[page] = acquiredTime;
             }
 
@@ -2464,20 +2376,20 @@ namespace FLIMage
             else
             {
                 calculateProject();
-                Project_Pages[page] = MatrixCalc.MatrixCopy3D(Project);
+                Project_Pages[page] = (ushort[][,])Utilities.Copier.DeepCopyArray(Project);
                 ProjectCalculated[page] = true;
             }
 
             if (FLIMMapCalculated[page])
             {
-                LifetimeMapBase = LifetimeMapBase_Pages[page]; // MatrixCalc.MatrixCopy3D<double>(LifetimeMapBase_Pages[currentPage]);
+                LifetimeMapBase = LifetimeMapBase_Pages[page];
             }
             else
             {
                 if (FLIM_on.Any(x => x == true))
                 {
                     calculateLifetimeMap();
-                    LifetimeMapBase_Pages[page] = MatrixCalc.MatrixCopy3D(LifetimeMapBase);
+                    LifetimeMapBase_Pages[page] = (float[][,])Utilities.Copier.DeepCopyArray(LifetimeMapBase);
                     FLIMMapCalculated[page] = true;
                 }
             }
@@ -2539,18 +2451,21 @@ namespace FLIMage
 
         //////////////////////////////////////////////////////////////////////////
 
+        /// <summary>
+        /// Projection type is enumerated.
+        /// </summary>
+        public enum projectionType
+        {
+            Sum = 1,
+            Max = 2,
+            Min = 3,
+        }
+
         public enum FileType
         {
             ZStack = 1,
             TimeCourse = 2,
             TimeCourse_ZStack = 3,
-        }
-
-        public enum Z_Projection
-        {
-            None = 1,
-            Maxium = 2,
-            Sum = 3,
         }
 
         public enum FitType

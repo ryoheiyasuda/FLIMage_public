@@ -51,7 +51,7 @@ namespace FLIMage.HardwareControls
                 shading_filePath[i] = filePath;
                 if (File.Exists(filePath))
                 {
-                    float[][] image = null;
+                    float[,] image = null;
                     fileIO.LoadFloatArrayFromTiff(filePath, 0, out image);
                     //fileIO.SaveFloatImageInTiff(image, filePath + ".tif");
 

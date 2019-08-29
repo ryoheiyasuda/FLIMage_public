@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using TCSPC_controls;
+using Utilities;
 
 namespace FLIMage
 {
@@ -81,7 +82,7 @@ namespace FLIMage
         bool waitingSliceTask = false;
 
         ////// FLIM data stroage. All temporal. 
-        List<UInt16[][][]> FLIMSaveBuffer = new List<ushort[][][]>(); //Used only when images are not saved in memory.
+        List<UInt16[][][,,]> FLIMSaveBuffer = new List<ushort[][][,,]>(); //Used only when images are not saved in memory.
         List<DateTime> acquiredTimeList = new List<DateTime>(); //Store acquisition time info.
         DateTime acquiredTime;
         public FLIMData FLIM_ImgData;
@@ -1174,14 +1175,14 @@ namespace FLIMage
             {
                 UInt16[][][,,] FLIMTemp = (UInt16[][][,,])fifo.FLIM_data;
 
-                FLIM_ImgData.LoadFLIMdata5D_Realtime(FLIMTemp); //Save in FLIM_ImgData class. Linearize first.
-                var flimZdata = ImageProcessing.PermuteFLIM5D(FLIM_ImgData.FLIMRaw5D); //Copy to FLIMPage.
+                FLIM_ImgData.LoadFLIMdata5D_Realtime(FLIMTemp); //Save in FLIM_ImgData class.
+                var flimZdata = ImageProcessing.PermuteFLIM5D(FLIM_ImgData.FLIMRaw5D, true); //Copy to FLIMPage.
 
                 if (!State.Acq.fastZScan)
-                    FLIM_ImgData.LoadFLIMRawFromLinearAllChannels(flimZdata[0]);
+                    FLIM_ImgData.LoadFLIMRawFromDataAllChannels(flimZdata[0]);  //will becopied.
                 else
                 {
-                    FLIM_ImgData.SetupPagesFromZProject(flimZdata, acquiredTime);
+                    FLIM_ImgData.SetupPagesFromZProject(flimZdata, acquiredTime); //not copied.
                     FLIMage.image_display.calcZProjection();
                 }
 
@@ -1215,12 +1216,12 @@ namespace FLIMage
                 {
                     UInt16[][][,,] FLIMTemp = fifo.FLIM_data;
 
-                    FLIM_ImgData.LoadFLIMdata5D_Realtime(FLIMTemp); //Save in FLIM_ImgData class. This linearize the vector.
+                    FLIM_ImgData.LoadFLIMdata5D_Realtime(FLIMTemp); //Save in FLIM_ImgData class. 
 
-                    var flimZdata = ImageProcessing.PermuteFLIM5D(FLIM_ImgData.FLIMRaw5D);
+                    var flimZdata = ImageProcessing.PermuteFLIM5D(FLIM_ImgData.FLIMRaw5D, true);
 
                     if (!State.Acq.fastZScan)
-                        FLIM_ImgData.LoadFLIMRawFromLinearAllChannels(flimZdata[0]);
+                        FLIM_ImgData.LoadFLIMRawFromDataAllChannels(flimZdata[0]);
                     else
                     {
                         FLIM_ImgData.SetupPagesFromZProject(flimZdata, acquiredTime);
@@ -1313,7 +1314,7 @@ namespace FLIMage
             {
                 acTime = acquiredTime.AddMilliseconds(internalFrameCounter * msPerLine * State.Acq.linesPerFrame);
 
-                var FLIMForSave = MatrixCalc.MatrixCopy3D(FLIM_ImgData.FLIMRaw5D);
+                var FLIMForSave = (ushort[][][,,])Copier.DeepCopyArray(FLIM_ImgData.FLIMRaw5D);
 
                 FLIM_ImgData.saveChannels = saveFileBools;
 
@@ -1466,10 +1467,10 @@ namespace FLIMage
                 if (DEBUGMODE)
                     Debug.WriteLine("Start FLIMsave sync");
 
-                UInt16[][][] FLIMImage; //Before permutation.
+                UInt16[][][,,] FLIMImage; //Before permutation.
                 DateTime acqTimeTemp;
 
-                ushort[][][] FLIM_5D; //After permutation.
+                ushort[][][,,] FLIM_5D; //After permutation.
 
                 ////Overwrite and savefile setting
                 bool[] overwrite = (bool[])newFile.Clone();
@@ -1496,7 +1497,7 @@ namespace FLIMage
                         acqTimeTemp = acquiredTimeList[savePage];
                     }
 
-                    FLIM_5D = ImageProcessing.PermuteFLIM5D(FLIMImage); //Finished copy.
+                    FLIM_5D = ImageProcessing.PermuteFLIM5D(FLIMImage, true); //Finished copy.
 
                     for (int ch = 0; ch < State.Acq.nChannels; ch++)
                     {
@@ -1531,7 +1532,7 @@ namespace FLIMage
                             String fileName = State.Files.fullName(ch);
                             if (FLIM_5D.Length == 1)
                             {
-                                ushort[][] FLIM_separated = new ushort[State.Acq.nChannels][];
+                                ushort[][,,] FLIM_separated = new ushort[State.Acq.nChannels][,,];
                                 FLIM_separated[ch] = FLIM_5D[0][ch];
                                 error = fileIO.SaveFLIMInTiff(fileName, FLIM_separated, acqTimeTemp, overwrite1, saveCh);
 
@@ -1540,7 +1541,7 @@ namespace FLIMage
                             }
                             else
                             {
-                                ushort[][][] FLIM_separated = new ushort[FLIM_5D.Length][][];
+                                ushort[][][,,] FLIM_separated = new ushort[FLIM_5D.Length][][,,];
                                 for (int z = 0; z < FLIM_5D.Length; z++)
                                 {
                                     FLIM_separated[z][ch] = FLIM_5D[z][ch];
@@ -1572,8 +1573,7 @@ namespace FLIMage
                             {
                                 String fileName = fileIO.FLIM_FilePath(c, State.Files.channelsInSeparatedFile, State.Files.fileCounter, FileIO.ImageType.Intensity, "", State.Files.pathName);
                                 bool overwrite1 = (overwrite[c] && (z == 0)) && (State.Files.channelsInSeparatedFile || c == 0);
-                                int[] dimYXT = FLIM_ImgData.dimensionYXT(c);
-                                fileIO.Save2DImageInTiff(fileName, ImageProcessing.GetProjectFromFLIM_Linear(FLIM_5D[z][c], dimYXT), acqTimeTemp, overwrite1, saveCh);
+                                fileIO.Save2DImageInTiff(fileName, ImageProcessing.GetProjectFromFLIM(FLIM_5D[z][c]), acqTimeTemp, overwrite1, saveCh);
                             }
                         }
                     }
@@ -1802,7 +1802,7 @@ namespace FLIMage
                     if (State.Acq.fastZScan && !State.Acq.ZStack)
                     {
                         //Setup display.
-                        var FLIM5D = (ushort[][][])FLIM_ImgData.FLIMRaw5D;
+                        var FLIM5D = FLIM_ImgData.FLIMRaw5D;
                         FLIM_ImgData.clearPages4D(); //Clean the the 4D stack. it is separated from acquisition.
                         FLIM_ImgData.addToPageAndCalculate5D(FLIM5D, acquiredTime, true, true, 0, true);
                     }

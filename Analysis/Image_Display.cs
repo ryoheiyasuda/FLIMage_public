@@ -46,8 +46,8 @@ namespace FLIMage.Analysis
 
         public Bitmap BlankBMP = ImageProcessing.FormatImage(new double[] { -1.0, 1.0 }, MatrixCalc.MatrixCreate2D<ushort>(128, 128));
 
-        ushort[][][] FocusProjectBuffer;
-        double[][][] FocusFLIMimageBuffer;
+        ushort[][,] FocusProjectBuffer;
+        double[][,] FocusFLIMimageBuffer;
         public byte[][] pixelsBuffer;
 
         //ROI manipulation
@@ -2921,7 +2921,7 @@ namespace FLIMage.Analysis
         public void AlignFrames()
         {
             int refChannel = currentChannel;
-            ushort[][] saveProject = FLIM_ImgData.Project[refChannel];
+            ushort[,] saveProject = FLIM_ImgData.Project[refChannel];
             for (int i = 0; i < FLIM_ImgData.n_pages; i++)
             {
                 GotoPage4D(i);
@@ -3103,8 +3103,8 @@ namespace FLIMage.Analysis
 
                     bool[] saveCh = new bool[FLIM_ImgData.nChannels];
                     saveCh[ch] = true;
-                    ushort[][] imageStich;
-                    ushort[][] imageStichMax;
+                    ushort[,] imageStich;
+                    ushort[,] imageStichMax;
                     Bitmap bitmapFLIM = null;
                     Bitmap bitmapFLIM_Max = null;
 
@@ -3119,15 +3119,20 @@ namespace FLIMage.Analysis
                         {
                             if (FastZStack) //if FastZ, we will stich everything together.
                             {
-                                int col = FastZFormat[0];
-                                int ro = FastZFormat[1];
+                                int nCol = FastZFormat[0];
+                                int nRo = FastZFormat[1];
                                 int startS = FastZFormat[2];
                                 int endS = Math.Min(FastZFormat[3], FLIM_ImgData.n_pages);
-                                imageStich = MatrixCalc.MatrixCreate2D<ushort>(FLIM_ImgData.height * ro, FLIM_ImgData.width * col);
+                                int height = FLIM_ImgData.height;
+                                int width = FLIM_ImgData.width;
+
+                                int height_all = height * nRo;
+                                int width_all = width * nCol;
+                                imageStich = new ushort[height_all, width_all]; //[y, x]
 
                                 if (FLIM_ImgData.FLIM_on[ch])
                                 {
-                                    bitmapFLIM = new Bitmap(FLIM_ImgData.width * ro, FLIM_ImgData.height * col);
+                                    bitmapFLIM = new Bitmap(width_all, height_all); //[x, y]
                                 }
 
                                 for (int i = startS; i < endS; i++)
@@ -3135,13 +3140,14 @@ namespace FLIMage.Analysis
                                     GotoPage4D(i);
                                     UpdateImages(true, false, false, false, true);
                                     Application.DoEvents();
-                                    int row = (i / ro);
-                                    int colm = (i % ro);
-                                    int height = FLIM_ImgData.height;
-                                    int width = FLIM_ImgData.width;
+                                    int row = (i / nCol);
+                                    int colm = (i % nCol);
+
                                     for (int y = 0; y < FLIM_ImgData.height; y++)
                                     {
-                                        Array.Copy(FLIM_ImgData.Project[ch][y], 0, imageStich[y + row * height], width * colm, width);
+                                        //Array.Copy(FLIM_ImgData.Project[ch][y], 0, imageStich[y + row * height], width * colm, width);
+                                        Array.Copy(FLIM_ImgData.Project[ch], y * width, imageStich,
+                                            (y + row * height) * width_all + width * colm, width);
                                     }
 
                                     if (FLIM_ImgData.FLIM_on[ch])
@@ -3434,7 +3440,7 @@ namespace FLIMage.Analysis
                         else if (file_type == FLIMData.FileType.TimeCourse && !fast_zThis && !z_stackThis)
                         {
 
-                            var flim_pages = MatrixCalc.MatrixCopy3D<ushort>(FLIM_ImgData.FLIM_Pages);
+                            var flim_pages = (ushort[][][,,])Copier.CopyDoubleArray(FLIM_ImgData.FLIM_Pages);
                             var acquiredTime_page = (DateTime[])FLIM_ImgData.acquiredTime_Pages.Clone();
 
                             for (int i = 0; i < FLIM_ImgData.FLIM_Pages.Length; i++)
@@ -3510,7 +3516,7 @@ namespace FLIMage.Analysis
                 int finalPageSize = FLIM_ImgData.n_pages5D / binning;
                 for (int i = 0; i < finalPageSize; i++)
                 {
-                    ushort[][][] ave = FLIM_ImgData.FLIM_Pages5D[i * binning]; //This is linearized!
+                    ushort[][][,,] ave = FLIM_ImgData.FLIM_Pages5D[i * binning]; //This is linearized!
 
                     for (int j = 1; j < binning; j++)
                     {
@@ -3539,7 +3545,7 @@ namespace FLIMage.Analysis
 
                 for (int i = 0; i < finalPageSize; i++)
                 {
-                    ushort[][] ave = FLIM_ImgData.FLIM_Pages[i * binning];
+                    ushort[][,,] ave = FLIM_ImgData.FLIM_Pages[i * binning];
 
                     for (int j = 1; j < binning; j++)
                     {
@@ -3831,8 +3837,8 @@ namespace FLIMage.Analysis
 
                             if (pageZ == FLIM_ImgData.nFastZ - 1)
                             {
-                                //Last page. Copy to FLIM_Pages5D directly.
-                                FLIM_ImgData.Add_AllFLIM_PageFormat_To_FLIM_Pages5D(FLIM_ImgData.FLIM_Pages, FLIM_ImgData.acquiredTime_Pages[0], page1);
+                        //Last page. Copy to FLIM_Pages5D directly.
+                        FLIM_ImgData.Add_AllFLIM_PageFormat_To_FLIM_Pages5D(FLIM_ImgData.FLIM_Pages, FLIM_ImgData.acquiredTime_Pages[0], page1);
                             }
                         }, new { i2 = i });
                     }
@@ -4813,8 +4819,7 @@ namespace FLIMage.Analysis
         public void InitializeStripeBuffer(int nChannels, int height, int width)
         {
             int bytePerPixel = 3;
-            FocusProjectBuffer = MatrixCalc.MatrixCreate3D<UInt16>(nChannels, height, width);
-            FocusFLIMimageBuffer = MatrixCalc.MatrixCreate3D<double>(nChannels, height, width);
+
             pixelsBuffer = MatrixCalc.MatrixCreate2D<byte>(nChannels, width * bytePerPixel * height); //new byte[width * bytePerPixel * height];
 
             MapStateIntensityRange();

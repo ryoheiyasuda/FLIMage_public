@@ -103,8 +103,8 @@ namespace FLIMage.Analysis
 
                 if (x0 > 0 && x0 < fastZRange[1])
                 {
-                    int height = FLIM_ImgData.Project_Pages[x0][channel].Length;
-                    int width = FLIM_ImgData.Project_Pages[x0][channel][0].Length;
+                    int height = FLIM_ImgData.Project_Pages[x0][channel].GetLength(0);
+                    int width = FLIM_ImgData.Project_Pages[x0][channel].GetLength(1);
 
                     //[peak, x-center, x-variance, y-center, y-variance, background]
                     

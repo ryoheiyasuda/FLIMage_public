@@ -479,7 +479,7 @@ namespace FLIMage
         public class Shading
         {
             ScanParameters State;
-            public float[][][] ShadingImages;
+            public float[][,] ShadingImages;
             public int width, height;
             public bool shading_on = false;
             public bool shading_uncaging = false;
@@ -492,15 +492,15 @@ namespace FLIMage
             {
                 State = State_in;
                 calibration = new Calibration(State, this);
-                ShadingImages = new float[State.Init.EOM_nChannels][][];
+                ShadingImages = new float[State.Init.EOM_nChannels][,];
                 applyCalibration(State);
             }
 
-            public void AddShadingImageFromBinary(float[][] Image, int LaserN)
+            public void AddShadingImageFromBinary(float[,] Image, int LaserN)
             {
                 ShadingImages[LaserN] = Image;
-                width = ShadingImages[LaserN].Length;
-                height = ShadingImages[LaserN][0].Length;
+                height = ShadingImages[LaserN].GetLength(0);
+                width = ShadingImages[LaserN].GetLength(1);
             }
 
             public void AddShadingImage(FLIMData FLIM, int LaserN, int ShadingCh)
@@ -511,8 +511,8 @@ namespace FLIMage
                 ShadingImages[LaserN] = ImageProcessing.ImageSqrt(ShadingImages[LaserN]);
                 ShadingImages[LaserN] = MatrixCalc.InverseMatrix(ShadingImages[LaserN]);
                 State = FLIM.State;
-                width = ShadingImages[LaserN].Length;
-                height = ShadingImages[LaserN][0].Length;
+                height = ShadingImages[LaserN].GetLength(0);
+                width = ShadingImages[LaserN].GetLength(1);
             }
 
             public void applyCalibration(ScanParameters State_in)
@@ -539,7 +539,7 @@ namespace FLIMage
                     int xpixel = (int)((Xvol / maxX + 0.5) * width);
                     int ypixel = (int)((Yvol / maxY + 0.5) * height);
                     if (ShadingImages[LaserN] != null && ypixel >= 0 && xpixel >= 0 && ypixel < height && xpixel < width)
-                        val = ShadingImages[LaserN][ypixel][xpixel];
+                        val = ShadingImages[LaserN][ypixel, xpixel];
                     if (val > 3)
                         val = 3;
 

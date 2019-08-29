@@ -1,5 +1,6 @@
 ﻿using BitMiracle.LibTiff.Classic;
 using MathLibrary;
+using Utilities;
 using Microsoft.CSharp;
 using System;
 using System.CodeDom.Compiler;
@@ -649,35 +650,38 @@ namespace FLIMage
 
                 object obj2 = Str2obj(strA, StateNew);
 
-                type2 = obj2.GetType();
-                //members2 = type2.GetFields();
+                Copier.DeepCopyClass(obj, obj2);
 
-                for (int j = 0; j < members.Length; j++)
-                {
-                    var value = members[j].GetValue(obj);
-                    var valuetype = members[j].FieldType;
-                    if (value != null)
-                    {
-                        if (valuetype == typeof(int[]))
-                        {
-                            var valA = (int[])value;
-                            value = valA.Clone();
-                        }
-                        else if (valuetype == typeof(bool[]))
-                        {
-                            var valA = (bool[])value;
-                            value = valA.Clone();
-                        }
-                        else if (valuetype == typeof(double[]))
-                        {
-                            var valA = (double[])value;
-                            value = valA.Clone(); 
-                        }
 
-                        type2.GetField(members[j].Name).SetValue(obj2, value);
-                        //members2[j].SetValue(obj2, value);
-                    }
-                }
+                //type2 = obj2.GetType();
+                ////members2 = type2.GetFields();
+
+                //for (int j = 0; j < members.Length; j++)
+                //{
+                //    var value = members[j].GetValue(obj);
+                //    var valuetype = members[j].FieldType;
+                //    if (value != null)
+                //    {
+                //        if (valuetype == typeof(int[]))
+                //        {
+                //            var valA = (int[])value;
+                //            value = valA.Clone();
+                //        }
+                //        else if (valuetype == typeof(bool[]))
+                //        {
+                //            var valA = (bool[])value;
+                //            value = valA.Clone();
+                //        }
+                //        else if (valuetype == typeof(double[]))
+                //        {
+                //            var valA = (double[])value;
+                //            value = valA.Clone();
+                //        }
+
+                //        type2.GetField(members[j].Name).SetValue(obj2, value);
+                //        //members2[j].SetValue(obj2, value);
+                //    }
+                //}
             }
 
             return StateNew;
@@ -1271,7 +1275,7 @@ namespace FLIMage
                     FLIM.imagesPerFile = zPerFile;
                     if (zPerFile == 1)
                     {
-                        FLIM.PutToPageOnly(imgZ[0], dt, into_page);
+                        FLIM.PutToPageOnly_Linear(imgZ[0], dt, into_page);
                     }
                     else
                     {
@@ -1467,7 +1471,7 @@ namespace FLIMage
             return dataNew;
         }
 
-        public FileError LoadFloatArrayFromTiff(string filename, int read_page, out float[][] img)
+        public FileError LoadFloatArrayFromTiff(string filename, int read_page, out float[,] img)
         {
             img = null;
 
@@ -1506,7 +1510,7 @@ namespace FLIMage
                     // scanlines to be read in a random fashion. 
                     // So, we need to read all scanlines from start of the image.                     
 
-                    img = MatrixCalc.MatrixCreate2D<float>(height, width);
+                    img = new float[height, width];
 
 
                     for (int y = 0; y < height; y++)
@@ -1515,7 +1519,7 @@ namespace FLIMage
                         image.ReadScanline(scanline, y);
                         Buffer.BlockCopy(scanline, 0, buf, 0, scanline.Length);
                         for (int x = 0; x < width; x++)
-                            img[y][x] = (float)buf[x] / 1000.0f;
+                            img[y,x] = (float)buf[x] / 1000.0f;
                     }
                 } //COMPRESSION
             } //Tiff
@@ -1525,25 +1529,38 @@ namespace FLIMage
 
         public void SaveFloatImageInTiff(float[][] image, string filename)
         {
-            UInt16[][] image16 = MatrixCalc.MatrixCreate2D<UInt16>(image.Length, image[0].Length);
+            UInt16[,] image16 = new ushort[image.Length, image[0].Length];
             var saveChannels = new bool[] { true };
             for (int y = 0; y < image.Length; y++)
                 for (int x = 0; x < image[0].Length; x++)
                 {
-                    image16[y][x] = (UInt16)(1000.0 * image[y][x]);
+                    image16[y,x] = (UInt16)(1000.0 * image[y][x]);
                 }
             Save2DImageInTiff(filename, image16, DateTime.Now, true, saveChannels);
         }
 
+        public void SaveFloatImageInTiff(float[,] image, string filename)
+        {
+            int h = image.GetLength(0);
+            int w = image.GetLength(1);
+            ushort[,] image16 = new ushort[h, w];
+            var saveChannels = new bool[] { true };
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    image16[y, x] = (UInt16)(1000.0 * image[y,x]);
+                }
+            Save2DImageInTiff(filename, image16, DateTime.Now, true, saveChannels);
+        }
 
-        public int Save2DImageInTiff(String fileName, UInt16[][] img, DateTime dt, bool overwrite, bool[] saveChannels)
+        public int Save2DImageInTiff(String fileName, UInt16[,] img, DateTime dt, bool overwrite, bool[] saveChannels)
         {
             int depth = 2; //Bytes; 16 bit image.
             int error = 0;
             int nCh = State.Acq.nChannels;
 
-            int width = img.Length;
-            int height = img[0].Length;
+            int width = img.GetLength(0);
+            int height = img.GetLength(1);
 
             string writeMode;
             string acquiredTime = dt.ToString("yyyy-MM-ddTHH:mm:ss.fff");
@@ -1589,7 +1606,8 @@ namespace FLIMage
                 {
 
                     byte[] buf = new byte[height * depth]; //Do line-by-line!
-                    Buffer.BlockCopy(img[x], 0, buf, 0, buf.Length);
+                    //Buffer.BlockCopy(img[x], 0, buf, 0, buf.Length);
+                    Buffer.BlockCopy(img, x * width * depth, buf, 0, buf.Length);
 
                     output.WriteScanline(buf, x);
                 }
@@ -1600,24 +1618,24 @@ namespace FLIMage
 
 
         //Saving data for Y-X-T data.
-        public int SaveFLIMInTiff(String fileName, UInt16[] img, DateTime dt, bool overwrite, bool[] saveChannels)
+        public int SaveFLIMInTiff(String fileName, UInt16[,,] img, DateTime dt, bool overwrite, bool[] saveChannels)
         {
-            var image5D = new UInt16[1][][];
-            image5D[0] = new ushort[1][];
+            var image5D = new UInt16[1][][,,];
+            image5D[0] = new ushort[1][,,];
             image5D[0][0] = img;
             return SaveFLIMInTiffZStack(fileName, image5D, dt, overwrite, saveChannels);
         }
 
         //save data for C-Y-X-T data
-        public int SaveFLIMInTiff(String fileName, UInt16[][] img, DateTime dt, bool overwrite, bool[] saveChannels)
+        public int SaveFLIMInTiff(String fileName, UInt16[][,,] img, DateTime dt, bool overwrite, bool[] saveChannels)
         {
-            var image5D = new UInt16[1][][];
+            var image5D = new UInt16[1][][,,];
             image5D[0] = img;
             return SaveFLIMInTiffZStack(fileName, image5D, dt, overwrite, saveChannels);
         }
 
         //Saving data for Z-C-Y-X-T data.
-        public int SaveFLIMInTiffZStack(String fileName, UInt16[][][] FLIM_Pages, DateTime dt, bool overwrite, bool[] saveChannels)
+        public int SaveFLIMInTiffZStack(String fileName, UInt16[][][,,] FLIM_Pages, DateTime dt, bool overwrite, bool[] saveChannels)
         {
             //Save two channel images. //Not Safe at all.
             int depth = 2; //Bytes; 16 bit image.

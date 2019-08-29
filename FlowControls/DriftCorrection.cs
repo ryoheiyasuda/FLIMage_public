@@ -18,14 +18,14 @@ namespace FLIMage.FlowControls
     {
         FLIMageMain FLIMage;
         ScanParameters State;
-        ushort[][] template_image;
+        ushort[,] template_image;
         double[] template_z_profile;
         //ushort[][] template_image_xz;
-        ushort[][] current_image;
+        ushort[,] current_image;
         //ushort[][] current_image_xz;
         double[] current_z_profile;
-        ushort[][][] FLIM_5D;
-        ushort[][][] imageZYX;
+        ushort[][][,,] FLIM_5D;
+        ushort[][,] imageZYX; //[z][x,y]
         int[] dimYXT = new int[] { 128, 128, 64 };
         int nSlices = 0;
         Bitmap templateBMP, templateBMP_XZ;
@@ -44,7 +44,7 @@ namespace FLIMage.FlowControls
 
             FLIMage.flimage_io.EventNotify += new FLIMage_IO.FLIMage_EventHandler(EventHandling);
 
-            template_image = MatrixCalc.MatrixCreate2D<ushort>(128, 128);
+            template_image = new ushort[128, 128];
             template_z_profile = new double[16];
             ApplyBMP();
         }
@@ -96,14 +96,14 @@ namespace FLIMage.FlowControls
 
         public void reconstructImageFromPages()
         {
-            FLIM_5D = MatrixCalc.MatrixCopy3D(FLIMage.image_display.FLIM_ImgData.FLIM_Pages);
+            FLIM_5D = (ushort[][][,,])Copier.DeepCopyArray(FLIMage.image_display.FLIM_ImgData.FLIM_Pages);
             dimYXT = FLIMage.image_display.FLIM_ImgData.dimensionYXT(correctionChannel);
             nSlices = FLIM_5D.Length;
 
 
-            imageZYX = new ushort[nSlices][][];
+            imageZYX = new ushort[nSlices][,];
             for (int z = 0; z < nSlices; z++)
-                imageZYX[z] = ImageProcessing.GetProjectFromFLIM_Linear(FLIM_5D[z][correctionChannel], dimYXT);
+                imageZYX[z] = ImageProcessing.GetProjectFromFLIM(FLIM_5D[z][correctionChannel]);
 
         }
 
@@ -178,8 +178,8 @@ namespace FLIMage.FlowControls
 
             var xyz_drift = calculateDriftXYZ();
             double[] voltage_xy = new double[2];
-            double width = (double)current_image[0].Length;
-            double height = (double)current_image.Length;
+            double width = (double)current_image.GetLength(1);
+            double height = (double)current_image.GetLength(0);
             voltage_xy[0] = xyz_drift[0] / width / State.Acq.zoom * State.Acq.scanVoltageMultiplier[0] * State.Acq.XMaxVoltage;
             voltage_xy[1] = xyz_drift[1] / height / State.Acq.zoom * State.Acq.scanVoltageMultiplier[1] * State.Acq.YMaxVoltage;
             voltage_xy = MatrixCalc.Rotate(voltage_xy, State.Acq.Rotation);
@@ -268,7 +268,7 @@ namespace FLIMage.FlowControls
             return data_projection_z;
         }
 
-        public UInt16[][] getProjection()
+        public UInt16[,] getProjection()
         {
             int z_length = FLIM_5D.Length;
             int c_length = FLIM_5D[0].Length;
@@ -276,7 +276,7 @@ namespace FLIMage.FlowControls
             int x_length = dimYXT[1];
             int t_length = dimYXT[2];
 
-            UInt16[][] data_projection = MatrixCalc.MatrixCreate2D<UInt16>(y_length, x_length);
+            UInt16[,] data_projection = new ushort[y_length, x_length];
 
             for (int z = 0; z < nSlices; z++)
                 MatrixCalc.MatrixCalc2D(data_projection, imageZYX[z], "Max", true);
