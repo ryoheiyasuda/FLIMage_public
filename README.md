@@ -3,7 +3,9 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 
 * Compiled and packaged installer can be found in https://github.com/ryoheiyasuda/FLIMage_Installer
 
-* This is open as it is, but for support, please contact Florida Lifetime Imaging LLC (http://www.lifetime-imaging.com/).
+* This code is for academic use only. For commercial use, please contact Max Planck Florida Institute (Ryohei.yasuda@mpfi.org). 
+
+* For support, please contact Florida Lifetime Imaging LLC (http://www.lifetime-imaging.com/).
 
 * The solution file is made in Visual Studio 17 (free "Community" version should build this).
 
@@ -15,17 +17,16 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 
 * In default setting, binary will be created in ${SolutionDir}..\..\bin folder. You may need to create the folder before building.
 
-* NI-card: If you want to use National Instruments cards, you need to install National instrument driver with DotNet support (we use version 18.6). Then, put NationalInstruments.Common.dll and NationalInstruments.DAQmx.dll in $(ProjectDir)..\Libraries. We tested with PCIe-6231/6233 and PCI-6371/6373. It should compile without these libraries for analysis. 
+* NI-card: If you want to use National Instruments cards, you need to install National instrument driver with DotNet support (we use version 18.6). Then, put their DotNet assembly DLL in $(ProjectDir)..\Libraries. We tested with PCIe-6231/6233 and PCI-6371/6373. It should compile without these libraries for analysis. 
 
-* TCSPC card: If you want to use TCSPC card from PicoQuant (TimeHarp 260 / MultiHarp) or Becker Hickl (SPC-150), you need to install their drivers. Contact Florida Lifetime Imaging LLC for details (http://www.lifetime-imaging.com/). 
+* TCSPC card: If you want to use TCSPC card from PicoQuant (TimeHarp 260 / MultiHarp) or Becker Hickl (SPC-150), you need to install the device drivers and DLLs. Contact these companies for purchasing DLL. Contact Florida Lifetime Imaging LLC for support (http://www.lifetime-imaging.com/). 
 
-* For additional DLL files and their source codes you may want, please contact Yasuda lab (Ryohei.yasuda@mpfi.org). 
+* For additional source code of C# assemblies in this tree, please contact Max Planck Florida Institute (Ryohei.yasuda@mpfi.org).
 
-* Sutter or Thorlab linear stage controls and other hardware controls.
-You need DLL files and configure them. Contact Florida Lifetime Imaging LLC (http://www.lifetime-imaging.com/).
+* For Thorlab linear stage controls and other Thorlab hardware controls, you may need additional DLL files from Thorlab. Contact Florida Lifetime Imaging LLC for support(http://www.lifetime-imaging.com/).
 
 * Tag-lens: 
-It is possible to scan in Z-axis extremely fast (~200-1000KHz) with taglens. This feature is still under development. You need to add DLL.
+It is possible to scan in Z-axis extremely fast (~200-1000KHz) with Tag-lens. This feature will be available soon.
 
 * Resonant scanning:
 We are aiming to implement it in next version.
