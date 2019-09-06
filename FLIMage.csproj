@@ -122,15 +122,16 @@
     <SignManifests>false</SignManifests>
   </PropertyGroup>
   <PropertyGroup />
+  <PropertyGroup />
   <PropertyGroup>
-    <NoWin32Manifest>true</NoWin32Manifest>
+    <ApplicationManifest>flimage.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="BitMiracle.LibTiff.NET">
       <HintPath>..\Libraries\BitMiracle.LibTiff.NET.dll</HintPath>
     </Reference>
-    <Reference Include="MathNet.Numerics, Version=4.8.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MathNet.Numerics.4.8.0\lib\net461\MathNet.Numerics.dll</HintPath>
+    <Reference Include="MathNet.Numerics, Version=4.8.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MathNet.Numerics.4.8.1\lib\net461\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="NationalInstruments.Common, Version=15.1.40.49152, Culture=neutral, PublicKeyToken=dc6ad606294fc298, processorArchitecture=MSIL">
@@ -380,6 +381,7 @@
     <EmbeddedResource Include="Uncaging\Uncaging_Trigger_Panel.resx">
       <DependentUpon>Uncaging_Trigger_Panel.cs</DependentUpon>
     </EmbeddedResource>
+    <None Include="flimage.manifest" />
     <None Include="Main\app.manifest" />
     <None Include="Main\packages.config" />
     <None Include="packages.config" />

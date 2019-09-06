@@ -22,10 +22,10 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 * For additional DLL files and their source codes you may want, please contact Yasuda lab (Ryohei.yasuda@mpfi.org). 
 
 * Sutter or Thorlab linear stage controls and other hardware controls.
-Thorlab hardware needs DLL files. You should be able to do direct coding for the serial command too.
+You need DLL files and configure them. Contact Florida Lifetime Imaging LLC (http://www.lifetime-imaging.com/).
 
 * Tag-lens: 
-It is possible to scan in Z-axis extremely fast (~200-1000KHz) with taglens. This feature is still under development. 
+It is possible to scan in Z-axis extremely fast (~200-1000KHz) with taglens. This feature is still under development. You need to add DLL.
 
 * Resonant scanning:
 We are aiming to implement it in next version.
