@@ -81,7 +81,6 @@ namespace FLIMage.HardwareControls
 
             State.Init.AO_uncagingShutter = AO_uncagingShutterCheck.Checked;
             State.Init.DO_uncagingShutter = DO_uncagingShutterCheck.Checked;
-            State.Init.DO_uncagingShutter_useForPMTsignal = ActiveLow.Checked;
 
             State.Init.UncagingShutterAnalogPort = PockelsBoard.Text + "/" + Shutter_AOChannel.Text;
             
@@ -177,7 +176,6 @@ namespace FLIMage.HardwareControls
 
             DO_uncagingShutterCheck.Checked = State.Init.DO_uncagingShutter;
             AO_uncagingShutterCheck.Checked = State.Init.AO_uncagingShutter;
-            ActiveLow.Checked = State.Init.DO_uncagingShutter_useForPMTsignal;
 
             UseAOMirrorOffset.Checked = State.Init.UseExternalMirrorOffset;
 

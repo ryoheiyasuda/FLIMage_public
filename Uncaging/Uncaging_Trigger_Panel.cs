@@ -26,12 +26,10 @@ namespace FLIMage.Uncaging
 
         IOControls.pockelAO UncagePockelAO;
         IOControls.MirrorAO UncageMirrorAO;
-        IOControls.DigitalUncagingShutterSignal UncagingShutterSignal;
+        IOControls.DigitalOutputSignal digitalOutput;
 
-        double[,] DataXY;
-        double[,] DataEOM;
 
-        PlotOnPanel pp1, pp2;
+        PlotOnPictureBox plot1, plot2;
 
         public bool UncagingShutter = false;
         public bool uncaging_running = false;
@@ -57,9 +55,10 @@ namespace FLIMage.Uncaging
             if (!FLIMage.image_display.uncaging_on)
                 FLIMage.image_display.ActivateUncaging();
 
+            plot1 = new PlotOnPictureBox(panel1);
+            plot2 = new PlotOnPictureBox(panel2);
+
             UpdateUncaging(this);
-            pp1 = new PlotOnPanel(panel1.Width, panel1.Height);
-            pp2 = new PlotOnPanel(panel2.Width, panel2.Height);
 
             winManager = new WindowLocManager(this, WindowName, State.Files.windowsInfoPath);
             winManager.LoadWindowLocation(false);
@@ -216,10 +215,10 @@ namespace FLIMage.Uncaging
 
             if (!anyUncaging)
             {
+                str1 = "No uncaging laser assigned\r\n";
+
                 if (State.Init.AO_uncagingShutter)
-                    str1 = "AO: " + State.Init.UncagingShutterAnalogPort + "\r\n";
-                else
-                    str1 = "";
+                    str1 = str1 + "AO: " + State.Init.UncagingShutterAnalogPort + "\r\n";
 
                 if (State.Init.DO_uncagingShutter)
                     str1 = str1 + "DO: " + State.Init.MirrorAOBoard + "/port0/" + State.Init.DigitalShutterPort;
@@ -238,6 +237,7 @@ namespace FLIMage.Uncaging
                         break;
                     }
                 }
+
                 if (State.Init.AO_uncagingShutter)
                 {
                     str1 = str1 + "\r\nUncaging AO shutter: " + State.Init.UncagingShutterAnalogPort;
@@ -260,7 +260,11 @@ namespace FLIMage.Uncaging
             if (State.Uncaging.pulseDelay < maxDelay)
                 State.Uncaging.pulseDelay = maxDelay;
 
-            double frameTime = State.Acq.msPerLine * State.Acq.linesPerFrame;
+            double msPerLine = State.Acq.msPerLine;
+            if (State.Acq.fastZScan)
+                msPerLine = State.Acq.FastZ_msPerLine;
+
+            double frameTime = msPerLine * State.Acq.linesPerFrame;
 
             if (sender != null)
             {
@@ -457,17 +461,66 @@ namespace FLIMage.Uncaging
             if (FLIMage.flimage_io.shading != null)
                 FLIMage.flimage_io.shading.applyCalibration(State);
 
-            DataXY = IOControls.MakeUncagePulses_MirrorAO(State, State.Uncaging.outputRate);
-            DataEOM = IOControls.MakePockelsPulses_PockelsAO(State, State.Uncaging.outputRate, ShowShutter.Checked, ShowRepeat.Checked, FLIMage.flimage_io.shading);
+            
+            
+            
+            updatePlot(plot1);
+            updatePlot(plot2);
+        }
 
-            if (pp1 != null)
+        public void updatePlot(PlotOnPictureBox plot)
+        {
+            plot.ClearData();
+            double[] t1;
+            double[,] Data;
+            bool plotEOM = true;
+
+            if (plot.Equals(plot2))
             {
-                pp1.AutoScaleNow(true);
-                pp2.AutoScaleNow(true);
+                plotEOM = false;
+                Data = IOControls.MakeUncagePulses_MirrorAO(State, State.Uncaging.outputRate);
+            }
+            else
+            {
+                Data = IOControls.MakePockelsPulses_PockelsAO(State, State.Uncaging.outputRate, ShowShutter.Checked, ShowRepeat.Checked, FLIMage.flimage_io.shading);
             }
 
-            panel1.Invalidate();
-            panel2.Invalidate();
+            if (Data.GetLength(1) > 0 && Data.GetLength(0) > 0)
+            {
+                t1 = new double[Data.GetLength(1)];
+                double[] Data1 = new double[Data.GetLength(1)];
+                for (int i = 0; i < t1.Length; i++)
+                    t1[i] = i * 1000.0 / State.Uncaging.outputRate; //in msec.
+
+                for (int j = 0; j < Data.GetLength(0); j++)
+                {
+                    for (int i = 0; i < Data1.Length; i++)
+                        Data1[i] = Data[j, i];
+                    plot.AddData(t1, Data1, "-", 1);
+                }               
+            }
+
+            if (State.Init.DO_uncagingShutter && plotEOM && ShowShutter.Checked)
+            {
+                double[][] dodata = IOControls.GetDigitalOutputInDouble(State, true, false, ShowRepeat.Checked, out double outputRate);
+                double[] Data_DO_Shutter = dodata[0];
+
+                t1 = new double[Data_DO_Shutter.Length];
+                for (int i = 0; i < t1.Length; i++)
+                    t1[i] = i * 1000.0 / outputRate; //in msec.
+
+                plot.AddData(t1, Data_DO_Shutter, "-", 1);
+            }
+
+            plot.XTitle = "Time (ms)";
+            plot.YTitle = "Voltage";
+
+            plot.plot.xMergin = 0.12F;
+            plot.plot.xFrac = 0.85F;
+            plot.plot.yMergin = 0.3F;
+            plot.plot.yFrac = 0.45F;
+
+            plot.UpdatePlot();
         }
 
         void UncagingTimerEvent(Object myObject, EventArgs myEventArgs)
@@ -542,8 +595,8 @@ namespace FLIMage.Uncaging
                 UncagePockelAO.dispose();
             if (UncageMirrorAO != null)
                 UncageMirrorAO.dispose();
-            if (UncagingShutterSignal != null)
-                UncagingShutterSignal.dispose();
+            if (digitalOutput != null)
+                digitalOutput.dispose();
         }
 
         /// <summary>
@@ -564,9 +617,9 @@ namespace FLIMage.Uncaging
 
             if (State.Init.DO_uncagingShutter)
             {
-                FLIMage.flimage_io.UncagingShutter_DO_S.TurnOnOff(false);
-                UncagingShutterSignal = new IOControls.DigitalUncagingShutterSignal(State);
-                UncagingShutterSignal.PutValue_and_Start(false);
+                FLIMage.flimage_io.uncagingDOShutter_S.TurnOnOff(false);
+                digitalOutput = new IOControls.DigitalOutputSignal(State);
+                digitalOutput.PutValue_and_Start(false, true, false, false);
             }
 
             //System.Threading.Thread.Sleep(10); //Not sure.
@@ -591,25 +644,22 @@ namespace FLIMage.Uncaging
 
             FLIMage.flimage_io.dioTrigger.Evoke();
 
-            int timeout = (int)(State.Uncaging.sampleLength);
+            int timeout = (int)(State.Uncaging.sampleLength + 10.0);
 
             bool forcestop = false;
 
-            if (sender.Equals(this))
+            //For a long call, you may want to terminate in the middle. 
+            Stopwatch sw1 = new Stopwatch();
+            sw1.Restart();
+            while (sw1.ElapsedMilliseconds < timeout)
             {
-                //For a long call, you may want to terminate in the middle. 
-                Stopwatch sw1 = new Stopwatch();
-                sw1.Restart();
-                while (sw1.ElapsedMilliseconds < timeout)
+                System.Threading.Thread.Sleep(10);
+                Application.DoEvents();
+                //abort_uncaging becomes true when stop button is pressed.
+                if (abort_uncaging)
                 {
-                    System.Threading.Thread.Sleep(10);
-                    Application.DoEvents();
-                    //abort_uncaging becomes true when stop button is pressed.
-                    if (abort_uncaging)
-                    {
-                        forcestop = true;
-                        break;
-                    }
+                    forcestop = true;
+                    break;
                 }
             }
 
@@ -628,8 +678,8 @@ namespace FLIMage.Uncaging
 
             if (State.Init.DO_uncagingShutter)
             {
-                UncagingShutterSignal.Stop();
-                UncagingShutterSignal.dispose();
+                digitalOutput.Stop();
+                digitalOutput.dispose();
             }
 
             if (mainShutterCtrl)
@@ -690,79 +740,6 @@ namespace FLIMage.Uncaging
             }
         }
 
-        public void PlotNow(PlotOnPanel pp, PaintEventArgs e, double[,] Data)
-        {
-            pp.xMergin = 0.12F;
-            pp.xFrac = 0.85F;
-            pp.yMergin = 0.3F;
-            pp.yFrac = 0.45F;
-            pp.clearData();
-            pp.addData(Data, State.Uncaging.outputRate / 1000);
-
-            pp.plotType = "-";
-            pp.XTitle = "Time (ms)";
-            pp.YTitle = "Voltage";
-            pp.plot(e);
-        }
-
-        public void panel1_Paint(object sender, PaintEventArgs e)
-        {
-            PlotNow(pp1, e, DataEOM);
-
-            if (pp1.drawingROI)
-            {
-                Pen rectPen = new Pen(Color.Red, (float)0.5);
-                e.Graphics.DrawRectangle(rectPen, pp1.boxRoi);
-            }
-        }
-
-        public void panel1_DoubleClick(object sender, EventArgs e)
-        {
-            pp1.AutoScaleNow(true);
-            panel1.Invalidate();
-        }
-
-        public void panel1_MouseDown(object sender, MouseEventArgs e)
-        {
-            pp1.StartDrawingROI(e);
-        }
-
-        public void panel1_MouseMove(object sender, MouseEventArgs e)
-        {
-            pp1.Draw_DuringMoveMouse(e);
-            if (pp1.drawingROI)
-                panel1.Invalidate();
-        }
-
-        public void panel1_MouseUp(object sender, MouseEventArgs e)
-        {
-            pp1.Finish_DrawoingROI_MouseUp(e);
-            panel1.Invalidate();
-        }
-
-        public void panel2_DoubleClick(object sender, EventArgs e)
-        {
-            pp2.AutoScaleNow(true);
-            panel2.Invalidate();
-        }
-
-
-        public void panel2_MouseDown(object sender, MouseEventArgs e)
-        {
-            pp2.StartDrawingROI(e);
-        }
-
-        public void panel2_MouseMove(object sender, MouseEventArgs e)
-        {
-            pp2.Draw_DuringMoveMouse(e);
-            panel2.Invalidate();
-        }
-
-        public void panel2_MouseUp(object sender, MouseEventArgs e)
-        {
-            pp2.Finish_DrawoingROI_MouseUp(e);
-            panel2.Invalidate();
-        }
 
         public void Shutter2_Click(object sender, EventArgs e)
         {
@@ -785,21 +762,17 @@ namespace FLIMage.Uncaging
             uc.Show();
         }
 
+        private void ShowShutter_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
+
         public void miscSettingToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Uncaging_miscSetting um = new Uncaging_miscSetting(FLIMage);
             um.Show();
         }
 
-        public void panel2_Paint(object sender, PaintEventArgs e)
-        {
-            PlotNow(pp2, e, DataXY);
 
-            if (pp2.drawingROI)
-            {
-                Pen rectPen = new Pen(Color.Red, (float)0.5);
-                e.Graphics.DrawRectangle(rectPen, pp2.boxRoi);
-            }
-        }
     }
 }

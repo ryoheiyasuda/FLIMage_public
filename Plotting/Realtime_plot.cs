@@ -27,7 +27,7 @@ namespace FLIMage.Plotting
 
         public List<double> realtimeData = new List<double>();
         public List<double> realtimeTime = new List<double>();
-        public plotWhat plotType = plotWhat.meanIntensity;
+        public plotWhat plotType = plotWhat.sumIntensity;
 
         public bool autoScale = true;
 
@@ -130,8 +130,7 @@ namespace FLIMage.Plotting
             plot.UpdatePlot();
         }
 
-
-        private void Intensity_radio_Click(object sender, EventArgs e)
+        private void updateWhatToMeasure()
         {
             if (meanIntensity_radio.Checked)
                 plotType = plotWhat.meanIntensity;
@@ -145,7 +144,12 @@ namespace FLIMage.Plotting
                 plotType = plotWhat.tau_m_fit;
             else if (fraction2_fit_radio.Checked)
                 plotType = plotWhat.farction2_fit;
+        }
 
+
+        private void Intensity_radio_Click(object sender, EventArgs e)
+        {
+            updateWhatToMeasure();
             updatePlot();
         }
 
@@ -199,7 +203,6 @@ namespace FLIMage.Plotting
 
                     plot.AddData(TCF.time_seconds, curve, "-r", 1);
 
-                    //pp.addData(x1, curve);
                     strList.Add("Selected ROI");
                 }
 
@@ -359,6 +362,8 @@ namespace FLIMage.Plotting
 
             if (!real_time)
                 InitializeSetting();
+
+            updateWhatToMeasure();
         }
 
         private void DefaultWindowLocation()

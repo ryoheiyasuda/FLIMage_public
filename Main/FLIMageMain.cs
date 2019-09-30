@@ -28,9 +28,6 @@ namespace FLIMage
 {
     public partial class FLIMageMain : Form
     {
-        public const bool DEBUGMODE = false;
-
-
         //FLIMage_IO --- main IO control.
         public FLIMage_IO flimage_io;
         object syncStateObj = new object();
@@ -69,6 +66,7 @@ namespace FLIMage
         public MotorCtrlPanel motor_ctrl_panel;
 
         public Uncaging_Trigger_Panel uncaging_panel;
+        public Digital_Trigger_Panel digital_panel;
         public Image_seqeunce image_seqeunce;
         public ShadingCorrection shading_correction;
         public DriftCorrection drift_correction;
@@ -377,14 +375,35 @@ namespace FLIMage
 
         void binningSettingChange()
         {
-            if (flimage_io.parameters.spcData.HW_Model == "TimeHarp 260 N")
+            if (flimage_io.parameters.BoardType == "PQ")
             {
-                Binning_setting.Items.Clear();
-                Binning_setting.Items.Add("0 (0.25 ns)");
-                Binning_setting.Items.Add("1 (0.50 ns)");
-                Binning_setting.Items.Add("2 (1.00 ns)");
-                Binning_setting.Items.Add("4 (2.00 ns)");
-                Binning_setting.Items.Add("8 (4.00 ns)");
+                if (flimage_io.parameters.spcData.HW_Model.Contains("260 N"))
+                {
+                    Binning_setting.Items[0] = "0 (0.25 ns)";
+                    Binning_setting.Items[1] = "1 (0.50 ns)";
+                    Binning_setting.Items[2] = "2 (1.00 ns)";
+                    Binning_setting.Items[3] = "3 (2.00 ns)";
+                    Binning_setting.Items[4] = "4 (4.00 ns)";
+                    Binning_setting.Items[5] = "5 (8.00 ns)";
+                }
+                else if (flimage_io.parameters.spcData.HW_Model.Contains("260 Q"))
+                {
+                    Binning_setting.Items[0] = "0 (25 ps)";
+                    Binning_setting.Items[1] = "1 (50 ps)";
+                    Binning_setting.Items[2] = "2 (100 ps)";
+                    Binning_setting.Items[3] = "3 (200 ps)";
+                    Binning_setting.Items[4] = "4 (400 ps)";
+                    Binning_setting.Items[5] = "5 (800 ps)";
+                }
+            }
+            else if (flimage_io.parameters.BoardType == "MH")
+            {
+                Binning_setting.Items[0] = "0 (0.08 ns)";
+                Binning_setting.Items[1] = "1 (0.16 ns)";
+                Binning_setting.Items[2] = "2 (0.32 ns)";
+                Binning_setting.Items[3] = "3 (0.64 ns)";
+                Binning_setting.Items[4] = "4 (1.28 ns)";
+                Binning_setting.Items[5] = "5 (2.56 ns)";
             }
         }
 
@@ -431,6 +450,12 @@ namespace FLIMage
                 {
                     uncaging_panel = new Uncaging_Trigger_Panel(this);
                     uncaging_panel.Show();
+                }
+
+                if (readText.Contains("digital_panel") || State.DO.DO_whileImage && flimage_io.use_nidaq)
+                {
+                    digital_panel = new Digital_Trigger_Panel(this);
+                    digital_panel.Show();
                 }
 
                 if (readText.Contains("image_sequence"))
@@ -498,6 +523,12 @@ namespace FLIMage
             {
                 uncaging_panel.Close();
                 uncaging_panel = new Uncaging_Trigger_Panel(this);
+            }
+
+            if (digital_panel != null && !digital_panel.IsDisposed)
+            {
+                digital_panel.Close();
+                digital_panel = new Digital_Trigger_Panel(this);
             }
 
             if (image_seqeunce != null && !image_seqeunce.IsDisposed)
@@ -572,6 +603,13 @@ namespace FLIMage
                 sb.Append("uncaging_panel");
                 sb.Append(",");
             }
+            if (digital_panel != null && digital_panel.Visible)
+            {
+                digital_panel.SaveWindowLocation();
+                sb.Append("digital_panel");
+                sb.Append(",");
+            }
+
             if (image_seqeunce != null && image_seqeunce.Visible)
             {
                 image_seqeunce.SaveWindowLocation();
@@ -649,6 +687,7 @@ namespace FLIMage
         void MenuItems_CheckControls()
         {
             uncagingControlToolStripMenuItem1.Checked = (uncaging_panel != null && uncaging_panel.Visible);
+            digitalOutputControlToolStripMenuItem.Checked = digital_panel != null && digital_panel.Visible;
             shadingCorretionToolStripMenuItem.Checked = (shading_correction != null && shading_correction.Visible);
             driftCorrectionToolStripMenuItem.Checked = (drift_correction != null && drift_correction.Visible);
             fastZControlToolStripMenuItem.Checked = (fastZcontrol != null && fastZcontrol.Visible);
@@ -1125,9 +1164,13 @@ namespace FLIMage
                 }
 
                 State.Uncaging.uncage_whileImage = Uncage_while_image_check.Checked;
+                State.DO.DO_whileImage = DO_whileImaging_check.Checked;
 
                 if (State.Uncaging.uncage_whileImage && uncaging_panel != null)
                     uncaging_panel.SetupUncage(uncaging_panel);
+
+                if (State.DO.DO_whileImage && digital_panel != null)
+                    digital_panel.SetupDO(digital_panel);
 
                 GrabButton.Text = "ABORT";
 
@@ -1748,27 +1791,24 @@ namespace FLIMage
         {
             try
             {
-                Invoke((Action)delegate
+                if (!flimage_io.focusing)
                 {
-                    if (!flimage_io.focusing)
+                    if (State.Acq.aveSlice)
                     {
-                        if (State.Acq.aveSlice)
-                        {
-                            if (flimage_io.internalFrameCounter == 0 && flimage_io.averageSliceCounter == 0)
-                                nAverageFrame.Text = (State.Acq.nAveSlice * State.Acq.nAveFrame).ToString();
-                            else
-                                nAverageFrame.Text = (flimage_io.internalFrameCounter + flimage_io.averageSliceCounter * State.Acq.nAveFrame).ToString();
-                        }
-                        else if (State.Acq.aveFrameA[0])
-                            nAverageFrame.Text = (flimage_io.averageCounter + 1).ToString();
+                        if (flimage_io.internalFrameCounter == 0 && flimage_io.averageSliceCounter == 0)
+                            nAverageFrame.Text = (State.Acq.nAveSlice * State.Acq.nAveFrame).ToString();
                         else
-                            nAverageFrame.Text = "1";
+                            nAverageFrame.Text = (flimage_io.internalFrameCounter + flimage_io.averageSliceCounter * State.Acq.nAveFrame).ToString();
                     }
+                    else if (State.Acq.aveFrameA[0])
+                        nAverageFrame.Text = (flimage_io.averageCounter + 1).ToString();
                     else
-                    {
                         nAverageFrame.Text = "1";
-                    }
-                });
+                }
+                else
+                {
+                    nAverageFrame.Text = "1";
+                }
             }
             catch
             {
@@ -1825,7 +1865,11 @@ namespace FLIMage
             else
                 State.Acq.fastZScan = false;
 
-            if (Int32.TryParse(FreqDivBox.Text, out valI)) State.Spc.spcData.sync_divider[0] = valI;
+            if (Int32.TryParse(FreqDivBox.Text, out valI))
+            {
+                for (int i = 0; i < State.Spc.spcData.sync_divider.Length; i++)
+                    State.Spc.spcData.sync_divider[i] = valI;
+            }
 
             if (flimage_io.use_pq)
             {
@@ -1948,6 +1992,8 @@ namespace FLIMage
 
 
             SetupFLIMParameters_ImageDelay();
+
+            parameters.spcData = State.Spc.spcData;
 
             //Perhaps not necessary..
             if (parameters.rateInfo.syncRate[0] != 0)
@@ -2150,7 +2196,11 @@ namespace FLIMage
             if (uncaging_panel != null)
                 uncaging_panel.UpdateUncaging(this);
 
+            if (digital_panel != null)
+                digital_panel.UpdateDO(this);
+
             Uncage_while_image_check.Checked = State.Uncaging.uncage_whileImage;
+            DO_whileImaging_check.Checked = State.DO.DO_whileImage;
 
             ScanPosition.Invalidate();
         }
@@ -2383,6 +2433,9 @@ namespace FLIMage
             if (State.Uncaging.uncage_whileImage && uncaging_panel != null)
                 uncaging_panel.Show();
 
+            if (State.DO.DO_whileImage && digital_panel != null)
+                digital_panel.Show();
+
             flimage_io.updateState(State);
         }
 
@@ -2460,6 +2513,7 @@ namespace FLIMage
             UpdatePowerGUI();
 
             Uncage_while_image_check.Checked = State.Uncaging.uncage_whileImage;
+            DO_whileImaging_check.Checked = State.DO.DO_whileImage;
 
             if (uncaging_panel != null && uncaging_panel.Visible)
                 uncaging_panel.UpdateUncaging(this);
@@ -2621,6 +2675,32 @@ namespace FLIMage
             else if (command == "AbortGrab")
             {
                 StopGrab(true);
+            }
+            else if (command == "StartDO")
+            {
+                if (digital_panel == null)
+                    digital_panel = new Digital_Trigger_Panel(this);
+
+                digital_panel.Show();
+                digital_panel.Activate();
+
+                this.Invoke((Action)delegate
+                {
+                    if (!digital_panel.digital_running && !flimage_io.grabbing && !flimage_io.focusing)
+                        digital_panel.Start_button_Click(digital_panel, null);
+                });
+            }
+            else if (command == "StopDO")
+            {
+                if (digital_panel != null && !digital_panel.IsDisposed)
+                {
+                    this.Invoke((Action)delegate
+                    {
+                        if (digital_panel.digital_running)
+                            digital_panel.Stop_DO();
+                    });
+                }
+
             }
             else if (command == "StartUncaging")
             {
@@ -3682,6 +3762,7 @@ namespace FLIMage
         private void Uncage_while_image_check_Click(object sender, EventArgs e)
         {
             State.Uncaging.uncage_whileImage = Uncage_while_image_check.Checked;
+            State.DO.DO_whileImage = DO_whileImaging_check.Checked;
 
             if (State.Uncaging.uncage_whileImage)
             {
@@ -3693,9 +3774,21 @@ namespace FLIMage
             }
 
             if (uncaging_panel != null)
-            {
                 uncaging_panel.SetupUncage(uncaging_panel);
+
+
+            if (State.DO.DO_whileImage)
+            {
+                if (digital_panel == null)
+                {
+                    digital_panel = new Digital_Trigger_Panel(this);
+                }
+                digital_panel.Show();
             }
+
+            if (digital_panel != null)
+                digital_panel.SetupDO(digital_panel);
+
         }
 
 
@@ -3963,6 +4056,13 @@ namespace FLIMage
             analyzeAfterEachAcquisiiton = analyzeEach.Checked;
         }
 
+        private void digitalOutputControlToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (digital_panel == null || digital_panel.IsDisposed)
+                digital_panel = new Digital_Trigger_Panel(this);
+
+            digital_panel.Show();
+        }
     } //Form
 
 

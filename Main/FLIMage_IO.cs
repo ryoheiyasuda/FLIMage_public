@@ -17,7 +17,7 @@ namespace FLIMage
 {
     public class FLIMage_IO
     {
-        bool DEBUGMODE = false;
+        bool DEBUGMODE = true;
 
         FLIMageMain FLIMage;
         public ScanParameters State;
@@ -96,15 +96,15 @@ namespace FLIMage
         public IOControls.ShutterCtrl ShutterCtrl;
         public IOControls.DigitalIn DI;
         public IOControls.AO_Write UncagingShutterAO; //This is static.
-        //public IOControls.DigitalUncagingShutterSignal UncagingShutter_DO; //for time control
-        public IOControls.DigitalUncagingShutterSignal UncagingShutter_DO_S; //_S for static shutter control.
+        public IOControls.DigitalOutputSignal digitalOutput; //for time control
+        public IOControls.DigitalOutputSignal uncagingDOShutter_S; //_S for static shutter control.
         public IOControls.DigitalLineClock dLineClock; //for time control
 
         ////// Uncaging prameters.
         public UncagingCalibration uc;
         Timer UncagingTimer = new Timer();
         public double[] uncaging_Calib = new double[2];
-        int uncaging_SliceCounter = 0;
+        int uncaging_DO_SliceCounter = 0;
 
 
         ///// Shaidng
@@ -141,8 +141,14 @@ namespace FLIMage
                 try
                 {
                     IOControls.exportBaseClockSignal(State);
-                    lineClock = new IOControls.lineClock(State, false);
-                    dLineClock = new IOControls.DigitalLineClock(State);
+
+                    if (State.Init.use_digitalLineClock)
+                        dLineClock = new IOControls.DigitalLineClock(State);
+                    else
+                    {
+                        lineClock = new IOControls.lineClock(State, false);
+                        digitalOutput = new IOControls.DigitalOutputSignal(State);
+                    }
 
                     dioTrigger = new IOControls.dioTrigger(State);
                     ShutterCtrl = new IOControls.ShutterCtrl(State);
@@ -155,8 +161,7 @@ namespace FLIMage
 
                     if (State.Init.DO_uncagingShutter)
                     {
-                        //UncagingShutter_DO = new IOControls.DigitalUncagingShutterSignal(State);
-                        UncagingShutter_DO_S = new IOControls.DigitalUncagingShutterSignal(State);
+                        uncagingDOShutter_S = new IOControls.DigitalOutputSignal(State);
                     }
 
                     if (State.Init.AO_uncagingShutter)
@@ -195,7 +200,7 @@ namespace FLIMage
 
                 if (error == FiFio_multiBoards.ErrorCode.NONE)
                 {
-                    FiFo_acquire.FrameDone += new FiFio_multiBoards.FrameDoneHandler(BackGroundFLIMAcq);
+                    FiFo_acquire.FrameDone += new FiFio_multiBoards.FrameDoneHandler(FrameDoneEvent);
                     FiFo_acquire.StripeDone += new FiFio_multiBoards.StripeDoneHandler(StripeDoneEvent);
                     FiFo_acquire.MeasDone += new FiFio_multiBoards.MeasDoneHandler(MeasDoneEvent);
                     //FiFo_acquire.SetupParameters(focusing, parameters);
@@ -271,7 +276,10 @@ namespace FLIMage
             if (FLIMage.uncaging_panel != null)
                 FLIMage.uncaging_panel.uncaging_count = 0;
 
-            uncaging_SliceCounter = 0;
+            if (FLIMage.digital_panel != null)
+                FLIMage.digital_panel.StartPrep();
+
+            uncaging_DO_SliceCounter = 0;
             savePageCounterTotal = 0;
             savePageCounter = 0;
             displayPageCounter = 0;
@@ -285,7 +293,7 @@ namespace FLIMage
                     FLIMage.InitializeCounter_GUI_Update();
                 else
                 {
-                    FLIMage.Invoke((Action)delegate
+                    FLIMage.BeginInvoke((Action)delegate
                     {
                         FLIMage.InitializeCounter_GUI_Update();
                     });
@@ -479,15 +487,37 @@ namespace FLIMage
 
             if (use_nidaq && !stopGrabActivated)
             {
+
                 if (putValue)
                 {
-                    //Is this better?
-                    lineClock.dispose();
-                    lineClock = new IOControls.lineClock(State, focusing);
+                    //Maybe better to separate put value and start!.
+                    bool use_clock = State.Init.use_digitalLineClock;
 
-                    dLineClock.dispose();
-                    dLineClock = new IOControls.DigitalLineClock(State);
-                    dLineClock.PutValue_and_Start(State.Acq.externalTrigger);
+                    //Important that uncaging and digital will not be added when focusing (only in grabbing).
+                    bool use_uncaging = State.Uncaging.uncage_whileImage && grabbing && State.Uncaging.sync_withFrame;
+                    bool use_digital = State.DO.DO_whileImage && grabbing && State.DO.sync_withFrame;
+
+                    if (State.Init.use_digitalLineClock)
+                    {
+                        dLineClock.dispose();
+                        dLineClock = new IOControls.DigitalLineClock(State);
+                        
+                        dLineClock.PutValue_and_Start(State.Acq.externalTrigger, use_clock, use_uncaging,
+                            use_digital, grabbing); 
+                    }
+                    else
+                    {
+                        lineClock.dispose();
+                        lineClock = new IOControls.lineClock(State, focusing);
+
+                        if ((State.Uncaging.uncage_whileImage || State.DO.DO_whileImage) && grabbing)
+                        {
+                            digitalOutput.dispose();
+                            digitalOutput = new IOControls.DigitalOutputSignal(State);
+                            digitalOutput.PutValue_and_Start(State.Acq.externalTrigger, use_uncaging, use_digital, grabbing);
+                        }
+                    }
+
 
                     mirrorAO.dispose();
                     mirrorAO = new IOControls.MirrorAO(State, shading);
@@ -540,7 +570,10 @@ namespace FLIMage
                         pockelAO.start(State.Acq.externalTrigger);
 
                     bool success = mirrorAO.start(State.Acq.externalTrigger);
-                    lineClock.start(State.Acq.externalTrigger);
+
+                    if (!State.Init.use_digitalLineClock)
+                        lineClock.start(State.Acq.externalTrigger);
+
                 }
             }
 
@@ -674,7 +707,8 @@ namespace FLIMage
 
             InitializeCounter(); //Counters Reset.
 
-            UIstopWatch_Frame.Start();
+            if (DEBUGMODE)
+                UIstopWatch_Frame.Start();
 
             System.Threading.Thread.Sleep(10);
 
@@ -720,6 +754,9 @@ namespace FLIMage
                 System.Threading.Thread.Sleep(50);
             }
 
+            if (digitalOutput != null)
+                digitalOutput.dispose();
+
             if (dLineClock != null)
                 dLineClock.dispose();
 
@@ -741,8 +778,8 @@ namespace FLIMage
             if (UncagingShutterAO != null)
                 UncagingShutterAO.dispose();
 
-            if (UncagingShutter_DO_S != null)
-                UncagingShutter_DO_S.dispose();
+            if (uncagingDOShutter_S != null)
+                uncagingDOShutter_S.dispose();
 
         }
 
@@ -760,8 +797,16 @@ namespace FLIMage
                 else
                     ShutterCtrl.close();
 
-                lineClock.stop();
-                dLineClock.Stop();
+                if (State.Init.use_digitalLineClock)
+                {
+                    dLineClock.Stop();
+                }
+                else
+                {
+                    lineClock.stop();
+                    digitalOutput.Stop();
+                }
+
                 mirrorAO.stop();
 
                 if (State.Init.EOM_nChannels > 0)
@@ -883,8 +928,13 @@ namespace FLIMage
         {
             if (use_nidaq)
             {
-                lineClock.dispose();
-                dLineClock.dispose();
+                if (State.Init.use_digitalLineClock)
+                    dLineClock.dispose();
+                else
+                {
+                    lineClock.dispose();
+                    digitalOutput.dispose();
+                }
                 mirrorAO.dispose();
 
                 if (State.Init.EOM_nChannels > 0)
@@ -896,7 +946,7 @@ namespace FLIMage
         {
             if (State.Init.DO_uncagingShutter && controlDO)
             {
-                UncagingShutter_DO_S.TurnOnOff(ON);
+                uncagingDOShutter_S.TurnOnOff(ON);
             }
 
             if (State.Init.AO_uncagingShutter && controlAO)
@@ -921,16 +971,31 @@ namespace FLIMage
 
             DisposeDAQ(); //Just to make sure in this thread...
             waitForAcquisitionTaskCompleted();
-            uncaging_SliceCounter++;
+            uncaging_DO_SliceCounter++;
 
             int standard_waitTime = 40;  //With this cycle, we can see if stopGrab is activated. 
 
-            if (State.Uncaging.sync_withSlice && State.Uncaging.uncage_whileImage) //Uncaging protocol!!
+            bool uncaging_slice = State.Uncaging.sync_withSlice && State.Uncaging.uncage_whileImage;
+            bool DO_slice = State.DO.sync_withSlice && State.DO.DO_whileImage;
+
+            double overHead_ms = 40; //each uncaging or DO output requires some overhead time.
+
+            if (uncaging_slice || DO_slice) //Uncaging protocol!!
             {
                 while (waitingSliceTask && !State.Acq.ZStack) //Cycle roughly every standard_waitTime.
                 {
                     double eTime2 = UIstopWatch_Image.ElapsedMilliseconds;
-                    double waitTime = State.Acq.sliceInterval * internalSliceCounter * 1000.0 - State.Uncaging.uncagingTime() - eTime2;
+
+                    double sampleLength_ms = State.Uncaging.sampleLength + overHead_ms;
+
+                    if (DO_slice)
+                        sampleLength_ms = State.DO.sampleLength + overHead_ms;
+
+                    if (uncaging_slice && DO_slice)
+                        sampleLength_ms = State.DO.sampleLength + State.Uncaging.sampleLength + 2 * overHead_ms;
+
+
+                    double waitTime = State.Acq.sliceInterval * internalSliceCounter * 1000.0 - sampleLength_ms - eTime2;
 
                     if (waitTime > standard_waitTime)
                     {
@@ -946,30 +1011,44 @@ namespace FLIMage
                     }
                 } //While
 
-                if (stopGrabActivated || !waitingSliceTask) //stoped in the middle.
+                if (stopGrabActivated || !waitingSliceTask) //stoped in the middle of loop.
                 {
                     FLIMage.MoveBackToHome();
                     return;
                 }
 
-                if (uncaging_SliceCounter >= State.Uncaging.SlicesBeforeUncage)
+                bool fire_uncaging_cond = uncaging_DO_SliceCounter >= State.Uncaging.SlicesBeforeUncage && uncaging_slice;
+                bool fire_DO_cond = uncaging_DO_SliceCounter >= State.DO.SlicesBeforeDO && DO_slice;
+                if (fire_uncaging_cond)
                 {
-                    bool fire = (uncaging_SliceCounter - State.Uncaging.SlicesBeforeUncage) % State.Uncaging.Uncage_SliceInterval == 0;
+                    bool fire = (uncaging_DO_SliceCounter - State.Uncaging.SlicesBeforeUncage) % State.Uncaging.Uncage_SliceInterval == 0;
                     fire = fire && FLIMage.uncaging_panel.uncaging_count < State.Uncaging.trainRepeat;
-                    //Stopwatch sw1 = new Stopwatch();
-                    //sw1.Start();
                     if (fire)
                     {
                         if (FLIMage.uncaging_panel != null)
                         {
                             Power_putEOMValues(true); //Put zero value first before opening the shutter.
                             ShutterCtrl.open();
-                            FLIMage.uncaging_panel.UncageOnce(false, this); //Takes 40 + uncaging ms.
-                                                                            //Debug.WriteLine("Uncaging time: {0}", sw1.ElapsedMilliseconds);
+                            FLIMage.uncaging_panel.UncageOnce(false, this);
                         }
                     }
                     else
-                        System.Threading.Thread.Sleep((int)State.Uncaging.uncagingTime());
+                        System.Threading.Thread.Sleep((int)(State.Uncaging.sampleLength + overHead_ms));
+                }
+
+                if (fire_DO_cond)
+                {
+                    bool fire = (uncaging_DO_SliceCounter - State.DO.SlicesBeforeDO) % State.DO.SliceInterval == 0;
+                    fire = fire && FLIMage.digital_panel.DO_count < State.DO.trainRepeat;
+                    if (fire)
+                    {
+                        if (FLIMage.digital_panel != null)
+                        {
+                            FLIMage.digital_panel.DigitalOutOnce(false, this); //Takes 40 + uncaging ms.
+                        }
+                    }
+                    else
+                        System.Threading.Thread.Sleep((int)(State.DO.sampleLength + overHead_ms));
                 }
             }
             else
@@ -1110,7 +1189,8 @@ namespace FLIMage
                     FLIMage.fastZcontrol.BeginInvoke((Action)delegate
                     {
                         FLIMage.fastZcontrol.Enabled = true;
-                        FLIMage.fastZcontrol.CalculateFastZParameters();
+                        if (parameters.fastZScan.measureTagParameters)
+                            FLIMage.fastZcontrol.CalculateFastZParameters();
                     });
                 }
                 else
@@ -1127,53 +1207,31 @@ namespace FLIMage
 
         ///////////////////////////////////FRAME EVENT HANDLING////////////////////////////////////////
 
-        public void BackGroundFLIMAcq(FiFio_multiBoards fifo, EventArgs e) //called when a Frame is done.
+
+        public void FrameDoneEvent(FiFio_multiBoards fifo, FrameEventArgs e) //called when a Frame is done.
         {
             lock (syncFLIMacq) //acquisition lock.
             {
-                BackGroundFLIMAll(fifo);
+                FrameDoneEvent_Core(fifo, e);
             }
-        }
-
-        public int[] GetAverageFrame(int nAverage)
-        {
-            int[] aveN = new int[State.Acq.nChannels];
-            for (int c = 0; c < State.Acq.nChannels; c++)
-                if (State.Acq.aveFrameA[c])
-                    aveN[c] = nAverage;
-                else
-                    aveN[c] = 1;
-
-            return aveN;
-        }
-
-        public int[] Get_n_time()
-        {
-            int[] n_time = Enumerable.Repeat<int>(State.Spc.spcData.n_dataPoint, State.Acq.nChannels).ToArray();
-            for (int i = 0; i < State.Acq.nChannels; i++)
-            {
-                if (!State.Acq.acqFLIMA[i])
-                    n_time[i] = 1;
-            }
-
-            return n_time;
         }
 
         /// <summary>
         /// This handles acquired images. Called by FiFo when a frame is acquired.
         /// </summary>
         /// <param name="fifo"></param>
-        public void BackGroundFLIMAll(FiFio_multiBoards fifo)
+        public void FrameDoneEvent_Core(FiFio_multiBoards fifo, FrameEventArgs e)
         {
             if (DEBUGMODE)
-                Debug.WriteLine("Frame done event received. Time = " + DateTime.Now.ToString("HH:mm:ss.fff"));
+                Debug.WriteLine("Frame done event received. Time = " + DateTime.Now.ToString("HH:mm:ss.fff") + " Frame = " + e.frameNumber);
 
             //Stopwatch sw = new Stopwatch();
             //sw.Start();
 
             if (FLIMage.snapShot & (use_pq || use_bh))
             {
-                UInt16[][][,,] FLIMTemp = (UInt16[][][,,])fifo.FLIM_data;
+                //UInt16[][][,,] FLIMTemp = (UInt16[][][,,])fifo.FLIM_data;
+                UInt16[][][,,] FLIMTemp = e.data;
 
                 FLIM_ImgData.LoadFLIMdata5D_Realtime(FLIMTemp); //Save in FLIM_ImgData class.
                 var flimZdata = ImageProcessing.PermuteFLIM5D(FLIM_ImgData.FLIMRaw5D, true); //Copy to FLIMPage.
@@ -1205,6 +1263,7 @@ namespace FLIMage
 
             if (use_pq || use_bh)
             {
+
                 Boolean running = false;
 
                 if (runningImgAcq)
@@ -1214,7 +1273,8 @@ namespace FLIMage
 
                 if (running)
                 {
-                    UInt16[][][,,] FLIMTemp = fifo.FLIM_data;
+                    //UInt16[][][,,] FLIMTemp = fifo.FLIM_data;
+                    UInt16[][][,,] FLIMTemp = e.data;
 
                     FLIM_ImgData.LoadFLIMdata5D_Realtime(FLIMTemp); //Save in FLIM_ImgData class. 
 
@@ -1235,7 +1295,7 @@ namespace FLIMage
                     {
                         FLIM_ImgData.nAveragedFrame = Enumerable.Repeat(1, State.Acq.nChannels).ToArray();
                     }
-                    else
+                    else if (grabbing)
                     {
                         for (int i = 0; i < State.Acq.nChannels; i++)
                             savebool[i] = (!(State.Acq.aveFrameA[i] && State.Acq.nAveFrame > 1)) && (State.Acq.acquisition[i]);
@@ -1286,21 +1346,53 @@ namespace FLIMage
                         }
                     } //if focus.
 
-                    FLIM_ImgData.saveChannels = (bool[])savebool.Clone();
+                    if (DEBUGMODE)
+                        Debug.WriteLine("Debug: C# Frame Done process 1");
 
-                    SaveUpdateAcquiredImage(savebool, protecting_save_task);
+                    if (grabbing || focusing)
+                    {
+                        FLIM_ImgData.saveChannels = (bool[])savebool.Clone();
+                        SaveUpdateAcquiredImage(savebool, protecting_save_task);
+                    }
 
-                    if (runningImgAcq)
+
+                    if (grabbing || focusing)
                         FLIMProgressChanged();
 
-
+                    if (DEBUGMODE)
+                        Debug.WriteLine("Debug: C# Frame Done Event Done");
                 } //Running
             } //if (use_bh || use_pq)
             //Debug.WriteLine("Time to acquire file: " + sw.ElapsedMilliseconds + " ms");
-        } //BackgroundFLIMAll.
+        } //FrameDoneEvent_Core.
+
+        public int[] GetAverageFrame(int nAverage)
+        {
+            int[] aveN = new int[State.Acq.nChannels];
+            for (int c = 0; c < State.Acq.nChannels; c++)
+                if (State.Acq.aveFrameA[c])
+                    aveN[c] = nAverage;
+                else
+                    aveN[c] = 1;
+
+            return aveN;
+        }
+
+        public int[] Get_n_time()
+        {
+            int[] n_time = Enumerable.Repeat<int>(State.Spc.spcData.n_dataPoint, State.Acq.nChannels).ToArray();
+            for (int i = 0; i < State.Acq.nChannels; i++)
+            {
+                if (!State.Acq.acqFLIMA[i])
+                    n_time[i] = 1;
+            }
+
+            return n_time;
+        }
+
 
         /// <summary>
-        /// SaveUpdateAcquiredImage: Called by BackgroundFLIMAll. Control saving and displaying acquired data.
+        /// SaveUpdateAcquiredImage: Called by FrameDoneEvent_Core. Control saving and displaying acquired data.
         /// </summary>
         /// <param name="saveFileBools"></param>
         /// <param name="protecting_save_task"></param>
@@ -1344,11 +1436,15 @@ namespace FLIMage
                 }
             }
 
+            bool busy = AO_FrameCounter - internalFrameCounter > 3;
 
-            UpdateImages();
+            if (DEBUGMODE && busy)
+                Debug.WriteLine("Busy!! ---- FrameCounter = " + internalFrameCounter + ", AO frame counter = " + AO_FrameCounter);
 
+            if (focusing || grabbing)
+                UpdateImages();
 
-            if (saveFileBools.Any(x => x == true))
+            if (grabbing && saveFileBools.Any(x => x == true))
             {
                 SaveFile(protecting_save_task);
             }
@@ -1726,16 +1822,21 @@ namespace FLIMage
 
             internalFrameCounter++;
 
+            if (DEBUGMODE)
+                Debug.WriteLine("Debug: C# Frame Done Event FLIMProgressChanged 1. grabbing = " + grabbing + ", focusing = " + focusing + ", stopGrabActivated = " + stopGrabActivated);
+
+
             //Update GUI. We are in different thread from main window. So, we will evoke it.
-            FLIMage.Invoke((Action)delegate
+            FLIMage.BeginInvoke((Action)delegate
              {
                  FLIMage.UpdateCounters();
              });
             //Debug.WriteLine("Acquired frame {0} / {1}, Slice {2} / {3}. Time = {4} ms", internalFrameCounter, Acq_nFrames, internalSliceCounter, State.Acq.nSlices, UIstopWatch_Frame.ElapsedMilliseconds);
 
-            UIstopWatch_Frame.Restart();
+            if (DEBUGMODE)
+                UIstopWatch_Frame.Restart(); //Not used?
 
-            if (internalFrameCounter == State.Acq.nFrames && !focusing)
+            if (internalFrameCounter == State.Acq.nFrames && !focusing && grabbing)
             {
                 //Debug.WriteLine("Slice done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 internalSliceCounter++;
@@ -1882,12 +1983,19 @@ namespace FLIMage
                     Debug.WriteLine("Warning.... Slice counter: {0} > n Slices: {1}", internalSliceCounter, State.Acq.nSlices);
                 }
 
-            }//internalFrame
+            }//internalFrame && !focusing
 
-            FLIMage.Invoke((Action)delegate
-            {
-                FLIMage.UpdateAverageFrameCounter();
-            });
+            if (DEBUGMODE)
+                Debug.WriteLine("Debug: C# Frame Done Event FLIMProgressChanged 3. grabbing = " + grabbing + ", focusing = " + focusing + ", stopGrabActivated = " + stopGrabActivated);
+
+            if (focusing || grabbing)
+                FLIMage.BeginInvoke((Action)delegate
+                {
+                    FLIMage.UpdateAverageFrameCounter();
+                });
+
+            if (DEBUGMODE)
+                Debug.WriteLine("Debug: C# Frame Done Event FLIMProgressChanged Done");
         }
 
         public void UpdateImages() //Can be slow. //Done with timer. //Thread safe.
@@ -1901,12 +2009,18 @@ namespace FLIMage
             {
                 if (State.Acq.fastZScan)
                 {
-                    if (displayPageCounter == 1) //First page = 1. After ++.
-                        FLIMage.image_display.SetFastZModeDisplay(State.Acq.fastZScan); //To set the page at the center.
-                    FLIMage.image_display.setupImageUpdateForZStack();
+                    FLIMage.image_display.BeginInvoke((Action)delegate
+                    {
+                        if (displayPageCounter == 1) //First page = 1. After ++.
+                            FLIMage.image_display.SetFastZModeDisplay(State.Acq.fastZScan); //To set the page at the center.
+                        FLIMage.image_display.setupImageUpdateForZStack();
+                    });
                 }
 
-                FLIMage.image_display.UpdateImages(true, true, focusing, true);
+                FLIMage.image_display.BeginInvoke((Action)delegate
+                {
+                    FLIMage.image_display.UpdateImages(true, true, focusing, true);
+                });
             }
             else
             {

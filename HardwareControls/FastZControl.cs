@@ -272,14 +272,14 @@ namespace FLIMage.HardwareControls
         {
 
             FastZSliceStep.Text = String.Format("Slice step: {0:0.00} μm, {1:0.0} deg", State.Acq.FastZ_umPerSlice, State.Acq.FastZ_degreePerSlice);
-            CountPerZScanEB.Text = parameters.fastZScan.TimePerZScan.ToString();
+            CountPerZScanEB.Text = parameters.fastZScan.CountPerFastZCycle.ToString();
 
-            var res = parameters.fastZScan.TimePerZScan % parameters.fastZScan.VoxelCount;
+            var res = parameters.fastZScan.CountPerFastZCycle % parameters.fastZScan.VoxelCount;
             if (!State.Acq.FastZ_phase_detection_mode)
                 res = (parameters.fastZScan.phaseRangeCount[1] - parameters.fastZScan.phaseRangeCount[0]) % parameters.fastZScan.VoxelCount;
 
             ResidualEB.Text = res.ToString();
-            Residual_deg.Text = String.Format("({0:0.0} deg)", (double)res / parameters.fastZScan.TimePerZScan * 360.0);
+            Residual_deg.Text = String.Format("({0:0.0} deg)", (double)res / parameters.fastZScan.CountPerFastZCycle * 360.0);
 
             //UpdateState(FLIMage);
             int zScanPerLine = parameters.fastZScan.ZScanPerLine;
@@ -298,7 +298,7 @@ namespace FLIMage.HardwareControls
                 VoxelCount.Text = parameters.fastZScan.VoxelCount.ToString();
                 VoxelTimeUS.Text = String.Format("{0:0.00}", parameters.fastZScan.VoxelTimeUs); //parameters.fastZScan.VoxelTimeUs.ToString();
 
-                US_Per_ZScan.Text = String.Format("{0:0.00}", parameters.fastZScan.TimePerZScan * parameters.spcData.time_per_unit * 1e6);
+                US_Per_ZScan.Text = String.Format("{0:0.00}", parameters.fastZScan.CountPerFastZCycle * parameters.spcData.time_per_unit * 1e6);
                 FastZScanMsPerLine.Text = String.Format("{0:0.0}", State.Acq.FastZ_msPerLine);
             }
             else
@@ -390,7 +390,9 @@ namespace FLIMage.HardwareControls
                     parameters.fastZScan.phaseRangeCount[i] = (uint)(CountPerZScanD * parameters.fastZScan.phaseRange[i] / 360.0);
 
 
-                parameters.fastZScan.TimePerZScan = (uint)CountPerZScanD;
+                parameters.fastZScan.CountPerFastZCycle = (uint)CountPerZScanD;
+                parameters.fastZScan.CountPerFastZCycleHalf = (uint)(CountPerZScanD / 2);
+
                 parameters.fastZScan.ZScanPerLine = (int)(msPerLine * parameters.fastZScan.FrequencyKHz * State.Acq.fillFraction);
 
                 int nSlices = State.Acq.FastZ_nSlices;
@@ -402,7 +404,7 @@ namespace FLIMage.HardwareControls
                     parameters.fastZScan.VoxelTimeUs = 1000.0 / parameters.fastZScan.FrequencyKHz / nSlices;
                     parameters.fastZScan.VoxelCount = (int)(parameters.fastZScan.VoxelTimeUs / parameters.spcData.time_per_unit / 1e6);
 
-                    nSlices = (int)parameters.fastZScan.TimePerZScan / parameters.fastZScan.VoxelCount;
+                    nSlices = (int)parameters.fastZScan.CountPerFastZCycle / parameters.fastZScan.VoxelCount;
 
                     State.Acq.FastZ_nSlices = nSlices;
                     parameters.fastZScan.nFastZSlices = State.Acq.FastZ_nSlices;
@@ -426,6 +428,19 @@ namespace FLIMage.HardwareControls
 
                 int indx = Preset_Pulldown.SelectedIndex;
                 State.Acq.FastZ_umPerSlice = (indx >= 0) ? preset[indx][0] / 90 * degPerSlice : 1;
+
+
+                uint nZlocs = (uint)State.Acq.FastZ_nSlices;
+                if (parameters.fastZScan.phase_detection_mode)
+                {
+                    parameters.fastZScan.CountPerFastZSlice = parameters.fastZScan.CountPerFastZCycle / nZlocs;
+                    parameters.fastZScan.residual_for_PhaseDetection = parameters.fastZScan.CountPerFastZCycle % nZlocs;
+                }
+                else
+                {
+                    parameters.fastZScan.CountPerFastZSlice = (parameters.fastZScan.phaseRangeCount[1] - parameters.fastZScan.phaseRangeCount[0]) / nZlocs;
+                    parameters.fastZScan.residual_for_PhaseDetection = 0;
+                }
 
                 DisplayTagLensParameters(FLIMage);
             }

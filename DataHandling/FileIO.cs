@@ -48,6 +48,7 @@ namespace FLIMage
             headerList_nonDevice.Add("State.Spc.datainfo");
             headerList_nonDevice.Add("State.Spc.spcData");
             headerList_nonDevice.Add("State.Uncaging");
+            headerList_nonDevice.Add("State.DO");
 
             headerDevice = new List<String>();
             headerDevice.Add("State.Init");
@@ -77,7 +78,8 @@ namespace FLIMage
                 obj = Scan.Motor;
             else if (strA.Contains("Uncaging"))
                 obj = Scan.Uncaging;
-
+            else if (strA.Contains("DO"))
+                obj = Scan.DO;
             return obj;
         }
 

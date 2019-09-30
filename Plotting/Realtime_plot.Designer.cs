@@ -75,13 +75,11 @@
             // 
             this.meanIntensity_radio.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.meanIntensity_radio.AutoSize = true;
-            this.meanIntensity_radio.Checked = true;
             this.meanIntensity_radio.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
             this.meanIntensity_radio.Location = new System.Drawing.Point(449, 8);
             this.meanIntensity_radio.Name = "meanIntensity_radio";
             this.meanIntensity_radio.Size = new System.Drawing.Size(100, 17);
             this.meanIntensity_radio.TabIndex = 5;
-            this.meanIntensity_radio.TabStop = true;
             this.meanIntensity_radio.Text = "Intensity (Mean)";
             this.meanIntensity_radio.UseVisualStyleBackColor = true;
             this.meanIntensity_radio.Click += new System.EventHandler(this.Intensity_radio_Click);
@@ -190,11 +188,13 @@
             // 
             this.sumIntensity_radio.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.sumIntensity_radio.AutoSize = true;
+            this.sumIntensity_radio.Checked = true;
             this.sumIntensity_radio.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
             this.sumIntensity_radio.Location = new System.Drawing.Point(449, 28);
             this.sumIntensity_radio.Name = "sumIntensity_radio";
             this.sumIntensity_radio.Size = new System.Drawing.Size(94, 17);
             this.sumIntensity_radio.TabIndex = 485;
+            this.sumIntensity_radio.TabStop = true;
             this.sumIntensity_radio.Text = "Intensity (Sum)";
             this.sumIntensity_radio.UseVisualStyleBackColor = true;
             this.sumIntensity_radio.Click += new System.EventHandler(this.Intensity_radio_Click);

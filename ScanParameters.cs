@@ -16,6 +16,7 @@ namespace FLIMage
         public Motor_Parameters Motor = new Motor_Parameters();
         public Files_Setting Files = new Files_Setting();
         public Uncaging_Setting Uncaging = new Uncaging_Setting();
+        public Digital_Output_Setting DO  = new Digital_Output_Setting();
 
         public class Initialize
         {
@@ -49,6 +50,9 @@ namespace FLIMage
 
             public String DigitalLinePort = "line2";
             public String DigitalShutterPort = "line3";
+            public String DigitalOutput1 = "line4";
+            public String DigitalOutput2 = "line5";
+            public String DigitalOutput3 = "line6";
             public String TriggerInput = "PFI6";
             public String SampleClockPort = "PFI4";
 
@@ -70,7 +74,8 @@ namespace FLIMage
             public int EOM_nChannels = 2;
             public bool AO_uncagingShutter = true;
             public bool DO_uncagingShutter = false;
-            public bool DO_uncagingShutter_useForPMTsignal = false;
+            public bool use_digitalLineClock = false;
+            public bool lineClockAcitveHigh = true;
             public double[] mirrorParkPosition = { -1, -1 };
 
             public String MotorComPort = "COM1";
@@ -79,7 +84,7 @@ namespace FLIMage
             public int MotorDisplayUpdateTime_ms = 1000;
             public double[] MotorConversionFactor = { 0, 0, 0 };
 
-            public String MicroscopeSystem = ""; //"ThorBScopeGG"; //or None
+            public String MicroscopeSystem = ""; //"ThorBScopeGG"; //"THorBScopeRG" or None
             public String ThorPMTModule = "ThorECU"; //or ThorPMT21000
             public String ThorFlipper = "ThorBCA"; // or ThorBScope
             public bool Use_EPhys = true;
@@ -221,6 +226,35 @@ namespace FLIMage
             //public bool SavePagesInMemory = false;
         }
 
+        public class Digital_Output_Setting
+        {
+            public int NChannels = 3;
+            public string name = "pulse set";
+            public bool DO_whileImage = false;
+            public bool sync_withFrame = false;
+            public bool sync_withSlice = true;
+            public double FramesBeforeDO = 32;
+            public int SlicesBeforeDO = 32;
+            public double FrameInterval = 4;
+            public double SliceInterval = 1;
+
+            public int pulse_number = 1;
+            public int[] nPulses = { 1, 0, 0 };
+            public double[] pulseWidth = { 6, 6, 6 }; //ms
+            public double[] pulseISI = { 2048, 2048, 2048 };
+            public double[] pulseDelay = { 100, 100, 100 };
+            public bool[] active_high = { true, true, true };
+
+            public double sampleLength = 300; //milisecond.
+            public double outputRate = 4000;
+
+            public double baselineBeforeTrain_forFrame = 2048;
+            public double pulseSetInterval_forFrame = 2048;
+
+            public int trainRepeat = 1;
+            public double trainInterval = 2048; //ms
+        }
+
         public class Uncaging_Setting
         {
             public string name = "pulse set";
@@ -236,6 +270,8 @@ namespace FLIMage
             public double AnalogShutter_delay = 4; //ms
             public double DigitalShutter_delay = 8; //ms
             public double Mirror_delay = 4; //ms
+
+            public bool shutter_activeHigh = true;
 
             //public double delay = 8192; //ms
             public int nPulses = 30;
@@ -267,11 +303,6 @@ namespace FLIMage
 
             public bool MoveMirrorsToUncagingPosition = true;
             public bool TurnOffImagingDuringUncaging = true;
-
-            public double uncagingTime()
-            {
-                return 40.0 + pulseWidth + Math.Max(AnalogShutter_delay, DigitalShutter_delay);
-            }
         }
 
         public class FLIM

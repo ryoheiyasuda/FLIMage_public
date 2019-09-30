@@ -123,6 +123,7 @@
   </PropertyGroup>
   <PropertyGroup />
   <PropertyGroup />
+  <PropertyGroup />
   <PropertyGroup>
     <ApplicationManifest>flimage.manifest</ApplicationManifest>
   </PropertyGroup>
@@ -174,6 +175,12 @@
       <DependentUpon>PMTControl.cs</DependentUpon>
     </Compile>
     <Compile Include="HardwareControls\StageControls\ThorMCMX000.cs" />
+    <Compile Include="HardwareControls\Digital_Control_Panel.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="HardwareControls\Digital_Control_Panel.Designer.cs">
+      <DependentUpon>Digital_Control_Panel.cs</DependentUpon>
+    </Compile>
     <Compile Include="Main\FLIMage_IO.cs" />
     <Compile Include="FlowControls\COMserver.cs" />
     <Compile Include="HardwareControls\DigitalSignalPanel.cs">
@@ -326,6 +333,9 @@
     <EmbeddedResource Include="HardwareControls\PMTControl.resx">
       <DependentUpon>PMTControl.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="HardwareControls\Digital_Control_Panel.resx">
+      <DependentUpon>Digital_Control_Panel.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Main\FLIMageMain.resx">
       <DependentUpon>FLIMageMain.cs</DependentUpon>
     </EmbeddedResource>
@@ -382,7 +392,6 @@
       <DependentUpon>Uncaging_Trigger_Panel.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="flimage.manifest" />
-    <None Include="Main\app.manifest" />
     <None Include="Main\packages.config" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">

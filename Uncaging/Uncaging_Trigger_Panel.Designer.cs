@@ -52,6 +52,13 @@
             this.label4 = new System.Windows.Forms.Label();
             this.uncageNote = new System.Windows.Forms.Label();
             this.groupBox10 = new System.Windows.Forms.GroupBox();
+            this.FrameNote = new System.Windows.Forms.Label();
+            this.SliceNote = new System.Windows.Forms.Label();
+            this.BaseLine_Slice_s = new System.Windows.Forms.Label();
+            this.label17 = new System.Windows.Forms.Label();
+            this.label19 = new System.Windows.Forms.Label();
+            this.label18 = new System.Windows.Forms.Label();
+            this.SliceInterval_s = new System.Windows.Forms.Label();
             this.label14 = new System.Windows.Forms.Label();
             this.RepeatFrame = new System.Windows.Forms.Label();
             this.FrameBeforeUncage_ms = new System.Windows.Forms.TextBox();
@@ -103,13 +110,6 @@
             this.advancedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.calibrationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.miscSettingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.SliceInterval_s = new System.Windows.Forms.Label();
-            this.label18 = new System.Windows.Forms.Label();
-            this.label19 = new System.Windows.Forms.Label();
-            this.label17 = new System.Windows.Forms.Label();
-            this.BaseLine_Slice_s = new System.Windows.Forms.Label();
-            this.SliceNote = new System.Windows.Forms.Label();
-            this.FrameNote = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.PulseNumber)).BeginInit();
             this.groupBox10.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.panel1)).BeginInit();
@@ -406,6 +406,84 @@
             this.groupBox10.TabIndex = 370;
             this.groupBox10.TabStop = false;
             this.groupBox10.Text = "Uncage/Trigger during imaging";
+            // 
+            // FrameNote
+            // 
+            this.FrameNote.AutoSize = true;
+            this.FrameNote.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.FrameNote.Location = new System.Drawing.Point(7, 149);
+            this.FrameNote.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.FrameNote.Name = "FrameNote";
+            this.FrameNote.Size = new System.Drawing.Size(119, 14);
+            this.FrameNote.TabIndex = 429;
+            this.FrameNote.Text = "(Frame interval = 0.0 s)";
+            // 
+            // SliceNote
+            // 
+            this.SliceNote.AutoSize = true;
+            this.SliceNote.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.SliceNote.Location = new System.Drawing.Point(149, 149);
+            this.SliceNote.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.SliceNote.Name = "SliceNote";
+            this.SliceNote.Size = new System.Drawing.Size(112, 14);
+            this.SliceNote.TabIndex = 428;
+            this.SliceNote.Text = "(Slice interval = 0.0 s)";
+            // 
+            // BaseLine_Slice_s
+            // 
+            this.BaseLine_Slice_s.AutoSize = true;
+            this.BaseLine_Slice_s.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.BaseLine_Slice_s.Location = new System.Drawing.Point(200, 74);
+            this.BaseLine_Slice_s.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.BaseLine_Slice_s.Name = "BaseLine_Slice_s";
+            this.BaseLine_Slice_s.Size = new System.Drawing.Size(31, 14);
+            this.BaseLine_Slice_s.TabIndex = 427;
+            this.BaseLine_Slice_s.Text = "0.0 s";
+            // 
+            // label17
+            // 
+            this.label17.AutoSize = true;
+            this.label17.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label17.Location = new System.Drawing.Point(226, 57);
+            this.label17.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.label17.Name = "label17";
+            this.label17.Size = new System.Drawing.Size(36, 14);
+            this.label17.TabIndex = 425;
+            this.label17.Text = "Slices";
+            // 
+            // label19
+            // 
+            this.label19.AutoSize = true;
+            this.label19.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label19.Location = new System.Drawing.Point(149, 86);
+            this.label19.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.label19.Name = "label19";
+            this.label19.Size = new System.Drawing.Size(90, 14);
+            this.label19.TabIndex = 424;
+            this.label19.Text = "Pulse-set interval";
+            this.label19.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // label18
+            // 
+            this.label18.AutoSize = true;
+            this.label18.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label18.Location = new System.Drawing.Point(149, 35);
+            this.label18.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.label18.Name = "label18";
+            this.label18.Size = new System.Drawing.Size(122, 14);
+            this.label18.TabIndex = 423;
+            this.label18.Text = "Baseline before uncage";
+            // 
+            // SliceInterval_s
+            // 
+            this.SliceInterval_s.AutoSize = true;
+            this.SliceInterval_s.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.SliceInterval_s.Location = new System.Drawing.Point(198, 126);
+            this.SliceInterval_s.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.SliceInterval_s.Name = "SliceInterval_s";
+            this.SliceInterval_s.Size = new System.Drawing.Size(31, 14);
+            this.SliceInterval_s.TabIndex = 422;
+            this.SliceInterval_s.Text = "0.0 s";
             // 
             // label14
             // 
@@ -777,11 +855,6 @@
             this.panel1.Size = new System.Drawing.Size(612, 161);
             this.panel1.TabIndex = 395;
             this.panel1.TabStop = false;
-            this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
-            this.panel1.DoubleClick += new System.EventHandler(this.panel1_DoubleClick);
-            this.panel1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panel1_MouseDown);
-            this.panel1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panel1_MouseMove);
-            this.panel1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panel1_MouseUp);
             // 
             // panel2
             // 
@@ -791,11 +864,6 @@
             this.panel2.Size = new System.Drawing.Size(612, 161);
             this.panel2.TabIndex = 396;
             this.panel2.TabStop = false;
-            this.panel2.Paint += new System.Windows.Forms.PaintEventHandler(this.panel2_Paint);
-            this.panel2.DoubleClick += new System.EventHandler(this.panel2_DoubleClick);
-            this.panel2.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panel2_MouseDown);
-            this.panel2.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panel2_MouseMove);
-            this.panel2.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panel2_MouseUp);
             // 
             // label1
             // 
@@ -804,9 +872,9 @@
             this.label1.Location = new System.Drawing.Point(24, 295);
             this.label1.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(127, 14);
+            this.label1.Size = new System.Drawing.Size(109, 14);
             this.label1.TabIndex = 397;
-            this.label1.Text = "Pockels cell + AO shutter";
+            this.label1.Text = "Pockels cell + shutter";
             // 
             // label2
             // 
@@ -827,10 +895,11 @@
             this.ShowShutter.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ShowShutter.Location = new System.Drawing.Point(159, 294);
             this.ShowShutter.Name = "ShowShutter";
-            this.ShowShutter.Size = new System.Drawing.Size(110, 18);
+            this.ShowShutter.Size = new System.Drawing.Size(92, 18);
             this.ShowShutter.TabIndex = 399;
-            this.ShowShutter.Text = "Show AO shutter";
+            this.ShowShutter.Text = "Show shutter";
             this.ShowShutter.UseVisualStyleBackColor = true;
+            this.ShowShutter.CheckedChanged += new System.EventHandler(this.ShowShutter_CheckedChanged);
             this.ShowShutter.Click += new System.EventHandler(this.ShowShutter_Click);
             // 
             // UncageOnlyPanel
@@ -973,9 +1042,9 @@
             this.ShowRepeat.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ShowRepeat.Location = new System.Drawing.Point(274, 294);
             this.ShowRepeat.Name = "ShowRepeat";
-            this.ShowRepeat.Size = new System.Drawing.Size(155, 18);
+            this.ShowRepeat.Size = new System.Drawing.Size(258, 18);
             this.ShowRepeat.TabIndex = 401;
-            this.ShowRepeat.Text = "Show repeat (sync frame)";
+            this.ShowRepeat.Text = "Show whole trace for \"sync with frames\" mode";
             this.ShowRepeat.UseVisualStyleBackColor = true;
             this.ShowRepeat.Click += new System.EventHandler(this.ShowShutter_Click);
             // 
@@ -1018,84 +1087,6 @@
             this.miscSettingToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
             this.miscSettingToolStripMenuItem.Text = "Misc setting";
             this.miscSettingToolStripMenuItem.Click += new System.EventHandler(this.miscSettingToolStripMenuItem_Click);
-            // 
-            // SliceInterval_s
-            // 
-            this.SliceInterval_s.AutoSize = true;
-            this.SliceInterval_s.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.SliceInterval_s.Location = new System.Drawing.Point(198, 126);
-            this.SliceInterval_s.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.SliceInterval_s.Name = "SliceInterval_s";
-            this.SliceInterval_s.Size = new System.Drawing.Size(31, 14);
-            this.SliceInterval_s.TabIndex = 422;
-            this.SliceInterval_s.Text = "0.0 s";
-            // 
-            // label18
-            // 
-            this.label18.AutoSize = true;
-            this.label18.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label18.Location = new System.Drawing.Point(149, 35);
-            this.label18.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.label18.Name = "label18";
-            this.label18.Size = new System.Drawing.Size(122, 14);
-            this.label18.TabIndex = 423;
-            this.label18.Text = "Baseline before uncage";
-            // 
-            // label19
-            // 
-            this.label19.AutoSize = true;
-            this.label19.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label19.Location = new System.Drawing.Point(149, 86);
-            this.label19.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.label19.Name = "label19";
-            this.label19.Size = new System.Drawing.Size(90, 14);
-            this.label19.TabIndex = 424;
-            this.label19.Text = "Pulse-set interval";
-            this.label19.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // label17
-            // 
-            this.label17.AutoSize = true;
-            this.label17.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label17.Location = new System.Drawing.Point(226, 57);
-            this.label17.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(36, 14);
-            this.label17.TabIndex = 425;
-            this.label17.Text = "Slices";
-            // 
-            // BaseLine_Slice_s
-            // 
-            this.BaseLine_Slice_s.AutoSize = true;
-            this.BaseLine_Slice_s.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.BaseLine_Slice_s.Location = new System.Drawing.Point(200, 74);
-            this.BaseLine_Slice_s.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.BaseLine_Slice_s.Name = "BaseLine_Slice_s";
-            this.BaseLine_Slice_s.Size = new System.Drawing.Size(31, 14);
-            this.BaseLine_Slice_s.TabIndex = 427;
-            this.BaseLine_Slice_s.Text = "0.0 s";
-            // 
-            // SliceNote
-            // 
-            this.SliceNote.AutoSize = true;
-            this.SliceNote.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.SliceNote.Location = new System.Drawing.Point(149, 149);
-            this.SliceNote.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.SliceNote.Name = "SliceNote";
-            this.SliceNote.Size = new System.Drawing.Size(112, 14);
-            this.SliceNote.TabIndex = 428;
-            this.SliceNote.Text = "(Slice interval = 0.0 s)";
-            // 
-            // FrameNote
-            // 
-            this.FrameNote.AutoSize = true;
-            this.FrameNote.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.FrameNote.Location = new System.Drawing.Point(7, 149);
-            this.FrameNote.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.FrameNote.Name = "FrameNote";
-            this.FrameNote.Size = new System.Drawing.Size(119, 14);
-            this.FrameNote.TabIndex = 429;
-            this.FrameNote.Text = "(Frame interval = 0.0 s)";
             // 
             // Uncaging_Trigger_Panel
             // 

@@ -3737,11 +3737,11 @@ namespace FLIMage.Analysis
 
             Task openTask = Task.Factory.StartNew(() =>
             {
-                ret = FileIO.OpenFLIMTiffFilePage(fn, 0, 0, FLIM_ImgData, true, true); //Save In Mmeory for the first page --- we don't know the format yet.                
+                //Used to open a file. Anyway I removed it.... (now after openTask.wait()).
             });
+            openTask.Wait();
 
-
-            openTask.Wait(); //Wait!!
+            ret = FileIO.OpenFLIMTiffFilePage(fn, 0, 0, FLIM_ImgData, true, true); //Save In Mmeory for the first page --- we don't know the format yet.                
 
             if (ret != FileIO.FileError.Success)
                 return ret;
@@ -3795,7 +3795,8 @@ namespace FLIMage.Analysis
             for (short i = 1; i < nPages + 1; i++)
             {
                 int pre = i - 1;
-                openTask.Wait();
+                if (openTask != null)
+                    openTask.Wait();
                 openTask.Dispose();
 
 
@@ -3837,8 +3838,8 @@ namespace FLIMage.Analysis
 
                             if (pageZ == FLIM_ImgData.nFastZ - 1)
                             {
-                        //Last page. Copy to FLIM_Pages5D directly.
-                        FLIM_ImgData.Add_AllFLIM_PageFormat_To_FLIM_Pages5D(FLIM_ImgData.FLIM_Pages, FLIM_ImgData.acquiredTime_Pages[0], page1);
+                            //Last page. Copy to FLIM_Pages5D directly.
+                            FLIM_ImgData.Add_AllFLIM_PageFormat_To_FLIM_Pages5D(FLIM_ImgData.FLIM_Pages, FLIM_ImgData.acquiredTime_Pages[0], page1);
                             }
                         }, new { i2 = i });
                     }
@@ -4385,6 +4386,7 @@ namespace FLIMage.Analysis
         {
             if (on)
             {
+                
                 FrameSlicePanel.Location = new Point(185, 102);
                 FrameSlicePanel.Text = "Fast Z Stack";
                 FastZPanel.Visible = true;
@@ -6003,7 +6005,7 @@ namespace FLIMage.Analysis
                     FLIM_ImgData.calculate_MeanLifetime_ch(currentChannel);
 
                     if (plot_realtime.plotType == plot_timeCourse.plotWhat.meanIntensity)
-                        realtimeData.Add(FLIM_ImgData.Roi.intensity[currentChannel]);
+                        realtimeData.Add(FLIM_ImgData.Roi.intensity[currentChannel] / (double)FLIM_ImgData.nAveragedFrame[currentChannel]);
                     else if (plot_realtime.plotType == plot_timeCourse.plotWhat.sumIntensity)
                         realtimeData.Add(FLIM_ImgData.Roi.sumIntensity[currentChannel]);
                     else

@@ -417,6 +417,8 @@
             this.Acquisition1 = new System.Windows.Forms.CheckBox();
             this.StatusText = new System.Windows.Forms.Label();
             this.MotorStatus = new System.Windows.Forms.Label();
+            this.DO_whileImaging_check = new System.Windows.Forms.CheckBox();
+            this.digitalOutputControlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             tabPage2 = new System.Windows.Forms.TabPage();
             tabPage2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.PowerSlider2)).BeginInit();
@@ -2181,21 +2183,21 @@
             // nIDAQConfigToolStripMenuItem
             // 
             this.nIDAQConfigToolStripMenuItem.Name = "nIDAQConfigToolStripMenuItem";
-            this.nIDAQConfigToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.nIDAQConfigToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.nIDAQConfigToolStripMenuItem.Text = "Hardware Config";
             this.nIDAQConfigToolStripMenuItem.Click += new System.EventHandler(this.NIDAQConfigToolStripMenuItem_Click);
             // 
             // dIOPanelToolStripMenuItem
             // 
             this.dIOPanelToolStripMenuItem.Name = "dIOPanelToolStripMenuItem";
-            this.dIOPanelToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.dIOPanelToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.dIOPanelToolStripMenuItem.Text = "DIO panel";
             this.dIOPanelToolStripMenuItem.Click += new System.EventHandler(this.dIOPanelToolStripMenuItem_Click);
             // 
             // pMTControlToolStripMenuItem
             // 
             this.pMTControlToolStripMenuItem.Name = "pMTControlToolStripMenuItem";
-            this.pMTControlToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.pMTControlToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.pMTControlToolStripMenuItem.Text = "PMT Control";
             this.pMTControlToolStripMenuItem.Click += new System.EventHandler(this.pMTControlToolStripMenuItem_Click);
             // 
@@ -2203,6 +2205,7 @@
             // 
             this.ToolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.uncagingControlToolStripMenuItem1,
+            this.digitalOutputControlToolStripMenuItem,
             this.imageSeqControlToolStripMenuItem,
             this.fastZControlToolStripMenuItem,
             this.shadingCorretionToolStripMenuItem,
@@ -2218,56 +2221,56 @@
             // uncagingControlToolStripMenuItem1
             // 
             this.uncagingControlToolStripMenuItem1.Name = "uncagingControlToolStripMenuItem1";
-            this.uncagingControlToolStripMenuItem1.Size = new System.Drawing.Size(172, 22);
+            this.uncagingControlToolStripMenuItem1.Size = new System.Drawing.Size(192, 22);
             this.uncagingControlToolStripMenuItem1.Text = "Uncaging Control";
             this.uncagingControlToolStripMenuItem1.Click += new System.EventHandler(this.uncagingControlToolStripMenuItem_Click);
             // 
             // imageSeqControlToolStripMenuItem
             // 
             this.imageSeqControlToolStripMenuItem.Name = "imageSeqControlToolStripMenuItem";
-            this.imageSeqControlToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.imageSeqControlToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.imageSeqControlToolStripMenuItem.Text = "Image Seq Control";
             this.imageSeqControlToolStripMenuItem.Click += new System.EventHandler(this.imageSeqControlToolStripMenuItem_Click);
             // 
             // fastZControlToolStripMenuItem
             // 
             this.fastZControlToolStripMenuItem.Name = "fastZControlToolStripMenuItem";
-            this.fastZControlToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.fastZControlToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.fastZControlToolStripMenuItem.Text = "FastZ Control";
             this.fastZControlToolStripMenuItem.Click += new System.EventHandler(this.fastZControlToolStripMenuItem_Click);
             // 
             // shadingCorretionToolStripMenuItem
             // 
             this.shadingCorretionToolStripMenuItem.Name = "shadingCorretionToolStripMenuItem";
-            this.shadingCorretionToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.shadingCorretionToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.shadingCorretionToolStripMenuItem.Text = "Shading Corretion";
             this.shadingCorretionToolStripMenuItem.Click += new System.EventHandler(this.shadingCorretionToolStripMenuItem_Click);
             // 
             // driftCorrectionToolStripMenuItem
             // 
             this.driftCorrectionToolStripMenuItem.Name = "driftCorrectionToolStripMenuItem";
-            this.driftCorrectionToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.driftCorrectionToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.driftCorrectionToolStripMenuItem.Text = "Drift Correction";
             this.driftCorrectionToolStripMenuItem.Click += new System.EventHandler(this.driftCorrectionToolStripMenuItem_Click);
             // 
             // remoteControlToolStripMenuItem1
             // 
             this.remoteControlToolStripMenuItem1.Name = "remoteControlToolStripMenuItem1";
-            this.remoteControlToolStripMenuItem1.Size = new System.Drawing.Size(172, 22);
+            this.remoteControlToolStripMenuItem1.Size = new System.Drawing.Size(192, 22);
             this.remoteControlToolStripMenuItem1.Text = "Remote Control";
             this.remoteControlToolStripMenuItem1.Click += new System.EventHandler(this.remoteControlToolStripMenuItem1_Click);
             // 
             // stageControlToolStripMenuItem
             // 
             this.stageControlToolStripMenuItem.Name = "stageControlToolStripMenuItem";
-            this.stageControlToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.stageControlToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.stageControlToolStripMenuItem.Text = "Stage Control";
             this.stageControlToolStripMenuItem.Click += new System.EventHandler(this.stageControlToolStripMenuItem_Click);
             // 
             // electrophysiologyToolStripMenuItem
             // 
             this.electrophysiologyToolStripMenuItem.Name = "electrophysiologyToolStripMenuItem";
-            this.electrophysiologyToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.electrophysiologyToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.electrophysiologyToolStripMenuItem.Text = "Electrophysiology";
             this.electrophysiologyToolStripMenuItem.Click += new System.EventHandler(this.electrophysiologyToolStripMenuItem_Click);
             // 
@@ -2290,7 +2293,7 @@
             // 
             this.Uncage_while_image_check.AutoSize = true;
             this.Uncage_while_image_check.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Uncage_while_image_check.Location = new System.Drawing.Point(17, 38);
+            this.Uncage_while_image_check.Location = new System.Drawing.Point(17, 20);
             this.Uncage_while_image_check.Name = "Uncage_while_image_check";
             this.Uncage_while_image_check.Size = new System.Drawing.Size(131, 18);
             this.Uncage_while_image_check.TabIndex = 317;
@@ -2731,6 +2734,7 @@
             // 
             // acquisitionPanel
             // 
+            this.acquisitionPanel.Controls.Add(this.DO_whileImaging_check);
             this.acquisitionPanel.Controls.Add(this.laserWarningButton);
             this.acquisitionPanel.Controls.Add(this.analyzeEach);
             this.acquisitionPanel.Controls.Add(this.label79);
@@ -5114,6 +5118,25 @@
             this.MotorStatus.TabIndex = 335;
             this.MotorStatus.Text = "Status...";
             // 
+            // DO_whileImaging_check
+            // 
+            this.DO_whileImaging_check.AutoSize = true;
+            this.DO_whileImaging_check.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.DO_whileImaging_check.Location = new System.Drawing.Point(17, 38);
+            this.DO_whileImaging_check.Name = "DO_whileImaging_check";
+            this.DO_whileImaging_check.Size = new System.Drawing.Size(109, 18);
+            this.DO_whileImaging_check.TabIndex = 323;
+            this.DO_whileImaging_check.Text = "DO while imaging";
+            this.DO_whileImaging_check.UseVisualStyleBackColor = true;
+            this.DO_whileImaging_check.Click += new System.EventHandler(this.Uncage_while_image_check_Click);
+            // 
+            // digitalOutputControlToolStripMenuItem
+            // 
+            this.digitalOutputControlToolStripMenuItem.Name = "digitalOutputControlToolStripMenuItem";
+            this.digitalOutputControlToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.digitalOutputControlToolStripMenuItem.Text = "Digital Output Control";
+            this.digitalOutputControlToolStripMenuItem.Click += new System.EventHandler(this.digitalOutputControlToolStripMenuItem_Click);
+            // 
             // FLIMageMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -5605,6 +5628,8 @@
         private System.Windows.Forms.RadioButton BackToStartRadio;
         private System.Windows.Forms.RadioButton BackToCenterRadio;
         private System.Windows.Forms.RadioButton StayMotorRadio;
+        public System.Windows.Forms.CheckBox DO_whileImaging_check;
+        private System.Windows.Forms.ToolStripMenuItem digitalOutputControlToolStripMenuItem;
     }
 }
 

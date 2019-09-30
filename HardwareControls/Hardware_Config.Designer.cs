@@ -105,6 +105,8 @@
             this.label37 = new System.Windows.Forms.Label();
             this.label38 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.label13 = new System.Windows.Forms.Label();
+            this.label11 = new System.Windows.Forms.Label();
             this.Shutter_DOBoard = new System.Windows.Forms.TextBox();
             this.ActiveLow = new System.Windows.Forms.CheckBox();
             this.label46 = new System.Windows.Forms.Label();
@@ -112,20 +114,18 @@
             this.Shutter_DOChannel = new System.Windows.Forms.TextBox();
             this.label44 = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.MH_radio = new System.Windows.Forms.RadioButton();
             this.BH_radio = new System.Windows.Forms.RadioButton();
             this.FLIM_onCheck = new System.Windows.Forms.CheckBox();
             this.PQ_radio = new System.Windows.Forms.RadioButton();
             this.label43 = new System.Windows.Forms.Label();
             this.Motor_onCheck = new System.Windows.Forms.CheckBox();
             this.panel3 = new System.Windows.Forms.Panel();
+            this.Thorlab_MCM5000 = new System.Windows.Forms.RadioButton();
             this.Sutter_MP285A = new System.Windows.Forms.RadioButton();
             this.Sutter_MP285 = new System.Windows.Forms.RadioButton();
             this.Thorlab_MCM3000 = new System.Windows.Forms.RadioButton();
             this.label45 = new System.Windows.Forms.Label();
-            this.label11 = new System.Windows.Forms.Label();
-            this.label13 = new System.Windows.Forms.Label();
-            this.MH_radio = new System.Windows.Forms.RadioButton();
-            this.Thorlab_MCM5000 = new System.Windows.Forms.RadioButton();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.panel3.SuspendLayout();
@@ -849,6 +849,26 @@
             this.panel1.Size = new System.Drawing.Size(238, 135);
             this.panel1.TabIndex = 130;
             // 
+            // label13
+            // 
+            this.label13.AutoSize = true;
+            this.label13.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label13.Location = new System.Drawing.Point(7, 26);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(41, 14);
+            this.label13.TabIndex = 134;
+            this.label13.Text = "Analog";
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label11.Location = new System.Drawing.Point(7, 80);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(35, 14);
+            this.label11.TabIndex = 133;
+            this.label11.Text = "Digital";
+            // 
             // Shutter_DOBoard
             // 
             this.Shutter_DOBoard.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -863,9 +883,9 @@
             this.ActiveLow.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ActiveLow.Location = new System.Drawing.Point(150, 112);
             this.ActiveLow.Name = "ActiveLow";
-            this.ActiveLow.Size = new System.Drawing.Size(63, 18);
+            this.ActiveLow.Size = new System.Drawing.Size(82, 18);
             this.ActiveLow.TabIndex = 131;
-            this.ActiveLow.Text = "for PMT";
+            this.ActiveLow.Text = "Active Low";
             this.ActiveLow.UseVisualStyleBackColor = true;
             // 
             // label46
@@ -923,6 +943,17 @@
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(363, 106);
             this.panel2.TabIndex = 131;
+            // 
+            // MH_radio
+            // 
+            this.MH_radio.AutoSize = true;
+            this.MH_radio.Location = new System.Drawing.Point(16, 78);
+            this.MH_radio.Name = "MH_radio";
+            this.MH_radio.Size = new System.Drawing.Size(129, 17);
+            this.MH_radio.TabIndex = 134;
+            this.MH_radio.TabStop = true;
+            this.MH_radio.Text = "Pico Quant Multi-Harp";
+            this.MH_radio.UseVisualStyleBackColor = true;
             // 
             // BH_radio
             // 
@@ -992,6 +1023,18 @@
             this.panel3.Size = new System.Drawing.Size(236, 135);
             this.panel3.TabIndex = 135;
             // 
+            // Thorlab_MCM5000
+            // 
+            this.Thorlab_MCM5000.AutoSize = true;
+            this.Thorlab_MCM5000.Location = new System.Drawing.Point(66, 112);
+            this.Thorlab_MCM5000.Name = "Thorlab_MCM5000";
+            this.Thorlab_MCM5000.Size = new System.Drawing.Size(113, 17);
+            this.Thorlab_MCM5000.TabIndex = 137;
+            this.Thorlab_MCM5000.TabStop = true;
+            this.Thorlab_MCM5000.Text = "Thorlab MCM5000";
+            this.Thorlab_MCM5000.UseVisualStyleBackColor = true;
+            this.Thorlab_MCM5000.CheckedChanged += new System.EventHandler(this.Thorlab_MCM_CheckedChanged);
+            // 
             // Sutter_MP285A
             // 
             this.Sutter_MP285A.AutoSize = true;
@@ -1035,49 +1078,6 @@
             this.label45.Size = new System.Drawing.Size(165, 14);
             this.label45.TabIndex = 136;
             this.label45.Text = "Line clock and trigger for AO";
-            // 
-            // label11
-            // 
-            this.label11.AutoSize = true;
-            this.label11.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label11.Location = new System.Drawing.Point(7, 80);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(35, 14);
-            this.label11.TabIndex = 133;
-            this.label11.Text = "Digital";
-            // 
-            // label13
-            // 
-            this.label13.AutoSize = true;
-            this.label13.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label13.Location = new System.Drawing.Point(7, 26);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(41, 14);
-            this.label13.TabIndex = 134;
-            this.label13.Text = "Analog";
-            // 
-            // MH_radio
-            // 
-            this.MH_radio.AutoSize = true;
-            this.MH_radio.Location = new System.Drawing.Point(16, 78);
-            this.MH_radio.Name = "MH_radio";
-            this.MH_radio.Size = new System.Drawing.Size(129, 17);
-            this.MH_radio.TabIndex = 134;
-            this.MH_radio.TabStop = true;
-            this.MH_radio.Text = "Pico Quant Multi-Harp";
-            this.MH_radio.UseVisualStyleBackColor = true;
-            // 
-            // Thorlab_MCM5000
-            // 
-            this.Thorlab_MCM5000.AutoSize = true;
-            this.Thorlab_MCM5000.Location = new System.Drawing.Point(66, 112);
-            this.Thorlab_MCM5000.Name = "Thorlab_MCM5000";
-            this.Thorlab_MCM5000.Size = new System.Drawing.Size(113, 17);
-            this.Thorlab_MCM5000.TabIndex = 137;
-            this.Thorlab_MCM5000.TabStop = true;
-            this.Thorlab_MCM5000.Text = "Thorlab MCM5000";
-            this.Thorlab_MCM5000.UseVisualStyleBackColor = true;
-            this.Thorlab_MCM5000.CheckedChanged += new System.EventHandler(this.Thorlab_MCM_CheckedChanged);
             // 
             // NIDAQ_Config
             // 

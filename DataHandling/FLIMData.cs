@@ -1,5 +1,5 @@
-﻿using MathLibrary;
-using Utilities;
+﻿using FLIMage.Analysis;
+using MathLibrary;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using FLIMage.Analysis;
+using Utilities;
 
 namespace FLIMage
 {
@@ -838,7 +838,7 @@ namespace FLIMage
         public void Add_AllFLIM_PageFormat_To_FLIM_Pages5D(ushort[][][] FLIM_i, DateTime acqTime, int page_position)
         {
             expandArray5D(page_position);
-            FLIM_Pages5D[page_position] = ImageProcessing.FLIM_Pages2FLIMRaw5D(FLIM_i);
+            FLIM_Pages5D[page_position] = ImageProcessing.FLIM_Pages2FLIMRaw5D(FLIM_i, new int[] { height, width }, n_time);
 
             n_pages5D = FLIM_Pages5D.Length;
 
@@ -1727,12 +1727,12 @@ namespace FLIMage
                         for (int x = roi.Rect.Left; x < roi.Rect.Right; x++)
                             if (x < width1 && y < height1 && x >= 0 && y >= 0)
                             {
-                                intensity = img[y,x];
+                                intensity = img[y, x];
 
                                 Point P = new Point(x, y);
 
                                 if (lf_img != null)
-                                    val = lf_img[y,x] - offset[ch];
+                                    val = lf_img[y, x] - offset[ch];
                                 else
                                     val = 0;
 
@@ -1845,7 +1845,7 @@ namespace FLIMage
                         for (int x = xstart; x < xend; ++x)
                         {
                             int val, intensity;
-                            intensity = Img[y,x];
+                            intensity = Img[y, x];
                             MatrixCalc.extract3rdAxis(lifetimeImg, ref FLIMRawT, y, x);
                             Point P = new Point(x, y);
 
