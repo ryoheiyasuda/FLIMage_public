@@ -22,7 +22,7 @@ namespace FLIMage.HardwareControls
         Timer DigitalTimer = new Timer();
         public int DO_count = 0;
 
-        IOControls.DigitalOutputSignal digitalOutput;
+        IOControls.DigitalOutputControl digitalOutput;
 
         PlotOnPictureBox plot;
 
@@ -130,14 +130,7 @@ namespace FLIMage.HardwareControls
             State.DO.sync_withSlice = SyncWithSlice_Check.Checked;
 
             State.DO.name = PulseName.Text;
-
-            if (this.InvokeRequired)
-                this.Invoke((Action)delegate
-                {
-                    UpdateDO(sender);
-                });
-            else
-                UpdateDO(sender);
+            this.BeginInvokeIfRequired(o => o.UpdateDO(o));
         }
 
 
@@ -279,9 +272,9 @@ namespace FLIMage.HardwareControls
 
             if (FLIMage.flimage_io.use_nidaq)
             {
-                var DO1 = new IOControls.DigitalOutputSignal(State);
+                var DO1 = new IOControls.DigitalOutputControl(State);
                 DO1.PutSingleValue(false);
-                DO1.dispose();
+                DO1.Dispose();
             }
         }
 
@@ -292,8 +285,9 @@ namespace FLIMage.HardwareControls
             {
                 DigitalTimer.Stop();
                 DigitalTimer.Dispose();
-                StartDO_button.Text = "Start";
+                StartDO_button.InvokeIfRequired(o => o.Text = "Start");
                 digital_running = false;
+                FLIMage.ExternalCommand("DO_Done");
             }
         }
 
@@ -302,7 +296,7 @@ namespace FLIMage.HardwareControls
             DO_count = 0;
             abort_digital = false;
             SetupDO(this);
-            UpdateDOCounter();
+            this.BeginInvokeIfRequired(o => o.UpdateDOCounter());
         }
 
         public void Start_button_Click(object sender, EventArgs e)
@@ -312,7 +306,7 @@ namespace FLIMage.HardwareControls
             if (StartDO_button.Text.Equals("Start"))
             {
                 StartPrep();
-                StartDO_button.Text = "Stop";
+                StartDO_button.InvokeIfRequired(o => o.Text = "Stop");
 
                 if (State.DO.trainRepeat > 1)
                 {
@@ -326,9 +320,8 @@ namespace FLIMage.HardwareControls
 
                 if (State.DO.trainRepeat <= 1)
                 {
-                    StartDO_button.Text = "Start";
+                    StartDO_button.InvokeIfRequired(o => o.Text = "Start");
                     State.DO.trainRepeat = 1;
-
                 }
             }
             else
@@ -344,6 +337,7 @@ namespace FLIMage.HardwareControls
             DigitalTimer.Dispose();
             abort_digital = true;
             digital_running = false;
+            this.BeginInvokeIfRequired(o => o.UpdateDOCounter());
         }
 
         public void UpdateDOCounter()
@@ -355,7 +349,7 @@ namespace FLIMage.HardwareControls
         public void CleanBufferForDO()
         {
             if (digitalOutput != null)
-                digitalOutput.dispose();
+                digitalOutput.Dispose();
         }
 
         /// <summary>
@@ -367,8 +361,8 @@ namespace FLIMage.HardwareControls
         {
             CleanBufferForDO();
 
-            digitalOutput = new IOControls.DigitalOutputSignal(State);
-            digitalOutput.PutValue_and_Start(false, false, true, false);
+            digitalOutput = new IOControls.DigitalOutputControl(State);
+            digitalOutput.PutValue_and_Start(false, false, false, true, false);
 
             if (mainShutterCtrl)
             {
@@ -389,7 +383,6 @@ namespace FLIMage.HardwareControls
             while (sw1.ElapsedMilliseconds < timeout)
             {
                 System.Threading.Thread.Sleep(10);
-                Application.DoEvents();
                 //abort_digital becomes true when stop button is pressed.
                 if (abort_digital)
                 {
@@ -402,20 +395,18 @@ namespace FLIMage.HardwareControls
             if (digitalOutput != null)
             {
                 digitalOutput.Stop();
-                digitalOutput.dispose();
+                digitalOutput.Dispose();
             }
 
             if (mainShutterCtrl)
                 FLIMage.flimage_io.ShutterCtrl.close();
-
 
             DO_count++;
             Debug.WriteLine("DO counter = " + DO_count);
 
             System.Threading.Thread.Sleep(1);
 
-            if (U_counter.Created)
-                U_counter.BeginInvoke(new Action(() => UpdateDOCounter()));
+            this.BeginInvokeIfRequired(o => o.UpdateDOCounter());
         }
 
         public void PulseNumber_ValueChanged(object sender, EventArgs e)

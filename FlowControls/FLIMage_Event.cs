@@ -59,7 +59,7 @@ namespace FLIMage.FlowControls
             eventNotifyTable.Rows.Add(8, "FocusStart", false);
             eventNotifyTable.Rows.Add(9, "FocusStop", false);
             eventNotifyTable.Rows.Add(10, "UncagingDone", true);
-            eventNotifyTable.Rows.Add(11, "UncagingStart", false);
+            eventNotifyTable.Rows.Add(11, "DODone", false);
             eventNotifyTable.Rows.Add(12, "StageMoveStart", false);
             eventNotifyTable.Rows.Add(13, "StageMoveDone", true);
             eventNotifyTable.Rows.Add(14, "ParametersChanged", false);
@@ -654,24 +654,15 @@ namespace FLIMage.FlowControls
                     {
                         FLIMage.ExternalCommand("StartGrab");
                         cm = CommandMode.Execution;
-
-                        //var totalFrameTime = State.Acq.msPerLine * State.Acq.linesPerFrame * State.Acq.nFrames; //in milliseconds.
-                        //double totalTime = totalFrameTime;
-
-                        //if (State.Acq.nSlices > 1)
-                        //{
-                        //    if (State.Acq.ZStack)
-                        //        totalTime = (totalFrameTime + 1000) * State.Acq.nSlices;
-                        //    else
-                        //        totalTime = Math.Max(totalFrameTime + 1000, State.Acq.sliceInterval) * State.Acq.nSlices;
-                        //}
-                        //for (int i = 0; i < (totalTime + 1000) / wait_interval; i++) //total time + 1 s.
-                        //{
-                        //    System.Threading.Thread.Sleep(wait_interval);
-                        //    Application.DoEvents();
-                        //    if (!FLIMage.flimage_io.grabbing)
-                        //        break;
-                        //}
+                        break;
+                    }
+                case "IsDORunning":
+                    {
+                        int value = 0;
+                        if (FLIMage.digital_panel != null)
+                            value = FLIMage.digital_panel.digital_running ? 1 : 0;
+                        writeString = String.Format("IsDORunning, {0}", value);
+                        cm = CommandMode.Get_Parameter;
                         break;
                     }
                 case "IsUncaging":
@@ -685,7 +676,7 @@ namespace FLIMage.FlowControls
                     }
                 case "IsGrabbing":
                     {
-                        int value = (FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process == false) ? 1 : 0;
+                        int value = (FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process == false || FLIMage.flimage_io.focusing) ? 1 : 0;
                         writeString = String.Format("IsGrabbing, {0}", value);
                         cm = CommandMode.Get_Parameter;
                         break;
@@ -705,7 +696,7 @@ namespace FLIMage.FlowControls
                         double x = values[0];
                         double y = values[1];
 
-                        FLIMage.image_display.uncagingLocFrac = IOControls.PixelsToFracOnScreen(new double[] { x, y }, State);
+                        FLIMage.image_display.uncagingLocFrac = HardwareControls.IOControls.PixelsToFracOnScreen(new double[] { x, y }, State);
 
                         FLIMage.image_display.uncaging_on = true;
                         FLIMage.image_display.ActivateUncaging();
@@ -723,28 +714,13 @@ namespace FLIMage.FlowControls
                         double x = values[0];
                         double y = values[1];
 
-                        FLIMage.image_display.uncagingLocFrac = IOControls.PixelsToFracOnScreen(new double[] { x, y }, State);
+                        FLIMage.image_display.uncagingLocFrac = HardwareControls.IOControls.PixelsToFracOnScreen(new double[] { x, y }, State);
 
                         FLIMage.image_display.uncaging_on = true;
                         FLIMage.image_display.ActivateUncaging();
                         FLIMage.UpdateUncagingFromDisplay();
                         FLIMage.ExternalCommand("StartUncaging");
                         cm = CommandMode.Execution;
-
-                        //double totalTime;
-                        //if (State.Uncaging.trainRepeat > 1)
-                        //    totalTime = Math.Max(State.Uncaging.trainInterval, State.Uncaging.sampleLength) * State.Uncaging.trainRepeat;
-                        //else
-                        //    totalTime = State.Uncaging.sampleLength * State.Uncaging.trainRepeat;
-                        //
-                        //for (int i = 0; i < (totalTime + 1000) / wait_interval; i++) //total time + 1 s.
-                        //{
-                        //    System.Threading.Thread.Sleep(wait_interval);
-                        //    Application.DoEvents();
-                        //    if (!FLIMage.uncaging_panel.uncaging_running)
-                        //        break;
-                        //}
-
                         break;
                     }
                 case "StopUncaging":

@@ -64,7 +64,7 @@
             this.Zoom});
             this.ImageSequenceGridView.Location = new System.Drawing.Point(0, 2);
             this.ImageSequenceGridView.Name = "ImageSequenceGridView";
-            this.ImageSequenceGridView.Size = new System.Drawing.Size(490, 266);
+            this.ImageSequenceGridView.Size = new System.Drawing.Size(563, 266);
             this.ImageSequenceGridView.TabIndex = 0;
             this.ImageSequenceGridView.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.ImageSequenceGridView_CellEndEdit);
             this.ImageSequenceGridView.CurrentCellChanged += new System.EventHandler(this.ImageSequenceGridView_CurrentCellChanged);
@@ -106,7 +106,7 @@
             // 
             // AddCurrentSetting
             // 
-            this.AddCurrentSetting.Location = new System.Drawing.Point(496, 160);
+            this.AddCurrentSetting.Location = new System.Drawing.Point(581, 156);
             this.AddCurrentSetting.Name = "AddCurrentSetting";
             this.AddCurrentSetting.Size = new System.Drawing.Size(60, 23);
             this.AddCurrentSetting.TabIndex = 1;
@@ -116,7 +116,7 @@
             // 
             // RowUp
             // 
-            this.RowUp.Location = new System.Drawing.Point(496, 46);
+            this.RowUp.Location = new System.Drawing.Point(581, 42);
             this.RowUp.Name = "RowUp";
             this.RowUp.Size = new System.Drawing.Size(60, 23);
             this.RowUp.TabIndex = 2;
@@ -126,7 +126,7 @@
             // 
             // RowDown
             // 
-            this.RowDown.Location = new System.Drawing.Point(496, 75);
+            this.RowDown.Location = new System.Drawing.Point(581, 71);
             this.RowDown.Name = "RowDown";
             this.RowDown.Size = new System.Drawing.Size(60, 23);
             this.RowDown.TabIndex = 3;
@@ -136,7 +136,7 @@
             // 
             // DeleteRow
             // 
-            this.DeleteRow.Location = new System.Drawing.Point(496, 189);
+            this.DeleteRow.Location = new System.Drawing.Point(581, 185);
             this.DeleteRow.Name = "DeleteRow";
             this.DeleteRow.Size = new System.Drawing.Size(60, 23);
             this.DeleteRow.TabIndex = 4;
@@ -237,7 +237,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(562, 372);
+            this.ClientSize = new System.Drawing.Size(669, 372);
             this.Controls.Add(this.AutoDriftCorrection);
             this.Controls.Add(this.LoadSelected);
             this.Controls.Add(this.ReplaceWithCurrent);

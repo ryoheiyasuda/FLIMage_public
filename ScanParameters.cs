@@ -63,6 +63,9 @@ namespace FLIMage
             public String EOM_AI_Port2 = "Dev4/AI2";
             public String EOM_AI_Port3 = "Dev4/AI3";
 
+            public String Piezo_Z_Signal = "Dev2/AO3";
+            public String Piezo_Z_Monitor = "Dev2/AI3";
+
             //public String EOM_AI_Trigger = "/Dev4/PFI6";
 
             public String MarkerInput = "";
@@ -89,10 +92,13 @@ namespace FLIMage
             public String ThorFlipper = "ThorBCA"; // or ThorBScope
             public bool Use_EPhys = true;
 
+            public bool usePiezo = false;
+            public double Piezo_um_per_V = 100; // Total 10 V. If 1000 um, it is 100.
+
             public int FLIMserial = 0;
             public int ComputerID = 0;
 
-            public double AbsoluteMaxVoltageScan = 9;
+            public double AbsoluteMaxVoltageScan = 10;
 
             public bool[] imagingLasers = { true, false, false, false, false }; //Up to 5 channels
             public bool[] uncagingLasers = { false, true, false, false, false };

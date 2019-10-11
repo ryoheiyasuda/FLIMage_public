@@ -33,6 +33,7 @@ namespace FLIMage.FlowControls
         int current_repeat = 0;
         int current_row = 0;
 
+        bool image_seq_running = false;
         bool abortGrabActivated = false;
         int CheckingInterval_ms = 100;
         bool autoDriftCorrection = false;
@@ -40,6 +41,14 @@ namespace FLIMage.FlowControls
         public Image_seqeunce(FLIMageMain FLIMage_in)
         {
             InitializeComponent();
+            DataGridViewComboBoxColumn procColumn = new DataGridViewComboBoxColumn();
+            procColumn.Name = "Procedure";
+            procColumn.HeaderText = "Procedure";
+            procColumn.Items.Add("Imaging");
+            procColumn.Items.Add("Uncaging");
+            procColumn.Items.Add("DO");
+            ImageSequenceGridView.Columns.Add(procColumn);
+            ImageSequenceGridView.CurrentCellDirtyStateChanged += new EventHandler(dataGridView1_CellValueChanged);
 
             FLIMage = FLIMage_in;
             State = FLIMage.State;
@@ -83,7 +92,7 @@ namespace FLIMage.FlowControls
             SetLargestID();
             settingIDLargest += 1;
             String fn = Path.GetFileNameWithoutExtension(State.Files.initFileName);
-            ImageSequenceGridView.Rows.Add(settingIDLargest, fn, State.Acq.imageInterval, State.Acq.nImages, State.Acq.zoom);
+            ImageSequenceGridView.Rows.Add(settingIDLargest, fn, State.Acq.imageInterval, State.Acq.nImages, State.Acq.zoom, "Imaging");
             FileIO fo = new FileIO(State);
             String str1 = fo.AllSetupValues_nonDevice();
             str1 = fn + ";" + "\r\n" + str1;
@@ -144,6 +153,9 @@ namespace FLIMage.FlowControls
                     if (File.Exists(fileName))
                     {
                         Array.Resize(ref sP, ImageSequenceGridView.ColumnCount);
+                        if (sP[sP.Length - 1] == null || (sP[sP.Length - 1] != "Uncaging" && sP[sP.Length - 1] != "DO"))
+                            sP[sP.Length - 1] = "Imaging";
+
                         ImageSequenceGridView.Rows.Add(sP);
                         if (fileNum > settingIDLargest)
                             settingIDLargest = fileNum;
@@ -215,14 +227,17 @@ namespace FLIMage.FlowControls
 
         public void RunSeq_Click(object sender, EventArgs e)
         {
+            RunSeq.Enabled = false;
             State = FLIMage.State;
-
-
             if (RunSeq.Text == "Abort")
             {
                 RunSeq.Text = "Run sequence";
                 abortGrabActivated = true;
-                FLIMage.ExternalCommand("AbortGrab");
+                while (image_seq_running)
+                {
+                    Application.DoEvents();
+                    System.Threading.Thread.Sleep(CheckingInterval_ms);
+                }
             }
             else
             {
@@ -237,6 +252,7 @@ namespace FLIMage.FlowControls
                     });
                 });
             }
+            RunSeq.Enabled = true;
         }
 
 
@@ -265,8 +281,46 @@ namespace FLIMage.FlowControls
             });
         }
 
+        public void AnyUncagingOrDO(out bool anyDO, out bool anyUncaging)
+        {
+            anyUncaging = false;
+            anyDO = false;
+            for (int i = 0; i < ImageSequenceGridView.Rows.Count; i++)
+            {
+                bool imaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Imaging";
+                bool uncaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Uncaging";
+                bool DO = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "DO";
+                if (uncaging)
+                {
+                    anyUncaging = true;
+                    break;
+                }
+                if (DO)
+                {
+                    anyDO = true;
+                    break;
+                }
+            }
+        }
+
         public void RunSequence()
         {
+            //Problem check.
+            AnyUncagingOrDO(out bool anyDO, out bool anyUncaging);
+            if (anyUncaging && FLIMage.uncaging_panel == null)
+            {
+                MessageBox.Show("Please open uncaging panel!!");
+                return;
+            }
+
+            if (anyDO && FLIMage.digital_panel == null)
+            {
+                MessageBox.Show("Please open DO panel!!");
+                return;
+            }
+
+            //Start Running.
+            image_seq_running = true;
             FLIMage.flimage_io.imageSequencing = true;
             bool firstImage = false;
             if (autoDriftCorrection)
@@ -287,6 +341,9 @@ namespace FLIMage.FlowControls
                 reportProgress(false); //Select current row.
                 LoadSelectedSetting();
 
+                bool imaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Imaging";
+                bool uncaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Uncaging";
+                bool DO = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "DO";
 
                 for (int rep = 0; rep < repetition; rep++)
                 {
@@ -295,18 +352,34 @@ namespace FLIMage.FlowControls
 
                     timer_rep.Restart();
 
-                    RunOnce();
+                    if (imaging)
+                        ImageOnce();
+                    else if (uncaging)
+                        UncageOnce();
+                    else
+                        DO_Once();
 
                     System.Threading.Thread.Sleep(CheckingInterval_ms);
 
-                    while ((FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process) 
-                        && !abortGrabActivated)
+                    bool running = true;
+
+                    while (running)
                     {
+                        if (imaging)
+                            running = (FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process);
+                        else if (uncaging)
+                            running = FLIMage.uncaging_panel.uncaging_running;
+                        else if (DO)
+                            running = FLIMage.digital_panel.digital_running;
+
+                        if (abortGrabActivated || !running)
+                            break;
+
                         System.Threading.Thread.Sleep(CheckingInterval_ms);
                         reportProgress(true);
                     }
 
-                    if (autoDriftCorrection && firstImage)
+                    if (autoDriftCorrection && firstImage && !abortGrabActivated)
                     {
                         FLIMage.drift_correction.SelectImage();
                         FLIMage.drift_correction.TurnOnOffCorrection(true);
@@ -315,7 +388,7 @@ namespace FLIMage.FlowControls
                     while (interval_ms - (int)timer_rep.ElapsedMilliseconds > CheckingInterval_ms)
                     {
                         if (abortGrabActivated)
-                            return;
+                            break;
                         System.Threading.Thread.Sleep(CheckingInterval_ms);
                         reportProgress(true);
                     }
@@ -323,12 +396,38 @@ namespace FLIMage.FlowControls
                     if ((int)timer_rep.ElapsedMilliseconds < interval_ms)
                     {
                         if (abortGrabActivated)
-                            return;
+                            break;
                         System.Threading.Thread.Sleep(interval_ms - (int)timer_rep.ElapsedMilliseconds);
                         reportProgress(true);
                     }
+
+                    if (abortGrabActivated)
+                        break;
                 }
 
+                if (abortGrabActivated)
+                    break;
+            }
+
+            if (FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process)
+            {
+                FLIMage.ExternalCommand("AbortGrab");
+                while (FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process)
+                    System.Threading.Thread.Sleep(CheckingInterval_ms);
+            }
+
+            if (FLIMage.uncaging_panel != null && FLIMage.uncaging_panel.uncaging_running)
+            {
+                FLIMage.ExternalCommand("StopUncaging");
+                while (FLIMage.uncaging_panel.uncaging_running)
+                    System.Threading.Thread.Sleep(CheckingInterval_ms);
+            }
+
+            if (FLIMage.digital_panel != null && FLIMage.digital_panel.digital_running)
+            {
+                FLIMage.ExternalCommand("StopDO");
+                while (FLIMage.digital_panel.digital_running)
+                    System.Threading.Thread.Sleep(CheckingInterval_ms);
             }
 
             FLIMage.flimage_io.imageSequencing = false;
@@ -336,12 +435,32 @@ namespace FLIMage.FlowControls
             {
                 FLIMage.ChangeItemsStatus(true, false);
             });
+
+            image_seq_running = false;
         }
 
-        public void RunOnce()
+        public void ImageOnce()
         {
             FLIMage.ExternalCommand("StartGrab");
             Debug.WriteLine("Start Grab started : " + FLIMage.flimage_io.grabbing);
+        }
+
+        public void UncageOnce()
+        {
+            FLIMage.ExternalCommand("StartUncaging");
+            if (FLIMage.uncaging_panel != null)
+                Debug.WriteLine("Start Uncaging started : " + FLIMage.uncaging_panel.uncaging_running);
+            else
+                MessageBox.Show("Uncaging failed : please open uncaging panel");
+        }
+
+        public void DO_Once()
+        {
+            FLIMage.ExternalCommand("StartDO");
+            if (FLIMage.digital_panel != null)
+                Debug.WriteLine("Start DO started: " + FLIMage.digital_panel.digital_running);
+            else
+                MessageBox.Show("DO failed : please open digital output control panel");
         }
 
         public void ImageSequenceGridView_CurrentCellChanged(object sender, EventArgs e)
@@ -374,11 +493,22 @@ namespace FLIMage.FlowControls
             FLIMage.ExternalCommand("UpdateGUI");
         }
 
-
-        public void ImageSequenceGridView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        public void EditProc()
         {
             SaveTable();
             SaveWindowLocation();
+        }
+
+        public void ImageSequenceGridView_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            EditProc();
+        }
+        public void dataGridView1_CellValueChanged(object sender, EventArgs e)
+        {
+            if (ImageSequenceGridView.IsCurrentCellDirty)
+            {
+                EditProc();
+            }
         }
 
         public void AutoDriftCorrection_Click(object sender, EventArgs e)

@@ -1,6 +1,4 @@
 ﻿using MathLibrary;
-using NationalInstruments;
-using NationalInstruments.DAQmx;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -9,8 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Timers;
 using System.Windows.Forms;
+using MicroscopeHardwareLibs;
 
-namespace FLIMage
+namespace FLIMage.HardwareControls
 {
     //This class controls National Instruments cards.
     public class IOControls
@@ -22,7 +21,7 @@ namespace FLIMage
         {
             if (State.Init.EOM_slaveClockPort != "")
             {
-                DaqSystem.Local.ConnectTerminals(State.Init.masterClock, State.Init.masterClockPort);
+                NiDaq.exportBaseClockSignal(State.Init.masterClock, State.Init.masterClockPort);
                 Debug.WriteLine("***Terminal: " + State.Init.masterClock + " was connected with terminal: " + State.Init.masterClockPort + "***");
             }
         }
@@ -89,7 +88,7 @@ namespace FLIMage
             public void PutValue(double[] input)
             {
                 if (active)
-                    calib.EOM_AO_S.putValue_S(input);
+                    calib.EOM_AO.putValue_Single_EOM(input);
             }
 
             public double GetEOMVoltageByFitting(double percent, int ch)
@@ -144,10 +143,8 @@ namespace FLIMage
             public double noiseThreshold = 0.20;
             public ScanParameters State;
             public pockelAI EOM_AI;
-            public pockelAI EOM_AI_S;
-            public pockelAO EOM_AO;
-            public pockelAO EOM_AO_S;
-            public DigitalOutputSignal EOM_DO;
+            public AnalogOutput EOM_AO;
+            public String DigitalUncagingShutterPort;
             public Shading shading;
             public double[][] beta;
 
@@ -162,12 +159,9 @@ namespace FLIMage
                 createFalseCurves();
 
                 EOM_AI = new pockelAI(State);
-                EOM_AO_S = new pockelAO(State, shading, false);
-                EOM_AI_S = new pockelAI(State);
+                EOM_AO = new AnalogOutput(State, shading, false);
 
-                if (State.Init.DO_uncagingShutter)
-                    EOM_DO = new DigitalOutputSignal(State);
-
+                DigitalUncagingShutterPort = State.Init.MirrorAOBoard + "/port0/" + State.Init.DigitalShutterPort;
             }
 
             public void createFalseCurves()
@@ -184,13 +178,13 @@ namespace FLIMage
 
             public double[] readIntensity()
             {
-                return EOM_AI_S.getSingleValue();
+                return EOM_AI.getSingleValue();
             }
 
             public bool[] calcibrateEOMs(bool plot)
             {
                 //dioTrigger dio = new dioTrigger(State);
-                EOM_AO = new pockelAO(State, shading, true);
+                EOM_AO = new AnalogOutput(State, shading, false);
 
                 double maxV = 2.0;
                 double minV = 0;
@@ -240,9 +234,9 @@ namespace FLIMage
                     inputValue[nChannels] = 5;
 
                 if (State.Init.DO_uncagingShutter)
-                    EOM_DO.TurnOnOff(true);
+                    new Digital_Out(DigitalUncagingShutterPort, true);
 
-                EOM_AO.putValue_S(inputValue);
+                EOM_AO.putValue_Single_EOM(inputValue);
                 double[,] values = new double[nChannels + addUncageChannel, sampleN * repeat];
 
 
@@ -261,39 +255,20 @@ namespace FLIMage
                 EOM_AO.putvalue(values, outputRate);
 
                 EOM_AI.start(false);
-                EOM_AO.start(false);
+                EOM_AO.Start(false);
                 dio.Evoke();
 
                 int timeout = 5000;
-                try
-                {
-                    EOM_AO.hEOM.WaitUntilDone(timeout);
-                }
-                catch (DaqException ex)
-                {
-                    EOM_AO.stop();
-                    EOM_AO.dispose();
-                    Debug.WriteLine("Calibration error in EOM_AO:" + ex.Message);
-                }
+                bool success1 = EOM_AO.WaitUntilDone(timeout);
+                bool success2 = EOM_AI.WaitUntilDone(timeout);
 
-                try
-                {
-                    EOM_AI.hEOM_AI.WaitUntilDone(timeout);
-                }
-                catch (DaqException ex)
-                {
-                    EOM_AI.stop();
-                    EOM_AI.dispose();
-                    Debug.WriteLine("Calibration error in EOM_AI:" + ex.Message);
+                if (!success1 || !success2)
                     return success;
-                }
 
+                EOM_AO.Stop();
+                EOM_AO.Dispose();
 
-                EOM_AO.stop();
-                EOM_AO.dispose();
-
-
-                EOM_AI.readSample();
+                var AIResult = EOM_AI.readSample();
 
                 EOM_AI.stop();
 
@@ -306,9 +281,9 @@ namespace FLIMage
                         {
                             {
                                 if (k == 0)
-                                    outputValues[ch][j] = EOM_AI.result[ch, j * repeat] / repeat;
+                                    outputValues[ch][j] = AIResult[ch, j * repeat] / repeat;
                                 else
-                                    outputValues[ch][j] += EOM_AI.result[ch, j * repeat + k] / repeat;
+                                    outputValues[ch][j] += AIResult[ch, j * repeat + k] / repeat;
                             }
                         }
                 }
@@ -430,7 +405,7 @@ namespace FLIMage
 
 
                 if (State.Init.DO_uncagingShutter)
-                    EOM_DO.TurnOnOff(false);
+                    new Digital_Out(DigitalUncagingShutterPort, false);
 
                 for (int i = 0; i < nChannels; i++)
                 {
@@ -439,7 +414,7 @@ namespace FLIMage
                 if (State.Init.AO_uncagingShutter)
                     inputValue[nChannels] = 0; //Close shutter.
 
-                EOM_AO_S.putValue_S(inputValue);
+                EOM_AO.putValue_Single_EOM(inputValue);
 
                 if (plot)
                 {
@@ -584,56 +559,20 @@ namespace FLIMage
         }
 
         //This class is to see if digital channel is on or off
-        public class DigitalIn
+        public class Digital_In
         {
-            public Task DI;
-            public DigitalSingleChannelReader reader;
-            public String port;
-            public bool value;
-            public DigitalIn(String channel)
+            public Digital_In(String port_in, out bool signal)
             {
-                port = channel;
-                DI = new Task();
-                DI.DIChannels.CreateChannel(port, "DI", ChannelLineGrouping.OneChannelForEachLine);
-                reader = new DigitalSingleChannelReader(DI.Stream);
-                value = reader.ReadSingleSampleSingleLine();
-
-            }
-            public bool readDI()
-            {
-                value = reader.ReadSingleSampleSingleLine();
-                return value;
-            }
-            public void dispose()
-            {
-                if (DI != null)
-                    DI.Dispose();
+                var DI = new NiDaq.DigitalIn_SingleValue(port_in);
+                signal = DI.readDI();
             }
         }
 
-        public class DigitalOut
+        public class Digital_Out
         {
-            Task DO;
-            public DigitalSingleChannelWriter writer;
-            String port;
-            public DigitalOut(String port_in)
+            public Digital_Out(String port_in, bool signal)
             {
-                port = port_in;
-                DO = new Task();
-                //shutter.DOChannels.CreateChannel(port, "DIO", ChannelLineGrouping.OneChannelForAllLines);
-                DO.DOChannels.CreateChannel(port, "DIO", ChannelLineGrouping.OneChannelForEachLine);
-                writer = new DigitalSingleChannelWriter(DO.Stream);
-                writer.WriteSingleSampleSingleLine(true, false);
-            }
-
-            public void PutValue(bool signal)
-            {
-                writer.WriteSingleSampleSingleLine(true, signal);
-            }
-
-            public void Dispose()
-            {
-                DO.Dispose();
+                new NiDaq.DigitalOut_SingleValue(port_in, signal);
             }
         }
 
@@ -641,124 +580,83 @@ namespace FLIMage
         //THis class is to control shutter through digital IO
         public class ShutterCtrl
         {
-            public Task shutter;
-            public Task shutterEx;
-            public DigitalSingleChannelWriter writer;
-            public DigitalSingleChannelWriter writerEx;
             public String port;
             public ScanParameters State;
 
             public ShutterCtrl(ScanParameters State_in)
             {
                 State = State_in;
-                shutter = new Task();
                 port = State.Init.shutterPort;
-                //shutter.DOChannels.CreateChannel(port, "DIO", ChannelLineGrouping.OneChannelForAllLines);
-                shutter.DOChannels.CreateChannel(port, "DIO", ChannelLineGrouping.OneChannelForEachLine);
-                writer = new DigitalSingleChannelWriter(shutter.Stream);
-                writer.WriteSingleSampleSingleLine(true, false);
             }
 
             public void open()
             {
-                writer.WriteSingleSampleSingleLine(true, true);
-                shutter.WaitUntilDone();
+                new Digital_Out(port, true);
             }
 
             public void close()
             {
-                writer.WriteSingleSampleSingleLine(true, false);
-                shutter.WaitUntilDone();
+                new Digital_Out(port, false);
             }
-
-            public void dispose()
-            {
-                if (shutter != null)
-                    shutter.Dispose();
-            }
-
         }
 
         //This class is to send a DIO trigger signal from digital output defined by State.Init.triggerPort.
         public class dioTrigger
         {
-            //public Task dioTask;
-            public Task dioTaskS;
-            public String port;
-            private DigitalSingleChannelWriter writer;
-            private DigitalSingleChannelWriter writerS;
-            public ScanParameters State;
-            private DigitalWaveform waveform;
-            int nSamples = 2;
-            double outputRate = 1000;
-
+            ScanParameters State;
+            String port;
             public dioTrigger(ScanParameters State_in)
             {
                 State = State_in;
                 port = State.Init.triggerPort;
-
-                dioTaskS = new Task();
-                dioTaskS.DOChannels.CreateChannel(port, "DIO", ChannelLineGrouping.OneChannelForEachLine);
-                writerS = new DigitalSingleChannelWriter(dioTaskS.Stream);
-
-                writerS.WriteSingleSampleSingleLine(true, false);
             }
-
 
             public void Evoke()
             {
-                //if (dioTask != null)
-                //    dioTask.Dispose();
-
-                writerS.WriteSingleSampleSingleLine(true, false);
-                writerS.WriteSingleSampleSingleLine(true, true);
-                writerS.WriteSingleSampleSingleLine(true, false);
-            }
-
-            public void dispose()
-            {
-                dioTaskS.Dispose();
+                new Digital_Out(port, false);
+                new Digital_Out(port, true);
+                new Digital_Out(port, false);
             }
         }
-
 
         public class AO_Write
         {
-            public Task AO;
-            public AnalogSingleChannelWriter writer;
-            public double maxV = 10;
-            public double minV = -10;
-
             public AO_Write(String port, double value)
             {
-                AO = new Task();
-                AO.AOChannels.CreateVoltageChannel(port, "Port1", minV, maxV, AOVoltageUnits.Volts);
-                AO.Control(TaskAction.Verify);
-                writer = new AnalogSingleChannelWriter(AO.Stream);
-                writer.WriteSingleSample(true, value);
+                double[] range = new double[] { -10, 10 };
+                if (value > -2)
+                    range[0] = -2;
+                else if (value > 0)
+                    range[0] = 0;
+                else if (value > 2)
+                    range[0] = 2;
 
+                //maxValue
+                if (value < -2)
+                    range[1] = -2;
+                else if (value < 0)
+                    range[1] = 0;
+                else if (value < 2)
+                    range[1] = 2;
+
+                NiDaq.AO_Write ao_write = new NiDaq.AO_Write(port, value, range);
             }
 
-            public void AO_putValue(double value)
-            {
-                try
-                {
-                    writer.WriteSingleSample(true, value);
-                }
-                catch (Exception EX)
-                {
-                    Debug.WriteLine("Problem --- need to fix. AO_putValue: " + EX.Message);
-                }
-            }
 
-            public void dispose()
+            public AO_Write(String port, double value, double[] range)
             {
-                if (AO != null)
-                {
-                    AO.Dispose();
-                }
+                NiDaq.AO_Write ao_write = new NiDaq.AO_Write(port, value, range);
             }
         }
+
+        public class AI_Read_SingleValue
+        {
+            public AI_Read_SingleValue(String port, double[] range, out double result)
+            {
+                new NiDaq.AI_Read_SingleValue(port, range, out result);
+            }
+        }
+
 
         public static bool IfSameBoard_With_Mirror(String BoardName, ScanParameters State)
         {
@@ -769,8 +667,30 @@ namespace FLIMage
             return (String.Compare(BoardMirror, BoardName, StringComparison.OrdinalIgnoreCase) == 0);
         }
 
+        static double[] ConcatChannels(double[] DataA, double[] DataB)
+        {
+            if (DataA == null && DataB == null)
+                return null;
+            if (DataA == null)
+                return DataB;
+            if (DataB == null)
+                return DataA;
+
+            double[] result = new double[DataA.Length + DataB.Length];
+            Array.Copy(DataA, result, DataA.Length);
+            Array.Copy(DataB, 0, result, DataA.Length, DataB.Length);
+            return result;
+        }
+
         static double[,] ConcatChannels(double[,] DataA, double[,] DataB)
         {
+            if (DataA == null && DataB == null)
+                return null;
+            if (DataA == null)
+                return DataB;
+            if (DataB == null)
+                return DataA;
+
             int nChB = DataB.GetLength(0);
             int nChA = DataA.GetLength(0);
             int nCh = nChA + nChB;
@@ -782,184 +702,14 @@ namespace FLIMage
 
             double[,] DataAll = new double[nCh, nSamples];
 
-            for (int ch = 0; ch < nCh; ch++)
-                for (int x = 0; x < nSamples; x++)
-                {
-                    if (ch < nChA && x < nSamplesA)
-                    {
-                        DataAll[ch, x] = DataA[ch, x];
-                    }
-                    else if (ch >= nChA && x < nSamplesB)
-                        DataAll[ch, x] = DataB[ch - nChA, x];
-                }
+            Buffer.BlockCopy(DataA, 0, DataAll, 0, DataA.Length * sizeof(double));
+            Buffer.BlockCopy(DataB, DataA.Length * sizeof(double), DataAll, 0, DataB.Length * sizeof(double));
 
             return DataAll;
         }
 
-        public class DigitalOutputSignal
-        {
-            private String dLineClockPort;
-            private String DO_ShutterPort;
-            private String[] DO_Port;
-            private String triggerPort = "";
-            private String ExternalTriggerPort = "";
-            private String sampleClockPort = "";
-            private String Board = "";
-            private ScanParameters State;
 
-            private int nSamples;
-            private Task myTask;
-            private Task OnOfTaskAll;
-            private Task onoffTask;
-            private DigitalWaveform[] waveform_output;
-            private DigitalSingleChannelWriter writerOnOff;
-            private DigitalMultiChannelWriter writer;
-            private bool activeHigh_shutter = true;
-
-            private bool portActive = false;
-
-            private bool sameBoardWithMirrors = false;
-
-            public DigitalOutputSignal(ScanParameters State_in)
-            {
-                State = State_in;
-
-                DO_Port = new string[State.DO.NChannels];
-
-                GetTriggerPortName(State.Init.mirrorAOPortX, State, ref Board, ref triggerPort, ref ExternalTriggerPort, ref sampleClockPort);
-                dLineClockPort = Board + "/port0/" + State.Init.DigitalLinePort;
-                DO_ShutterPort = Board + "/port0/" + State.Init.DigitalShutterPort;
-                DO_Port = new string[3];
-                DO_Port[0] = Board + "/port0/" + State.Init.DigitalOutput1;
-                DO_Port[1] = Board + "/port0/" + State.Init.DigitalOutput2;
-                DO_Port[2] = Board + "/port0/" + State.Init.DigitalOutput3;
-
-                sameBoardWithMirrors = IfSameBoard_With_Mirror(Board, State);
-
-                if (sameBoardWithMirrors)
-                    sampleClockPort = "";
-
-                activeHigh_shutter = true;
-
-                onoffTask = new Task();
-                onoffTask.DOChannels.CreateChannel(DO_ShutterPort, "", ChannelLineGrouping.OneChannelForEachLine);
-
-                writerOnOff = new DigitalSingleChannelWriter(onoffTask.Stream);
-                PutSingleValue(false);
-            }
-
-            public void PutSingleValue(bool ON)
-            {
-                OnOfTaskAll = new Task();
-
-                OnOfTaskAll.DOChannels.CreateChannel(dLineClockPort, "", ChannelLineGrouping.OneChannelForEachLine);
-                OnOfTaskAll.DOChannels.CreateChannel(DO_ShutterPort, "", ChannelLineGrouping.OneChannelForEachLine);
-                for (int j = 0; j < DO_Port.Length; j++)
-                {
-                    if (State.DO.NChannels > j)
-                        OnOfTaskAll.DOChannels.CreateChannel(DO_Port[j], "", ChannelLineGrouping.OneChannelForEachLine);
-                }
-
-                writer = new DigitalMultiChannelWriter(OnOfTaskAll.Stream);
-
-                bool[,] data = new bool[2 + DO_Port.Length, 1];
-                data[0, 0] = !State.Init.lineClockAcitveHigh; //uncage
-                data[1, 0] = !State.Uncaging.shutter_activeHigh; //uncage
-
-                for (int j = 0; j < DO_Port.Length; j++)
-                    data[2 + j, 0] = !State.DO.active_high[j];
-
-                if (ON)
-                {
-                    for (int i = 0; i < data.GetLength(0); i++)
-                        data[i, 0] = !data[i, 0];
-                }
-
-                writer.WriteSingleSampleMultiLine(true, data);
-                OnOfTaskAll.Dispose();
-            }
-
-            public void PutValue_and_Start(bool ext_trigger, bool uncaging_on, bool digital_on, bool image_grabbing)
-            {
-                bool includeUncaging = State.Init.DO_uncagingShutter && uncaging_on;
-                bool includeDigital = digital_on;
-                bool includeClock = false;
-
-                if (!includeUncaging && !includeDigital)
-                    return;
-
-                waveform_output = makeDigitalOutputAllChannels(State, includeClock, includeUncaging, includeDigital, image_grabbing, out double outputRate, out int nSamples);
-
-                myTask = new Task();
-
-                if (includeUncaging)
-                {
-                    myTask.DOChannels.CreateChannel(DO_ShutterPort, "", ChannelLineGrouping.OneChannelForEachLine);
-                }
-
-                if (includeDigital)
-                {
-                    for (int j = 0; j < DO_Port.Length; j++)
-                    {
-                        if (State.DO.NChannels > j)
-                            myTask.DOChannels.CreateChannel(DO_Port[j], "", ChannelLineGrouping.OneChannelForEachLine);
-                    }
-                }
-
-                myTask.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples);
-
-                if (sameBoardWithMirrors)
-                {
-                    if (ext_trigger)
-                        myTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(ExternalTriggerPort, DigitalEdgeStartTriggerEdge.Rising);
-                    else
-                        myTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
-                }
-                myTask.Control(TaskAction.Verify);
-
-
-
-                writer = new DigitalMultiChannelWriter(myTask.Stream);
-                writer.WriteWaveform(false, waveform_output);
-                myTask.Start();
-                portActive = true;
-            }
-
-            public void TurnOnOff(bool ON)
-            {
-                if (!activeHigh_shutter)
-                    ON = !ON;
-
-                try
-                {
-                    writerOnOff.WriteSingleSampleSingleLine(true, ON);
-                }
-                catch (Exception EX)
-                {
-                    Debug.WriteLine(EX.ToString());
-                }
-            }
-
-            public void Stop()
-            {
-                if (myTask != null && portActive)
-                {
-                    myTask.Stop();
-                    myTask.WaitUntilDone();
-                    portActive = false;
-                }
-            }
-
-            public void dispose()
-            {
-                if (myTask != null)
-                    myTask.Dispose();
-                if (onoffTask != null)
-                    onoffTask.Dispose();
-            }
-        }
-
-        static public DigitalWaveform[] makeDigitalOutputAllChannels(ScanParameters State, bool includeClock, bool includeUncage, bool includeDigital, bool image_grabbing, out double outputRate, out int nSamples)
+        static public bool[][] makeDigitalOutputAllChannels(ScanParameters State, bool includeClock, bool includeUncage, bool includeDigital, bool image_grabbing, out double outputRate, out int nSamples)
         {
             int AddClockC = includeClock ? 1 : 0;
             int AddUncage = includeUncage ? 1 : 0;
@@ -985,7 +735,7 @@ namespace FLIMage
             if (outputRate < 1000)
                 outputRate = 10000;
 
-            DigitalWaveform[] waveform_output = new DigitalWaveform[AddDigital + AddUncage + AddClockC];
+            bool[][] waveform_output = new bool[AddDigital + AddUncage + AddClockC][];
             double totalLength_ms = State.DO.sampleLength;
 
             if (includeUncage)
@@ -1006,41 +756,13 @@ namespace FLIMage
             if (image_grabbing)
             {
                 nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame * State.Acq.nFrames);
-                //int nSampleU = nSamples;
-                //int nSampleD = nSamples;
-                ////Uncaging
-                //if (includeUncage)
-                //{
-                //    int nRepeat = State.Uncaging.trainRepeat;
-                //    int repeatInterval = (int)(State.Uncaging.pulseSetInterval_forFrame * outputRate / 1000.0);
-                //    int samplesPerRepeat = (int)(outputRate * State.Uncaging.pulseSetInterval_forFrame / 1000.0);
-                //    int TotalSamples = (int)(outputRate * (State.Uncaging.pulseSetInterval_forFrame * nRepeat + State.Uncaging.baselineBeforeTrain_forFrame) / 1000.0);
-                //    if (TotalSamples < samplesPerRepeat)
-                //        TotalSamples = samplesPerRepeat;
-                //    nSampleU = TotalSamples;
-                //    nSamples = nSampleU;
-                //}
-
-                //if (includeDigital)
-                //{
-                //    int nRepeat = State.DO.trainRepeat;
-                //    int repeatInterval = (int)(State.DO.pulseSetInterval_forFrame * outputRate / 1000.0);
-                //    int samplesPerRepeat = (int)(outputRate * State.DO.pulseSetInterval_forFrame / 1000.0);
-                //    int TotalSamples = (int)(outputRate * (State.DO.pulseSetInterval_forFrame * nRepeat + State.DO.baselineBeforeTrain_forFrame) / 1000.0);
-                //    if (TotalSamples < samplesPerRepeat)
-                //        TotalSamples = samplesPerRepeat;
-                //    nSampleD = TotalSamples;
-                //    nSamples = nSampleU;
-                //}
-
-                //if (includeDigital && includeUncage)
-                //    nSamples = Math.Max(nSampleD, nSampleU);
             }
 
             if (includeClock) //nSamples will be changed.
             {
                 int linePerCycle = State.Acq.linesPerFrame * State.Acq.nFrames;
 
+                outputRate = State.Acq.outputRate;
                 nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame * State.Acq.nFrames);
 
                 if (!image_grabbing) //focusing.
@@ -1049,14 +771,16 @@ namespace FLIMage
                     nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame);
                 }
 
-                DigitalState digital_state = State.Init.lineClockAcitveHigh ? DigitalState.ForceDown : DigitalState.ForceUp;
+                bool[] waveform = new bool[nSamples];
 
-                DigitalWaveform waveform = new DigitalWaveform(nSamples, 1, digital_state);
+                if (!State.Init.lineClockAcitveHigh)
+                    for (int i = 0; i < nSamples; i++)
+                        waveform[i] = true;
 
                 for (int i = 0; i < linePerCycle; i++)
                 {
                     int loc = (int)(i * outputRate * msPerLine / 1000.0);
-                    waveform.Signals[0].States[loc] = State.Init.lineClockAcitveHigh ? DigitalState.ForceUp : DigitalState.ForceDown;
+                    waveform[loc] = State.Init.lineClockAcitveHigh;
                 }
 
                 waveform_output[0] = waveform;
@@ -1067,7 +791,7 @@ namespace FLIMage
                 if (State.Init.DO_uncagingShutter)
                     waveform_output[AddClockC] = MakeWaveFormForDigitalUncaging(State, outputRate, image_grabbing, nSamples);
                 else //Never been reached.
-                    waveform_output[AddClockC] = new DigitalWaveform(nSamples, 1, DigitalState.ForceDown);
+                    waveform_output[AddClockC] = new bool[nSamples];
             }
 
             if (includeDigital)
@@ -1079,27 +803,22 @@ namespace FLIMage
             return waveform_output;
         }
 
+
         static public double[][] GetDigitalOutputInDouble(ScanParameters State, bool uncaging_on, bool digital_on, bool for_frame, out double outputRate)
         {
             bool clock_on = false;
-            DigitalWaveform[] digitalform = makeDigitalOutputAllChannels(State, clock_on, uncaging_on, digital_on, for_frame, out outputRate, out int nSamples);
+            bool[][] digitalform = makeDigitalOutputAllChannels(State, clock_on, uncaging_on, digital_on, for_frame, out outputRate, out int nSamples);
             double[][] result = new double[digitalform.Length][];
             for (int i = 0; i < digitalform.Length; i++)
-                result[i] = DigitalWaveFormToDouble(digitalform[i]);
+            {
+                result[i] = new double[nSamples];
+                for (int j = 0; j < digitalform[i].Length; j++)
+                    result[i][j] = digitalform[i][j] ? 1.0 : 0.0;
+            }
             return result;
         }
 
-        static public double[] DigitalWaveFormToDouble(DigitalWaveform waveform)
-        {
-            int nSamples = waveform.Signals[0].States.Count;
-            double[] result = new double[nSamples];
-            for (int i = 0; i < nSamples; i++)
-                result[i] = waveform.Signals[0].States[i] == DigitalState.ForceUp ? 1.0 : 0.0;
-
-            return result;
-        }
-
-        static public DigitalWaveform MakeWaveFormForDigitalOutputChannel(ScanParameters State, double outputRate, bool forFrame, int channel, int nSamples)
+        static public bool[] MakeWaveFormForDigitalOutputChannel(ScanParameters State, double outputRate, bool forFrame, int channel, int nSamples)
         {
             int baseLine_train = (int)(State.DO.baselineBeforeTrain_forFrame * outputRate / 1000.0);
             int trainInterval = (int)(State.DO.pulseSetInterval_forFrame * outputRate / 1000.0);
@@ -1117,11 +836,10 @@ namespace FLIMage
             int pulseInterval = (int)(State.DO.pulseISI[channel] * outputRate / 1000.0);
 
             bool end_of_pulse = false;
-            DigitalState state = DigitalState.ForceDown;
+            bool[] waveform = new bool[nSamples];
             if (!State.DO.active_high[channel])
-                state = DigitalState.ForceUp;
-
-            DigitalWaveform waveform = new DigitalWaveform(nSamples, 1, state);
+                for (int i = 0; i < nSamples; i++)
+                    waveform[i] = true;
 
             for (int train = 0; train < nRepeat; train++)
             {
@@ -1146,12 +864,7 @@ namespace FLIMage
                     }
 
                     for (int i = pulseStart; i < pulseEnd; i++)
-                    {
-                        if (State.DO.active_high[channel])
-                            waveform.Signals[0].States[i] = DigitalState.ForceUp;
-                        else
-                            waveform.Signals[0].States[i] = DigitalState.ForceDown;
-                    }
+                        waveform[i] = State.DO.active_high[channel];
                 }
 
                 if (end_of_pulse)
@@ -1161,8 +874,7 @@ namespace FLIMage
             return waveform;
         }
 
-
-        static public DigitalWaveform MakeWaveFormForDigitalUncaging(ScanParameters State, double outputRate, bool forFrame, int nSamples)
+        static public bool[] MakeWaveFormForDigitalUncaging(ScanParameters State, double outputRate, bool forFrame, int nSamples)
         {
             bool activeHigh = State.Uncaging.shutter_activeHigh;
             int baseLine_train = (int)(State.Uncaging.baselineBeforeTrain_forFrame * outputRate / 1000.0);
@@ -1181,11 +893,10 @@ namespace FLIMage
             int pulseInterval = (int)(State.Uncaging.pulseISI * outputRate / 1000.0);
 
             bool end_of_pulse = false;
-            DigitalState state = DigitalState.ForceDown;
+            bool[] waveform = new bool[nSamples];
             if (!activeHigh)
-                state = DigitalState.ForceUp;
-
-            DigitalWaveform waveform = new DigitalWaveform(nSamples, 1, state);
+                for (int i = 0; i < nSamples; i++)
+                    waveform[i] = true;
 
 
             for (int train = 0; train < nRepeat; train++)
@@ -1211,12 +922,7 @@ namespace FLIMage
                     }
 
                     for (int i = pulseStart; i < pulseEnd; i++)
-                    {
-                        if (activeHigh)
-                            waveform.Signals[0].States[i] = DigitalState.ForceUp;
-                        else
-                            waveform.Signals[0].States[i] = DigitalState.ForceDown;
-                    }
+                        waveform[i] = activeHigh;
                 }
 
                 if (end_of_pulse)
@@ -1226,32 +932,20 @@ namespace FLIMage
             return waveform;
         }
 
-        //
-        //Clock is coming out of the second board. For now.
-        //
-        public class DigitalLineClock
+        public class DigitalOutputControl
         {
             private String digitalLinePort;
             private String DO_ShutterPort = "";
             private String[] DO_Port;
 
-            private String triggerPort;
-            private String ExternalTriggerPort;
-            private String sampleClockPort;
-            private bool sameBoardWithMirrors;
+            NiDaq.DigitalOutputSignal hDO;
+            private String sampleClockPort = "";
             private ScanParameters State;
             private String Board;
-            private int nSamples;
-            private Task myTask;
-            private DigitalWaveform[] waveform_output;
-            private DigitalMultiChannelWriter writer;
 
-            private bool portActive = false;
-
-            public DigitalLineClock(ScanParameters State_in)
+            public DigitalOutputControl(ScanParameters State_in)
             {
                 State = State_in;
-                GetTriggerPortName(State.Init.mirrorAOPortX, State, ref Board, ref triggerPort, ref ExternalTriggerPort, ref sampleClockPort);
 
                 digitalLinePort = Board + "/port0/" + State.Init.DigitalLinePort;
                 DO_ShutterPort = Board + "/port0/" + State.Init.DigitalShutterPort;
@@ -1259,11 +953,6 @@ namespace FLIMage
                 DO_Port[0] = Board + "/port0/" + State.Init.DigitalOutput1;
                 DO_Port[1] = Board + "/port0/" + State.Init.DigitalOutput2;
                 DO_Port[2] = Board + "/port0/" + State.Init.DigitalOutput3;
-
-                sameBoardWithMirrors = IfSameBoard_With_Mirror(Board, State);
-
-                if (sameBoardWithMirrors)
-                    sampleClockPort = "";
             }
 
             public void PutValue_and_Start(bool ext_trigger, bool clock_on, bool uncaging_on, bool digital_on, bool grabbing)
@@ -1274,463 +963,471 @@ namespace FLIMage
 
                 if (!include_uncaging && !include_digital && !include_clock)
                 {
-                    myTask = null;
                     return;
                 }
 
-                waveform_output = makeDigitalOutputAllChannels(State, include_clock, include_uncaging, include_digital, grabbing, out double outputRate, out int nSamples);
+                bool[][] data1 = makeDigitalOutputAllChannels(State, include_clock, include_uncaging, include_digital, grabbing, out double outputRate, out int nSamples);
 
-                myTask = new Task();
-
+                List<string> ports = new List<string>();
                 if (include_clock)
-                    myTask.DOChannels.CreateChannel(digitalLinePort, "", ChannelLineGrouping.OneChannelForEachLine);
-
+                    ports.Add(digitalLinePort);
                 if (include_uncaging)
-                    myTask.DOChannels.CreateChannel(DO_ShutterPort, "", ChannelLineGrouping.OneChannelForEachLine);
-
+                    ports.Add(DO_ShutterPort);
                 if (include_digital)
                 {
                     for (int j = 0; j < DO_Port.Length; j++)
                     {
                         if (State.DO.NChannels > j)
-                            myTask.DOChannels.CreateChannel(DO_Port[j], "", ChannelLineGrouping.OneChannelForEachLine);
+                            ports.Add(DO_Port[j]);
                     }
                 }
 
-                if (grabbing)
-                    myTask.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples);
-                else
-                    myTask.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.ContinuousSamples, nSamples);
+                hDO = new NiDaq.DigitalOutputSignal(ports.ToArray());
+                String trig_port = State.Init.TriggerInput;
+                if (ext_trigger)
+                    trig_port = State.Init.ExternalTriggerInputPort;
 
-                if (sameBoardWithMirrors)
+                hDO.PutValue_and_Start(data1, outputRate, sampleClockPort, trig_port, !grabbing);
+            }
+
+            public void PutSingleValue(bool ON)
+            {
+                List<string> ports = new List<string>();
+                ports.Add(digitalLinePort);
+                ports.Add(DO_ShutterPort);
+                for (int j = 0; j < DO_Port.Length; j++)
                 {
-                    if (ext_trigger)
-                        myTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(ExternalTriggerPort, DigitalEdgeStartTriggerEdge.Rising);
-                    else
-                        myTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
+                    if (State.DO.NChannels > j)
+                        ports.Add(DO_Port[j]);
                 }
 
-                myTask.Control(TaskAction.Verify);
+                hDO = new NiDaq.DigitalOutputSignal(ports.ToArray());
 
-                writer = new DigitalMultiChannelWriter(myTask.Stream);
-                writer.WriteWaveform(false, waveform_output);
+                bool[] data = new bool[2 + DO_Port.Length];
+                data[0] = !State.Init.lineClockAcitveHigh; //uncage
+                data[1] = !State.Uncaging.shutter_activeHigh; //uncage
 
-                myTask.Start();
-                portActive = true;
+                for (int j = 0; j < DO_Port.Length; j++)
+                    data[2 + j] = !State.DO.active_high[j];
 
-                //double outputRate = State.Acq.outputRate;
+                if (ON)
+                {
+                    for (int i = 0; i < data.GetLength(0); i++)
+                        data[i] = !data[i];
+                }
 
-                //double msPerLine = State.Acq.msPerLine;
-                //if (State.Acq.fastZScan)
-                //    msPerLine = State.Acq.FastZ_msPerLine;
-
-                //int linePerCycle = State.Acq.linesPerFrame * State.Acq.nFrames;
-
-                //nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame * State.Acq.nFrames);
-
-                //if (focus)
-                //{
-                //    linePerCycle = State.Acq.linesPerFrame;
-                //    nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame);
-                //}
-
-                //myTask = new Task();
-                //myTask.DOChannels.CreateChannel(digitalLinePort, "", ChannelLineGrouping.OneChannelForEachLine);
-                //myTask.DOChannels.CreateChannel(digitalShutterPort, "", ChannelLineGrouping.OneChannelForEachLine);
-
-                //if (focus)
-                //    myTask.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.ContinuousSamples, nSamples);
-                //else
-                //    myTask.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, nSamples);
-
-                //if (sameBoardWithMirrors)
-                //{
-                //    if (!ext_trigger)
-                //        myTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
-                //    else
-                //        myTask.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(ExternalTriggerPort, DigitalEdgeStartTriggerEdge.Rising);
-                //}
-
-                //myTask.Control(TaskAction.Verify);
-
-                //DigitalState digital_state = State.Init.lineClockAcitveHigh ? DigitalState.ForceDown : DigitalState.ForceUp;
-
-                //waveform = new DigitalWaveform[2];
-                //waveform[0] = new DigitalWaveform(nSamples, 1, digital_state);
-
-                //for (int i = 0; i < linePerCycle; i++)
-                //{
-                //    int loc = (int)(i * outputRate * msPerLine / 1000.0);
-                //    waveform[0].Signals[0].States[loc] = State.Init.lineClockAcitveHigh ? DigitalState.ForceUp : DigitalState.ForceDown;
-                //}
-
-                //if (State.Init.DO_uncagingShutter && !focus)
-                //    waveform[1] = MakeWaveFormForDigitalUncaging(State, outputRate, true, nSamples);
-                //else
-                //    waveform[1] = new DigitalWaveform(nSamples, 1, DigitalState.ForceDown);
-
-                //writer = new DigitalMultiChannelWriter(myTask.Stream);
-                //writer.WriteWaveform(false, waveform);
-                //myTask.Start();
+                hDO.PutSingleValue(data);
             }
 
             public void Stop()
             {
-                if (myTask != null && portActive)
-                {
-                    myTask.Stop();
-                    myTask.WaitUntilDone();
-                    //myTask.Dispose();
-                    portActive = false;
-                }
+                if (hDO != null)
+                    hDO.Stop();
             }
 
-            public void dispose()
+            public void Dispose()
             {
-                if (myTask != null)
-                    myTask.Dispose();
+                if (hDO != null)
+                    hDO.Dispose();
             }
 
         }
 
 
-        //Analog output class to control galvanoic mirrors. X and Y outputs are defined by State.Init.mirrorAOPortX and State.Init.mirrorAOPortY
-        public class MirrorAO
+        public class AnalogOutput
         {
-            public Task hAOXY;
-            //public Task hAOXY_S;
-            public Task hAOX_S;
-            public Task hAOY_S;
-
-            public AnalogMultiChannelWriter writerXY;
-            //public AnalogMultiChannelWriter writerXY_S;
-            public AnalogMultiChannelWriter writerX_S;
-            public AnalogMultiChannelWriter writerY_S;
-
             public double outputRate;
-            public double msPerLine;
-            public int nFrames;
-            public int nLines;
-            public double ScanFraction;
             public String portX;
             public String portY;
-            public String triggerPort = "";
-            public String sampleClockPort = "";
-            public String Board = "";
-            public String ExternalTriggerInputPort = "";
 
             public ScanParameters State;
             public Shading shading;
 
+            public String[] AO_Ports;
+            public NiDaq.AnalogOutput analog_output;
+
+            public double[,] DataXY;
+            public double[,] DataEOM;
+            public double[,] DataAll;
+
             public event FrameDoneHandler FrameDone;
             public EventArgs e = null;
-            public delegate void FrameDoneHandler(MirrorAO mirrorAO, EventArgs e);
-            public bool SameBoard = false;
+            public delegate void FrameDoneHandler(AnalogOutput mirrorAO, EventArgs e);
 
-            public MirrorAO(ScanParameters State_in, Shading shading_in)
+            double maxV_Mirror = 10;
+            double minV_Mirror = -10;
+            double maxV_EOM = 2;
+            double minV_EOM = -2;
+
+            double[] maxVots;
+            double[] minVolts;
+
+            bool includeMirror = true;
+            bool includeEOM = true;
+            int addUncagingAO = 0;
+
+            public AnalogOutput(ScanParameters State_in, Shading shading_in, bool includeMirror_in)
             {
                 State = State_in;
                 shading = shading_in;
 
-                hAOXY = new Task();
-                //hAOXY_S = new Task();
-                hAOX_S = new Task();
-                hAOY_S = new Task();
-
-                double maxV = 10;
-                double minV = -10;
+                includeMirror = includeMirror_in;
 
                 portX = State.Init.mirrorAOPortX;
                 portY = State.Init.mirrorAOPortY;
 
-                hAOXY.AOChannels.CreateVoltageChannel(portX, "aoChannelX", minV, maxV, AOVoltageUnits.Volts);
-                hAOXY.AOChannels.CreateVoltageChannel(portY, "aoChannelY", minV, maxV, AOVoltageUnits.Volts);
+                var portList = new List<string>();
+                var maxValues = new List<double>();
+                var minValues = new List<double>();
 
-                //hAOXY_S.AOChannels.CreateVoltageChannel(portX, "aoChannelXS", minV, maxV, AOVoltageUnits.Volts);
-                //hAOXY_S.AOChannels.CreateVoltageChannel(portY, "aoChannelYS", minV, maxV, AOVoltageUnits.Volts);
-
-                hAOX_S.AOChannels.CreateVoltageChannel(portX, "aoChannelXS", minV, maxV, AOVoltageUnits.Volts);
-                hAOY_S.AOChannels.CreateVoltageChannel(portY, "aoChannelYS", minV, maxV, AOVoltageUnits.Volts);
-
-                GetTriggerPortName(portX, State, ref Board, ref triggerPort, ref ExternalTriggerInputPort, ref sampleClockPort);
-                State.Init.MirrorAOBoard = Board;
-
+                if (includeMirror)
+                {
+                    portList.Add(portX);
+                    portList.Add(portY);
+                    maxValues.Add(maxV_Mirror);
+                    maxValues.Add(maxV_Mirror);
+                    minValues.Add(minV_Mirror);
+                    minValues.Add(minV_Mirror);
+                }
 
                 if (State.Init.EOM_nChannels > 0)
                 {
-                    string tmpBoard = "";
-                    string tmpTrigger = "";
-                    string tmpExt = "";
-                    string tmpSample = "";
-                    GetTriggerPortName(State.Init.EOM_Port0, State, ref tmpBoard, ref tmpTrigger, ref tmpExt, ref tmpSample);
-                    SameBoard = IfSameBoard_With_Mirror(tmpBoard, State);
-                    minV = -2;
-                    maxV = 2;
-
-                    if (SameBoard)
+                    for (int i = 0; i < State.Init.EOM_nChannels; i++)
                     {
-                        hAOXY.AOChannels.CreateVoltageChannel(State.Init.EOM_Port0, "M_EOM0", minV, maxV, AOVoltageUnits.Volts);
-                        if (State.Init.EOM_nChannels > 1)
-                        {
-                            hAOXY.AOChannels.CreateVoltageChannel(State.Init.EOM_Port1, "M_EOM1S", minV, maxV, AOVoltageUnits.Volts);
-                        }
-                        if (State.Init.EOM_nChannels > 2)
-                        {
-                            hAOXY.AOChannels.CreateVoltageChannel(State.Init.EOM_Port2, "M_EOM2", minV, maxV, AOVoltageUnits.Volts);
-                        }
-                        if (State.Init.EOM_nChannels > 3)
-                        {
-                            hAOXY.AOChannels.CreateVoltageChannel(State.Init.EOM_Port3, "M_EOM3", minV, maxV, AOVoltageUnits.Volts);
-                        }
-
-                        if (State.Init.AO_uncagingShutter)
-                        {
-                            hAOXY.AOChannels.CreateVoltageChannel(State.Init.UncagingShutterAnalogPort, "M_UncagingShutter", 0, 5, AOVoltageUnits.Volts);
-                        }
+                        String port = (String)State.Init.GetType().GetField("EOM_Port" + i).GetValue(State.Init);
+                        portList.Add(port);
+                        maxValues.Add(maxV_EOM);
+                        minValues.Add(minV_EOM);
                     }
                 }
 
-                hAOXY.Control(TaskAction.Verify);
-                //hAOXY_S.Control(TaskAction.Verify);
-                hAOX_S.Control(TaskAction.Verify);
-                hAOY_S.Control(TaskAction.Verify);
-
-
-                //
-                try
+                if (State.Init.AO_uncagingShutter)
                 {
-                    if (sampleClockPort != "")
-                        hAOXY.ExportSignals.ExportHardwareSignal(ExportSignal.SampleClock, sampleClockPort);
-                }
-                catch (DaqException ex)
-                {
-                    Debug.WriteLine("Error in exporting clock:" + sampleClockPort + ":" + ex.Message);
+                    addUncagingAO = 1;
+                    portList.Add(State.Init.UncagingShutterAnalogPort);
+                    maxValues.Add(10);
+                    minValues.Add(-10);
                 }
 
-            }
+                includeEOM = (State.Init.EOM_nChannels + addUncagingAO) > 0;
 
-            //Put value for simple scanning.
-            public double[,] putValueScan(bool focus, bool shutter_open, bool makeNew)
-            {
-                outputRate = State.Acq.outputRate;
-                msPerLine = State.Acq.msPerLine;
-                if (State.Acq.fastZScan)
-                    msPerLine = State.Acq.FastZ_msPerLine;
-
-                nFrames = State.Acq.nFrames;
-                nLines = State.Acq.linesPerFrame;
-
-
-                int samplesPerChannel = (int)(outputRate * msPerLine * nLines * nFrames / 1000.0);
-
-                if (makeNew)
+                if (portList.Count > 0)
                 {
-                    if (focus)
-                        hAOXY.Timing.ConfigureSampleClock("", outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.ContinuousSamples);
-                    else
-                        hAOXY.Timing.ConfigureSampleClock("", outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, samplesPerChannel);
-
-                    hAOXY.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
-
-                    hAOXY.EveryNSamplesWrittenEventInterval = (int)(outputRate * msPerLine * nLines / 1000.0);
-                    hAOXY.EveryNSamplesWritten += new EveryNSamplesWrittenEventHandler(EveryNSampleEvent);
-
-                    writerXY = new AnalogMultiChannelWriter(hAOXY.Stream);
-                }
-
-                double[,] DataXY = MakeMirrorOutputXY(State);
-                double[,] DataAll;
-
-                if (SameBoard)
-                {
-                    double[,] DataEOM = MakeEOMOutput(State, shading, focus, shutter_open);
-                    DataAll = ConcatChannels(DataXY, DataEOM);
+                    AO_Ports = portList.ToArray();
+                    maxVots = maxValues.ToArray();
+                    minVolts = minValues.ToArray();
+                    analog_output = new NiDaq.AnalogOutput(AO_Ports, maxVots, minVolts);
                 }
                 else
                 {
-                    DataAll = DataXY;
+                    AO_Ports = null;
+                    analog_output = null;
                 }
+            }
 
-                writerXY.WriteMultiSample(false, DataAll);
+            //Put value for simple scanning.
+            public double[,] putValueScan(bool focus, bool shutter_open)
+            {
+                if (analog_output == null)
+                    return null;
+
+                outputRate = State.Acq.outputRate;
+                if (includeMirror)
+                    DataXY = MakeMirrorOutputXY(State);
+                else
+                    DataXY = null;
+
+                if (includeEOM)
+                    DataEOM = MakeEOMOutput(State, shading, focus, shutter_open);
+                else
+                    DataEOM = null;
+
+                DataAll = ConcatChannels(DataXY, DataEOM);
+
+                analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, focus);
                 return DataXY;
             }
 
-            void EveryNSampleEvent(object sender, EveryNSamplesWrittenEventArgs e)
+            public void putvalue(double[,] values, double outputRate1)
             {
-                FrameDone(this, null);
+                outputRate = outputRate1;
+                int samplesPerChannel = (int)(values.GetLength(1));
+                analog_output.Putvalue(values, outputRate, State.Init.SampleClockPort, false);
+            }
+
+            void EveryNSampleEvent(object sender, EventArgs e)
+            {
+                FrameDone?.Invoke(this, null);
             }
 
             public void putValueScanAndUncaging()
             {
+                if (analog_output == null)
+                    return;
+
                 outputRate = State.Acq.outputRate;
-                msPerLine = State.Acq.msPerLine;
-                if (State.Acq.fastZScan)
-                    msPerLine = State.Acq.FastZ_msPerLine;
+                double[,] DataXY_Org = MakeMirrorOutputXY(State);
 
-                nFrames = State.Acq.nFrames;
-                nLines = State.Acq.linesPerFrame;
-
-                int samplesPerChannel = (int)(outputRate * msPerLine * nLines * nFrames / 1000);
-
-                hAOXY.Timing.ConfigureSampleClock("", outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, samplesPerChannel);
-                hAOXY.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
-
-                double[,] DataXY = makeMirrorOutput_Imaging_Uncaging(State);
-
-                double[,] DataAll;
-
-                if (SameBoard)
-                {
-                    double[,] DataEOM = makeEOMOutput_Imaging_Uncaging(State, shading); //(State, calib, focus, shutter_open);
-                    DataAll = ConcatChannels(DataXY, DataEOM);
-                }
+                if (includeMirror)
+                    DataXY = makeMirrorOutput_Imaging_Uncaging(State);
                 else
-                {
-                    DataAll = DataXY;
-                }
+                    DataXY = null;
 
-                hAOXY.EveryNSamplesWrittenEventInterval = (int)(outputRate * msPerLine * nLines / 1000);
-                hAOXY.EveryNSamplesWritten += new EveryNSamplesWrittenEventHandler(EveryNSampleEvent);
+                if (includeEOM)
+                    DataEOM = makeEOMOutput_Imaging_Uncaging(State, shading); //(State, calib, focus, shutter_open);
+                else
+                    DataEOM = null;
 
-                writerXY = new AnalogMultiChannelWriter(hAOXY.Stream);
-                writerXY.WriteMultiSample(false, DataAll);
+                DataAll = ConcatChannels(DataXY, DataEOM);
+
+                analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false);
+                analog_output.SetReturnFunction(DataXY_Org.GetLength(1));
+                analog_output.EveryNSamplesEvent += EveryNSampleEvent;
             }
 
             public double[,] putvalueUncageOnce() //lower sampling rate!!
             {
+                if (analog_output == null)
+                    return null;
+
                 outputRate = State.Uncaging.outputRate;
 
-                int samplesPerChannel = (int)(outputRate * State.Uncaging.sampleLength / 1000.0);
-                //double[,] DataXY = new double[2, samplesPerChannel];
-
-                double[,] DataXY = MakeUncagePulses_MirrorAO(State, outputRate);
-
-                double[,] DataAll;
-
-                if (SameBoard)
-                {
-                    double[,] DataEOM = MakePockelsPulses_PockelsAO(State, outputRate, State.Init.AO_uncagingShutter, false, shading);
-                    DataAll = ConcatChannels(DataXY, DataEOM);
-                }
+                if (includeMirror)
+                    DataXY = MakeUncagePulses_MirrorAO(State, outputRate);
                 else
-                {
-                    DataAll = DataXY;
-                }
+                    DataXY = null;
 
-                hAOXY.Timing.ConfigureSampleClock("", outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, samplesPerChannel);
-                //hAOXY.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
+                if (includeEOM)
+                    DataEOM = MakePockelsPulses_PockelsAO(State, outputRate, State.Init.AO_uncagingShutter, false, shading);
+                else
+                    DataEOM = null;
 
-                writerXY = new AnalogMultiChannelWriter(hAOXY.Stream);
-                writerXY.WriteMultiSample(false, DataAll);
-
+                DataAll = ConcatChannels(DataXY, DataEOM);
+                analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false);
                 return DataXY;
             }
 
-
-            public void putValue_S_ToStartPos()
+            public double[] mirrorStartPos()
             {
                 double[,] values = new double[2, 1];
-
                 double maxX = State.Acq.XMaxVoltage * State.Acq.scanVoltageMultiplier[0] / State.Acq.zoom / State.Acq.fillFraction;
                 double maxY = State.Acq.YMaxVoltage * State.Acq.scanVoltageMultiplier[1] / State.Acq.zoom;
                 values[0, 0] = -0.5 * maxX; //Default position.
                 values[1, 0] = -0.5 * maxY;
-
                 RotateAndOffset(values, State);
-                double[] setValue = new double[] { values[0, 0], values[1, 0] };
+                return new double[] { values[0, 0], values[1, 0] };
+            }
 
-                putValue_S(setValue);
+            public void putValue_S_ToStartPos(bool zero_EOM, bool ao_shutter)
+            {
+                if (analog_output == null)
+                    return;
+
+                double[] xyValue = null;
+                if (includeMirror)
+                    xyValue = mirrorStartPos();
+
+                double[] powerArray = null;
+                if (includeEOM)
+                    powerArray = EOM_Value(zero_EOM, ao_shutter);
+
+                var dataAll = ConcatChannels(xyValue, powerArray);
+                putValue_Single(dataAll);
+            }
+
+            public double[] EOM_Value(bool zero_EOM, bool ao_shutter)
+            {
+                double[] powerArray = new double[State.Init.EOM_nChannels + addUncagingAO];
+
+                if (shading != null)
+                    for (int i = 0; i < State.Init.EOM_nChannels; i++)
+                    {
+                        if (zero_EOM)
+                            powerArray[i] = shading.calibration.GetEOMVoltageByFitting(0, i);   //calibration.calibrationCurve[i][State.Acq.power[0]];
+                        else
+                            powerArray[i] = shading.calibration.GetEOMVoltageByFitting(State.Acq.power[i], i);//calibrationCurve[i][State.Acq.power[i]];                                                                                                              //}
+                    }
+                if (addUncagingAO == 1)
+                    powerArray[powerArray.Length - 1] = ao_shutter ? 5.0 : 0.0;
+
+                return powerArray;
+            }
+
+            public void putValue_Single(double[] XY, bool zero_EOM, bool ao_shutter)
+            {
+                if (analog_output == null)
+                    return;
+
+                double[] xyValue = null;
+                if (includeMirror)
+                    xyValue = XY;
+
+                double[] powerArray = null;
+                if (includeEOM)
+                    powerArray = EOM_Value(zero_EOM, ao_shutter);
+
+                var dataAll = ConcatChannels(xyValue, powerArray);
+                putValue_Single(dataAll);
+            }
+
+            private void putValue_Single(double[] values)
+            {
+                if (analog_output == null)
+                    return;
+
+                analog_output.PutValue_SingleValue(values);
+            }
+
+            public void putValue_Single_EOM(double[] EOMvalues)
+            {
+                if (analog_output == null)
+                    return;
+
+                double[] xyValue = null;
+                if (includeMirror)
+                    xyValue = mirrorStartPos();
+
+                double[] powerArray = null;
+                if (includeEOM)
+                    powerArray = EOMvalues;
+
+                var dataAll = ConcatChannels(xyValue, powerArray);
+                putValue_Single(dataAll);
+            }
+
+
+            public void Start(bool externalTrigger)
+            {
+                if (externalTrigger)
+                    analog_output.Start(State.Init.ExternalTriggerInputPort);
+                else
+                    analog_output.Start(State.Init.TriggerInput);
+            }
+
+            public bool WaitUntilDone(int timeout)
+            {
+                return analog_output.WaitUntilDone(timeout);
+            }
+
+            public void Stop()
+            {
+                analog_output.Stop();
+            }
+
+            public void Dispose()
+            {
+                if (analog_output != null)
+                    analog_output.Dispose();
+            }
+        } //MirrorAO
+
+        public class PiezoControl
+        {
+            ScanParameters State;
+            String Port_AI;
+            String Port_AO;
+            NiDaq.AnalogOutput PiezoAO;
+            NiDaq.AnalogOutput PiezoAI;
+            bool sameBoard_AI = false;
+            bool sameBoard_AO = false;
+            double maxV = 10;
+            double minV = 0;
+            double centerV = 5;
+            public double time_for_movement_ms = 50;
+
+            public PiezoControl(ScanParameters State_in)
+            {
+                State = State_in;
+                Port_AI = State.Init.Piezo_Z_Monitor;
+                Port_AO = State.Init.Piezo_Z_Signal;
             }
 
 
             /// <summary>
-            /// Put Single Values to Mirror channels. 
-            /// double[] values: {X, Y};
+            /// Return how much it moved in voltage.
             /// </summary>
-            /// <param name="values"></param>
-            public void putValue_S(double[] values)
+            /// <param name="destination_V"></param>
+            /// <returns></returns>
+            public void move_piezo_V(double destination_V)
             {
-                try
-                {
-                    //writerXY_S = new AnalogMultiChannelWriter(hAOXY_S.Stream);
-                    //writerXY_S.WriteSingleSample(true, values);
+                double outputRate = 10000;
+                var currentPos_V = getPosition_V();
+                var movement_V = destination_V - currentPos_V;
 
-                    writerX_S = new AnalogMultiChannelWriter(hAOX_S.Stream);
-                    writerX_S.WriteSingleSample(true, new double[] { values[0] });
-                    hAOX_S.WaitUntilDone();
-                    System.Threading.Thread.Sleep(10);
+                int nSamples = (int)(time_for_movement_ms * outputRate / 1000.0); //100 samples
 
-                    writerY_S = new AnalogMultiChannelWriter(hAOY_S.Stream);
-                    writerY_S.WriteSingleSample(true, new double[] { values[1] });
-                    hAOX_S.WaitUntilDone();
-                    System.Threading.Thread.Sleep(10);
-                }
-                catch (Exception EX)
-                {
-                    Debug.WriteLine(EX.ToString());
-                }
+                PiezoAO = new NiDaq.AnalogOutput(new string[] { Port_AO }, new double[] { maxV }, new double[] { minV });
+
+                double[,] DataAll = new double[1, nSamples];
+                for (int i = 0; i < nSamples; i++)
+                    DataAll[0, i] = currentPos_V + i * movement_V / nSamples;
+
+                PiezoAO.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false); //immediately move. Trigger is not necessary since it is only 1 channel.
+
+                PiezoAO.Dispose();
             }
 
-            public bool start(bool externalTrigger)
+            public double um_to_V(double um)
             {
-                if (externalTrigger)
-                    hAOXY.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(ExternalTriggerInputPort, DigitalEdgeStartTriggerEdge.Rising);
-                else
-                    hAOXY.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
-                try
-                {
-                    hAOXY.Start();
-                    return true;
-                }
-                catch (DaqException ex)
-                {
-                    hAOXY.Start();
-                    return false;
-                }
+                return um / State.Init.Piezo_um_per_V + centerV;
             }
 
-            public void WaitUntilDone(int timeout)
+            public double V_to_um(double voltage)
             {
-                try
-                {
-                    hAOXY.WaitUntilDone(timeout);
-                }
-                catch (DaqException ex)
-                {
-                    Debug.WriteLine("TIMEOUT: hAOXY mirror output" + ex.Message);
-                    stop();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("TIMEOUT: hAOXY mirror data" + ex.Message);
-                }
+                return (voltage - centerV) * State.Init.Piezo_um_per_V;
             }
 
-            public void stop()
+            /// <summary>
+            /// It moves piezo to destination (um). Return destination in um.
+            /// </summary>
+            /// <param name="destination_um"></param>
+            /// <returns></returns>
+            public double move_Piezo_um(double destination_um)
             {
-                try
-                {
-                    hAOXY.Stop();
-                    hAOXY.WaitUntilDone();
-                }
-                catch { }
-                finally { }
+                move_piezo_V(um_to_V(destination_um));
+                return getPosition_um();
             }
 
-            public void dispose()
+            /// <summary>
+            /// Move 1 step for the distance_um.
+            /// return destination in um.
+            /// </summary>
+            /// <param name="distance_um"></param>
+            /// <returns></returns>
+            public double move_Piezo_1step_um(double distance_um)
             {
-                if (hAOXY != null)
-                    hAOXY.Dispose();
-
-                if (hAOX_S != null)
-                    hAOX_S.Dispose();
-
-                if (hAOY_S != null)
-                    hAOY_S.Dispose();
-
-                //if (hAOXY_S != null)
-                //    hAOXY_S.Dispose();
+                var destination_um = distance_um + getPosition_um();
+                return move_Piezo_um(destination_um);
             }
+
+            /// <summary>
+            /// Get current piezo position in um.
+            /// </summary>
+            /// <returns></returns>
+            public double getPosition_um()
+            {
+                double v = getPosition_V();
+                return V_to_um(v);
+            }
+
+            /// <summary>
+            /// move piezo to zero and calculate how much it moved in um.
+            /// </summary>
+            /// <returns></returns>
+            public double goto_center_um()
+            {
+                double org = getPosition_um();
+                move_piezo_V(centerV);
+                double dest = getPosition_um();
+                return dest - org;
+            }
+
+            public double getPosition_V()
+            {
+                var ai = new NiDaq.AI_Read_SingleValue(Port_AI, new double[] { minV, maxV }, out double result);
+                return result;
+            }
+
         }
 
         static public double[,] DefinePulsePosition(ScanParameters State)
@@ -2040,506 +1737,98 @@ namespace FLIMage
             return DataEOM;
         }
 
-        static public void GetTriggerPortName(String DeviceName, ScanParameters State, ref String BoardName, ref string triggerPort, ref String ExternalTriggerInputPort, ref String SampleClockPort)
-        {
-            String[] sP = DeviceName.Split('/');
-            BoardName = sP[0];
-            for (int i = 0; i < sP.Length; i++)
-                if (sP[i].StartsWith("Dev"))
-                {
-                    BoardName = sP[i];
-                }
-
-            ExternalTriggerInputPort = "/" + BoardName + "/" + State.Init.ExternalTriggerInputPort;
-            triggerPort = "/" + BoardName + "/" + State.Init.TriggerInput;
-            SampleClockPort = "/" + BoardName + "/" + State.Init.SampleClockPort;
-        }
-
         public class pockelAI
         {
-            public Task hEOM_AI, hEOM_AI_S;
-            public AnalogMultiChannelReader readerEOM_AI; // readerEOM_AI_S;
-            public Task runningTask;
-            public AsyncCallback analogCallback;
-
-            public String port0;
-            public String port1;
-            public String port2;
-            public String port3;
-
+            public String[] AI_Ports;
+            public double[] maxVots;
+            public double[] minVolts;
+            public NiDaq.AnalogInput analog_input;
             public int nChannels;
 
             public int samplesPerTrigger;
-            public String triggerPort;
-            public String SampleClockPort;
-            public DigitalEdgeStartTriggerEdge triggerEdge;
-
-            public bool measurement_done = false;
-
-            //public double[,] data;
-            public double[,] result;
-
             public ScanParameters State;
-
-            public String Board;
-            public String ExternalTriggerInputPort;
+            public double maxV_EOM = 2;
+            public double minV_EOM = -2;
 
             public pockelAI(ScanParameters State_in)
             {
                 State = State_in;
                 //triggerPort = State.Init.EOM_AI_Trigger;
-                port0 = State.Init.EOM_AI_Port0;
-                port1 = State.Init.EOM_AI_Port1;
-                port2 = State.Init.EOM_AI_Port2;
-                port3 = State.Init.EOM_AI_Port3;
+                var portList = new List<string>();
+                var maxValues = new List<double>();
+                var minValues = new List<double>();
+
+                if (State.Init.EOM_nChannels > 0)
+                {
+                    for (int i = 0; i < State.Init.EOM_nChannels; i++)
+                    {
+                        String port = (String)State.Init.GetType().GetField("EOM_AI_Port" + i).GetValue(State.Init);
+                        portList.Add(port);
+                        maxValues.Add(maxV_EOM);
+                        minValues.Add(minV_EOM);
+                    }
+                }
+
                 nChannels = State.Init.EOM_nChannels;
 
-                GetTriggerPortName(port0, State, ref Board, ref triggerPort, ref ExternalTriggerInputPort, ref SampleClockPort);
-
-                double maxV = 1;
-                double minV = -1;
-
-                if (nChannels > 4)
-                    nChannels = 4;
-
-                triggerEdge = DigitalEdgeStartTriggerEdge.Rising;
-
-                hEOM_AI = new Task();
-                hEOM_AI_S = new Task();
-
-                hEOM_AI.AIChannels.CreateVoltageChannel(port0, "EOM_AI_Ch0", (AITerminalConfiguration)(-1), minV, maxV, AIVoltageUnits.Volts);
-                hEOM_AI_S.AIChannels.CreateVoltageChannel(port0, "EOM_AI_Ch0S", (AITerminalConfiguration)(-1), minV, maxV, AIVoltageUnits.Volts);
-
-                if (nChannels > 1)
+                if (portList.Count > 0)
                 {
-                    hEOM_AI.AIChannels.CreateVoltageChannel(port1, "EOM_AI_Ch1", (AITerminalConfiguration)(-1), minV, maxV, AIVoltageUnits.Volts);
-                    hEOM_AI_S.AIChannels.CreateVoltageChannel(port1, "EOM_AI_Ch1S", (AITerminalConfiguration)(-1), minV, maxV, AIVoltageUnits.Volts);
+                    AI_Ports = portList.ToArray();
+                    maxVots = maxValues.ToArray();
+                    minVolts = minValues.ToArray();
+                    analog_input = new NiDaq.AnalogInput(AI_Ports, maxVots, minVolts);
                 }
-
-                if (nChannels > 2)
+                else
                 {
-                    hEOM_AI.AIChannels.CreateVoltageChannel(port2, "EOM_AI_Ch2", (AITerminalConfiguration)(-1), minV, maxV, AIVoltageUnits.Volts);
-                    hEOM_AI_S.AIChannels.CreateVoltageChannel(port2, "EOM_AI_Ch2S", (AITerminalConfiguration)(-1), minV, maxV, AIVoltageUnits.Volts);
+                    AI_Ports = null;
+                    analog_input = null;
                 }
-
-                if (nChannels > 3)
-                {
-                    hEOM_AI.AIChannels.CreateVoltageChannel(port3, "EOM_AI_Ch3", (AITerminalConfiguration)(-1), minV, maxV, AIVoltageUnits.Volts);
-                    hEOM_AI_S.AIChannels.CreateVoltageChannel(port3, "EOM_AI_Ch3S", (AITerminalConfiguration)(-1), minV, maxV, AIVoltageUnits.Volts);
-                }
-
-                hEOM_AI.Control(TaskAction.Verify);
-                hEOM_AI_S.Control(TaskAction.Verify);
-
-                //hEOM_AI.EveryNSamplesReadEventInterval = 1;
-                //hEOM_AI.EveryNSamplesRead += new EveryNSamplesReadEventHandler(SampleCompleted);
             }
 
-            public void SampleCompleted(object obj, EveryNSamplesReadEventArgs e)
+            public bool WaitUntilDone(int timeout)
             {
-                //Debug.WriteLine("Sample Completed!!"); //just put function.
+                return analog_input.WaitUntilDone(timeout);
             }
-
-            //public void setEveryNSampleNumber(int sampleNumber)
-            //{
-            //    hEOM_AI.EveryNSamplesReadEventInterval = sampleNumber;
-            //}
 
             public void setupAI(int samplesPerChannel, double inputRate)
             {
-                //inputRate = State.Acq.inputRate;
                 samplesPerTrigger = samplesPerChannel;
-
-                //hEOM_AI.Timing.ConfigureSampleClock("", inputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, samplesPerTrigger);
-                hEOM_AI.Timing.ConfigureSampleClock("", inputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, samplesPerTrigger);
-                //hEOM_AI.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, triggerEdge);
-                hEOM_AI.Control(TaskAction.Verify);
-
-                hEOM_AI.EveryNSamplesReadEventInterval = samplesPerChannel;
-                //result = new double[,]; //[State.Init.EOM_nChannels, samplesPerTrigger];
-            }
-
-            public void startWithAsyncCallback() //does not work.
-            {
-                readerEOM_AI = new AnalogMultiChannelReader(hEOM_AI.Stream);
-                analogCallback = new AsyncCallback(AnalogInCallback);
-                readerEOM_AI.SynchronizeCallbacks = true;
-                readerEOM_AI.BeginReadMultiSample((int)samplesPerTrigger, analogCallback, hEOM_AI);
-                measurement_done = false;
-                hEOM_AI.Start();
+                analog_input.SetupAI(samplesPerTrigger, inputRate, State.Init.SampleClockPort, false);
             }
 
             public void start(bool externalTrigger)
             {
+                string trig_port = State.Init.TriggerInput;
                 if (externalTrigger)
-                    hEOM_AI.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(ExternalTriggerInputPort, triggerEdge);
-                else
-                    hEOM_AI.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, triggerEdge);
+                    trig_port = State.Init.ExternalTriggerInputPort;
 
-                hEOM_AI.Control(TaskAction.Verify);
-
-                readerEOM_AI = new AnalogMultiChannelReader(hEOM_AI.Stream);
-                measurement_done = false;
-                hEOM_AI.Start();
-                //
+                analog_input.Start(trig_port);
             }
-
 
             public double[] getSingleValue()
             {
-                AnalogMultiChannelReader reader = new AnalogMultiChannelReader(hEOM_AI_S.Stream);
-                double[] data1;
-
-                try
-                {
-                    data1 = reader.ReadSingleSample();
-                    measurement_done = true;
-                }
-                catch (DaqException ex)
-                {
-                    data1 = new double[nChannels];
-                    Debug.WriteLine("Failed:" + ex.Message);
-                }
-                return data1;
+                return analog_input.GetSingleValue();
             }
 
             public void stop()
             {
-                //runningTask = null;
-                hEOM_AI.Stop();
+                analog_input.Stop();
             }
             public void dispose()
             {
-                hEOM_AI.Dispose();
-                hEOM_AI_S.Dispose();
+                analog_input.Dispose();
             }
 
-            public void readSample()
+            public double[,] readSample()
             {
-                if (hEOM_AI.Stream.AvailableSamplesPerChannel == samplesPerTrigger)
-                {
-                    result = readerEOM_AI.ReadMultiSample((int)samplesPerTrigger);
-                }
-                else
-                {
-                    result = readerEOM_AI.ReadMultiSample((int)hEOM_AI.Stream.AvailableSamplesPerChannel);
-                }
-                measurement_done = true;
+                var result = analog_input.ReadSample();
+                return result;
             }
-
-            public void AnalogInCallback(IAsyncResult ar)
-            {
-                try
-                {
-                    result = readerEOM_AI.EndReadMultiSample(ar);
-                }
-                catch (DaqException ex)
-                {
-                    //MessageBox.Show(ex.Message);
-                    Debug.WriteLine("Problem in AnalogInCallback by pockelAI: " + ex.Message);
-                    runningTask = null;
-                }
-                finally
-                {
-                    measurement_done = true;
-                }
-            }
-
         }
 
-
-        public class pockelAO
+        public class LineClockByCounter
         {
-            public Task hEOM, hEOM_S;
-            public AnalogMultiChannelWriter writerEOM;
-            public AnalogMultiChannelWriter writerEOM_S;
-
-            public double outputRate;
-            public double msPerLine;
-            public int nFrames;
-            public int nLines;
-            public int addUncaging = 0;
-            public double ScanFraction;
-            public String port0;
-            public String port1;
-            public String port2;
-            public String port3;
-            public String portU;
-            public String sampleClockPort;
-            public String slaveClockPort;
-            public int nChannels;
-
-            public String triggerPort;
-            public ScanParameters State;
-            public Shading shading;
-
-            public String Board;
-            public String ExternalTriggerInputPort;
-
-            public pockelAO(ScanParameters State_in, Shading shading_in, bool sync)
-            {
-                State = State_in;
-                shading = shading_in;
-
-                outputRate = State.Acq.outputRate;
-                port0 = State.Init.EOM_Port0;
-                port1 = State.Init.EOM_Port1;
-                port2 = State.Init.EOM_Port2;
-                port3 = State.Init.EOM_Port3;
-                portU = State.Init.UncagingShutterAnalogPort;
-                nChannels = State.Init.EOM_nChannels;
-                slaveClockPort = State.Init.EOM_slaveClockPort;
-
-                GetTriggerPortName(port0, State, ref Board, ref triggerPort, ref ExternalTriggerInputPort, ref sampleClockPort);
-                State.Init.EOMBoard = Board;
-
-                if (sampleClockPort.Length <= 4) //Like NA;
-                    sampleClockPort = "";
-
-                if (State.Init.AO_uncagingShutter)
-                    addUncaging = 1;
-
-                if (nChannels > 4)
-                    nChannels = 4;
-
-                double maxV = 2;
-                double minV = -2;
-
-                hEOM = new Task();
-                hEOM_S = new Task();
-
-                if (nChannels > 0)
-                {
-                    hEOM.AOChannels.CreateVoltageChannel(port0, "EOM_Ch0", minV, maxV, AOVoltageUnits.Volts);
-                    hEOM_S.AOChannels.CreateVoltageChannel(port0, "EOM_Ch0S", minV, maxV, AOVoltageUnits.Volts);
-                }
-
-
-                if (nChannels > 1)
-                {
-                    hEOM.AOChannels.CreateVoltageChannel(port1, "EOM_Ch1", minV, maxV, AOVoltageUnits.Volts);
-                    hEOM_S.AOChannels.CreateVoltageChannel(port1, "EOM_Ch1S", minV, maxV, AOVoltageUnits.Volts);
-                }
-
-                if (nChannels > 2)
-                {
-                    hEOM.AOChannels.CreateVoltageChannel(port2, "EOM_Ch2", minV, maxV, AOVoltageUnits.Volts);
-                    hEOM_S.AOChannels.CreateVoltageChannel(port2, "EOM_Ch2S", minV, maxV, AOVoltageUnits.Volts);
-                }
-
-                if (nChannels > 3)
-                {
-                    hEOM.AOChannels.CreateVoltageChannel(port3, "EOM_Ch3", minV, maxV, AOVoltageUnits.Volts);
-                    hEOM_S.AOChannels.CreateVoltageChannel(port3, "EOM_Ch3S", minV, maxV, AOVoltageUnits.Volts);
-                }
-
-                if (State.Init.AO_uncagingShutter)
-                {
-                    hEOM.AOChannels.CreateVoltageChannel(portU, "UncagingShutter", 0, 5, AOVoltageUnits.Volts);
-                    hEOM_S.AOChannels.CreateVoltageChannel(portU, "UncagingShutterS", 0, 5, AOVoltageUnits.Volts);
-
-                    State.Init.uncagingShutter = new bool[State.Init.uncagingLasers.Length];
-                    State.Init.uncagingShutter[nChannels] = true;
-                }
-
-
-                hEOM.Control(TaskAction.Verify);
-                hEOM_S.Control(TaskAction.Verify);
-
-
-                try
-                {
-                    if (slaveClockPort != "" && sync)
-                    {
-                        hEOM.Timing.MasterTimebaseSource = slaveClockPort;
-                        Debug.WriteLine("*** Base clock of EOMs: " + hEOM.Timing.MasterTimebaseSource.ToString() + ", Rate = " + hEOM.Timing.MasterTimebaseRate.ToString() + "***");
-                    }
-                }
-                catch (DaqException ex)
-                {
-                    Debug.WriteLine("Error in synchronizing signals" + ex.ToString());
-                }
-
-            }
-
-
-            public void putvalueUncageOnce()
-            {
-                outputRate = State.Uncaging.outputRate;
-                bool anyUncaging = State.Init.uncagingLasers.Any(item => item == true);
-                double sDelay = State.Uncaging.AnalogShutter_delay;
-                if (!anyUncaging)
-                    sDelay = 0;
-                int samplesPerChannel = (int)(outputRate * State.Uncaging.sampleLength / 1000.0);
-
-                shading.applyCalibration(State);
-                double[,] DataEOM = MakePockelsPulses_PockelsAO(State, outputRate, State.Init.AO_uncagingShutter, false, shading);
-                hEOM.Timing.ConfigureSampleClock("", outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, samplesPerChannel);
-                hEOM.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
-                hEOM.EveryNSamplesWrittenEventInterval = DataEOM.GetLength(1);
-                Debug.WriteLine("Data Length = " + DataEOM.GetLength(1));
-                hEOM.EveryNSamplesWritten += new EveryNSamplesWrittenEventHandler(EveryNSampleEvent);
-
-                writerEOM = new AnalogMultiChannelWriter(hEOM.Stream);
-                writerEOM.WriteMultiSample(false, DataEOM);
-            }
-
-            void EveryNSampleEvent(object sender, EveryNSamplesWrittenEventArgs e)
-            {
-                Debug.WriteLine("finished!!");
-            }
-
-            public void putValueScan(bool focus, bool shutter_open, bool makeNew)
-            {
-                outputRate = State.Acq.outputRate;
-                msPerLine = State.Acq.msPerLine;
-                if (State.Acq.fastZScan)
-                    msPerLine = State.Acq.FastZ_msPerLine;
-
-                nFrames = State.Acq.nFrames;
-                nLines = State.Acq.linesPerFrame;
-
-                int samplesPerChannel = (int)(outputRate * msPerLine * nLines * nFrames / 1000);
-
-                if (makeNew)
-                {
-                    if (focus)
-                        hEOM.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.ContinuousSamples);
-                    else
-                        hEOM.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, samplesPerChannel);
-
-
-                    hEOM.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
-
-                    writerEOM = new AnalogMultiChannelWriter(hEOM.Stream);
-                }
-
-                double[,] DataEOM = MakeEOMOutput(State, shading, focus, shutter_open);
-
-                writerEOM.WriteMultiSample(false, DataEOM);
-            }
-
-
-            public void putValueScan(bool focus, bool shutter_open, double[,] DataXY)
-            {
-                putValueScan(focus, shutter_open, true);
-            }
-
-            public void putValueScanAndUncaging()
-            {
-                outputRate = State.Acq.outputRate;
-                msPerLine = State.Acq.msPerLine;
-                if (State.Acq.fastZScan)
-                    msPerLine = State.Acq.FastZ_msPerLine;
-
-                nFrames = State.Acq.nFrames;
-                nLines = State.Acq.linesPerFrame;
-
-                int samplesPerChannel = (int)(outputRate * msPerLine * nLines * nFrames / 1000);
-
-                hEOM.Timing.ConfigureSampleClock(sampleClockPort, outputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, samplesPerChannel);
-                hEOM.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
-
-                double[,] DataEOM = makeEOMOutput_Imaging_Uncaging(State, shading);
-                writerEOM = new AnalogMultiChannelWriter(hEOM.Stream);
-                writerEOM.WriteMultiSample(false, DataEOM);
-            }
-
-            public void putvalue(double[,] values, double outputRate1)
-            {
-                int samplesPerChannel = (int)(values.GetLength(1));
-
-                hEOM.Timing.ConfigureSampleClock("", outputRate1, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, samplesPerChannel);
-                //hEOM.Triggers.StartTrigger.ConfigureNone();
-                //hEOM.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
-                writerEOM = new AnalogMultiChannelWriter(hEOM.Stream);
-                writerEOM.WriteMultiSample(false, values);
-            }
-
-
-            public int putValue_S(double[] values)
-            {
-                int error = 0;
-                writerEOM_S = new AnalogMultiChannelWriter(hEOM_S.Stream);
-                try
-                {
-                    writerEOM_S.WriteSingleSample(true, values);
-                    hEOM_S.WaitUntilDone();
-                }
-                catch (DaqException ex)
-                {
-                    Debug.WriteLine("Problem in putValue_S" + ex.Message);
-                    error = -1;
-                }
-                return error;
-            }
-
-            public void WaitUntioDone(int timeout)
-            {
-                try
-                {
-                    hEOM.WaitUntilDone(timeout);
-                }
-                catch (DaqException ex)
-                {
-                    Debug.WriteLine("Problem in EOM timeout" + ex.Message);
-                    stop();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Problem in EOM waitUntilDone: " + ex.Message);
-                }
-            }
-
-
-            public void startWithoutTrigger()
-            {
-                hEOM.Triggers.StartTrigger.ConfigureNone();
-                hEOM.Start();
-            }
-
-            public void start(bool externalTrigger)
-            {
-                if (externalTrigger)
-                    hEOM.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(ExternalTriggerInputPort, DigitalEdgeStartTriggerEdge.Rising);
-                else
-                    hEOM.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
-
-                hEOM.Start();
-            }
-
-            public void stop()
-            {
-                try
-                {
-                    hEOM.Stop();
-                    hEOM.WaitUntilDone();
-                }
-                catch
-                {
-
-                }
-                finally { }
-            }
-
-            public void dispose()
-            {
-                if (hEOM != null)
-                {
-                    hEOM.Dispose();
-                }
-
-                if (hEOM_S != null)
-                    hEOM_S.Dispose();
-            }
-
-        }
-
-
-        public class lineClock
-        {
-            public Task lineClockTask;
-            //public Task frameClockTask;
+            public NiDaq.CounterOutput lineClockCounter;
             public String lineClockPort;
             public String frameClockPort;
             public String TriggerPort;
@@ -2555,14 +1844,12 @@ namespace FLIMage
             public String ExternalTriggerInputPort;
             public String sampleClockPort;
 
-            public lineClock(ScanParameters State_in, bool focus) //Constructor
+            public LineClockByCounter(ScanParameters State_in, bool focus) //Constructor
             {
                 State = State_in;
 
                 lineClockPort = State.Init.lineClockPort;
                 frameClockPort = State.Init.frameClockPort;
-
-                GetTriggerPortName(lineClockPort, State, ref Board, ref TriggerPort, ref ExternalTriggerInputPort, ref sampleClockPort);
 
                 msPerLine = State.Acq.msPerLine;
                 if (State.Acq.fastZScan)
@@ -2570,7 +1857,6 @@ namespace FLIMage
 
                 nLines = State.Acq.linesPerFrame * State.Acq.nFrames;
 
-                lineClockTask = new Task();
                 frequency = 1000.0 / msPerLine;
                 dutyCycle = 0.0001; //0.2 us
 
@@ -2579,41 +1865,22 @@ namespace FLIMage
 
                 double delay = State.Acq.LineClockDelay / 1000.0;
 
-                lineClockTask.COChannels.CreatePulseChannelFrequency(lineClockPort, "PulseTrain", COPulseFrequencyUnits.Hertz, COPulseIdleState.Low, delay, frequency, dutyCycle);
-
-                lineClockTask.Triggers.StartTrigger.Type = StartTriggerType.DigitalEdge;
-                lineClockTask.Triggers.StartTrigger.DigitalEdge.Edge = DigitalEdgeStartTriggerEdge.Rising;
-                lineClockTask.Triggers.StartTrigger.DigitalEdge.Source = TriggerPort;
-
-                int nRepeat = nLines + 2; //signal the last line. +1 necessary?
-                if (focus)
-                {
-                    //nRepeat = 32767 * State.Acq.linesPerFrame;
-                    lineClockTask.Timing.ConfigureImplicit(SampleQuantityMode.ContinuousSamples);
-                }
-                else
-                {
-                    lineClockTask.Timing.ConfigureImplicit(SampleQuantityMode.ContinuousSamples);
-                    //lineClockTask.Timing.ConfigureImplicit(SampleQuantityMode.FiniteSamples, nRepeat);
-                }
+                lineClockCounter = new NiDaq.CounterOutput(lineClockPort, State.Init.TriggerInput, delay, frequency, dutyCycle);
             }
 
             public void start(bool externalTrigger)
             {
                 if (externalTrigger)
-                    lineClockTask.Triggers.StartTrigger.DigitalEdge.Source = ExternalTriggerInputPort;
+                    lineClockCounter.Start(State.Init.ExternalTriggerInputPort);
                 else
-                    lineClockTask.Triggers.StartTrigger.DigitalEdge.Source = TriggerPort;
-
-                lineClockTask.Start();
+                    lineClockCounter.Start(State.Init.TriggerInput);
             }
 
             public void stop()
             {
                 try
                 {
-                    lineClockTask.Stop();
-                    lineClockTask.WaitUntilDone();
+                    lineClockCounter.Stop();
                 }
                 catch (Exception Ex)
                 {
@@ -2623,8 +1890,8 @@ namespace FLIMage
 
             public void dispose()
             {
-                if (lineClockTask != null)
-                    lineClockTask.Dispose();
+                if (lineClockCounter != null)
+                    lineClockCounter.Dispose();
             }
         }
 

@@ -50,6 +50,8 @@ namespace FLIMage.HardwareControls.StageControls
         public double[] minVelocity = new double[3];
         public bool setting_velocity = false;
 
+        public double ZStack_Stepsize = 1;
+        public int ZStack_nSlices = 1;
         public double ZStackStart = int.MaxValue;
         public double ZStackCenter = int.MaxValue;
         public double ZStackEnd = int.MaxValue;
@@ -262,6 +264,65 @@ namespace FLIMage.HardwareControls.StageControls
             return new double[] { XPos, YPos, ZPos };
         }
 
+        public void GotoStartPosition(bool warning_on, bool waitUntilFinish)
+        {
+            if (ZStackStart == int.MaxValue || ZStackEnd == int.MaxValue)
+                return;
+
+            double[] position = CurrentUncalibratedPosition();
+            position[2] = ZStackStart;
+            SetNewPosition(position);
+            if (!IfStepTooBig(warning_on))
+                SetPosition();
+
+            if (waitUntilFinish) //For external command it will be always true.
+            {
+                WaitUntilMovementDone();
+            }
+
+            stack_Position = MotorCtrl.StackPosition.Start;
+            GetPosition();
+        }
+
+        public void GotoEndPosition(bool warning_on, bool waitUntilFinish)
+        {
+            double[] position = CurrentUncalibratedPosition();
+            position[2] = ZStackEnd;
+            SetNewPosition(position);
+            if (!IfStepTooBig(warning_on))
+                SetPosition();
+
+            if (waitUntilFinish) //For external command it will be always true.
+            {
+                WaitUntilMovementDone();
+            }
+
+            stack_Position = MotorCtrl.StackPosition.Start;
+            GetPosition();
+        }
+
+        public void MoveMotorBackToCenter_RelativeToZStart()
+        {
+            double Z_um = (int)((double)(ZStack_nSlices - 1) * ZStack_Stepsize / resolutionZ / 2.0);
+            GotoRelativeToZStart(true, true, Z_um);
+            stack_Position = MotorCtrl.StackPosition.Start;
+        }
+
+        public void GotoRelativeToZStart(bool warning_on, bool waitUntilFinish, double Z_um)
+        {
+            double[] position = CurrentUncalibratedPosition();
+            position[2] = ZStackStart + Z_um;
+            SetNewPosition(position);
+            if (!IfStepTooBig(warning_on))
+                SetPosition();
+
+            if (waitUntilFinish) //For external command it will be always true.
+            {
+                WaitUntilMovementDone();
+            }
+            GetPosition();
+        }
+
         public void Zero_Z()
         {
             GetPosition();
@@ -305,7 +366,7 @@ namespace FLIMage.HardwareControls.StageControls
             getParameters();
         }
 
-        public void IfStepTooBig(bool warningOn)
+        public bool IfStepTooBig(bool warningOn)
         {
             getParameters();
             double maxStepXY = maxDistanceXY;
@@ -326,8 +387,12 @@ namespace FLIMage.HardwareControls.StageControls
                     dr = MessageBox.Show("Moving a big step of " + StepSizeX + "um in X, Are you sure?", "", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
                 if (dr == DialogResult.No)
-                    return;
+                    return true;
+                else
+                    return false;
             }
+            else
+                return false;
         }
 
         /// <summary>
@@ -337,6 +402,121 @@ namespace FLIMage.HardwareControls.StageControls
         public void SetPosition()
         {
             controller_object.GetType().GetMethod("SetPosition").Invoke(controller_object, null);
+        }
+
+        public void MoveMotor(bool warningOn, bool waitUntilFinish)
+        {
+            if (waitUntilFinish)
+                WaitUntilMovementDone(); //make sure that there is no task remaining.
+
+            //this.Enabled = false;
+            IfStepTooBig(warningOn);
+
+            SetPosition(); //Actual movement.
+
+            if (waitUntilFinish) //For external command it will be always true.
+            {
+                WaitUntilMovementDone();
+                GetPosition();
+            }
+        }
+
+        public void CalcNSlices(double stepSize)
+        {            
+            int nSlices = (int)Math.Ceiling(Math.Abs((ZStackStart - ZStackEnd) * resolutionZ / stepSize)) + 1;
+            if (ZStackStart - ZStackEnd > 0)
+                stepSize = -Math.Abs(stepSize);
+            else
+                stepSize = Math.Abs(stepSize);
+
+            ZStack_Stepsize = stepSize;
+            ZStack_nSlices = nSlices;
+        }
+
+        public void SetTopPosition()
+        {
+            GetPosition();
+            double[] position = CurrentUncalibratedPosition();
+            ZStackStart = position[2];
+            ZStackCenter = ZStackStart + ZStackHalfStroke();
+            ZStackEnd = ZStackStart + 2 * ZStackHalfStroke();
+            stack_Position = MotorCtrl.StackPosition.Start;
+            CalcNSlices(ZStack_Stepsize);
+            ZStackCenter = ZStackStart + ZStackHalfStroke();
+        }
+
+        public void SetCenterPosition()
+        {
+            AutoCalculateStackStartEnd();
+            stack_Position = MotorCtrl.StackPosition.Center;
+        }
+
+        public void SetBottomPosition()
+        {
+            if (ZStackStart == minMotorVal)
+                MessageBox.Show("Please choose Start position first");
+            else
+            {
+                GetPosition();
+                double[] position = CurrentUncalibratedPosition();
+                ZStackEnd = position[2];
+                stack_Position = MotorCtrl.StackPosition.End;
+                CalcNSlices(ZStack_Stepsize);
+                ZStackCenter = ZStackStart + ZStackHalfStroke();
+            }
+        }
+
+        public double ZStackHalfStroke()
+        {
+            return (double)(ZStack_nSlices - 1) * ZStack_Stepsize / resolutionZ / 2.0;
+        }
+
+        bool MotorStackCondition()
+        {
+            return (ZStack_nSlices > 1 && ZStack_Stepsize != 0) ;
+        }
+
+        public void MoveMotorBackToStart()
+        {
+            if (MotorStackCondition())// && motorCtrl.stack_Position != MotorCtrl.stackPosition.Start)
+            {
+                if (minMotorVal != ZStackStart)
+                {
+                    double[] current = CurrentUncalibratedPosition();
+                    current[2] = ZStackStart;
+                    SetNewPosition(current);
+                    stack_Position = MotorCtrl.StackPosition.Start;
+                    MoveMotor(false, true);
+                }
+            }
+        }
+
+        public void MoveMotorFromCenterToStart()
+        {
+            if (MotorStackCondition())
+            {
+                double[] current = CurrentUncalibratedPosition();
+                ZStackCenter = current[2];
+                current[2] = current[2] - ZStackHalfStroke();
+                ZStackStart = current[2]; //Actually we should use calibrated value.. but anyway...
+                ZStackEnd = ZStackStart + ZStackHalfStroke() * 2;
+
+                SetNewPosition(current);
+                stack_Position = MotorCtrl.StackPosition.Start;
+
+                MoveMotor(false, true);
+            }
+        }
+
+        public void AutoCalculateStackStartEnd()
+        {
+            double[] current = CurrentUncalibratedPosition();
+            if (current[2] != 0)
+            {
+                ZStackStart = current[2] - ZStackHalfStroke();
+                ZStackCenter = current[2];
+                ZStackEnd = current[2] + ZStackHalfStroke();
+            }
         }
 
         /// <summary>

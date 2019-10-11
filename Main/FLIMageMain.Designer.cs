@@ -185,6 +185,7 @@
             this.pMTControlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ToolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.uncagingControlToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.digitalOutputControlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.imageSeqControlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fastZControlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.shadingCorretionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -232,6 +233,7 @@
             this.Power4 = new System.Windows.Forms.TextBox();
             this.laserWarningButton = new System.Windows.Forms.Button();
             this.acquisitionPanel = new System.Windows.Forms.GroupBox();
+            this.DO_whileImaging_check = new System.Windows.Forms.CheckBox();
             this.analyzeEach = new System.Windows.Forms.CheckBox();
             this.label79 = new System.Windows.Forms.Label();
             this.ExtTriggerCB = new System.Windows.Forms.CheckBox();
@@ -417,8 +419,10 @@
             this.Acquisition1 = new System.Windows.Forms.CheckBox();
             this.StatusText = new System.Windows.Forms.Label();
             this.MotorStatus = new System.Windows.Forms.Label();
-            this.DO_whileImaging_check = new System.Windows.Forms.CheckBox();
-            this.digitalOutputControlToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.PiezoZ = new System.Windows.Forms.TextBox();
+            this.PiezoZUnitLabel = new System.Windows.Forms.Label();
+            this.PiezoZLabel = new System.Windows.Forms.Label();
+            this.CenterPiezoButton = new System.Windows.Forms.Button();
             tabPage2 = new System.Windows.Forms.TabPage();
             tabPage2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.PowerSlider2)).BeginInit();
@@ -1218,7 +1222,7 @@
             this.XY_panel.Controls.Add(this.YUp);
             this.XY_panel.Controls.Add(this.label44);
             this.XY_panel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.XY_panel.Location = new System.Drawing.Point(140, 9);
+            this.XY_panel.Location = new System.Drawing.Point(146, 9);
             this.XY_panel.Name = "XY_panel";
             this.XY_panel.Size = new System.Drawing.Size(82, 119);
             this.XY_panel.TabIndex = 266;
@@ -1318,7 +1322,7 @@
             this.label46.AutoSize = true;
             this.label46.BackColor = System.Drawing.Color.Transparent;
             this.label46.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label46.Location = new System.Drawing.Point(1, 44);
+            this.label46.Location = new System.Drawing.Point(1, 43);
             this.label46.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label46.Name = "label46";
             this.label46.Size = new System.Drawing.Size(14, 14);
@@ -1353,7 +1357,7 @@
             // 
             this.label49.AutoSize = true;
             this.label49.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label49.Location = new System.Drawing.Point(64, 44);
+            this.label49.Location = new System.Drawing.Point(64, 43);
             this.label49.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label49.Name = "label49";
             this.label49.Size = new System.Drawing.Size(21, 14);
@@ -1385,7 +1389,7 @@
             // Zero_all
             // 
             this.Zero_all.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Zero_all.Location = new System.Drawing.Point(84, 66);
+            this.Zero_all.Location = new System.Drawing.Point(86, 58);
             this.Zero_all.Margin = new System.Windows.Forms.Padding(1);
             this.Zero_all.Name = "Zero_all";
             this.Zero_all.Size = new System.Drawing.Size(51, 20);
@@ -1431,7 +1435,7 @@
             // XRead
             // 
             this.XRead.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.XRead.Location = new System.Drawing.Point(15, 39);
+            this.XRead.Location = new System.Drawing.Point(15, 38);
             this.XRead.Margin = new System.Windows.Forms.Padding(1);
             this.XRead.Name = "XRead";
             this.XRead.Size = new System.Drawing.Size(50, 20);
@@ -1459,9 +1463,9 @@
             this.groupBox1.Controls.Add(this.label53);
             this.groupBox1.Controls.Add(this.Zup);
             this.groupBox1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox1.Location = new System.Drawing.Point(226, 9);
+            this.groupBox1.Location = new System.Drawing.Point(231, 9);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(68, 119);
+            this.groupBox1.Size = new System.Drawing.Size(63, 119);
             this.groupBox1.TabIndex = 271;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Step Z";
@@ -1525,7 +1529,7 @@
             // zero_Z
             // 
             this.zero_Z.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.zero_Z.Location = new System.Drawing.Point(84, 87);
+            this.zero_Z.Location = new System.Drawing.Point(86, 79);
             this.zero_Z.Margin = new System.Windows.Forms.Padding(1);
             this.zero_Z.Name = "zero_Z";
             this.zero_Z.Size = new System.Drawing.Size(51, 20);
@@ -1537,7 +1541,11 @@
             // stagePanel
             // 
             this.stagePanel.BackColor = System.Drawing.SystemColors.Control;
+            this.stagePanel.Controls.Add(this.CenterPiezoButton);
             this.stagePanel.Controls.Add(this.ResetMotor);
+            this.stagePanel.Controls.Add(this.PiezoZLabel);
+            this.stagePanel.Controls.Add(this.PiezoZUnitLabel);
+            this.stagePanel.Controls.Add(this.PiezoZ);
             this.stagePanel.Controls.Add(this.YRead);
             this.stagePanel.Controls.Add(this.MotorReadButton);
             this.stagePanel.Controls.Add(this.Motor_Status);
@@ -1560,7 +1568,7 @@
             this.stagePanel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.stagePanel.Location = new System.Drawing.Point(10, 403);
             this.stagePanel.Name = "stagePanel";
-            this.stagePanel.Size = new System.Drawing.Size(300, 162);
+            this.stagePanel.Size = new System.Drawing.Size(300, 180);
             this.stagePanel.TabIndex = 272;
             this.stagePanel.TabStop = false;
             this.stagePanel.Text = "Stage";
@@ -1568,7 +1576,7 @@
             // ResetMotor
             // 
             this.ResetMotor.ForeColor = System.Drawing.Color.Red;
-            this.ResetMotor.Location = new System.Drawing.Point(12, 48);
+            this.ResetMotor.Location = new System.Drawing.Point(20, 46);
             this.ResetMotor.Name = "ResetMotor";
             this.ResetMotor.Size = new System.Drawing.Size(275, 42);
             this.ResetMotor.TabIndex = 126;
@@ -1592,7 +1600,7 @@
             // 
             this.Motor_Status.AutoSize = true;
             this.Motor_Status.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Motor_Status.Location = new System.Drawing.Point(146, 139);
+            this.Motor_Status.Location = new System.Drawing.Point(199, 158);
             this.Motor_Status.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Motor_Status.Name = "Motor_Status";
             this.Motor_Status.Size = new System.Drawing.Size(16, 13);
@@ -1619,17 +1627,17 @@
             this.groupBox11.Controls.Add(this.Vel_Down);
             this.groupBox11.Controls.Add(this.Vel_Up);
             this.groupBox11.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox11.Location = new System.Drawing.Point(8, 106);
+            this.groupBox11.Location = new System.Drawing.Point(71, 124);
             this.groupBox11.Name = "groupBox11";
             this.groupBox11.Size = new System.Drawing.Size(120, 51);
             this.groupBox11.TabIndex = 281;
             this.groupBox11.TabStop = false;
-            this.groupBox11.Text = "Velocity";
+            this.groupBox11.Text = "Velocity (Motor)";
             // 
             // Velocity
             // 
             this.Velocity.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Velocity.Location = new System.Drawing.Point(8, 16);
+            this.Velocity.Location = new System.Drawing.Point(8, 20);
             this.Velocity.Margin = new System.Windows.Forms.Padding(1);
             this.Velocity.Name = "Velocity";
             this.Velocity.Size = new System.Drawing.Size(50, 20);
@@ -1641,7 +1649,7 @@
             // Vel_Down
             // 
             this.Vel_Down.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Bold);
-            this.Vel_Down.Location = new System.Drawing.Point(89, 14);
+            this.Vel_Down.Location = new System.Drawing.Point(89, 18);
             this.Vel_Down.Name = "Vel_Down";
             this.Vel_Down.Size = new System.Drawing.Size(25, 23);
             this.Vel_Down.TabIndex = 278;
@@ -1652,7 +1660,7 @@
             // Vel_Up
             // 
             this.Vel_Up.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Bold);
-            this.Vel_Up.Location = new System.Drawing.Point(62, 14);
+            this.Vel_Up.Location = new System.Drawing.Point(62, 18);
             this.Vel_Up.Name = "Vel_Up";
             this.Vel_Up.Size = new System.Drawing.Size(25, 23);
             this.Vel_Up.TabIndex = 277;
@@ -2183,21 +2191,21 @@
             // nIDAQConfigToolStripMenuItem
             // 
             this.nIDAQConfigToolStripMenuItem.Name = "nIDAQConfigToolStripMenuItem";
-            this.nIDAQConfigToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.nIDAQConfigToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
             this.nIDAQConfigToolStripMenuItem.Text = "Hardware Config";
             this.nIDAQConfigToolStripMenuItem.Click += new System.EventHandler(this.NIDAQConfigToolStripMenuItem_Click);
             // 
             // dIOPanelToolStripMenuItem
             // 
             this.dIOPanelToolStripMenuItem.Name = "dIOPanelToolStripMenuItem";
-            this.dIOPanelToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.dIOPanelToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
             this.dIOPanelToolStripMenuItem.Text = "DIO panel";
             this.dIOPanelToolStripMenuItem.Click += new System.EventHandler(this.dIOPanelToolStripMenuItem_Click);
             // 
             // pMTControlToolStripMenuItem
             // 
             this.pMTControlToolStripMenuItem.Name = "pMTControlToolStripMenuItem";
-            this.pMTControlToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.pMTControlToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
             this.pMTControlToolStripMenuItem.Text = "PMT Control";
             this.pMTControlToolStripMenuItem.Click += new System.EventHandler(this.pMTControlToolStripMenuItem_Click);
             // 
@@ -2224,6 +2232,13 @@
             this.uncagingControlToolStripMenuItem1.Size = new System.Drawing.Size(192, 22);
             this.uncagingControlToolStripMenuItem1.Text = "Uncaging Control";
             this.uncagingControlToolStripMenuItem1.Click += new System.EventHandler(this.uncagingControlToolStripMenuItem_Click);
+            // 
+            // digitalOutputControlToolStripMenuItem
+            // 
+            this.digitalOutputControlToolStripMenuItem.Name = "digitalOutputControlToolStripMenuItem";
+            this.digitalOutputControlToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.digitalOutputControlToolStripMenuItem.Text = "Digital Output Control";
+            this.digitalOutputControlToolStripMenuItem.Click += new System.EventHandler(this.digitalOutputControlToolStripMenuItem_Click);
             // 
             // imageSeqControlToolStripMenuItem
             // 
@@ -2305,7 +2320,7 @@
             // 
             this.Ch_rate2.AutoSize = true;
             this.Ch_rate2.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Ch_rate2.Location = new System.Drawing.Point(559, 677);
+            this.Ch_rate2.Location = new System.Drawing.Point(559, 665);
             this.Ch_rate2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Ch_rate2.Name = "Ch_rate2";
             this.Ch_rate2.Size = new System.Drawing.Size(46, 14);
@@ -2317,7 +2332,7 @@
             // 
             this.Ch_rate1.AutoSize = true;
             this.Ch_rate1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Ch_rate1.Location = new System.Drawing.Point(559, 662);
+            this.Ch_rate1.Location = new System.Drawing.Point(559, 650);
             this.Ch_rate1.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Ch_rate1.Name = "Ch_rate1";
             this.Ch_rate1.Size = new System.Drawing.Size(46, 14);
@@ -2329,7 +2344,7 @@
             // 
             this.Sync_rate.AutoSize = true;
             this.Sync_rate.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Sync_rate.Location = new System.Drawing.Point(556, 579);
+            this.Sync_rate.Location = new System.Drawing.Point(556, 567);
             this.Sync_rate.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Sync_rate.Name = "Sync_rate";
             this.Sync_rate.Size = new System.Drawing.Size(64, 14);
@@ -2351,7 +2366,7 @@
             // 
             this.label14.AutoSize = true;
             this.label14.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label14.Location = new System.Drawing.Point(540, 647);
+            this.label14.Location = new System.Drawing.Point(540, 635);
             this.label14.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(71, 14);
@@ -2362,7 +2377,7 @@
             // 
             this.label15.AutoSize = true;
             this.label15.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label15.Location = new System.Drawing.Point(540, 562);
+            this.label15.Location = new System.Drawing.Point(540, 550);
             this.label15.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(64, 14);
@@ -2751,6 +2766,18 @@
             this.acquisitionPanel.TabStop = false;
             this.acquisitionPanel.Text = "Acquisition";
             // 
+            // DO_whileImaging_check
+            // 
+            this.DO_whileImaging_check.AutoSize = true;
+            this.DO_whileImaging_check.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.DO_whileImaging_check.Location = new System.Drawing.Point(17, 38);
+            this.DO_whileImaging_check.Name = "DO_whileImaging_check";
+            this.DO_whileImaging_check.Size = new System.Drawing.Size(109, 18);
+            this.DO_whileImaging_check.TabIndex = 323;
+            this.DO_whileImaging_check.Text = "DO while imaging";
+            this.DO_whileImaging_check.UseVisualStyleBackColor = true;
+            this.DO_whileImaging_check.Click += new System.EventHandler(this.Uncage_while_image_check_Click);
+            // 
             // analyzeEach
             // 
             this.analyzeEach.AutoSize = true;
@@ -2778,7 +2805,7 @@
             // 
             this.ExtTriggerCB.AutoSize = true;
             this.ExtTriggerCB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.ExtTriggerCB.Location = new System.Drawing.Point(541, 694);
+            this.ExtTriggerCB.Location = new System.Drawing.Point(541, 682);
             this.ExtTriggerCB.Name = "ExtTriggerCB";
             this.ExtTriggerCB.Size = new System.Drawing.Size(75, 18);
             this.ExtTriggerCB.TabIndex = 339;
@@ -2790,7 +2817,7 @@
             // 
             this.expectedRate.AutoSize = true;
             this.expectedRate.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.expectedRate.Location = new System.Drawing.Point(558, 628);
+            this.expectedRate.Location = new System.Drawing.Point(558, 616);
             this.expectedRate.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.expectedRate.Name = "expectedRate";
             this.expectedRate.Size = new System.Drawing.Size(52, 14);
@@ -2801,7 +2828,7 @@
             // 
             this.label67.AutoSize = true;
             this.label67.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label67.Location = new System.Drawing.Point(539, 612);
+            this.label67.Location = new System.Drawing.Point(539, 600);
             this.label67.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label67.Name = "label67";
             this.label67.Size = new System.Drawing.Size(77, 14);
@@ -2812,7 +2839,7 @@
             // 
             this.Sync_rate2.AutoSize = true;
             this.Sync_rate2.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Sync_rate2.Location = new System.Drawing.Point(556, 596);
+            this.Sync_rate2.Location = new System.Drawing.Point(556, 584);
             this.Sync_rate2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Sync_rate2.Name = "Sync_rate2";
             this.Sync_rate2.Size = new System.Drawing.Size(64, 14);
@@ -2935,7 +2962,7 @@
             this.Panel_Files.Controls.Add(this.st_PathName);
             this.Panel_Files.Controls.Add(this.st_BaseName);
             this.Panel_Files.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Panel_Files.Location = new System.Drawing.Point(10, 566);
+            this.Panel_Files.Location = new System.Drawing.Point(10, 588);
             this.Panel_Files.Name = "Panel_Files";
             this.Panel_Files.Size = new System.Drawing.Size(300, 138);
             this.Panel_Files.TabIndex = 115;
@@ -5103,7 +5130,7 @@
             // StatusText
             // 
             this.StatusText.AutoSize = true;
-            this.StatusText.Location = new System.Drawing.Point(11, 705);
+            this.StatusText.Location = new System.Drawing.Point(11, 729);
             this.StatusText.Name = "StatusText";
             this.StatusText.Size = new System.Drawing.Size(46, 13);
             this.StatusText.TabIndex = 334;
@@ -5112,36 +5139,63 @@
             // MotorStatus
             // 
             this.MotorStatus.AutoSize = true;
-            this.MotorStatus.Location = new System.Drawing.Point(12, 720);
+            this.MotorStatus.Location = new System.Drawing.Point(11, 744);
             this.MotorStatus.Name = "MotorStatus";
             this.MotorStatus.Size = new System.Drawing.Size(46, 13);
             this.MotorStatus.TabIndex = 335;
             this.MotorStatus.Text = "Status...";
             // 
-            // DO_whileImaging_check
+            // PiezoZ
             // 
-            this.DO_whileImaging_check.AutoSize = true;
-            this.DO_whileImaging_check.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.DO_whileImaging_check.Location = new System.Drawing.Point(17, 38);
-            this.DO_whileImaging_check.Name = "DO_whileImaging_check";
-            this.DO_whileImaging_check.Size = new System.Drawing.Size(109, 18);
-            this.DO_whileImaging_check.TabIndex = 323;
-            this.DO_whileImaging_check.Text = "DO while imaging";
-            this.DO_whileImaging_check.UseVisualStyleBackColor = true;
-            this.DO_whileImaging_check.Click += new System.EventHandler(this.Uncage_while_image_check_Click);
+            this.PiezoZ.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PiezoZ.Location = new System.Drawing.Point(15, 104);
+            this.PiezoZ.Margin = new System.Windows.Forms.Padding(1);
+            this.PiezoZ.Name = "PiezoZ";
+            this.PiezoZ.Size = new System.Drawing.Size(50, 20);
+            this.PiezoZ.TabIndex = 286;
+            this.PiezoZ.Text = "0";
+            this.PiezoZ.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
-            // digitalOutputControlToolStripMenuItem
+            // PiezoZUnitLabel
             // 
-            this.digitalOutputControlToolStripMenuItem.Name = "digitalOutputControlToolStripMenuItem";
-            this.digitalOutputControlToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.digitalOutputControlToolStripMenuItem.Text = "Digital Output Control";
-            this.digitalOutputControlToolStripMenuItem.Click += new System.EventHandler(this.digitalOutputControlToolStripMenuItem_Click);
+            this.PiezoZUnitLabel.AutoSize = true;
+            this.PiezoZUnitLabel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PiezoZUnitLabel.Location = new System.Drawing.Point(65, 108);
+            this.PiezoZUnitLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.PiezoZUnitLabel.Name = "PiezoZUnitLabel";
+            this.PiezoZUnitLabel.Size = new System.Drawing.Size(58, 14);
+            this.PiezoZUnitLabel.TabIndex = 287;
+            this.PiezoZUnitLabel.Text = "μm (Piezo)";
+            // 
+            // PiezoZLabel
+            // 
+            this.PiezoZLabel.AutoSize = true;
+            this.PiezoZLabel.BackColor = System.Drawing.Color.Transparent;
+            this.PiezoZLabel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PiezoZLabel.Location = new System.Drawing.Point(1, 107);
+            this.PiezoZLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.PiezoZLabel.Name = "PiezoZLabel";
+            this.PiezoZLabel.Size = new System.Drawing.Size(14, 14);
+            this.PiezoZLabel.TabIndex = 288;
+            this.PiezoZLabel.Text = "Z";
+            // 
+            // CenterPiezoButton
+            // 
+            this.CenterPiezoButton.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.CenterPiezoButton.Location = new System.Drawing.Point(15, 133);
+            this.CenterPiezoButton.Margin = new System.Windows.Forms.Padding(1);
+            this.CenterPiezoButton.Name = "CenterPiezoButton";
+            this.CenterPiezoButton.Size = new System.Drawing.Size(51, 40);
+            this.CenterPiezoButton.TabIndex = 289;
+            this.CenterPiezoButton.Text = "Center piezo";
+            this.CenterPiezoButton.UseVisualStyleBackColor = true;
+            this.CenterPiezoButton.Click += new System.EventHandler(this.CenterPiezoButton_Click);
             // 
             // FLIMageMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(638, 750);
+            this.ClientSize = new System.Drawing.Size(638, 763);
             this.Controls.Add(this.MotorStatus);
             this.Controls.Add(this.StatusText);
             this.Controls.Add(this.ExtTriggerCB);
@@ -5630,6 +5684,10 @@
         private System.Windows.Forms.RadioButton StayMotorRadio;
         public System.Windows.Forms.CheckBox DO_whileImaging_check;
         private System.Windows.Forms.ToolStripMenuItem digitalOutputControlToolStripMenuItem;
+        public System.Windows.Forms.Label PiezoZLabel;
+        public System.Windows.Forms.Label PiezoZUnitLabel;
+        public System.Windows.Forms.TextBox PiezoZ;
+        public System.Windows.Forms.Button CenterPiezoButton;
     }
 }
 

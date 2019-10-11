@@ -62,15 +62,7 @@ namespace FLIMage.FlowControls
 
         public void TurnOnOffCorrection(bool ON)
         {
-            if (this.InvokeRequired)
-            {
-                this.BeginInvoke((Action)delegate
-                {
-                    DriftCorrection_CB.Checked = ON;
-                });
-            }
-            else
-                DriftCorrection_CB.Checked = ON;
+            DriftCorrection_CB.InvokeIfRequired(o => o.Checked = ON);
         }
 
         public void SelectImage()
@@ -83,15 +75,8 @@ namespace FLIMage.FlowControls
             template_z_profile = getProjection_z();
 
             template_image_set = true;
-            if (this.InvokeRequired)
-            {
-                this.BeginInvoke((Action)delegate
-                {
-                    ApplyBMP();
-                });
-            }
-            else
-                ApplyBMP();
+
+            this.BeginInvokeIfRequired(o => o.ApplyBMP());
         }
 
         public void reconstructImageFromPages()
@@ -134,17 +119,7 @@ namespace FLIMage.FlowControls
                 xyz_drift[2] = CalculateZdrift();
             }
 
-            if (this.InvokeRequired)
-            {
-                this.BeginInvoke((Action)delegate
-                {
-                    DisplayDriftXYZ(xyz_drift);
-                });
-            }
-            else
-            {
-                DisplayDriftXYZ(xyz_drift);
-            }
+            this.BeginInvokeIfRequired(o => o.DisplayDriftXYZ(xyz_drift));
 
             return xyz_drift;
         }
@@ -184,13 +159,7 @@ namespace FLIMage.FlowControls
             voltage_xy[1] = xyz_drift[1] / height / State.Acq.zoom * State.Acq.scanVoltageMultiplier[1] * State.Acq.YMaxVoltage;
             voltage_xy = MatrixCalc.Rotate(voltage_xy, State.Acq.Rotation);
 
-            if (this.InvokeRequired)
-                this.BeginInvoke((Action)delegate
-                {
-                    Status_V.Text = String.Format("Votlage = {0:0.000} V, {1:0.000} V", voltage_xy[0], voltage_xy[1]);
-                });
-            else
-                Status_V.Text = String.Format("Votlage = {0:0.000} V, {1:0.000} V", voltage_xy[0], voltage_xy[1]);
+            Status_V.BeginInvokeIfRequired(o => o.Text = String.Format("Votlage = {0:0.000} V, {1:0.000} V", voltage_xy[0], voltage_xy[1]));
 
             if (DriftCorrection_CB.Checked)
             {

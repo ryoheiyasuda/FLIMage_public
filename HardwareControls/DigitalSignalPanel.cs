@@ -13,10 +13,10 @@ namespace FLIMage.HardwareControls
 {
     public partial class DigitalSignalPanel : Form
     {
-        ScanParameters State;
-        int nChannels = 8;
+        const int nChannels = 8;
 
-        IOControls.DigitalOut[] DigitalOutputs;
+        ScanParameters State;
+        String[] portNames = new string[nChannels];
 
         public DigitalSignalPanel(ScanParameters Scan)
         {
@@ -30,13 +30,13 @@ namespace FLIMage.HardwareControls
             {
                 Control[] found = Controls.Find("checkBox" + i, true);
                 CheckBox cb = (CheckBox)found[0];
-                DigitalOutputs[i].PutValue(cb.Checked);
+                new IOControls.Digital_Out(portNames[i], cb.Checked);
             }
         }
 
         public void DigitalSignalPanel_Load(object sender, EventArgs e)
         {
-            DigitalOutputs = new IOControls.DigitalOut[nChannels];
+
 
             for (int i = 0; i < nChannels; i++)
             {
@@ -48,26 +48,44 @@ namespace FLIMage.HardwareControls
 
                     if (State.Init.triggerPort.EndsWith(i.ToString()))
                     {
-                        cb.Enabled = false;
-                        cb.Text = "Trig out";
+                        //cb.Enabled = false;
+                        cb.Text = "Trigger out";
                     }
 
                     else if (State.Init.shutterPort.EndsWith(i.ToString()))
                     {
-                        //cb.Enabled = false;
                         cb.Text = "Shutter";
                     }
-
+                    else if (State.Init.use_digitalLineClock && State.Init.DigitalLinePort.EndsWith(i.ToString()))
+                    {
+                        cb.Text = "Line Clock";
+                    }
+                    else if (State.Init.DO_uncagingShutter && State.Init.DigitalShutterPort.EndsWith(i.ToString()))
+                    {
+                        cb.Text = "Uncaging Shutter";
+                    }
+                    else if (State.Init.DigitalOutput1.EndsWith(i.ToString()))
+                    {
+                        cb.Text = "DO1";
+                    }
+                    else if (State.Init.DigitalOutput2.EndsWith(i.ToString()))
+                    {
+                        cb.Text = "DO2";
+                    }
+                    else if (State.Init.DigitalOutput3.EndsWith(i.ToString()))
+                    {
+                        cb.Text = "DO3";
+                    }
                     else
                     {
-                        cb.Text = "Port " + i.ToString();
+                        cb.Text = "Reserved ";
                     }
+
+                    cb.Text = i + ": " + cb.Text;
+
+                    portNames[i] = State.Init.triggerPort.Substring(0, State.Init.triggerPort.Length - 1) + i;
+                    new IOControls.Digital_Out(portNames[i], cb.Checked);
                 }
-
-                String portname = State.Init.triggerPort.Substring(0, State.Init.triggerPort.Length - 1) + i;
-
-                DigitalOutputs[i] = new IOControls.DigitalOut(portname);
-
             }
         }
     }

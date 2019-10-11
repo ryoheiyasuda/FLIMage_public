@@ -208,9 +208,7 @@ namespace FLIMage.FlowControls
             bool value = false;
             if (FLIMage.flimage_io.use_nidaq)
             {
-                IOControls.DigitalIn DI = new IOControls.DigitalIn(port);
-                value = DI.readDI();
-                DI.dispose();
+                IOControls.Digital_In DI = new IOControls.Digital_In(port, out value);
             }
             return value;
         }

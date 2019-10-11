@@ -36,6 +36,7 @@ namespace FLIMage
 
         public bool saveIntensityImage = false;
         bool use_motor = true; // use motor control.
+        bool use_piezo = false;
         public bool use_mainPanel = true; //For analysis only
 
         public bool snapShot = false;
@@ -131,15 +132,8 @@ namespace FLIMage
                     string old_fileName = Path.Combine(State.Files.initFolderPath, "FLIM_deviceFile.txt");
                     if (File.Exists(old_fileName))
                         fileIO.LoadSetupFile(old_fileName);
-                    string board = "";
-                    string trigger = "";
-                    string ex_trigger = "";
-                    string sclock = "";
-                    IOControls.GetTriggerPortName(State.Init.mirrorAOPortX, State, ref board, ref trigger, ref ex_trigger, ref sclock);
-                    State.Init.MirrorAOBoard = board;
-                    IOControls.GetTriggerPortName(State.Init.EOM_AI_Port0, State, ref board, ref trigger, ref ex_trigger, ref sclock);
-                    State.Init.EOMBoard = board;
-
+                    State.Init.MirrorAOBoard = State.Init.mirrorAOPortX.Split('/')[0];
+                    State.Init.EOMBoard = State.Init.EOM_Port0.Split('/')[0];                    
                     //create new file.
                     System.IO.File.WriteAllText(State.Files.deviceFileName, fileIO.AllSetupValues_device());
                 }
@@ -164,6 +158,7 @@ namespace FLIMage
 
 
             use_motor = State.Init.motor_on;
+            use_piezo = State.Init.usePiezo;
 
             //Just to start withsomething...
             int height = 128; // State.Acq.linesPerFrame;
@@ -283,6 +278,14 @@ namespace FLIMage
             if (!use_motor)
             {
                 stagePanel.Enabled = false;
+            }
+
+            if (!use_piezo)
+            {
+                CenterPiezoButton.Visible = false;
+                PiezoZLabel.Visible = false;
+                PiezoZUnitLabel.Visible = false;
+                PiezoZ.Visible = false;
             }
 
 
@@ -754,15 +757,7 @@ namespace FLIMage
         /// <param name="str"></param>
         public void WriteStatusText(String str)
         {
-            if (StatusText.InvokeRequired)
-            {
-                StatusText.Invoke((Action)delegate
-                {
-                    StatusText.Text = str;
-                });
-            }
-            else
-                StatusText.Text = str;
+            StatusText.BeginInvokeIfRequired(o => o.Text = str);
         }
 
         //////////////////////////////////////////Power//////////////////////////////////////////////////////////////////
@@ -807,7 +802,7 @@ namespace FLIMage
                 flimage_io.ResetFocus();
                 if (!flimage_io.grabbing && !flimage_io.focusing)
                 {
-                    flimage_io.Power_putEOMValues(false);
+                    flimage_io.ParkMirrors(false);
                 }
 
             }
@@ -849,11 +844,9 @@ namespace FLIMage
             flimage_io.ResetFocus();
             if (!flimage_io.grabbing && !flimage_io.focusing)
             {
-                flimage_io.Power_putEOMValues(false);
+                flimage_io.ParkMirrors(false);
             }
-
         }
-
 
         private void UpdatePowerGUI()
         {
@@ -967,7 +960,7 @@ namespace FLIMage
             }
             else
             {
-                flimage_io.Power_putEOMValues(false);
+                flimage_io.ParkMirrors(false);
                 Calibrate1.ForeColor = Color.Black;
                 needCalibLabel.Visible = false;
             }
@@ -1058,6 +1051,7 @@ namespace FLIMage
 
             ChangeItemsStatus(true, false);
             GrabButton.Text = "GRAB";
+            GrabButton.Enabled = true;
 
             if (use_motor)
             {
@@ -1211,10 +1205,7 @@ namespace FLIMage
             flimage_io.allowLoop = true; //This is the difference between loop and grab.
             flimage_io.stopGrabActivated = false;
 
-            if (this.InvokeRequired)
-                this.Invoke((Action)delegate { LoopButton.Text = "STOP"; });
-            else
-                LoopButton.Text = "STOP";
+            LoopButton.InvokeIfRequired(o => o.Text = "Stop"); //Should block. (Invoke instead of BeginInvoke)
 
             GrabButton.Enabled = false;
             flimage_io.internalImageCounter = 0;
@@ -1227,20 +1218,13 @@ namespace FLIMage
             flimage_io.stopGrabActivated = true;
             StopGrab(true);
 
-
-            if (this.InvokeRequired)
-                this.Invoke((Action)delegate
-                {
-                    LoopButton.Text = "LOOP";
-                    if (!flimage_io.imageSequencing)
-                        GrabButton.Enabled = true;
-                });
-            else
+            this.InvokeIfRequired(o =>
             {
-                LoopButton.Text = "LOOP";
-                if (!flimage_io.imageSequencing)
-                    GrabButton.Enabled = true;
-            }
+                o.LoopButton.Text = "LOOP";
+                if (!o.flimage_io.imageSequencing)
+                    o.GrabButton.Enabled = true;
+            });
+
             flimage_io.looping = false;
         }
 
@@ -1386,7 +1370,7 @@ namespace FLIMage
                         Zoom100.Value = 0;
                     }
 
-                    Zoom.Text = string.Format("{0:0.0}", State.Acq.zoom);
+                    Zoom.BeginInvokeIfRequired(o => o.Text = string.Format("{0:0.0}", State.Acq.zoom));
                 }
 
                 ScanPosition.Invalidate();
@@ -1395,7 +1379,7 @@ namespace FLIMage
 
                 if (!flimage_io.grabbing && !flimage_io.focusing)
                 {
-                    flimage_io.Power_putEOMValues(false);
+                    flimage_io.ParkMirrors(false);
                 }
             }
             else
@@ -1403,8 +1387,6 @@ namespace FLIMage
                 //Make sure all text is reflected.
                 lock (syncStateObj)
                 {
-                    //State.Acq.nChannels = 2;
-                    double maxVoltage = 5;
                     double valD;
                     int valI;
 
@@ -1744,13 +1726,7 @@ namespace FLIMage
                     State.Acq.nStripes = (int)Math.Ceiling((double)State.Acq.linesPerFrame / (double)State.Acq.nStripes);
 
 
-                    //SPC
-                    if (InvokeRequired)
-                    {
-                        Invoke((Action)delegate { FillGUI(); });
-                    }
-                    else
-                        FillGUI();
+                    this.BeginInvokeIfRequired(o => o.FillGUI());
                 } //sync
             }
 
@@ -1963,8 +1939,8 @@ namespace FLIMage
 
             parameters.SineWaveScan = State.Acq.SineWaveScan;
             parameters.BiDirectionalScan = State.Acq.BiDirectionalScan;
-            double AcqusitionDelay = IOControls.GetAcquisitionDelay_ms(State);
-            double BiDirectionalDelay = IOControls.GetBidirectionalDelay_ms(State);
+            double AcqusitionDelay = HardwareControls.IOControls.GetAcquisitionDelay_ms(State);
+            double BiDirectionalDelay = HardwareControls.IOControls.GetBidirectionalDelay_ms(State);
 
             State.Acq.LineClockDelay = 0.05;
 
@@ -2027,16 +2003,7 @@ namespace FLIMage
             if (flimage_io.FiFo_acquire != null)
                 flimage_io.FiFo_acquire.SetupParameters(flimage_io.focusing, parameters);
 
-            if (this.InvokeRequired)
-            {
-                this.Invoke((Action)delegate
-               {
-                   UpdateSPC_GUI();
-               });
-            }
-            else
-                UpdateSPC_GUI();
-
+            this.BeginInvokeIfRequired(o => o.UpdateSPC_GUI());
         }
 
         /// <summary>
@@ -2335,13 +2302,7 @@ namespace FLIMage
         /// </summary>
         public void UpdateFileName()
         {
-            if (this.InvokeRequired)
-                this.Invoke((Action)delegate
-                {
-                    UpdateFileNameCore();
-                });
-            else
-                UpdateFileNameCore();
+            this.BeginInvokeIfRequired(o => o.UpdateFileNameCore());
         }
 
         /// <summary>
@@ -2435,6 +2396,12 @@ namespace FLIMage
 
             if (State.DO.DO_whileImage && digital_panel != null)
                 digital_panel.Show();
+
+            if (use_motor)
+            {
+                motorCtrl.ZStack_Stepsize = State.Acq.sliceStep;
+                motorCtrl.ZStack_nSlices = State.Acq.nSlices;
+            }
 
             flimage_io.updateState(State);
         }
@@ -2651,6 +2618,7 @@ namespace FLIMage
             return ExternalCommand(command, "");
         }
 
+
         public bool ExternalCommand(String command, String argument)
         {
             bool success = true;
@@ -2678,14 +2646,14 @@ namespace FLIMage
             }
             else if (command == "StartDO")
             {
-                if (digital_panel == null)
-                    digital_panel = new Digital_Trigger_Panel(this);
-
-                digital_panel.Show();
-                digital_panel.Activate();
-
                 this.Invoke((Action)delegate
                 {
+                    if (digital_panel == null)
+                        digital_panel = new Digital_Trigger_Panel(this);
+
+                    digital_panel.Show();
+                    digital_panel.Activate();
+
                     if (!digital_panel.digital_running && !flimage_io.grabbing && !flimage_io.focusing)
                         digital_panel.Start_button_Click(digital_panel, null);
                 });
@@ -2704,14 +2672,13 @@ namespace FLIMage
             }
             else if (command == "StartUncaging")
             {
-                if (uncaging_panel == null)
-                    uncaging_panel = new Uncaging_Trigger_Panel(this);
-
-                uncaging_panel.Show();
-                uncaging_panel.Activate();
-
                 this.Invoke((Action)delegate
                 {
+                    if (uncaging_panel == null)
+                        uncaging_panel = new Uncaging_Trigger_Panel(this);
+
+                    uncaging_panel.Show();
+                    uncaging_panel.Activate();
                     image_display.uncaging_on = true;
                     image_display.Activate_uncaging(true);
 
@@ -2730,9 +2697,9 @@ namespace FLIMage
                     });
                 }
             }
-            else if (command == "UncagingStart")
+            else if (command == "DO_Done")
             {
-                flimage_io.NotifyEventExternal("UncagingStart");
+                flimage_io.NotifyEventExternal("DO_Done");
             }
             else if (command == "UncagingDone")
             {
@@ -2946,7 +2913,7 @@ namespace FLIMage
 
         void PlotScanToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            double[,] DataXY = IOControls.MakeMirrorOutputXY(State);
+            double[,] DataXY = HardwareControls.IOControls.MakeMirrorOutputXY(State);
             Plot plot2 = new Plot(DataXY, "Time (ms)", "Voltage (V)", State.Acq.outputRate, "Laser");
             plot2.Show();
         }
@@ -2954,8 +2921,8 @@ namespace FLIMage
 
         void PlotPockelsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            double[,] DataXY = IOControls.MakeMirrorOutputXY(State);
-            double[,] DataEOM = IOControls.MakeEOMOutput(State, flimage_io.shading, false, false);
+            double[,] DataXY = HardwareControls.IOControls.MakeMirrorOutputXY(State);
+            double[,] DataEOM = HardwareControls.IOControls.MakeEOMOutput(State, flimage_io.shading, false, false);
             Plot plot2 = new Plot(DataEOM, "Time (ms)", "Voltage (V)", State.Acq.outputRate, "Laser");
             plot2.Show();
         }
@@ -3041,8 +3008,8 @@ namespace FLIMage
 
             if (State.Init.UseExternalMirrorOffset)
             {
-                IOControls.AO_Write aoX = new IOControls.AO_Write(State.Init.mirrorOffsetX, State.Acq.XOffset);
-                IOControls.AO_Write aoY = new IOControls.AO_Write(State.Init.mirrorOffsetY, State.Acq.YOffset);
+                var aoX = new HardwareControls.IOControls.AO_Write(State.Init.mirrorOffsetX, State.Acq.XOffset);
+                var aoY = new HardwareControls.IOControls.AO_Write(State.Init.mirrorOffsetY, State.Acq.YOffset);
             }
         }
 
@@ -3055,25 +3022,9 @@ namespace FLIMage
         {
             motorCtrl.continuousRead(ContRead.Checked);
             motorCtrl.GetPosition();
-            if (ContRead.Checked)
-                motorCtrl.GetStatus();
-            //motorCtrl.GetPosition();
         }
 
         void Motor_TextSet()
-        {
-            if (this.InvokeRequired)
-            {
-                this.Invoke((Action)delegate
-                {
-                    Motor_TextSetCore();
-                });
-            }
-            else
-                Motor_TextSetCore();
-        }
-
-        void Motor_TextSetCore()
         {
             double ZStep;
             if (!Double.TryParse(ZMotorStep.Text, out ZStep)) ZStep = motorCtrl.ZStep;
@@ -3089,7 +3040,7 @@ namespace FLIMage
             State.Motor.stepZ = ZStep;
             State.Motor.stepXY = XYStep;
 
-            FillGUIMotor();
+            this.BeginInvokeIfRequired(o => o.FillGUIMotor());
         }
 
         void FillGUIMotor()
@@ -3206,8 +3157,6 @@ namespace FLIMage
 
             if (e.Name == "MovementDone")
                 flimage_io.Notify(new ProcessEventArgs("StageMoveDone", null));
-            //this.Enabled = !motorCtrl.start_moving;
-
         }
 
 
@@ -3237,7 +3186,12 @@ namespace FLIMage
 
         public void MoveMotorStep(bool waitUntilFinish)
         {
-            if (use_motor)
+            if (use_piezo)
+            {
+                double um = flimage_io.piezo.move_Piezo_1step_um(State.Acq.sliceStep);
+                PiezoZ.Text = um.ToString();
+            }
+            else if (use_motor)
             {
                 if (State.Acq.sliceStep != 0)
                 {
@@ -3250,166 +3204,121 @@ namespace FLIMage
 
         public void MoveBackToHome()
         {
-            if (State.Acq.ZStack && State.Acq.sliceStep != 0 && State.Acq.nSlices > 1)
-            {
-                if (BackToStartRadio.Checked)
-                    MoveMotorBackToStart();
-                else if (BackToCenterRadio.Checked)
-                    MoveMotorBackToCenter();
-            }
+            if (BackToStartRadio.Checked)
+                MoveMotorBackToStart();
+            else if (BackToCenterRadio.Checked)
+                MoveMotorBackToCenter();
         }
 
         void MoveMotorBackToStart() //Called after acquisition.
         {
             if (use_motor)
-            {
-                if (State.Acq.nSlices > 1 && State.Acq.sliceStep != 0)// && motorCtrl.stack_Position != MotorCtrl.stackPosition.Start)
-                {
-                    if (motorCtrl.minMotorVal != motorCtrl.ZStackStart)
-                    {
-                        double[] current = motorCtrl.CurrentUncalibratedPosition();
-                        current[2] = motorCtrl.ZStackStart;
-                        motorCtrl.SetNewPosition(current);
-                        motorCtrl.stack_Position = MotorCtrl.StackPosition.Start;
-                        SetMotorPosition(false, true);
-                    }
-                }
-            }
+                motorCtrl.MoveMotorBackToStart();
         }
 
         void MoveMotorBackToCenter()  //Called after acquisition.
         {
             if (use_motor)
-            {
-                if (State.Acq.nSlices > 1 && State.Acq.sliceStep != 0 && motorCtrl.stack_Position != MotorCtrl.StackPosition.Center)
-                {
-                    if (motorCtrl.minMotorVal != motorCtrl.ZStackStart)
-                    {
-                        double[] current = motorCtrl.CurrentUncalibratedPosition();
-                        current[2] = motorCtrl.ZStackStart + (int)((double)(State.Acq.nSlices - 1) * (double)State.Acq.sliceStep / motorCtrl.resolutionZ / 2.0);
-                        motorCtrl.SetNewPosition(current);
-                        motorCtrl.stack_Position = MotorCtrl.StackPosition.Center;
-                        SetMotorPosition(false, true);
-                    }
-                }
-            }
+                motorCtrl.MoveMotorBackToCenter_RelativeToZStart();
         }
 
 
         void MoveMotorFromCenterToStart()
         {
             if (use_motor)
-            {
-                if (State.Acq.nSlices > 1 && State.Acq.sliceStep != 0)
-                {
-                    double[] current = motorCtrl.CurrentUncalibratedPosition();
-                    motorCtrl.ZStackCenter = (int)current[2];
-                    current[2] = current[2] - ZStackHalfStroke();
-                    motorCtrl.ZStackStart = (int)current[2]; //Actually we should use calibrated value.. but anyway...
-                    motorCtrl.ZStackEnd = motorCtrl.ZStackStart + ZStackHalfStroke() * 2;
-
-                    motorCtrl.SetNewPosition(current);
-                    motorCtrl.stack_Position = MotorCtrl.StackPosition.Start;
-
-                    SetMotorPosition(false, true);
-                }
-            }
+                motorCtrl.MoveMotorFromCenterToStart();
         }
+
 
         void AutoCalculateStackStartEnd()
         {
-            double[] current = motorCtrl.CurrentUncalibratedPosition();
-            if (current[2] != 0)
-            {
-                motorCtrl.ZStackStart = current[2] - ZStackHalfStroke();
-                motorCtrl.ZStackCenter = current[2];
-                motorCtrl.ZStackEnd = current[2] + ZStackHalfStroke();
-            }
+            if (use_motor)
+                motorCtrl.AutoCalculateStackStartEnd();
         }
 
-        double ZStackHalfStroke()
-        {
-            return (double)(State.Acq.nSlices - 1) * State.Acq.sliceStep / motorCtrl.resolutionZ / 2.0;
-        }
 
         /// <summary>
         /// Set motor position to new position.
         /// </summary>
         public void SetMotorPosition(bool warningOn, bool waitUntilFinish)
         {
-            if (waitUntilFinish)
-                WaitForMotorMove(); //make sure that there is no task remaining.
-
-            flimage_io.Notify(new ProcessEventArgs("StageMoveStart", null));
-
-            //this.Enabled = false;
-            motorCtrl.IfStepTooBig(warningOn);
-
-            //if (StepSizeX != 0 || StepSizeY != 0 || StepSizeZ != 0)
-            motorCtrl.SetPosition();
-
-            if (waitUntilFinish) //For external command it will be always true.
+            if (use_motor)
             {
-                WaitForMotorMove();
-                motorCtrl.GetPosition();
-                //
+                flimage_io.Notify(new ProcessEventArgs("StageMoveStart", null));
+                motorCtrl.MoveMotor(warningOn, waitUntilFinish);
             }
         }
 
         public void MotroStepMovementXYZ(object sender, EventArgs e)
         {
-
-            Motor_TextSet();
-
-            if (motorQ.Any(item => item != 0))
-            {
-                System.Threading.Thread.Sleep(1);
-            }
-
-            lock (motorQlock)
+            if (use_piezo) //Very fast. We don't que.
             {
                 if (sender.Equals(Zup))
-                    motorQ[2] += motorCtrl.ZStep;
+                {
+                    flimage_io.piezo.move_Piezo_1step_um(motorCtrl.ZStep);
+                }
                 else if (sender.Equals(Zdown))
-                    motorQ[2] -= motorCtrl.ZStep;
-                else if (sender.Equals(YUp))
-                    motorQ[1] += motorCtrl.XYStep;
-                else if (sender.Equals(YDown))
-                    motorQ[1] -= motorCtrl.XYStep;
-                else if (sender.Equals(XUp))
-                    motorQ[0] += motorCtrl.XYStep;
-                else if (sender.Equals(XDown))
-                    motorQ[0] -= motorCtrl.XYStep;
-
-                Debug.WriteLine("Set MotorZ position {0}", motorQ[2]);
+                {
+                    flimage_io.piezo.move_Piezo_1step_um(-motorCtrl.ZStep);
+                }
+                PiezoZ.Text = flimage_io.piezo.getPosition_um().ToString();
             }
 
-            motorCtrl.GetPosition();
-
-            if (!motor_moving)
+            if (use_motor)
             {
-                motor_moving = true;
+                Motor_TextSet();
 
-                Task.Factory.StartNew(() =>
+                if (motorQ.Any(item => item != 0))
                 {
-                    while (motorQ.Any(item => item != 0))
-                    {
-                        lock (motorQlock)
-                        {
-                            Debug.WriteLine("Executing MotorZ position {0}", motorQ[2]);
-                            motorCtrl.SetNewPosition_StepSize_um(motorQ);
-                            motorQ = new double[3];
-                        }
+                    System.Threading.Thread.Sleep(1);
+                }
 
-                        SetMotorPosition(true, true);
+                lock (motorQlock) //If it is clicked many times at once, it will juist add the distance in motorQ.
+                {
+                    if (!use_piezo)
+                    {
+                        if (sender.Equals(Zup))
+                            motorQ[2] += motorCtrl.ZStep;
+                        else if (sender.Equals(Zdown))
+                            motorQ[2] -= motorCtrl.ZStep;
                     }
 
+                    if (sender.Equals(YUp))
+                        motorQ[1] += motorCtrl.XYStep;
+                    else if (sender.Equals(YDown))
+                        motorQ[1] -= motorCtrl.XYStep;
+                    else if (sender.Equals(XUp))
+                        motorQ[0] += motorCtrl.XYStep;
+                    else if (sender.Equals(XDown))
+                        motorQ[0] -= motorCtrl.XYStep;
 
+                    Debug.WriteLine("Set MotorZ position {0}", motorQ[2]);
+                }
 
-                    motor_moving = false;
-                });
+                motorCtrl.GetPosition();
+
+                if (!motor_moving) //If motor is still moving, motorQ will not be excecuted. 
+                {
+                    motor_moving = true;
+
+                    Task.Factory.StartNew(() =>
+                    {
+                        while (motorQ.Any(item => item != 0))
+                        {
+                            lock (motorQlock)
+                            {
+                                Debug.WriteLine("Executing MotorZ position {0}", motorQ[2]);
+                                motorCtrl.SetNewPosition_StepSize_um(motorQ);
+                                motorQ = new double[3];
+                            }
+
+                            SetMotorPosition(true, true);
+                        }
+
+                        motor_moving = false;
+                    });
+                }
             }
-
         }
 
         private void MotorReadButton_Click(object sender, EventArgs e)
@@ -3429,54 +3338,51 @@ namespace FLIMage
 
         void CalcStackSize()
         {
-            double stepSize; // = Convert.ToDouble(SliceStep.Text);
+            double stepSize;
             if (!Double.TryParse(SliceStep.Text, out stepSize)) stepSize = 1.0;
-            int nSlices = (int)Math.Ceiling(Math.Abs((double)(motorCtrl.ZStackStart - motorCtrl.ZStackEnd) * motorCtrl.resolutionZ / (double)stepSize)) + 1;
-            if (motorCtrl.ZStackStart - motorCtrl.ZStackEnd > 0)
-                stepSize = -Math.Abs(stepSize);
-            else
-                stepSize = Math.Abs(stepSize);
 
-            NSlices.Text = nSlices.ToString();
-            N_AveragedSlices.Text = nSlices.ToString();
+            motorCtrl.CalcNSlices(stepSize);
 
-            NSlices2.Text = nSlices.ToString();
-            SliceStep.Text = stepSize.ToString();
-            State.Acq.sliceStep = stepSize;
-            State.Acq.nSlices = nSlices;
+            State.Acq.sliceStep = motorCtrl.ZStack_Stepsize;
+            State.Acq.nSlices = motorCtrl.ZStack_nSlices;
             State.Acq.ZStack = true;
+
+            UpdateStackSizeGUI();
         }
 
-        void Go_Start()
+        void UpdateStackSizeGUI()
         {
-            double[] position = motorCtrl.CurrentUncalibratedPosition();
-            position[2] = motorCtrl.ZStackStart;
-            motorCtrl.SetNewPosition(position);
-            SetMotorPosition(true, true);
-            motorCtrl.stack_Position = MotorCtrl.StackPosition.Start;
-            motorCtrl.GetPosition();
+            this.BeginInvokeIfRequired(o =>
+            {
+                o.NSlices.Text = o.State.Acq.nSlices.ToString();
+                o.N_AveragedSlices.Text = o.State.Acq.nSlices.ToString();
+                o.NSlices2.Text = o.State.Acq.nSlices.ToString();
+                o.SliceStep.Text = o.State.Acq.sliceStep.ToString();
+                if (!o.ZStack_radio.Checked && o.State.Acq.ZStack)
+                    o.Generic_ValueChanged(o.ZStack_radio, null);
+            });
         }
+
+        //void UpdateStackSizeGUI_Core()
+        //{
+        //    NSlices.Text = State.Acq.nSlices.ToString();
+        //    N_AveragedSlices.Text = State.Acq.nSlices.ToString();
+        //    NSlices2.Text = State.Acq.nSlices.ToString();
+        //    SliceStep.Text = State.Acq.sliceStep.ToString();
+        //    if (!ZStack_radio.Checked && State.Acq.ZStack)
+        //        Generic_ValueChanged(ZStack_radio, null);
+        //}
 
         void GoStart_Click(object sender, EventArgs e)
         {
             if (use_motor)
-                if (motorCtrl.ZStackStart != int.MaxValue && motorCtrl.ZStackEnd != int.MaxValue)
-                {
-                    Go_Start();
-                }
+                motorCtrl.GotoStartPosition(true, true);
         }
 
         void GoEnd_Click(object sender, EventArgs e)
         {
             if (use_motor)
-                if (motorCtrl.ZStackStart > 0 && motorCtrl.ZStackEnd > 0)
-                {
-                    double[] position = motorCtrl.CurrentUncalibratedPosition();
-                    position[2] = motorCtrl.ZStackEnd;
-                    motorCtrl.SetNewPosition(position);
-                    SetMotorPosition(true, true);
-                    motorCtrl.stack_Position = MotorCtrl.StackPosition.End;
-                }
+                motorCtrl.GotoEndPosition(true, true);
         }
 
         private void GoCenterButton_Click(object sender, EventArgs e)
@@ -3486,38 +3392,23 @@ namespace FLIMage
 
         void Set_Top_Click(object sender, EventArgs e)
         {
-            motorCtrl.GetPosition();
-            double[] position = motorCtrl.CurrentUncalibratedPosition();
-            motorCtrl.ZStackStart = position[2];
-            motorCtrl.ZStackCenter = motorCtrl.ZStackStart + ZStackHalfStroke();
-            motorCtrl.ZStackEnd = motorCtrl.ZStackStart + 2 * ZStackHalfStroke();
-            motorCtrl.stack_Position = MotorCtrl.StackPosition.Start;
-            CalcStackSize();
+            motorCtrl.SetTopPosition();
+            UpdateStackSizeGUI();
             MotorHandler(new MotrEventArgs(""));
         }
 
         private void Set_Center_Click(object sender, EventArgs e)
         {
-            AutoCalculateStackStartEnd();
-            motorCtrl.stack_Position = MotorCtrl.StackPosition.Center;
+            motorCtrl.SetCenterPosition();
+            UpdateStackSizeGUI();
             MotorHandler(new MotrEventArgs(""));
         }
 
         void Set_bottom_Click(object sender, EventArgs e)
         {
-            if (motorCtrl.ZStackStart == motorCtrl.minMotorVal)
-                MessageBox.Show("Please choose Start position first");
-            else
-            {
-                motorCtrl.GetPosition();
-                double[] position = motorCtrl.CurrentUncalibratedPosition();
-                motorCtrl.ZStackEnd = position[2];
-                motorCtrl.stack_Position = MotorCtrl.StackPosition.End;
-                CalcStackSize();
-
-                motorCtrl.ZStackCenter = motorCtrl.ZStackStart + ZStackHalfStroke();
-                MotorHandler(new MotrEventArgs(""));
-            }
+            motorCtrl.SetBottomPosition();
+            UpdateStackSizeGUI();
+            MotorHandler(new MotrEventArgs(""));
         }
 
 
@@ -3606,6 +3497,11 @@ namespace FLIMage
             motorCtrl.SetVelocity(new double[] { vel, vel, vel });
         }
 
+        private void CenterPiezoButton_Click(object sender, EventArgs e)
+        {
+            flimage_io.movePiezoToCenter();
+            PiezoZ.Text = flimage_io.piezo.getPosition_um().ToString();
+        }
 
         void CalibrateToolStripMenuItem_Click_1(object sender, EventArgs e)
         {
@@ -3625,7 +3521,6 @@ namespace FLIMage
         }
 
 
-
         void FLIMageToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ss.ControlBox = true;
@@ -3643,17 +3538,7 @@ namespace FLIMage
 
         public void ImageDisplayOpen()
         {
-            if (!this.InvokeRequired)
-            {
-                ImageDisplaySetup();
-            }
-            else
-            {
-                this.Invoke((Action)delegate
-                {
-                    ImageDisplaySetup();
-                });
-            }
+            this.BeginInvokeIfRequired(o => o.ImageDisplaySetup());
         }
 
         private void ImageDisplaySetup()
@@ -3661,7 +3546,7 @@ namespace FLIMage
             if (image_display == null || image_display.IsDisposed)
                 image_display = new Image_Display(flimage_io.FLIM_ImgData, this, false);
             image_display.Show();
-
+            image_display.Activate();
         }
 
         private void uncagingControlToolStripMenuItem_Click(object sender, EventArgs e)
@@ -3726,26 +3611,18 @@ namespace FLIMage
 
         public void UpdateUncagingFromDisplay()
         {
-            if (uncaging_panel != null && uncaging_panel.InvokeRequired && uncaging_panel.Visible)
+            if (uncaging_panel != null && uncaging_panel.Visible)
+                uncaging_panel.BeginInvokeIfRequired(o =>
             {
-                uncaging_panel.Invoke((Action)delegate
-                {
-                    if (uncaging_panel != null)
-                        uncaging_panel.UpdateUncaging(uncaging_panel);
-                });
-            }
-            else
-            {
-                if (uncaging_panel != null && uncaging_panel.Visible)
-                    uncaging_panel.UpdateUncaging(uncaging_panel);
-            }
+                o.UpdateUncaging(o);
+            });
         }
 
 
 
         void PlotScanGrabToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            double[,] DataXY = IOControls.makeMirrorOutput_Imaging_Uncaging(State);
+            double[,] DataXY = HardwareControls.IOControls.makeMirrorOutput_Imaging_Uncaging(State);
             if (uncaging_PlotXY_Scanning == null || uncaging_PlotXY_Scanning.IsDisposed)
             {
                 uncaging_PlotXY_Scanning = new Plot(DataXY, "Time (ms)", "Voltage (V)", State.Acq.outputRate, "Output Ch");
@@ -4025,7 +3902,7 @@ namespace FLIMage
 
         void PlotPockelsGrabToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            double[,] DataXY = IOControls.makeEOMOutput_Imaging_Uncaging(State, flimage_io.shading);
+            double[,] DataXY = HardwareControls.IOControls.makeEOMOutput_Imaging_Uncaging(State, flimage_io.shading);
 
             if (uncaging_PlotPockels_Scanning == null || uncaging_PlotPockels_Scanning.IsDisposed)
             {
@@ -4063,6 +3940,7 @@ namespace FLIMage
 
             digital_panel.Show();
         }
+
     } //Form
 
 

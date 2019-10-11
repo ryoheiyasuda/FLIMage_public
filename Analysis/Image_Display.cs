@@ -1235,8 +1235,8 @@ namespace FLIMage.Analysis
 
                         referenceLoc = e.Location;
                         double[] referenceLocFrac = new double[] { referenceLoc.X / (double)Image1.Width, referenceLoc.Y / (double)Image1.Height };
-                        double[] calibratedLocationV = IOControls.PositionFracToVoltage(referenceLocFrac, FLIMage.State);
-                        double[] originalLocationV = IOControls.PositionFracToVoltage(uncagingLocFrac, FLIMage.State);
+                        double[] calibratedLocationV = HardwareControls.IOControls.PositionFracToVoltage(referenceLocFrac, FLIMage.State);
+                        double[] originalLocationV = HardwareControls.IOControls.PositionFracToVoltage(uncagingLocFrac, FLIMage.State);
 
                         for (int i = 0; i < 2; i++)
                             FLIMage.flimage_io.uncaging_Calib[i] = calibratedLocationV[i] - originalLocationV[i];
@@ -1323,17 +1323,7 @@ namespace FLIMage.Analysis
 
         public void UpdateFileName()
         {
-            if (!FileN.InvokeRequired)
-            {
-                UpdateFileNameCore();
-            }
-            else
-            {
-                this.BeginInvoke((Action)delegate
-                {
-                    UpdateFileNameCore();
-                });
-            }
+            this.BeginInvokeIfRequired(o => o.UpdateFileNameCore());
         }
 
         public void ReadRois()
@@ -3223,8 +3213,8 @@ namespace FLIMage.Analysis
 
                         if (StopFileOpening)
                             break;
-                        Application.DoEvents();
 
+                        Application.DoEvents(); //Make the saving event stoppable by button.
                     } //page p
                 } //if saveChannel = true
             } //channel ch
@@ -3259,7 +3249,7 @@ namespace FLIMage.Analysis
 
                         var error = fileIO.SaveFLIMInTiffZStack(fileName, FLIM_ImgData.FLIM_Pages, FLIM_ImgData.acquiredTime_Pages5D[i5d], i5d == 0, FLIM_ImgData.saveChannels);
 
-                        Application.DoEvents();
+                        Application.DoEvents(); //Make the event stoppable with button.
                     }
                 }
                 else
@@ -3268,7 +3258,6 @@ namespace FLIMage.Analysis
                     {
                         GotoPage4D(i);
                         UpdateImages(false, false, false, false);
-                        Application.DoEvents();
 
                         //FLIM_ImgData.CopyFromFLIM_PageToFLIMRaw(i);
                         var error = fileIO.SaveFLIMInTiff(fileName, FLIM_ImgData.FLIM_Pages[i], FLIM_ImgData.acquiredTime_Pages[i], i == 0, FLIM_ImgData.saveChannels);
@@ -3278,6 +3267,8 @@ namespace FLIMage.Analysis
                             MessageBox.Show("Problem in saving ! Page = " + i);
                             return;
                         }
+
+                        Application.DoEvents(); //Make the event stoppable with button.
                     }
                 }
             }
@@ -3337,7 +3328,7 @@ namespace FLIMage.Analysis
                     SaveCurrentIntensityImage(saveFormat, channelToSave, FastZFormat, correctT0EachPage, false);
                     //SaveCurrentIntensityImage();
 
-                    Application.DoEvents();
+                    Application.DoEvents(); //Make the event stoppable with button.
                 }
                 else
                     break;
@@ -3362,8 +3353,7 @@ namespace FLIMage.Analysis
                         CalculateTimecourse(false);
 
                     //SaveCurrentIntensityImage();
-
-                    Application.DoEvents();
+                    Application.DoEvents(); //Make the event stoppable with button.
                 }
                 else
                     break;
@@ -3460,12 +3450,14 @@ namespace FLIMage.Analysis
                             ZStack = false;
                             FileN++;
                         }
-                        Application.DoEvents();
                     }
                     else
                         break;
                 }
+
+                Application.DoEvents(); //Make the event stoppable with button.0
             }
+
             FLIM_ImgData = flim_data;
             displayZProjection = false;
             cb_projectionYes.Checked = false;
@@ -3942,7 +3934,8 @@ namespace FLIMage.Analysis
                 }
 
 
-                Application.DoEvents();
+                Application.DoEvents(); //Make the opening stoppable.
+
                 //System.Threading.Thread.Sleep(2);
                 if (StopFileOpening)
                 {
@@ -4327,7 +4320,8 @@ namespace FLIMage.Analysis
                 //plot_regular.Refresh();
                 plot_regular.plotNow_noRealtime(TCF, TC, this, currentChannel);
 
-                Application.DoEvents();
+                Application.DoEvents(); //Make the event stoppable with button.
+
                 if (StopFileOpening)
                 {
                     if (FLIM_ImgData.KeepPagesInMemory)
@@ -4740,7 +4734,7 @@ namespace FLIMage.Analysis
                 TurnOnOffThreeD(ThreeDRoi);
                 UpdateImages(false, realtime, focusing, false);
             }
-            this.Refresh();
+            Refresh();
         }
 
         private void Image_Display_FormClosing(object sender, FormClosingEventArgs e)
@@ -4774,7 +4768,7 @@ namespace FLIMage.Analysis
             uncaging_on = !uncaging_on;
             uncagingLocFrac = FLIM_ImgData.State.Uncaging.Position;
             Activate_uncaging(uncaging_on);
-            this.Refresh();
+            Refresh();
         }
 
         private void TimeCoursePlotToolStripMenuItem_Click(object sender, EventArgs e)
@@ -6047,24 +6041,17 @@ namespace FLIMage.Analysis
                     DrawImages();
             }
 
-            if (this.InvokeRequired) //"Invoke" will block the process.
+            this.BeginInvokeIfRequired(o =>
             {
-                this.BeginInvoke((Action)delegate
+                try
                 {
-                    try
-                    {
-                        UpdateImageDisplay(calcLifetimeMap, calcLifetime, calcProject, c, focus);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine("Error in Invoking Update ImageDisplay" + e.Message);
-                    }
-                });
-            }
-            else
-            {
-                UpdateImageDisplay(calcLifetimeMap, calcLifetime, calcProject, c, focus);
-            }
+                    o.UpdateImageDisplay(calcLifetimeMap, calcLifetime, calcProject, c, focus);
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine("Error in Invoking Update ImageDisplay" + e.Message);
+                }
+            });
 
             //Debug.WriteLine("4 Elapsed time = " + sw.ElapsedMilliseconds + " ms");
             //sw.Restart();

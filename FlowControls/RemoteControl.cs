@@ -91,15 +91,7 @@ namespace FLIMage.FlowControls
 
         private void DisplayNotification(String str)
         {
-            if (this.InvokeRequired)
-            {
-                this.BeginInvoke((Action)delegate
-                {
-                    EventReceived.Text = str;
-                });
-            }
-            else
-                EventReceived.Text = str;
+            EventReceived.BeginInvokeIfRequired(o => o.Text = str);
         }
 
         public void SaveWindowLocation()
@@ -141,17 +133,7 @@ namespace FLIMage.FlowControls
 
         public void displaySendText(String str, FLIMage_Event.CommandReceivedFrom wr)
         {
-            if (this.InvokeRequired)
-            {
-                ServerOn.BeginInvoke((Action)delegate ()
-                {
-                    displaySendTextCore(str, wr);
-                });
-            }
-            else
-            {
-                displaySendTextCore(str, wr);
-            }
+            this.BeginInvokeIfRequired(o => o.displaySendTextCore(str, wr));
         }
 
         public void messageReceived(COMserver c, EventArgs e)
@@ -162,17 +144,7 @@ namespace FLIMage.FlowControls
 
         public void displayStatusText(String str, FLIMage_Event.CommandReceivedFrom wr)
         {
-            if (this.InvokeRequired)
-            {
-                ServerOn.BeginInvoke((Action)delegate ()
-                {
-                    displayStatusTextCore(str, wr);
-                });
-            }
-            else
-            {
-                displayStatusTextCore(str, wr);
-            }
+            this.BeginInvokeIfRequired(o => o.displayStatusTextCore(str, wr));
         }
 
         public void status_ComServer(bool active, FLIMage_Event.CommandReceivedFrom wr)
@@ -204,29 +176,12 @@ namespace FLIMage.FlowControls
                 displayStatusText("", FLIMage_Event.CommandReceivedFrom.FLIMage);
             }
 
-            if (this.InvokeRequired)
-                this.Invoke((Action)delegate { ServerOn.Checked = ON; });
-            else
-                ServerOn.Checked = ON;
+            ServerOn.BeginInvokeIfRequired(o => o.Checked = ON);
         }
 
         private void ServerOn_Click(object sender, EventArgs e)
         {
             TurnOnServer(ServerOn.Checked);
-            //COM_server.Close();
-            ////FLIM_event.unSubscribe();
-            //if (ServerOn.Checked && !COM_server.connected)
-            //{
-            //    //FLIMage.FLIM_EventHandling_Init();
-            //    COM_server.start();
-            //    status_ComServer(COM_server.connected, FLIMage_Event.CommandReceivedFrom.Client);
-            //    status_ComServer(COM_server.connectedR, FLIMage_Event.CommandReceivedFrom.FLIMage);
-            //}
-            //else
-            //{
-            //    displayStatusText("", FLIMage_Event.CommandReceivedFrom.Client);
-            //    displayStatusText("", FLIMage_Event.CommandReceivedFrom.FLIMage);
-            //}
         }
 
         private void Script_Shown(object sender, EventArgs e)

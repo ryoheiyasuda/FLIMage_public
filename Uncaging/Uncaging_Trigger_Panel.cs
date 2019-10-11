@@ -24,10 +24,8 @@ namespace FLIMage.Uncaging
         public double[] uncaging_Calib = new double[2];
         public int uncaging_count = 0;
 
-        IOControls.pockelAO UncagePockelAO;
-        IOControls.MirrorAO UncageMirrorAO;
-        IOControls.DigitalOutputSignal digitalOutput;
-
+        HardwareControls.IOControls.AnalogOutput UncageMirrorAO;
+        HardwareControls.IOControls.DigitalOutputControl digitalOutput;
 
         PlotOnPictureBox plot1, plot2;
 
@@ -159,13 +157,7 @@ namespace FLIMage.Uncaging
                     State.Uncaging.rotatePosition = true;
                 else
                 {
-                    if (this.InvokeRequired)
-                        this.Invoke((Action)delegate
-                        {
-                            State.Uncaging.currentPosition = UncageMultiRoi.SelectedIndex;
-                        });
-                    else
-                        State.Uncaging.currentPosition = UncageMultiRoi.SelectedIndex;
+                    State.Uncaging.currentPosition = UncageMultiRoi.SelectedIndex;
                     State.Uncaging.rotatePosition = false;
                 }
             }
@@ -174,13 +166,7 @@ namespace FLIMage.Uncaging
                 Debug.WriteLine("Problem in UncagingSelection" + e.Message);
             }
 
-            if (this.InvokeRequired)
-                this.Invoke((Action)delegate
-                {
-                    UpdateUncaging(sender);
-                });
-            else
-                UpdateUncaging(sender);
+            this.InvokeIfRequired(o => o.UpdateUncaging(sender));
         }
 
         public void UncageMultiRoi_SelectedIndexChanged(object sender, EventArgs e)
@@ -349,7 +335,7 @@ namespace FLIMage.Uncaging
                         State.Uncaging.UncagingPositionsX[i] = FLIMage.image_display.uncagingLocs[i][0];
                         State.Uncaging.UncagingPositionsY[i] = FLIMage.image_display.uncagingLocs[i][1];
 
-                        double[] xy_voltage = IOControls.PositionFracToVoltage(FLIMage.image_display.uncagingLocs[i], State);
+                        double[] xy_voltage = HardwareControls.IOControls.PositionFracToVoltage(FLIMage.image_display.uncagingLocs[i], State);
                         State.Uncaging.UncagingPositionsVX[i] = xy_voltage[0];
                         State.Uncaging.UncagingPositionsVY[i] = xy_voltage[1];
                         //State.Uncaging.UncagingPositionsVX[i] = (FLIMage.image_display.uncagingLocs[i][0] - 0.5) * State.Acq.XMaxVoltage / State.Acq.zoom + State.Uncaging.CalibV[0] + xOffset;
@@ -392,7 +378,7 @@ namespace FLIMage.Uncaging
 
             //State.Uncaging.PositionV[0] = (State.Uncaging.Position[0] - 0.5) * State.Acq.XMaxVoltage / State.Acq.zoom + State.Uncaging.CalibV[0] + xOffset;
             //State.Uncaging.PositionV[1] = (State.Uncaging.Position[1] - 0.5) * State.Acq.YMaxVoltage / State.Acq.zoom + State.Uncaging.CalibV[1] + yOffset;
-            State.Uncaging.PositionV = IOControls.PositionFracToVoltage(State.Uncaging.Position, State);
+            State.Uncaging.PositionV = HardwareControls.IOControls.PositionFracToVoltage(State.Uncaging.Position, State);
 
             UncagingPosX.Text = String.Format("{0:0.000}", State.Uncaging.PositionV[0]);
             UncagingPosY.Text = String.Format("{0:0.000}", State.Uncaging.PositionV[1]);
@@ -461,9 +447,9 @@ namespace FLIMage.Uncaging
             if (FLIMage.flimage_io.shading != null)
                 FLIMage.flimage_io.shading.applyCalibration(State);
 
-            
-            
-            
+
+
+
             updatePlot(plot1);
             updatePlot(plot2);
         }
@@ -478,11 +464,11 @@ namespace FLIMage.Uncaging
             if (plot.Equals(plot2))
             {
                 plotEOM = false;
-                Data = IOControls.MakeUncagePulses_MirrorAO(State, State.Uncaging.outputRate);
+                Data = HardwareControls.IOControls.MakeUncagePulses_MirrorAO(State, State.Uncaging.outputRate);
             }
             else
             {
-                Data = IOControls.MakePockelsPulses_PockelsAO(State, State.Uncaging.outputRate, ShowShutter.Checked, ShowRepeat.Checked, FLIMage.flimage_io.shading);
+                Data = HardwareControls.IOControls.MakePockelsPulses_PockelsAO(State, State.Uncaging.outputRate, ShowShutter.Checked, ShowRepeat.Checked, FLIMage.flimage_io.shading);
             }
 
             if (Data.GetLength(1) > 0 && Data.GetLength(0) > 0)
@@ -497,12 +483,12 @@ namespace FLIMage.Uncaging
                     for (int i = 0; i < Data1.Length; i++)
                         Data1[i] = Data[j, i];
                     plot.AddData(t1, Data1, "-", 1);
-                }               
+                }
             }
 
             if (State.Init.DO_uncagingShutter && plotEOM && ShowShutter.Checked)
             {
-                double[][] dodata = IOControls.GetDigitalOutputInDouble(State, true, false, ShowRepeat.Checked, out double outputRate);
+                double[][] dodata = HardwareControls.IOControls.GetDigitalOutputInDouble(State, true, false, ShowRepeat.Checked, out double outputRate);
                 double[] Data_DO_Shutter = dodata[0];
 
                 t1 = new double[Data_DO_Shutter.Length];
@@ -530,10 +516,16 @@ namespace FLIMage.Uncaging
             {
                 UncagingTimer.Stop();
                 UncagingTimer.Dispose();
-                StartUncaging_button.Text = "Start";
+                StartUncaging_button.InvokeIfRequired(o => o.Text = "Start");
                 FLIMage.ExternalCommand("UncagingDone");
                 uncaging_running = false;
             }
+        }
+
+        public void StartPrep()
+        {
+            uncaging_count = 0;
+            UpdateUncagingCounter();
         }
 
         public void StartUncaging_button_Click(object sender, EventArgs e)
@@ -541,15 +533,12 @@ namespace FLIMage.Uncaging
             uncaging_running = true;
             abort_uncaging = false;
 
-            FLIMage.ExternalCommand("UncagingStart");
-
             SetupUncage(sender);
 
             if (StartUncaging_button.Text.Equals("Start"))
             {
-                uncaging_count = 0;
-                StartUncaging_button.Text = "Stop";
-                UpdateUncagingCounter();
+                StartPrep();
+                StartUncaging_button.InvokeIfRequired(o => o.Text = "Stop");
 
                 if (State.Uncaging.trainRepeat > 1)
                 {
@@ -563,7 +552,7 @@ namespace FLIMage.Uncaging
 
                 if (State.Uncaging.trainRepeat <= 1)
                 {
-                    StartUncaging_button.Text = "Start";
+                    StartUncaging_button.InvokeIfRequired(o => o.Text = "Start");
                     State.Uncaging.trainRepeat = 1;
 
                 }
@@ -591,12 +580,10 @@ namespace FLIMage.Uncaging
 
         public void CleanBufferForUncaging()
         {
-            if (UncagePockelAO != null)
-                UncagePockelAO.dispose();
             if (UncageMirrorAO != null)
-                UncageMirrorAO.dispose();
+                UncageMirrorAO.Dispose();
             if (digitalOutput != null)
-                digitalOutput.dispose();
+                digitalOutput.Dispose();
         }
 
         /// <summary>
@@ -610,19 +597,17 @@ namespace FLIMage.Uncaging
 
             int pos = State.Uncaging.currentPosition;
 
-            double[,] uncagingPos = IOControls.DefinePulsePosition(State);
+            double[,] uncagingPos = HardwareControls.IOControls.DefinePulsePosition(State);
 
             //Put static values first.
-            FLIMage.flimage_io.mirrorAO_S.putValue_S(new double[] { uncagingPos[0, 0], uncagingPos[1, 0] });
+            FLIMage.flimage_io.AO_Mirror_EOM.putValue_Single(new double[] { uncagingPos[0, 0], uncagingPos[1, 0] }, true, false);
+            FLIMage.flimage_io.uncagingShutterCtrl(false, true, true); //Close uncaging shutter.
 
             if (State.Init.DO_uncagingShutter)
             {
-                FLIMage.flimage_io.uncagingDOShutter_S.TurnOnOff(false);
-                digitalOutput = new IOControls.DigitalOutputSignal(State);
-                digitalOutput.PutValue_and_Start(false, true, false, false);
+                digitalOutput = new HardwareControls.IOControls.DigitalOutputControl(State);
+                digitalOutput.PutValue_and_Start(false, false, true, false, false);
             }
-
-            //System.Threading.Thread.Sleep(10); //Not sure.
 
             if (mainShutterCtrl)
             {
@@ -630,17 +615,10 @@ namespace FLIMage.Uncaging
                 System.Threading.Thread.Sleep(1); //Wait for shutter open.
             }
 
-            UncageMirrorAO = new IOControls.MirrorAO(State, FLIMage.flimage_io.shading);
+            UncageMirrorAO = new HardwareControls.IOControls.AnalogOutput(State, FLIMage.flimage_io.shading, true);
             FLIMage.flimage_io.shading.applyCalibration(State);
             double[,] dataXY = UncageMirrorAO.putvalueUncageOnce();
-            UncageMirrorAO.start(false);
-
-            if (State.Init.EOM_nChannels > 0 && !UncageMirrorAO.SameBoard)
-            {
-                UncagePockelAO = new IOControls.pockelAO(State, FLIMage.flimage_io.shading, false);
-                UncagePockelAO.putvalueUncageOnce();
-                UncagePockelAO.start(false);
-            }
+            UncageMirrorAO.Start(false);
 
             FLIMage.flimage_io.dioTrigger.Evoke();
 
@@ -654,7 +632,6 @@ namespace FLIMage.Uncaging
             while (sw1.ElapsedMilliseconds < timeout)
             {
                 System.Threading.Thread.Sleep(10);
-                Application.DoEvents();
                 //abort_uncaging becomes true when stop button is pressed.
                 if (abort_uncaging)
                 {
@@ -665,37 +642,30 @@ namespace FLIMage.Uncaging
 
             if (!forcestop)
             {
-                if (State.Init.EOM_nChannels > 0 && !UncageMirrorAO.SameBoard)
-                    UncagePockelAO.WaitUntioDone(timeout);
                 UncageMirrorAO.WaitUntilDone(timeout); //Should be immediate but anyway....
             }
             else
             {
-                if (State.Init.EOM_nChannels > 0 && !UncageMirrorAO.SameBoard)
-                    UncagePockelAO.stop();
-                UncageMirrorAO.stop();
+                UncageMirrorAO.Stop();
             }
 
             if (State.Init.DO_uncagingShutter)
             {
                 digitalOutput.Stop();
-                digitalOutput.dispose();
+                digitalOutput.Dispose();
             }
 
             if (mainShutterCtrl)
                 FLIMage.flimage_io.ShutterCtrl.close();
 
-            if (UncagePockelAO != null)
-                UncagePockelAO.dispose();
-            UncageMirrorAO.dispose();
+            UncageMirrorAO.Dispose();
 
             uncaging_count++;
             Debug.WriteLine("Uncaging counter = " + uncaging_count);
 
             System.Threading.Thread.Sleep(1);
 
-            if (U_counter.Created)
-                U_counter.BeginInvoke(new Action(() => UpdateUncagingCounter()));
+            this.InvokeIfRequired(o => o.UpdateUncagingCounter());
         }
 
         public void PulseNumber_ValueChanged(object sender, EventArgs e)
