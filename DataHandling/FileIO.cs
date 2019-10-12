@@ -1521,7 +1521,7 @@ namespace FLIMage
                         image.ReadScanline(scanline, y);
                         Buffer.BlockCopy(scanline, 0, buf, 0, scanline.Length);
                         for (int x = 0; x < width; x++)
-                            img[y,x] = (float)buf[x] / 1000.0f;
+                            img[y, x] = (float)buf[x] / 1000.0f;
                     }
                 } //COMPRESSION
             } //Tiff
@@ -1536,7 +1536,7 @@ namespace FLIMage
             for (int y = 0; y < image.Length; y++)
                 for (int x = 0; x < image[0].Length; x++)
                 {
-                    image16[y,x] = (UInt16)(1000.0 * image[y][x]);
+                    image16[y, x] = (UInt16)(1000.0 * image[y][x]);
                 }
             Save2DImageInTiff(filename, image16, DateTime.Now, true, saveChannels);
         }
@@ -1550,7 +1550,7 @@ namespace FLIMage
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                 {
-                    image16[y, x] = (UInt16)(1000.0 * image[y,x]);
+                    image16[y, x] = (UInt16)(1000.0 * image[y, x]);
                 }
             Save2DImageInTiff(filename, image16, DateTime.Now, true, saveChannels);
         }
@@ -1833,15 +1833,19 @@ namespace FLIMage
             }
         }//saveTiff
 
-
         public String SaveFLIMFileDialog(String TempFileName)
+        {
+            return SaveFLIMFileDialog(".flim");
+        }
+
+        public String SaveFLIMFileDialog(String TempFileName, String extension)
         {
             String filename = "";
             SaveFileDialog saveFileDialog1 = new SaveFileDialog();
 
             saveFileDialog1.InitialDirectory = Path.GetDirectoryName(TempFileName);
             saveFileDialog1.FileName = TempFileName;
-            saveFileDialog1.Filter = "FLIM files (*.flim)|*.flim|All files (*.*)|*.*";
+            saveFileDialog1.Filter = String.Format("Image files (*{0})|*{0}|All files (*.*)|*.*", extension);
             saveFileDialog1.FilterIndex = 1;
             saveFileDialog1.RestoreDirectory = false;
 
@@ -1850,7 +1854,7 @@ namespace FLIMage
                 try
                 {
                     filename = saveFileDialog1.FileName;
-                    State.Files.initFileName = filename;
+                    //State.Files.initFileName = filename;
                 }
                 catch (Exception ex)
                 {

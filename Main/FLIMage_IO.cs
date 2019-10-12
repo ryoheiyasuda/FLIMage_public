@@ -637,6 +637,13 @@ namespace FLIMage
             }
             else
             {
+                if (!looping)
+                {
+                    if (CheckSavingParameters() < 0)
+                    {
+                        return;
+                    }
+                }
 
                 grabbing = true;
                 post_grabbing_process = false;
@@ -883,7 +890,7 @@ namespace FLIMage
                     }
                 } //While
 
-                if (stopGrabActivated || !waitingSliceTask) //stoped in the middle of loop.
+                if ((stopGrabActivated || !waitingSliceTask) && State.Acq.ZStack) //stoped in the middle of loop.
                 {
                     FLIMage.MoveBackToHome();
                     return;
@@ -946,7 +953,7 @@ namespace FLIMage
             } //While
 
 
-            if (stopGrabActivated || !waitingSliceTask) //When stopped, the above loop breaks;
+            if ((stopGrabActivated || !waitingSliceTask) && State.Acq.ZStack) //When stopped, the above loop breaks;
             {
                 FLIMage.MoveBackToHome();
                 return;
@@ -1773,7 +1780,8 @@ namespace FLIMage
 
                 if (internalSliceCounter == State.Acq.nSlices) //All slices done.
                 {
-                    FLIMage.MoveBackToHome();
+                    if (State.Acq.ZStack)
+                        FLIMage.MoveBackToHome();
 
                     State.Files.fileCounter++; //This needs to be after MoveMotorBack, since movemotorbacktohome sends notification with the current fileCounter.
                     internalImageCounter++;

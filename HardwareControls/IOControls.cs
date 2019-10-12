@@ -93,7 +93,13 @@ namespace FLIMage.HardwareControls
 
             public double GetEOMVoltageByFitting(double percent, int ch)
             {
-                return MatrixCalc.InverseSinusoidal(beta[ch], percent);
+                double val = MatrixCalc.InverseSinusoidal(beta[ch], percent);
+                if (val > 2)
+                    val = 2;
+                if (val < -2)
+                    val = -2;
+
+                return val;
             }
 
             public void MakeCalibrationCurveFit()
@@ -186,7 +192,7 @@ namespace FLIMage.HardwareControls
                 //dioTrigger dio = new dioTrigger(State);
                 EOM_AO = new AnalogOutput(State, shading, false);
 
-                double maxV = 2.0;
+                double maxV = 1.9;
                 double minV = 0;
                 int nChannels = State.Init.EOM_nChannels;
                 int sampleN = 1000;
@@ -525,11 +531,6 @@ namespace FLIMage.HardwareControls
                         val = 3;
 
                     returnValue = calibration.GetEOMVoltageByFitting(val * power, LaserN);
-
-                    if (returnValue > 2)
-                        returnValue = 2;
-                    else if (returnValue < -2)
-                        returnValue = -2;
                 }
                 else
                 {
@@ -538,6 +539,12 @@ namespace FLIMage.HardwareControls
                     else
                         returnValue = power / 100;
                 }
+
+                if (returnValue > 2)
+                    returnValue = 2;
+                else if (returnValue < -2)
+                    returnValue = -2;
+
                 return returnValue;
             }
 
@@ -703,7 +710,7 @@ namespace FLIMage.HardwareControls
             double[,] DataAll = new double[nCh, nSamples];
 
             Buffer.BlockCopy(DataA, 0, DataAll, 0, DataA.Length * sizeof(double));
-            Buffer.BlockCopy(DataB, DataA.Length * sizeof(double), DataAll, 0, DataB.Length * sizeof(double));
+            Buffer.BlockCopy(DataB, 0, DataAll, DataA.Length * sizeof(double), DataB.Length * sizeof(double));
 
             return DataAll;
         }
@@ -946,7 +953,7 @@ namespace FLIMage.HardwareControls
             public DigitalOutputControl(ScanParameters State_in)
             {
                 State = State_in;
-
+                Board = State.Init.triggerPort.Split('/')[0];
                 digitalLinePort = Board + "/port0/" + State.Init.DigitalLinePort;
                 DO_ShutterPort = Board + "/port0/" + State.Init.DigitalShutterPort;
                 DO_Port = new string[3];
@@ -1145,6 +1152,11 @@ namespace FLIMage.HardwareControls
                 DataAll = ConcatChannels(DataXY, DataEOM);
 
                 analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, focus);
+                if (includeMirror)
+                {
+                    analog_output.SetReturnFunction(DataXY.GetLength(1));
+                    analog_output.EveryNSamplesEvent += EveryNSampleEvent;
+                }
                 return DataXY;
             }
 
@@ -1166,8 +1178,6 @@ namespace FLIMage.HardwareControls
                     return;
 
                 outputRate = State.Acq.outputRate;
-                double[,] DataXY_Org = MakeMirrorOutputXY(State);
-
                 if (includeMirror)
                     DataXY = makeMirrorOutput_Imaging_Uncaging(State);
                 else
@@ -1181,8 +1191,12 @@ namespace FLIMage.HardwareControls
                 DataAll = ConcatChannels(DataXY, DataEOM);
 
                 analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false);
-                analog_output.SetReturnFunction(DataXY_Org.GetLength(1));
-                analog_output.EveryNSamplesEvent += EveryNSampleEvent;
+
+                if (includeMirror)
+                {
+                    analog_output.SetReturnFunction(GetNSamplesScan(State));
+                    analog_output.EveryNSamplesEvent += EveryNSampleEvent;
+                }
             }
 
             public double[,] putvalueUncageOnce() //lower sampling rate!!
@@ -1327,9 +1341,6 @@ namespace FLIMage.HardwareControls
             String Port_AI;
             String Port_AO;
             NiDaq.AnalogOutput PiezoAO;
-            NiDaq.AnalogOutput PiezoAI;
-            bool sameBoard_AI = false;
-            bool sameBoard_AO = false;
             double maxV = 10;
             double minV = 0;
             double centerV = 5;
@@ -1427,7 +1438,6 @@ namespace FLIMage.HardwareControls
                 var ai = new NiDaq.AI_Read_SingleValue(Port_AI, new double[] { minV, maxV }, out double result);
                 return result;
             }
-
         }
 
         static public double[,] DefinePulsePosition(ScanParameters State)
@@ -2230,6 +2240,17 @@ namespace FLIMage.HardwareControls
             }
 
             return finalOutput;
+        }
+
+        public static int GetNSamplesScan(ScanParameters State)
+        {
+            double NLines = (double)State.Acq.linesPerFrame;
+            double OutputRate = State.Acq.outputRate;
+            double msPerLine = State.Acq.msPerLine;
+            if (State.Acq.fastZScan)
+                msPerLine = State.Acq.FastZ_msPerLine;
+            int nSamples_All = (int)(msPerLine * OutputRate * NLines / 1000.0);
+            return nSamples_All;
         }
 
         public static double[,] MakeMirrorOutputXY(ScanParameters State)

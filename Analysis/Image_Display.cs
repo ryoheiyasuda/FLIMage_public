@@ -388,7 +388,7 @@ namespace FLIMage.Analysis
         {
             realtime = realtime_1;
             openFLIMImageToolStripMenuItem.Enabled = !realtime;
-            saveFLIMImageToolStripMenuItem.Enabled = !realtime;
+            saveFLIMImageToolStripMenuItem1.Enabled = !realtime;
             if (FLIM_ImgData.nFastZ == 1)
             {
                 PageUp.Enabled = !realtime;
@@ -2257,7 +2257,8 @@ namespace FLIMage.Analysis
                 }
                 else if (FastZStack && FLIM_ImgData.State.Acq.FastZ_phase_detection_mode)
                 {
-                    drawBMP = ImageProcessing.MergeBitmaps(IntensityBitmap, Bitmap_FastZ_PhaseComplementary);
+                    lock (syncBmp)
+                        drawBMP = ImageProcessing.MergeBitmaps(IntensityBitmap, Bitmap_FastZ_PhaseComplementary);
                 }
                 else
                 {
@@ -3039,6 +3040,44 @@ namespace FLIMage.Analysis
         }
 
 
+        private void exportCurrentImageJPGToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            exportBitMap(".jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
+        }
+
+        private void exportCurrentImagePNGToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            exportBitMap(".png", System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        private void exportCurrentImageBMPToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            exportBitMap(".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
+        }
+
+        private void exportBitMap(String extension, System.Drawing.Imaging.ImageFormat format)
+        {
+            Bitmap bmp;
+            if (MergeCB.Checked)
+                bmp = ImageProcessing.MergeBitmaps(IntensityBitmap, IntensityBitmap2);
+            else
+                bmp = IntensityBitmap;
+
+            bmp = ImageProcessing.ResizeBitmap(bmp, Image1.Width, Image1.Height);
+
+            FileIO fileIO = new FileIO(FLIM_ImgData.State);
+            FLIM_ImgData.fullName(currentChannel, false);
+            String fileName = FLIM_ImgData.fileName + extension;
+
+            fileName = fileIO.SaveFLIMFileDialog(fileName, extension);
+            var dir = Path.GetDirectoryName(fileName);
+            var fn = Path.GetFileNameWithoutExtension(fileName);
+            //var flieName_Intensity = Path.Combine(dir, fn + "_Intensity" + extension);
+            var fileName_FLIM = Path.Combine(dir, fn + "_FLIM" + extension);
+            bmp.Save(fileName, format);
+            FLIMBitmap.Save(fileName_FLIM, format);
+        }
+
         public void ChannelHandling(int channel)
         {
             RadioButton chb = Channel1;
@@ -3430,7 +3469,7 @@ namespace FLIMage.Analysis
                         else if (file_type == FLIMData.FileType.TimeCourse && !fast_zThis && !z_stackThis)
                         {
 
-                            var flim_pages = (ushort[][][,,])Copier.CopyDoubleArray(FLIM_ImgData.FLIM_Pages);
+                            var flim_pages = (ushort[][][,,])Copier.DeepCopyArray(FLIM_ImgData.FLIM_Pages);
                             var acquiredTime_page = (DateTime[])FLIM_ImgData.acquiredTime_Pages.Clone();
 
                             for (int i = 0; i < FLIM_ImgData.FLIM_Pages.Length; i++)
@@ -3830,8 +3869,8 @@ namespace FLIMage.Analysis
 
                             if (pageZ == FLIM_ImgData.nFastZ - 1)
                             {
-                            //Last page. Copy to FLIM_Pages5D directly.
-                            FLIM_ImgData.Add_AllFLIM_PageFormat_To_FLIM_Pages5D(FLIM_ImgData.FLIM_Pages, FLIM_ImgData.acquiredTime_Pages[0], page1);
+                                //Last page. Copy to FLIM_Pages5D directly.
+                                FLIM_ImgData.Add_AllFLIM_PageFormat_To_FLIM_Pages5D(FLIM_ImgData.FLIM_Pages, FLIM_ImgData.acquiredTime_Pages[0], page1);
                             }
                         }, new { i2 = i });
                     }
@@ -4380,7 +4419,7 @@ namespace FLIMage.Analysis
         {
             if (on)
             {
-                
+
                 FrameSlicePanel.Location = new Point(185, 102);
                 FrameSlicePanel.Text = "Fast Z Stack";
                 FastZPanel.Visible = true;

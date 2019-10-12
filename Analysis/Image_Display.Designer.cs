@@ -124,7 +124,6 @@
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openFLIMImageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveFLIMImageToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.saveFLIMImageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.BatchProcessingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showImageDescriptionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
@@ -214,6 +213,11 @@
             this.HoldCurrentImageCheckBox = new System.Windows.Forms.CheckBox();
             this.MergeCB = new System.Windows.Forms.CheckBox();
             this.ThreeDROIPanel = new System.Windows.Forms.PictureBox();
+            this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportFormatedImageTIFToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportCurrentImageJPGToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportCurrentImagePNGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportCurrentImageBMPToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.rightClickMenuStrip_inROI.SuspendLayout();
             this.rightClickMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.MinSldr1)).BeginInit();
@@ -1408,7 +1412,7 @@
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.openFLIMImageToolStripMenuItem,
             this.saveFLIMImageToolStripMenuItem1,
-            this.saveFLIMImageToolStripMenuItem,
+            this.exportToolStripMenuItem,
             this.BatchProcessingToolStripMenuItem,
             this.showImageDescriptionToolStripMenuItem,
             this.toolStripSeparator2,
@@ -1430,13 +1434,6 @@
             this.saveFLIMImageToolStripMenuItem1.Size = new System.Drawing.Size(251, 22);
             this.saveFLIMImageToolStripMenuItem1.Text = "Save FLIM image ...";
             this.saveFLIMImageToolStripMenuItem1.Click += new System.EventHandler(this.saveFLIMImageToolStripMenuItem1_Click);
-            // 
-            // saveFLIMImageToolStripMenuItem
-            // 
-            this.saveFLIMImageToolStripMenuItem.Name = "saveFLIMImageToolStripMenuItem";
-            this.saveFLIMImageToolStripMenuItem.Size = new System.Drawing.Size(251, 22);
-            this.saveFLIMImageToolStripMenuItem.Text = "Export formatted image (TIF)...";
-            this.saveFLIMImageToolStripMenuItem.Click += new System.EventHandler(this.SaveFLIMImageToolStripMenuItem_Click);
             // 
             // BatchProcessingToolStripMenuItem
             // 
@@ -2327,6 +2324,45 @@
             this.ThreeDROIPanel.Click += new System.EventHandler(this.ToolPanelClicked);
             this.ThreeDROIPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.ToolPanelPaint);
             // 
+            // exportToolStripMenuItem
+            // 
+            this.exportToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.exportFormatedImageTIFToolStripMenuItem,
+            this.exportCurrentImageJPGToolStripMenuItem1,
+            this.exportCurrentImagePNGToolStripMenuItem,
+            this.exportCurrentImageBMPToolStripMenuItem});
+            this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
+            this.exportToolStripMenuItem.Size = new System.Drawing.Size(251, 22);
+            this.exportToolStripMenuItem.Text = "Export";
+            // 
+            // exportFormatedImageTIFToolStripMenuItem
+            // 
+            this.exportFormatedImageTIFToolStripMenuItem.Name = "exportFormatedImageTIFToolStripMenuItem";
+            this.exportFormatedImageTIFToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
+            this.exportFormatedImageTIFToolStripMenuItem.Text = "Export formated image (TIF)...";
+            this.exportFormatedImageTIFToolStripMenuItem.Click += new System.EventHandler(this.SaveFLIMImageToolStripMenuItem_Click);
+            // 
+            // exportCurrentImageJPGToolStripMenuItem1
+            // 
+            this.exportCurrentImageJPGToolStripMenuItem1.Name = "exportCurrentImageJPGToolStripMenuItem1";
+            this.exportCurrentImageJPGToolStripMenuItem1.Size = new System.Drawing.Size(231, 22);
+            this.exportCurrentImageJPGToolStripMenuItem1.Text = "Export current image (JPG)...";
+            this.exportCurrentImageJPGToolStripMenuItem1.Click += new System.EventHandler(this.exportCurrentImageJPGToolStripMenuItem_Click);
+            // 
+            // exportCurrentImagePNGToolStripMenuItem
+            // 
+            this.exportCurrentImagePNGToolStripMenuItem.Name = "exportCurrentImagePNGToolStripMenuItem";
+            this.exportCurrentImagePNGToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
+            this.exportCurrentImagePNGToolStripMenuItem.Text = "Export current image (PNG)...";
+            this.exportCurrentImagePNGToolStripMenuItem.Click += new System.EventHandler(this.exportCurrentImagePNGToolStripMenuItem_Click);
+            // 
+            // exportCurrentImageBMPToolStripMenuItem
+            // 
+            this.exportCurrentImageBMPToolStripMenuItem.Name = "exportCurrentImageBMPToolStripMenuItem";
+            this.exportCurrentImageBMPToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
+            this.exportCurrentImageBMPToolStripMenuItem.Text = "Export current image (BMP)...";
+            this.exportCurrentImageBMPToolStripMenuItem.Click += new System.EventHandler(this.exportCurrentImageBMPToolStripMenuItem_Click);
+            // 
             // Image_Display
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2493,7 +2529,6 @@
         public System.Windows.Forms.PictureBox LifetimeCurvePlot;
         public System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem openFLIMImageToolStripMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem saveFLIMImageToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem rOIsToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem recoverRoisToolStripMenuItem;
         public System.Windows.Forms.Button FileUp;
@@ -2598,5 +2633,10 @@
         private System.ComponentModel.IContainer components;
         private System.Windows.Forms.ToolStripMenuItem timeBinningToolStripMenuItem;
         public System.Windows.Forms.CheckBox AutoApplyOffset;
+        private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem exportFormatedImageTIFToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem exportCurrentImageJPGToolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem exportCurrentImagePNGToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem exportCurrentImageBMPToolStripMenuItem;
     }
 }

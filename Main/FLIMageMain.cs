@@ -1062,11 +1062,14 @@ namespace FLIMage
             if (fastZcontrol != null)
                 fastZcontrol.ControlsDuringScanning(false);
 
-            if (BackToCenterRadio.Checked)
-                MoveMotorBackToCenter();
+            if (State.Acq.ZStack)
+            {
+                if (BackToCenterRadio.Checked)
+                    MoveMotorBackToCenter();
 
-            if (BackToStartRadio.Checked)
-                MoveMotorBackToStart();
+                if (BackToStartRadio.Checked)
+                    MoveMotorBackToStart();
+            }
             //SaveSetting();
             //
         }
@@ -1115,16 +1118,6 @@ namespace FLIMage
             {
                 ChangeItemsStatus(false, false);
 
-                if (!flimage_io.looping)
-                {
-                    int error = flimage_io.CheckSavingParameters();
-                    if (error < 0)
-                    {
-                        ChangeItemsStatus(true, false);
-                        return;
-                    }
-                }
-
                 if (use_motor)
                 {
                     motorCtrl.GetPosition();
@@ -1170,7 +1163,6 @@ namespace FLIMage
 
                 if (analyzeEach.Checked)
                     image_display.plot_regular.Show();
-
             }
         }
 
