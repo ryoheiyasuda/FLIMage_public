@@ -886,7 +886,7 @@ namespace FLIMage
 
             laserWarningButton.Visible = badrate;
 
-            //if (!flimage_io.runningImgAcq)
+            if (!flimage_io.grabbing && !flimage_io.focusing)
             {
                 if (flimage_io.shading != null && flimage_io.shading.calibration != null)
                 {
@@ -3904,7 +3904,7 @@ namespace FLIMage
                     uncaging_PlotPockels_Scanning.setPlotTitle("Uncaging and scanning Pockels cells: last channel = shutter");
                 }
                 else
-                    uncaging_plotPockels.setPlotTitle("Uncaging Pockels cells");
+                    uncaging_PlotPockels_Scanning.setPlotTitle("Uncaging Pockels cells");
                 uncaging_PlotPockels_Scanning.Show();
             }
             else

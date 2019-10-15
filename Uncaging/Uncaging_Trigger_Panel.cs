@@ -284,11 +284,11 @@ namespace FLIMage.Uncaging
             if (State.Uncaging.outputRate < 1000)
                 State.Uncaging.outputRate = 1000;
 
-            if (State.Uncaging.pulseSetInterval_forFrame < State.Uncaging.sampleLength)
-            {
-                State.Uncaging.pulseSetInterval_forFrame = State.Uncaging.sampleLength;
-                State.Uncaging.trainInterval = State.Uncaging.sampleLength;
-            }
+            //if (State.Uncaging.pulseSetInterval_forFrame < State.Uncaging.sampleLength)
+            //{
+            //    State.Uncaging.pulseSetInterval_forFrame = State.Uncaging.sampleLength;
+            //    State.Uncaging.trainInterval = State.Uncaging.sampleLength;
+            //}
 
             OutputRate.Text = State.Uncaging.outputRate.ToString();
             PulseName.Text = State.Uncaging.name;
@@ -606,12 +606,13 @@ namespace FLIMage.Uncaging
             if (State.Init.DO_uncagingShutter)
             {
                 digitalOutput = new HardwareControls.IOControls.DigitalOutputControl(State);
-                digitalOutput.PutValue_and_Start(false, false, true, false, false);
+                digitalOutput.PutValue(false, true, false, false, false);
+                digitalOutput.Start(false);
             }
 
             if (mainShutterCtrl)
             {
-                FLIMage.flimage_io.ShutterCtrl.open();
+                FLIMage.flimage_io.shutterCtrl.open();
                 System.Threading.Thread.Sleep(1); //Wait for shutter open.
             }
 
@@ -656,7 +657,7 @@ namespace FLIMage.Uncaging
             }
 
             if (mainShutterCtrl)
-                FLIMage.flimage_io.ShutterCtrl.close();
+                FLIMage.flimage_io.shutterCtrl.Close();
 
             UncageMirrorAO.Dispose();
 

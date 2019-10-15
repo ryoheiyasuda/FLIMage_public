@@ -130,7 +130,7 @@ namespace FLIMage.HardwareControls
             State.DO.sync_withSlice = SyncWithSlice_Check.Checked;
 
             State.DO.name = PulseName.Text;
-            this.BeginInvokeIfRequired(o => o.UpdateDO(o));
+            this.BeginInvokeIfRequired(o => o.UpdateDO(sender));
         }
 
 
@@ -197,11 +197,11 @@ namespace FLIMage.HardwareControls
             if (State.DO.outputRate < 1000)
                 State.DO.outputRate = 1000;
 
-            if (State.DO.pulseSetInterval_forFrame < State.DO.sampleLength)
-            {
-                State.DO.pulseSetInterval_forFrame = State.DO.sampleLength;
-                State.DO.trainInterval = State.DO.sampleLength;
-            }
+            //if (State.DO.pulseSetInterval_forFrame < State.DO.sampleLength)
+            //{
+            //    State.DO.pulseSetInterval_forFrame = State.DO.sampleLength;
+            //    State.DO.trainInterval = State.DO.sampleLength;
+            //}
 
             OutputRate.Text = State.DO.outputRate.ToString();
             PulseName.Text = State.DO.name;
@@ -362,11 +362,12 @@ namespace FLIMage.HardwareControls
             CleanBufferForDO();
 
             digitalOutput = new IOControls.DigitalOutputControl(State);
-            digitalOutput.PutValue_and_Start(false, false, false, true, false);
+            digitalOutput.PutValue(false, false, true, false, false);
+            digitalOutput.Start(false);
 
             if (mainShutterCtrl)
             {
-                FLIMage.flimage_io.ShutterCtrl.open();
+                FLIMage.flimage_io.shutterCtrl.open();
             }
 
             System.Threading.Thread.Sleep(1); //Wait for misc
@@ -399,7 +400,7 @@ namespace FLIMage.HardwareControls
             }
 
             if (mainShutterCtrl)
-                FLIMage.flimage_io.ShutterCtrl.close();
+                FLIMage.flimage_io.shutterCtrl.Close();
 
             DO_count++;
             Debug.WriteLine("DO counter = " + DO_count);

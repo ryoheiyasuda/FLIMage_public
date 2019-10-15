@@ -1,5 +1,5 @@
 # FLIMage
-This software allows for controlling TCSPC hardware and generate fluorescence lifetime images in real time. The main part of the source code is free for academic and educational uses. It is used and tested in the Yasuda lab (Max Planck Florida Institute for Neuroscience) on Windows X and NationalInstruments DAQmx 18.6. The software is updated frequently. 
+This software allows for controlling TCSPC hardware and generate fluorescence lifetime images in real time. The main part of the source code is free for academic and educational uses. It is used and tested in the Yasuda lab (Max Planck Florida Institute for Neuroscience) on Windows 10 and NationalInstruments DAQmx 18.6. The software is updated frequently. 
 
 * Compiled and packaged installer can be found in  https://github.com/ryoheiyasuda/FLIMage_Installer (provided "as is")
 

@@ -94,7 +94,7 @@ namespace FLIMage
         public HardwareControls.IOControls.LineClockByCounter lineClock;
         public HardwareControls.IOControls.AnalogOutput AO_Mirror_EOM;
         public HardwareControls.IOControls.dioTrigger dioTrigger;
-        public HardwareControls.IOControls.ShutterCtrl ShutterCtrl;
+        public HardwareControls.IOControls.ShutterCtrl shutterCtrl;
         public HardwareControls.IOControls.DigitalOutputControl digitalOutput_WClock; //for time control
         public HardwareControls.IOControls.PiezoControl piezo;
 
@@ -140,29 +140,34 @@ namespace FLIMage
             {
                 try
                 {
-                    HardwareControls.IOControls.exportBaseClockSignal(State);
-
-                    if (!State.Init.use_digitalLineClock)
-                        lineClock = new HardwareControls.IOControls.LineClockByCounter(State, false);
-
-                    digitalOutput_WClock = new HardwareControls.IOControls.DigitalOutputControl(State);
-
-                    dioTrigger = new HardwareControls.IOControls.dioTrigger(State);
-                    ShutterCtrl = new HardwareControls.IOControls.ShutterCtrl(State);
-                    shading = new HardwareControls.IOControls.Shading(State);
-                    AO_Mirror_EOM = new HardwareControls.IOControls.AnalogOutput(State, shading, true);
-
-                    if (State.Init.DO_uncagingShutter)
+                    var access = new MicroscopeHardwareLibs.NiDaq.AccessKey(State.Init.FLIMserial);
+                    if (MicroscopeHardwareLibs.NiDaq.DLLactive)
                     {
-                        DigitalUncagingShutterPort = State.Init.MirrorAOBoard + "/port0/" + State.Init.DigitalShutterPort;
-                        new HardwareControls.IOControls.Digital_Out(DigitalUncagingShutterPort, false);
+                        if (!State.Init.use_digitalLineClock)
+                            lineClock = new HardwareControls.IOControls.LineClockByCounter(State, false);
+
+                        digitalOutput_WClock = new HardwareControls.IOControls.DigitalOutputControl(State);
+
+                        dioTrigger = new HardwareControls.IOControls.dioTrigger(State);
+                        shutterCtrl = new HardwareControls.IOControls.ShutterCtrl(State);
+                        shading = new HardwareControls.IOControls.Shading(State);
+                        AO_Mirror_EOM = new HardwareControls.IOControls.AnalogOutput(State, shading, true);
+
+
+                        if (State.Init.DO_uncagingShutter)
+                        {
+                            DigitalUncagingShutterPort = State.Init.MirrorAOBoard + "/port0/" + State.Init.DigitalShutterPort;
+                            new HardwareControls.IOControls.Digital_Out(DigitalUncagingShutterPort, false);
+                        }
+
+                        if (State.Init.AO_uncagingShutter)
+                            new HardwareControls.IOControls.AO_Write(State.Init.UncagingShutterAnalogPort, 0);
+
+                        if (State.Init.usePiezo)
+                            piezo = new HardwareControls.IOControls.PiezoControl(State);
                     }
-
-                    if (State.Init.AO_uncagingShutter)
-                        new HardwareControls.IOControls.AO_Write(State.Init.UncagingShutterAnalogPort, 0);
-
-                    if (State.Init.usePiezo)
-                        piezo = new HardwareControls.IOControls.PiezoControl(State);
+                    else
+                        use_nidaq = false;
                 }
                 catch (Exception ex)
                 {
@@ -416,17 +421,12 @@ namespace FLIMage
             if (use_nidaq)
             {
                 if (State.Init.openShutterDuringCalibration)
-                    ShutterCtrl.open();
+                    shutterCtrl.open();
 
                 bool[] success = shading.calibration.calibrateEOM(plot);
                 shading.applyCalibration(State);
 
-                if (FLIMage.fastZcontrol != null && FLIMage.fastZcontrol.Visible)
-                {
-                    /////
-                }
-                else
-                    ShutterCtrl.close();
+                shutterCtrl.Close();
 
                 FLIMage.CalibEOM_GUI_Update(success);
 
@@ -477,19 +477,15 @@ namespace FLIMage
 
             if (use_nidaq && !stopGrabActivated)
             {
+                bool use_clock = State.Init.use_digitalLineClock;
+                bool use_uncaging = State.Uncaging.uncage_whileImage && grabbing && State.Uncaging.sync_withFrame;
+                bool use_digital = State.DO.DO_whileImage && grabbing && State.DO.sync_withFrame;
 
                 if (putValue)
                 {
-                    //Maybe better to separate put value and start!.
-                    bool use_clock = State.Init.use_digitalLineClock;
-
-                    //Important that uncaging and digital will not be added when focusing (only in grabbing).
-                    bool use_uncaging = State.Uncaging.uncage_whileImage && grabbing && State.Uncaging.sync_withFrame;
-                    bool use_digital = State.DO.DO_whileImage && grabbing && State.DO.sync_withFrame;
-
                     if (!State.Init.use_digitalLineClock)
                     {
-                        lineClock.dispose();
+                        lineClock.Dispose();
                         lineClock = new HardwareControls.IOControls.LineClockByCounter(State, focusing);
                     }
 
@@ -497,8 +493,8 @@ namespace FLIMage
                     {
                         digitalOutput_WClock.Dispose();
                         digitalOutput_WClock = new HardwareControls.IOControls.DigitalOutputControl(State);
-                        digitalOutput_WClock.PutValue_and_Start(State.Acq.externalTrigger, use_clock, use_uncaging,
-                            use_digital, grabbing);
+                        digitalOutput_WClock.PutValue(use_clock, use_uncaging,
+                            use_digital, grabbing, focusing);
                     }
 
                     AO_Mirror_EOM.Dispose();
@@ -517,14 +513,7 @@ namespace FLIMage
                             uncaging_shutter = FLIMage.uncaging_panel.UncagingShutter;
                         }
 
-                        try
-                        {
-                            AO_Mirror_EOM.putValueScan(focusing, uncaging_shutter);
-                        }
-                        catch (Exception EX)
-                        {
-                            Debug.WriteLine("AO_Mirror_EOM error !" + EX.Message);
-                        }
+                        AO_Mirror_EOM.putValueScan(focusing, uncaging_shutter);
 
                         if (State.Init.DO_uncagingShutter)
                         {
@@ -534,13 +523,15 @@ namespace FLIMage
                     }
 
                     FLIM_ImgData.copyState(State);
+                } //put value.
 
-                    AO_Mirror_EOM.Start(State.Acq.externalTrigger);
+                AO_Mirror_EOM.Start(State.Acq.externalTrigger);
 
-                    if (!State.Init.use_digitalLineClock)
-                        lineClock.start(State.Acq.externalTrigger);
+                if (use_clock || use_uncaging || use_digital)
+                    digitalOutput_WClock.Start(State.Acq.externalTrigger);
 
-                }
+                if (!State.Init.use_digitalLineClock)
+                    lineClock.Start(State.Acq.externalTrigger);
             }
 
             FiFo_acquire.StartMeas(eraseSPCmemory, focusing, false);
@@ -549,7 +540,7 @@ namespace FLIMage
             {
                 if (putValue)
                 {
-                    ShutterCtrl.open();
+                    shutterCtrl.open();
                     System.Threading.Thread.Sleep(2); //shutter open.
 
                     if (!State.Acq.externalTrigger)
@@ -717,7 +708,7 @@ namespace FLIMage
                 digitalOutput_WClock.Dispose();
 
             if (lineClock != null)
-                lineClock.dispose();
+                lineClock.Dispose();
 
             if (AO_Mirror_EOM != null)
                 AO_Mirror_EOM.Dispose(); //parking mirror
@@ -730,15 +721,11 @@ namespace FLIMage
         {
             if (use_nidaq)
             {
-                if (FLIMage.fastZcontrol != null && FLIMage.fastZcontrol.Visible)
-                {
-                    //does not do any thing?
-                }
-                else
-                    ShutterCtrl.close();
+                shutterCtrl.Close();
 
                 if (!State.Init.use_digitalLineClock)
-                    lineClock.stop();
+                    lineClock.Stop();
+
                 digitalOutput_WClock.Stop();
 
                 AO_Mirror_EOM.Stop();
@@ -801,6 +788,7 @@ namespace FLIMage
             AO_Mirror_EOM.putValue_S_ToStartPos(zeroEOM, shutterAO);
             if (FLIMage.uncaging_panel != null && State.Init.DO_uncagingShutter)
                 uncagingShutterCtrl(FLIMage.uncaging_panel.UncagingShutter, true, true);
+            System.Threading.Thread.Sleep(5);
         }
 
         /// <summary>
@@ -811,7 +799,7 @@ namespace FLIMage
             if (use_nidaq)
             {
                 if (!State.Init.use_digitalLineClock)
-                    lineClock.dispose();
+                    lineClock.Dispose();
 
                 digitalOutput_WClock.Dispose();
 
@@ -1060,8 +1048,10 @@ namespace FLIMage
                 MessageBox.Show("FiFo saturated!!");
             }
 
+#if !DEBUG
             try
             {
+#endif
                 if (FLIMage.fastZcontrol != null)
                 {
                     //BeginInvoke is correct.
@@ -1074,11 +1064,13 @@ namespace FLIMage
                 }
                 else
                     State.Acq.fastZScan = false;
+#if !DEBUG
             }
             catch (Exception EX)
             {
                 Debug.WriteLine("***Main window is closed!!*****" + EX.ToString());
             }
+#endif
         }
 
 
@@ -1918,7 +1910,7 @@ namespace FLIMage
                     });
                 }
 
-                FLIMage.image_display.BeginInvoke((Action)delegate
+                FLIMage.image_display.Invoke((Action)delegate
                 {
                     FLIMage.image_display.UpdateImages(true, true, focusing, true);
                 });

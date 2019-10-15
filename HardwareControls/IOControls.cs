@@ -1,4 +1,5 @@
 ﻿using MathLibrary;
+using MicroscopeHardwareLibs;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -7,26 +8,12 @@ using System.Linq;
 using System.Text;
 using System.Timers;
 using System.Windows.Forms;
-using MicroscopeHardwareLibs;
 
 namespace FLIMage.HardwareControls
 {
     //This class controls National Instruments cards.
     public class IOControls
     {
-
-        //Static method to export base clock from master card to slave. Used when State.Init.MasterClockPort and State.Init.SlaveClockPort are defined.
-        //Does not work in version 17. Sample clock will be used instead.
-        public static void exportBaseClockSignal(ScanParameters State)
-        {
-            if (State.Init.EOM_slaveClockPort != "")
-            {
-                NiDaq.exportBaseClockSignal(State.Init.masterClock, State.Init.masterClockPort);
-                Debug.WriteLine("***Terminal: " + State.Init.masterClock + " was connected with terminal: " + State.Init.masterClockPort + "***");
-            }
-        }
-
-
         public class Calibration
         {
             public ScanParameters State;
@@ -46,6 +33,10 @@ namespace FLIMage.HardwareControls
                 State = State_in;
                 success = new bool[State.Init.EOM_nChannels];
                 createFalseCurves();
+#if DEBUG
+                calib = new Calib(State, this, shading_in);
+                active = true;
+#else
                 try
                 {
                     calib = new Calib(State, this, shading_in);
@@ -56,6 +47,7 @@ namespace FLIMage.HardwareControls
                     Debug.WriteLine("Problem in calibration start: " + E.Message);
                     createFalseCurves();
                 }
+#endif
             }
 
             public void createFalseCurves()
@@ -115,24 +107,30 @@ namespace FLIMage.HardwareControls
 
             public bool[] calibrateEOM(bool plot)
             {
+#if !DEBUG
                 try
                 {
-                    calib.noiseThreshold = noiseThreshold;
-                    calib.contrastThreshold = contrastThreshold;
-                    success = calib.calcibrateEOMs(plot);
-                    beta = calib.beta;
-                    calibrationCurve = calib.calibrationCurve;
-                    MakeCalibrationCurveFit();
-                    calibrationOutput = calib.calibrationOutput;
-                    noiseValue = calib.noiseValue;
+#endif
+                calib.noiseThreshold = noiseThreshold;
+                calib.contrastThreshold = contrastThreshold;
+                success = calib.calcibrateEOMs(plot);
+                beta = calib.beta;
+                calibrationCurve = calib.calibrationCurve;
+                MakeCalibrationCurveFit();
+                calibrationOutput = calib.calibrationOutput;
+                noiseValue = calib.noiseValue;
+
+                return success;
+#if !DEBUG
                 }
                 catch (Exception E)
                 {
                     Debug.WriteLine(E.Message);
                     active = false;
-                }
 
-                return success;
+                    return new bool[State.Init.EOM_nChannels];
+                }
+#endif
             }
         }
 
@@ -601,7 +599,7 @@ namespace FLIMage.HardwareControls
                 new Digital_Out(port, true);
             }
 
-            public void close()
+            public void Close()
             {
                 new Digital_Out(port, false);
             }
@@ -709,21 +707,51 @@ namespace FLIMage.HardwareControls
 
             double[,] DataAll = new double[nCh, nSamples];
 
-            Buffer.BlockCopy(DataA, 0, DataAll, 0, DataA.Length * sizeof(double));
-            Buffer.BlockCopy(DataB, 0, DataAll, DataA.Length * sizeof(double), DataB.Length * sizeof(double));
-
+            if (nSamplesA == nSamplesB)
+            {
+                Buffer.BlockCopy(DataA, 0, DataAll, 0, Buffer.ByteLength(DataA));
+                Buffer.BlockCopy(DataB, 0, DataAll, Buffer.ByteLength(DataA), Buffer.ByteLength(DataB));
+            }
+            else
+            {
+#if DEBUG
+                DataAll = null; //Will be easier to catch a bug this way.
+#else
+                int byteLenthRowA = nSamplesA * sizeof(double);
+                int byteLenthRowB = nSamplesB * sizeof(double);
+                int byteLenthRow = nSamples * sizeof(double);
+                for (int i = 0; i < nChA; i++)
+                {
+                    Buffer.BlockCopy(DataA, i * byteLenthRowA, DataAll, i * byteLenthRow, Buffer.ByteLength(DataA));
+                }
+                for (int i = 0; i < nChB; i++)
+                {
+                    Buffer.BlockCopy(DataB, i * byteLenthRowB, DataAll, (i + nChA) * byteLenthRow, Buffer.ByteLength(DataB));
+                }
+#endif
+            }
             return DataAll;
         }
 
 
-        static public bool[][] makeDigitalOutputAllChannels(ScanParameters State, bool includeClock, bool includeUncage, bool includeDigital, bool image_grabbing, out double outputRate, out int nSamples)
+        static public bool[][] makeDigitalOutputAllChannels(ScanParameters State, bool includeClock, bool includeUncage, bool includeDigital, bool image_grabbing,
+            bool image_focusing, out double outputRate, out int nSamples, out bool continous)
         {
+            if (image_focusing)
+            {
+                includeUncage = false;
+                includeDigital = false;
+            }
+
             int AddClockC = includeClock ? 1 : 0;
             int AddUncage = includeUncage ? 1 : 0;
             int AddDigital = includeDigital ? State.DO.NChannels : 0;
 
-            outputRate = 10000;
+            //Default output parameters.
+            outputRate = 10000; //default rate. 0.1 ms.
             nSamples = 0;
+            continous = false;
+
             if (AddDigital + AddUncage + AddClockC == 0)
                 return null;
 
@@ -736,8 +764,8 @@ namespace FLIMage.HardwareControls
             if (includeUncage && includeDigital)
                 Math.Max(State.Uncaging.outputRate, State.DO.outputRate);
 
-            if (includeClock)
-                outputRate = State.Acq.outputRate / 10;
+            if (includeClock && (image_grabbing || image_focusing))
+                outputRate = State.Acq.outputRate;
 
             if (outputRate < 1000)
                 outputRate = 10000;
@@ -760,23 +788,18 @@ namespace FLIMage.HardwareControls
             if (State.Acq.fastZScan)
                 msPerLine = State.Acq.FastZ_msPerLine;
 
-            if (image_grabbing)
+            if (image_focusing && includeClock) //This is only condition that continuous is true.
             {
-                nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame * State.Acq.nFrames);
+                nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame);
+                continous = true;
             }
+
+            if (image_grabbing && (includeDigital || includeUncage))
+                nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame * State.Acq.nFrames);
 
             if (includeClock) //nSamples will be changed.
             {
                 int linePerCycle = State.Acq.linesPerFrame * State.Acq.nFrames;
-
-                outputRate = State.Acq.outputRate;
-                nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame * State.Acq.nFrames);
-
-                if (!image_grabbing) //focusing.
-                {
-                    linePerCycle = State.Acq.linesPerFrame;
-                    nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame);
-                }
 
                 bool[] waveform = new bool[nSamples];
 
@@ -814,7 +837,7 @@ namespace FLIMage.HardwareControls
         static public double[][] GetDigitalOutputInDouble(ScanParameters State, bool uncaging_on, bool digital_on, bool for_frame, out double outputRate)
         {
             bool clock_on = false;
-            bool[][] digitalform = makeDigitalOutputAllChannels(State, clock_on, uncaging_on, digital_on, for_frame, out outputRate, out int nSamples);
+            bool[][] digitalform = makeDigitalOutputAllChannels(State, clock_on, uncaging_on, digital_on, for_frame, false, out outputRate, out int nSamples, out bool cont);
             double[][] result = new double[digitalform.Length][];
             for (int i = 0; i < digitalform.Length; i++)
             {
@@ -962,7 +985,7 @@ namespace FLIMage.HardwareControls
                 DO_Port[2] = Board + "/port0/" + State.Init.DigitalOutput3;
             }
 
-            public void PutValue_and_Start(bool ext_trigger, bool clock_on, bool uncaging_on, bool digital_on, bool grabbing)
+            public void PutValue(bool clock_on, bool uncaging_on, bool digital_on, bool grabbing, bool focusing)
             {
                 bool include_uncaging = uncaging_on && State.Init.DO_uncagingShutter; //This is because clock...
                 bool include_digital = digital_on;
@@ -973,7 +996,7 @@ namespace FLIMage.HardwareControls
                     return;
                 }
 
-                bool[][] data1 = makeDigitalOutputAllChannels(State, include_clock, include_uncaging, include_digital, grabbing, out double outputRate, out int nSamples);
+                bool[][] data1 = makeDigitalOutputAllChannels(State, include_clock, include_uncaging, include_digital, grabbing, focusing, out double outputRate, out int nSamples, out bool continuous);
 
                 List<string> ports = new List<string>();
                 if (include_clock)
@@ -990,11 +1013,18 @@ namespace FLIMage.HardwareControls
                 }
 
                 hDO = new NiDaq.DigitalOutputSignal(ports.ToArray());
+
+                hDO.PutValue(data1, outputRate, sampleClockPort, !continuous);
+            }
+
+            public void Start(bool ext_trigger)
+            {
                 String trig_port = State.Init.TriggerInput;
                 if (ext_trigger)
                     trig_port = State.Init.ExternalTriggerInputPort;
 
-                hDO.PutValue_and_Start(data1, outputRate, sampleClockPort, trig_port, !grabbing);
+                if (hDO != null)
+                    hDO.Start(trig_port);
             }
 
             public void PutSingleValue(bool ON)
@@ -1145,13 +1175,18 @@ namespace FLIMage.HardwareControls
                     DataXY = null;
 
                 if (includeEOM)
-                    DataEOM = MakeEOMOutput(State, shading, focus, shutter_open);
+                    DataEOM = MakeEOMOutput(State, shading, focus, shutter_open); //focus will not change nSamples.
                 else
                     DataEOM = null;
 
                 DataAll = ConcatChannels(DataXY, DataEOM);
 
-                analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, focus);
+#if DEBUG
+                analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, true);
+#else
+                if (DataAll != null)
+                    analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, true);
+#endif
                 if (includeMirror)
                 {
                     analog_output.SetReturnFunction(DataXY.GetLength(1));
@@ -1190,8 +1225,12 @@ namespace FLIMage.HardwareControls
 
                 DataAll = ConcatChannels(DataXY, DataEOM);
 
+#if DEBUG
                 analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false);
-
+#else
+                if (DataAll != null)
+                    analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false);
+#endif
                 if (includeMirror)
                 {
                     analog_output.SetReturnFunction(GetNSamplesScan(State));
@@ -1217,8 +1256,14 @@ namespace FLIMage.HardwareControls
                     DataEOM = null;
 
                 DataAll = ConcatChannels(DataXY, DataEOM);
+
+#if DEBUG
                 analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false);
-                return DataXY;
+#else
+                if (DataAll != null)
+                    analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false);
+#endif
+                return DataAll;
             }
 
             public double[] mirrorStartPos()
@@ -1617,7 +1662,7 @@ namespace FLIMage.HardwareControls
             DataEOM[ch, samplesPerChannel - 1] = 0.0; //Last sample is zero. Shutter closed!
         }
 
-        static public double[,] MakePockelsPulses_PockelsAO(ScanParameters State, double outputRate, bool Shutter, bool repeat, Shading shading)
+        static public double[,] MakePockelsPulses_PockelsAO(ScanParameters State, double outputRate, bool Shutter, bool for_frame, Shading shading)
         {
             double sDelay = State.Uncaging.AnalogShutter_delay;
             double pulseDelay = State.Uncaging.pulseDelay;
@@ -1635,7 +1680,7 @@ namespace FLIMage.HardwareControls
 
             int nRepeat = 1;
             int repeatInterval = 0;
-            if (repeat)
+            if (for_frame)
             {
                 nRepeat = State.Uncaging.trainRepeat;
                 repeatInterval = (int)(State.Uncaging.pulseSetInterval_forFrame * outputRate / 1000.0);
@@ -1645,6 +1690,15 @@ namespace FLIMage.HardwareControls
 
             int samplesPerChannel = (int)(outputRate * (State.Uncaging.sampleLength) / 1000.0);
 
+            double msPerLine = State.Acq.msPerLine;
+            if (State.Acq.fastZScan)
+                msPerLine = State.Acq.FastZ_msPerLine;
+            double frameInterval = ((double)State.Acq.linesPerFrame * msPerLine / 1000.0); //in seconds
+
+            if (for_frame)
+                samplesPerChannel = (int)(outputRate * frameInterval * State.Acq.nFrames);
+
+
             if (samplesPerChannel % 2 == 1) //NI-DAQ cannot wirte add number samples.
                 samplesPerChannel += 1;
 
@@ -1653,7 +1707,7 @@ namespace FLIMage.HardwareControls
             int repeatTotalSamplesPerChannel = samplesPerChannel;
             int samplesPerRepeat = samplesPerChannel;
             int samplesBeforeRepeat = 0;
-            if (repeat)
+            if (for_frame)
             {
                 samplesPerRepeat = (int)(outputRate * State.Uncaging.pulseSetInterval_forFrame / 1000.0);
                 repeatTotalSamplesPerChannel = (int)(outputRate * (State.Uncaging.pulseSetInterval_forFrame * nRepeat + State.Uncaging.baselineBeforeTrain_forFrame) / 1000.0);
@@ -1664,7 +1718,7 @@ namespace FLIMage.HardwareControls
                 samplesBeforeRepeat = (int)(outputRate * State.Uncaging.baselineBeforeTrain_forFrame / 1000.0);
             }
 
-            DataEOM = new double[nChannels + addUncaging, repeatTotalSamplesPerChannel];
+            DataEOM = new double[nChannels + addUncaging, samplesPerChannel];
 
             double[,] posXY = DefinePulsePosition(State);
             //double[][] calib1 = makeCalib(State, calib);
@@ -1673,7 +1727,7 @@ namespace FLIMage.HardwareControls
             {
                 if (!State.Init.uncagingShutter[ch] && shading != null)
                 {
-                    for (int i = 0; i < repeatTotalSamplesPerChannel; i++)
+                    for (int i = 0; i < samplesPerChannel; i++)
                         DataEOM[ch, i] = shading.getZeroEOMVoltage(ch); // calib1[ch][0]; //First put minimum to all of them.
                 }
 
@@ -1703,11 +1757,6 @@ namespace FLIMage.HardwareControls
                             pulseShutterStart = pulseShutterStart + samplesBeforeRepeat + rep * samplesPerRepeat;
                             pulseEnd = pulseEnd + samplesBeforeRepeat + rep * samplesPerRepeat;
 
-                            if (repeatTotalSamplesPerChannel < pulseEnd && repeat)
-                            {
-                                break;
-                            }
-
                             if (State.Init.uncagingShutter[ch])
                             {
                                 for (int i = pulseShutterStart; i < pulseEnd; i++)
@@ -1732,7 +1781,7 @@ namespace FLIMage.HardwareControls
 
                     else if (State.Init.imagingLasers[ch] && !State.Init.uncagingLasers[ch] && shading != null)
                     {
-                        for (int i = 0; i < repeatTotalSamplesPerChannel; i++)
+                        for (int i = 0; i < samplesPerChannel; i++)
                         {
                             if (State.Uncaging.TurnOffImagingDuringUncaging)
                                 DataEOM[ch, i] = shading.getZeroEOMVoltage(ch); //all zero.
@@ -1741,7 +1790,7 @@ namespace FLIMage.HardwareControls
 
 
                     if (State.Init.uncagingShutter[ch])
-                        DataEOM[ch, repeatTotalSamplesPerChannel - 1] = 0;
+                        DataEOM[ch, samplesPerChannel - 1] = 0;
                 }  //repeat
             } //ch
             return DataEOM;
@@ -1847,6 +1896,7 @@ namespace FLIMage.HardwareControls
             public Double freqFrame;
             public Double dutyCycle;
             public Double dutyFrame;
+            public double delay;
             public int nLines;
 
             public ScanParameters State;
@@ -1873,32 +1923,43 @@ namespace FLIMage.HardwareControls
                 freqFrame = 1000.0 / msPerLine / State.Acq.linesPerFrame;
                 dutyFrame = dutyCycle / State.Acq.linesPerFrame;
 
-                double delay = State.Acq.LineClockDelay / 1000.0;
-
-                lineClockCounter = new NiDaq.CounterOutput(lineClockPort, State.Init.TriggerInput, delay, frequency, dutyCycle);
+                delay = State.Acq.LineClockDelay / 1000.0;
             }
 
-            public void start(bool externalTrigger)
+            public void Start(bool externalTrigger)
             {
+                lineClockCounter = new NiDaq.CounterOutput(lineClockPort, State.Init.TriggerInput, delay, frequency, dutyCycle);
                 if (externalTrigger)
                     lineClockCounter.Start(State.Init.ExternalTriggerInputPort);
                 else
                     lineClockCounter.Start(State.Init.TriggerInput);
             }
 
-            public void stop()
+            public void Stop()
             {
-                try
+#if DEBUG
+                if (lineClockCounter != null)
                 {
                     lineClockCounter.Stop();
+                    Dispose();
+                }
+#else
+                try
+                {
+                    if (lineClockCounter != null)
+                    {
+                        lineClockCounter.Stop();
+                        Dispose();
+                    }
                 }
                 catch (Exception Ex)
                 {
                     Debug.WriteLine("Stop LineClock failed: " + Ex.Message);
                 }
+#endif
             }
 
-            public void dispose()
+            public void Dispose()
             {
                 if (lineClockCounter != null)
                     lineClockCounter.Dispose();
@@ -2049,6 +2110,7 @@ namespace FLIMage.HardwareControls
                     }
                 } //ImageLaser.
                 else if (uncageLaser[ch] && Focus)
+                //during focusing, we will put laser intensity to set voltage, because you may want to see beads during this process.
                 {
                     for (int j = 0; j < NLines; j++)
                     {

@@ -327,78 +327,85 @@ namespace FLIMage.FlowControls
                 FLIMage.drift_correction.TurnOnOffCorrection(false);
 
             current_row = 0;
-            for (int i = 0; i < ImageSequenceGridView.Rows.Count; i++)
+
+            for (int loop = 0; loop < (LoopCheck.Checked ? 1000 : 1); loop++)
             {
-                current_row = i;
-                current_repeat = 0;
-
-                //int num = Convert.ToInt32(ImageSequenceGridView.Rows[i].Cells["SettingID"].Value);
-                //LoadSetting_Number(num);                
-
-                int interval_ms = (int)(1000.0 * Convert.ToDouble(ImageSequenceGridView.Rows[i].Cells["Interval"].Value));
-                int repetition = Convert.ToInt32(ImageSequenceGridView.Rows[i].Cells["Repetition"].Value);
-
-                reportProgress(false); //Select current row.
-                LoadSelectedSetting();
-
-                bool imaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Imaging";
-                bool uncaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Uncaging";
-                bool DO = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "DO";
-
-                for (int rep = 0; rep < repetition; rep++)
+                for (int i = 0; i < ImageSequenceGridView.Rows.Count; i++)
                 {
-                    firstImage = rep == 0 && i == 0;
-                    current_repeat = rep;
+                    current_row = i;
+                    current_repeat = 0;
 
-                    timer_rep.Restart();
+                    //int num = Convert.ToInt32(ImageSequenceGridView.Rows[i].Cells["SettingID"].Value);
+                    //LoadSetting_Number(num);                
 
-                    if (imaging)
-                        ImageOnce();
-                    else if (uncaging)
-                        UncageOnce();
-                    else
-                        DO_Once();
+                    int interval_ms = (int)(1000.0 * Convert.ToDouble(ImageSequenceGridView.Rows[i].Cells["Interval"].Value));
+                    int repetition = Convert.ToInt32(ImageSequenceGridView.Rows[i].Cells["Repetition"].Value);
 
-                    System.Threading.Thread.Sleep(CheckingInterval_ms);
+                    reportProgress(false); //Select current row.
+                    LoadSelectedSetting();
 
-                    bool running = true;
+                    bool imaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Imaging";
+                    bool uncaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Uncaging";
+                    bool DO = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "DO";
 
-                    while (running)
+                    for (int rep = 0; rep < repetition; rep++)
                     {
+                        firstImage = rep == 0 && i == 0;
+                        current_repeat = rep;
+
+                        timer_rep.Restart();
+
                         if (imaging)
-                            running = (FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process);
+                            ImageOnce();
                         else if (uncaging)
-                            running = FLIMage.uncaging_panel.uncaging_running;
-                        else if (DO)
-                            running = FLIMage.digital_panel.digital_running;
-
-                        if (abortGrabActivated || !running)
-                            break;
+                            UncageOnce();
+                        else
+                            DO_Once();
 
                         System.Threading.Thread.Sleep(CheckingInterval_ms);
-                        reportProgress(true);
-                    }
 
-                    if (autoDriftCorrection && firstImage && !abortGrabActivated)
-                    {
-                        FLIMage.drift_correction.SelectImage();
-                        FLIMage.drift_correction.TurnOnOffCorrection(true);
-                    }
+                        bool running = true;
 
-                    while (interval_ms - (int)timer_rep.ElapsedMilliseconds > CheckingInterval_ms)
-                    {
+                        while (running)
+                        {
+                            if (imaging)
+                                running = (FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process);
+                            else if (uncaging)
+                                running = FLIMage.uncaging_panel.uncaging_running;
+                            else if (DO)
+                                running = FLIMage.digital_panel.digital_running;
+
+                            if (abortGrabActivated || !running)
+                                break;
+
+                            System.Threading.Thread.Sleep(CheckingInterval_ms);
+                            reportProgress(true);
+                        }
+
+                        if (autoDriftCorrection && firstImage && !abortGrabActivated)
+                        {
+                            FLIMage.drift_correction.SelectImage();
+                            FLIMage.drift_correction.TurnOnOffCorrection(true);
+                        }
+
+                        while (interval_ms - (int)timer_rep.ElapsedMilliseconds > CheckingInterval_ms)
+                        {
+                            if (abortGrabActivated)
+                                break;
+                            System.Threading.Thread.Sleep(CheckingInterval_ms);
+                            reportProgress(true);
+                        }
+
+                        if ((int)timer_rep.ElapsedMilliseconds < interval_ms)
+                        {
+                            if (abortGrabActivated)
+                                break;
+                            System.Threading.Thread.Sleep(interval_ms - (int)timer_rep.ElapsedMilliseconds);
+                            reportProgress(true);
+                        }
+
                         if (abortGrabActivated)
                             break;
-                        System.Threading.Thread.Sleep(CheckingInterval_ms);
-                        reportProgress(true);
-                    }
-
-                    if ((int)timer_rep.ElapsedMilliseconds < interval_ms)
-                    {
-                        if (abortGrabActivated)
-                            break;
-                        System.Threading.Thread.Sleep(interval_ms - (int)timer_rep.ElapsedMilliseconds);
-                        reportProgress(true);
                     }
 
                     if (abortGrabActivated)

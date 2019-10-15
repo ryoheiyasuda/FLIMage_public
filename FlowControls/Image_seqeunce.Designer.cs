@@ -48,6 +48,7 @@
             this.ReplaceWithCurrent = new System.Windows.Forms.Button();
             this.LoadSelected = new System.Windows.Forms.Button();
             this.AutoDriftCorrection = new System.Windows.Forms.CheckBox();
+            this.LoopCheck = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.ImageSequenceGridView)).BeginInit();
             this.SuspendLayout();
             // 
@@ -106,7 +107,7 @@
             // 
             // AddCurrentSetting
             // 
-            this.AddCurrentSetting.Location = new System.Drawing.Point(581, 156);
+            this.AddCurrentSetting.Location = new System.Drawing.Point(574, 156);
             this.AddCurrentSetting.Name = "AddCurrentSetting";
             this.AddCurrentSetting.Size = new System.Drawing.Size(60, 23);
             this.AddCurrentSetting.TabIndex = 1;
@@ -116,7 +117,7 @@
             // 
             // RowUp
             // 
-            this.RowUp.Location = new System.Drawing.Point(581, 42);
+            this.RowUp.Location = new System.Drawing.Point(574, 42);
             this.RowUp.Name = "RowUp";
             this.RowUp.Size = new System.Drawing.Size(60, 23);
             this.RowUp.TabIndex = 2;
@@ -126,7 +127,7 @@
             // 
             // RowDown
             // 
-            this.RowDown.Location = new System.Drawing.Point(581, 71);
+            this.RowDown.Location = new System.Drawing.Point(574, 71);
             this.RowDown.Name = "RowDown";
             this.RowDown.Size = new System.Drawing.Size(60, 23);
             this.RowDown.TabIndex = 3;
@@ -136,7 +137,7 @@
             // 
             // DeleteRow
             // 
-            this.DeleteRow.Location = new System.Drawing.Point(581, 185);
+            this.DeleteRow.Location = new System.Drawing.Point(574, 185);
             this.DeleteRow.Name = "DeleteRow";
             this.DeleteRow.Size = new System.Drawing.Size(60, 23);
             this.DeleteRow.TabIndex = 4;
@@ -233,11 +234,22 @@
             this.AutoDriftCorrection.UseVisualStyleBackColor = true;
             this.AutoDriftCorrection.Click += new System.EventHandler(this.AutoDriftCorrection_Click);
             // 
+            // LoopCheck
+            // 
+            this.LoopCheck.AutoSize = true;
+            this.LoopCheck.Location = new System.Drawing.Point(532, 333);
+            this.LoopCheck.Name = "LoopCheck";
+            this.LoopCheck.Size = new System.Drawing.Size(50, 17);
+            this.LoopCheck.TabIndex = 14;
+            this.LoopCheck.Text = "Loop";
+            this.LoopCheck.UseVisualStyleBackColor = true;
+            // 
             // Image_seqeunce
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(669, 372);
+            this.ClientSize = new System.Drawing.Size(658, 372);
+            this.Controls.Add(this.LoopCheck);
             this.Controls.Add(this.AutoDriftCorrection);
             this.Controls.Add(this.LoadSelected);
             this.Controls.Add(this.ReplaceWithCurrent);
@@ -284,5 +296,6 @@
         public System.Windows.Forms.Button ReplaceWithCurrent;
         public System.Windows.Forms.Button LoadSelected;
         public System.Windows.Forms.CheckBox AutoDriftCorrection;
+        public System.Windows.Forms.CheckBox LoopCheck;
     }
 }
