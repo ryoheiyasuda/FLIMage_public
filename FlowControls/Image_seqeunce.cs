@@ -30,13 +30,21 @@ namespace FLIMage.FlowControls
 
 
         Stopwatch timer_rep = new Stopwatch();
+        Stopwatch total_time = new Stopwatch();
         int current_repeat = 0;
         int current_row = 0;
 
+        bool running_current = false;
         bool image_seq_running = false;
         bool abortGrabActivated = false;
+        bool wait_current_image_finish = false;
+        bool pause = false;
         int CheckingInterval_ms = 100;
         bool autoDriftCorrection = false;
+
+        int selectedRowIndex = 0;
+        int startRow = 0;
+        int startPos = 0;
 
         public Image_seqeunce(FLIMageMain FLIMage_in)
         {
@@ -45,8 +53,11 @@ namespace FLIMage.FlowControls
             procColumn.Name = "Procedure";
             procColumn.HeaderText = "Procedure";
             procColumn.Items.Add("Imaging");
+            procColumn.Items.Add("Imaging + Uncaging");
+            procColumn.Items.Add("Imaging + DO");
             procColumn.Items.Add("Uncaging");
             procColumn.Items.Add("DO");
+            procColumn.Width = 130;
             ImageSequenceGridView.Columns.Add(procColumn);
             ImageSequenceGridView.CurrentCellDirtyStateChanged += new EventHandler(dataGridView1_CellValueChanged);
 
@@ -68,6 +79,7 @@ namespace FLIMage.FlowControls
         {
             winManager = new WindowLocManager(this, WindowName, State.Files.windowsInfoPath);
             winManager.LoadWindowLocation(false);
+            PauseButton.Visible = false;
         }
 
         public void SaveWindowLocation()
@@ -107,8 +119,7 @@ namespace FLIMage.FlowControls
 
         public void ReplaceWithCurrent_Click(object sender, EventArgs e)
         {
-            int selected = ImageSequenceGridView.CurrentCell.RowIndex;
-            int num = Convert.ToInt32(ImageSequenceGridView.Rows[selected].Cells["SettingID"].Value);
+            int num = Convert.ToInt32(ImageSequenceGridView.Rows[selectedRowIndex].Cells["SettingID"].Value);
 
             State = FLIMage.State;
             String fn = Path.GetFileNameWithoutExtension(State.Files.initFileName);
@@ -153,7 +164,7 @@ namespace FLIMage.FlowControls
                     if (File.Exists(fileName))
                     {
                         Array.Resize(ref sP, ImageSequenceGridView.ColumnCount);
-                        if (sP[sP.Length - 1] == null || (sP[sP.Length - 1] != "Uncaging" && sP[sP.Length - 1] != "DO"))
+                        if (sP[sP.Length - 1] == null || (sP[sP.Length - 1].Contains("Uncaging") && sP[sP.Length - 1].Contains("DO")))
                             sP[sP.Length - 1] = "Imaging";
 
                         ImageSequenceGridView.Rows.Add(sP);
@@ -229,7 +240,30 @@ namespace FLIMage.FlowControls
         {
             RunSeq.Enabled = false;
             State = FLIMage.State;
-            if (RunSeq.Text == "Abort")
+            running_current = false;
+            pause = false;
+            wait_current_image_finish = false;
+
+            startRow = 0;
+            startPos = 0;
+            if (StartFromCurrentCheck.Checked)
+            {
+                startRow = selectedRowIndex;
+
+                int startPos_tmp = 0;
+                Int32.TryParse(ProgressEdit.Text, out startPos_tmp);
+                startPos_tmp = startPos_tmp - 1;
+                int repetition = Convert.ToInt32(ImageSequenceGridView.Rows[selectedRowIndex].Cells["Repetition"].Value);
+                
+                if (startPos_tmp < 0)
+                    startPos_tmp = 0;
+                if (startPos_tmp >= repetition)
+                    startPos_tmp = repetition - 1;
+
+                startPos = startPos_tmp;
+            }
+
+                if (RunSeq.Text == "Abort")
             {
                 RunSeq.Text = "Run sequence";
                 abortGrabActivated = true;
@@ -238,11 +272,14 @@ namespace FLIMage.FlowControls
                     Application.DoEvents();
                     System.Threading.Thread.Sleep(CheckingInterval_ms);
                 }
+                PauseButton.Visible = false;
             }
             else
             {
                 abortGrabActivated = false;
                 RunSeq.Text = "Abort";
+                PauseButton.Visible = true;
+                PauseButton.Text = "Pause";
                 Task.Factory.StartNew((Action)delegate
                 {
                     RunSequence();
@@ -267,9 +304,17 @@ namespace FLIMage.FlowControls
                 }
 
                 int repetition = Convert.ToInt32(ImageSequenceGridView.Rows[current_row].Cells["Repetition"].Value);
-                Progress.Text = String.Format("{0} / {1}", current_repeat + 1, repetition);
-
+                RepNumber.Text = "/" + repetition.ToString();
+                ProgressEdit.Text = (current_repeat + 1).ToString();
                 RepTime.Text = String.Format("{0:0.0}", timer_rep.ElapsedMilliseconds / 1000.0);
+                totalTimeLabel.Text = String.Format("{0:0.0}", total_time.ElapsedMilliseconds / 1000.0);
+                
+                if (wait_current_image_finish && !running_current)
+                {
+                    PauseButton.Text = "Restart";
+                    PauseButton.Font = new Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+                    wait_current_image_finish = false;
+                }
             });
         }
 
@@ -287,9 +332,9 @@ namespace FLIMage.FlowControls
             anyDO = false;
             for (int i = 0; i < ImageSequenceGridView.Rows.Count; i++)
             {
-                bool imaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Imaging";
-                bool uncaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Uncaging";
-                bool DO = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "DO";
+                bool imaging = ((String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value)).Contains("Imaging");
+                bool uncaging = ((String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value)).Contains("Uncaging");
+                bool DO = ((String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value)).Contains("DO");
                 if (uncaging)
                 {
                     anyUncaging = true;
@@ -326,14 +371,22 @@ namespace FLIMage.FlowControls
             if (autoDriftCorrection)
                 FLIMage.drift_correction.TurnOnOffCorrection(false);
 
+            total_time.Restart();
             current_row = 0;
+
 
             for (int loop = 0; loop < (LoopCheck.Checked ? 1000 : 1); loop++)
             {
-                for (int i = 0; i < ImageSequenceGridView.Rows.Count; i++)
+                if (loop > 0)
+                {
+                    startPos = 0;
+                    startRow = 0;
+                }
+
+                for (int i = startRow; i < ImageSequenceGridView.Rows.Count; i++)
                 {
                     current_row = i;
-                    current_repeat = 0;
+                    current_repeat = startRow;
 
                     //int num = Convert.ToInt32(ImageSequenceGridView.Rows[i].Cells["SettingID"].Value);
                     //LoadSetting_Number(num);                
@@ -344,11 +397,29 @@ namespace FLIMage.FlowControls
                     reportProgress(false); //Select current row.
                     LoadSelectedSetting();
 
-                    bool imaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Imaging";
+                    bool imaging = ((String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value)).Contains("Imaging");
                     bool uncaging = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "Uncaging";
                     bool DO = (String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value) == "DO";
 
-                    for (int rep = 0; rep < repetition; rep++)
+                    if (imaging)
+                    {
+                        bool image_uncage = ((String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value)).Contains("Uncaging");
+                        bool image_DO = ((String)(ImageSequenceGridView.Rows[i].Cells["Procedure"].Value)).Contains("DO");
+                        if (image_uncage)
+                            State.Uncaging.uncage_whileImage = true;
+                        else
+                            State.Uncaging.uncage_whileImage = false;
+
+                        if (image_DO)
+                            State.DO.DO_whileImage = true;
+                        else
+                            State.DO.DO_whileImage = false;
+
+
+                        FLIMage.ExternalCommand("UpdateGUI");
+                    }
+
+                    for (int rep = startPos; rep < repetition; rep++)
                     {
                         firstImage = rep == 0 && i == 0;
                         current_repeat = rep;
@@ -364,18 +435,18 @@ namespace FLIMage.FlowControls
 
                         System.Threading.Thread.Sleep(CheckingInterval_ms);
 
-                        bool running = true;
+                        running_current = true;
 
-                        while (running)
+                        while (running_current)
                         {
                             if (imaging)
-                                running = (FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process);
+                                running_current = (FLIMage.flimage_io.grabbing || FLIMage.flimage_io.post_grabbing_process);
                             else if (uncaging)
-                                running = FLIMage.uncaging_panel.uncaging_running;
+                                running_current = FLIMage.uncaging_panel.uncaging_running;
                             else if (DO)
-                                running = FLIMage.digital_panel.digital_running;
+                                running_current = FLIMage.digital_panel.digital_running;
 
-                            if (abortGrabActivated || !running)
+                            if (abortGrabActivated || !running_current)
                                 break;
 
                             System.Threading.Thread.Sleep(CheckingInterval_ms);
@@ -444,6 +515,7 @@ namespace FLIMage.FlowControls
             });
 
             image_seq_running = false;
+            running_current = false;
         }
 
         public void ImageOnce()
@@ -474,8 +546,11 @@ namespace FLIMage.FlowControls
         {
             if (ImageSequenceGridView.CurrentCell != null)
             {
-                int index = ImageSequenceGridView.CurrentCell.RowIndex;
-                ImageSequenceGridView.Rows[index].Selected = true;
+                selectedRowIndex = ImageSequenceGridView.CurrentCell.RowIndex;
+
+                ImageSequenceGridView.Rows[selectedRowIndex].Selected = true;
+                int repetition = Convert.ToInt32(ImageSequenceGridView.Rows[selectedRowIndex].Cells["Repetition"].Value);
+                RepNumber.Text = "/" + repetition.ToString();
             }
         }
 
@@ -492,10 +567,9 @@ namespace FLIMage.FlowControls
 
         public void LoadSelectedSetting()
         {
-            int index = ImageSequenceGridView.CurrentCell.RowIndex;
-            int num = Convert.ToInt32(ImageSequenceGridView.Rows[index].Cells["SettingID"].Value);
+            int num = Convert.ToInt32(ImageSequenceGridView.Rows[selectedRowIndex].Cells["SettingID"].Value);
             LoadSetting_Number(num);
-            double zoom = Convert.ToDouble(ImageSequenceGridView.Rows[index].Cells["Zoom"].Value);
+            double zoom = Convert.ToDouble(ImageSequenceGridView.Rows[selectedRowIndex].Cells["Zoom"].Value);
             State.Acq.zoom = zoom;
             FLIMage.ExternalCommand("UpdateGUI");
         }
@@ -527,6 +601,35 @@ namespace FLIMage.FlowControls
                 FLIMage.drift_correction.Show();
             }
             autoDriftCorrection = AutoDriftCorrection.Checked;
+        }
+
+        private void PauseButton_Click(object sender, EventArgs e)
+        {
+            if (!pause)
+            {
+                timer_rep.Stop();
+                if (!running_current)
+                {
+                    PauseButton.Text = "Restart";
+                    PauseButton.Font = new Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+                    wait_current_image_finish = false;
+                }
+                else
+                {
+                    PauseButton.Text = "Pause after current";
+                    PauseButton.Font = new Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+                    wait_current_image_finish = true;
+                }
+                pause = true;
+            }
+            else
+            {
+                timer_rep.Start();
+                PauseButton.Text = "Pause";
+                PauseButton.Font = new Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+                pause = false;
+                wait_current_image_finish = false;
+            }
         }
     }
 }

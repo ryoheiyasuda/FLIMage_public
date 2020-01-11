@@ -21,7 +21,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.DataVisualization.Charting;
 using Utilities;
 
 namespace FLIMage
@@ -133,7 +132,7 @@ namespace FLIMage
                     if (File.Exists(old_fileName))
                         fileIO.LoadSetupFile(old_fileName);
                     State.Init.MirrorAOBoard = State.Init.mirrorAOPortX.Split('/')[0];
-                    State.Init.EOMBoard = State.Init.EOM_Port0.Split('/')[0];                    
+                    State.Init.EOMBoard = State.Init.EOM_Port0.Split('/')[0];
                     //create new file.
                     System.IO.File.WriteAllText(State.Files.deviceFileName, fileIO.AllSetupValues_device());
                 }
@@ -275,6 +274,7 @@ namespace FLIMage
                 }
             }
 
+
             if (!use_motor)
             {
                 stagePanel.Enabled = false;
@@ -313,6 +313,20 @@ namespace FLIMage
             }
             else
                 Show();
+
+
+            if (State.Init.resonantScanner)
+            {
+                State.Acq.Rotation = 0;
+                Rotation.Visible = false;
+                ZeroAngle.Visible = false;
+                State.Acq.linesPerFrame = 512;
+                State.Acq.pixelsPerLine = 512;
+                State.Acq.msPerLine = 1000.0/State.Init.resonantFreq; //8kHz.
+                MsPerLine.Enabled = false;
+                NPixels_PulldownX.Enabled = false;
+                NPixels_PulldownY.Enabled = false;
+            }
 
             SetParametersFromState(false);
 
@@ -493,7 +507,7 @@ namespace FLIMage
 
                 if (readText.Contains("pmt_control") && State.Init.MicroscopeSystem.Contains("Thor"))
                 {
-                    pmt_control = new PMTControl(State);
+                    pmt_control = new PMTControl(State, this);
                     pmt_control.Show();
                 }
 
@@ -567,7 +581,7 @@ namespace FLIMage
             if (pmt_control != null && !pmt_control.IsDisposed)
             {
                 pmt_control.Close();
-                pmt_control = new PMTControl(State);
+                pmt_control = new PMTControl(State, this);
             }
 
             if (physiology != null && !physiology.IsDisposed)
@@ -1103,8 +1117,11 @@ namespace FLIMage
         /// <param name="focus"></param>
         private void StartGrab(bool focus)
         {
-            flimage_io.State = State;
-            flimage_io.StartGrab(focus);
+            Task.Factory.StartNew(() =>
+            {
+                flimage_io.State = State;
+                flimage_io.StartGrab(focus);
+            });
         }
 
         public void StarGrab_GUI_Update(bool focus)
@@ -1418,6 +1435,10 @@ namespace FLIMage
                         }
                     }
 
+                    //Safety feature. 
+                    if (State.Acq.msPerLine < 0.5 && !State.Init.resonantScanner)
+                        State.Acq.msPerLine = 0.5;
+
                     else if (sdr.Equals(ScanFraction))
                     {
                         if (!Double.TryParse(ScanFraction.Text, out scanFraction1)) scanFraction1 = State.Acq.scanFraction;
@@ -1555,6 +1576,11 @@ namespace FLIMage
                     if (angle <= 90 && angle >= -90)
                     {
                         State.Acq.Rotation = angle;
+                    }
+
+                    if (State.Init.resonantScanner)
+                    {
+                        State.Acq.Rotation = 0;
                     }
 
                     State.Acq.BiDirectionalScan = BiDirecCB.Checked;
@@ -1719,6 +1745,7 @@ namespace FLIMage
 
 
                     this.BeginInvokeIfRequired(o => o.FillGUI());
+
                 } //sync
             }
 
@@ -1856,6 +1883,7 @@ namespace FLIMage
             else if (flimage_io.use_bh)
             {
                 if (Int32.TryParse(Resolution_Pulldown.SelectedItem.ToString(), out valI)) State.Spc.spcData.n_dataPoint = valI;
+                State.Spc.spcData.adc_res = (short)(Math.Log(State.Spc.spcData.n_dataPoint, 2));
             }
 
             SetupFLIMParameters();
@@ -1987,6 +2015,9 @@ namespace FLIMage
             if ((double)State.Acq.linesPerFrame * State.Acq.msPerLine > 255.0) //more than 4 Hz
                 parameters.StripeDuringFocus = State.Acq.StripeDuringFocus;
             else
+                parameters.StripeDuringFocus = false;
+
+            if (State.Init.resonantScanner)
                 parameters.StripeDuringFocus = false;
 
             parameters.acquireFLIM = State.Acq.acqFLIMA;
@@ -2580,6 +2611,7 @@ namespace FLIMage
 
             flimage_io.StopNIDAQIOControls();
             flimage_io.TCSPC_Close();
+            flimage_io.ECU_Close();
 
             com_server.Close();
         }
@@ -3003,6 +3035,14 @@ namespace FLIMage
                 var aoX = new HardwareControls.IOControls.AO_Write(State.Init.mirrorOffsetX, State.Acq.XOffset);
                 var aoY = new HardwareControls.IOControls.AO_Write(State.Init.mirrorOffsetY, State.Acq.YOffset);
             }
+
+            flimage_io.ResetFocus();
+
+            if (!flimage_io.grabbing && !flimage_io.focusing)
+            {
+                flimage_io.ParkMirrors(false);
+            }
+
         }
 
 
@@ -3836,7 +3876,7 @@ namespace FLIMage
         private void pMTControlToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (pmt_control == null || pmt_control.IsDisposed)
-                pmt_control = new PMTControl(State);
+                pmt_control = new PMTControl(State, this);
             pmt_control.Show();
             pmt_control.Activate();
             MenuItems_CheckControls();

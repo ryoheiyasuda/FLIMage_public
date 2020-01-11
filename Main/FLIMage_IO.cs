@@ -2,6 +2,7 @@
 using FLIMage.HardwareControls.StageControls;
 using FLIMage.Uncaging;
 using MathLibrary;
+using MicroscopeHardwareLibs;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -57,6 +58,7 @@ namespace FLIMage
         public bool force_stop = false;
         public bool runningImgAcq = false;
 
+        public bool physWaitforTrigger = false;
         //////Counters for frames etc.
         //  int n_average;
 
@@ -97,6 +99,7 @@ namespace FLIMage
         public HardwareControls.IOControls.ShutterCtrl shutterCtrl;
         public HardwareControls.IOControls.DigitalOutputControl digitalOutput_WClock; //for time control
         public HardwareControls.IOControls.PiezoControl piezo;
+        public HardwareControls.IOControls.LineInputCounter lineCounter;
 
         public string DigitalUncagingShutterPort = "";
 
@@ -109,6 +112,11 @@ namespace FLIMage
 
         ///// Shaidng
         public HardwareControls.IOControls.Shading shading;
+
+
+        ////Thor labs
+        public ThorECU thorECU;
+        public bool thorECU_on = false;
 
         ///////FLIM card
         public FiFio_multiBoards FiFo_acquire;
@@ -136,6 +144,15 @@ namespace FLIMage
 
             SafetyFeature();
 
+            if (State.Init.resonantScanner && State.Init.MicroscopeSystem == "THorBScopeRG")
+            {
+                thorECU = new ThorECU(State.Init.resonantScanner_COMPort);
+                if (thorECU.OpenPort() == 1)
+                {
+                    thorECU_on = true;
+                }
+            }
+
             if (use_nidaq)
             {
                 try
@@ -143,16 +160,22 @@ namespace FLIMage
                     var access = new MicroscopeHardwareLibs.NiDaq.AccessKey(State.Init.FLIMserial);
                     if (MicroscopeHardwareLibs.NiDaq.DLLactive)
                     {
-                        if (!State.Init.use_digitalLineClock)
-                            lineClock = new HardwareControls.IOControls.LineClockByCounter(State, false);
+                        if (!State.Init.use_digitalLineClock && !State.Init.resonantScanner)
+                            lineClock = new HardwareControls.IOControls.LineClockByCounter();
+
+                        if (State.Init.resonantScanner)
+                        {
+                            lineCounter = new HardwareControls.IOControls.LineInputCounter(State);
+                            lineCounter.FrameDone += new HardwareControls.IOControls.LineInputCounter.FrameDoneHandler(mirrorAOFrameDoneEvent);
+                        }
 
                         digitalOutput_WClock = new HardwareControls.IOControls.DigitalOutputControl(State);
 
                         dioTrigger = new HardwareControls.IOControls.dioTrigger(State);
                         shutterCtrl = new HardwareControls.IOControls.ShutterCtrl(State);
                         shading = new HardwareControls.IOControls.Shading(State);
-                        AO_Mirror_EOM = new HardwareControls.IOControls.AnalogOutput(State, shading, true);
-
+                        AO_Mirror_EOM = new HardwareControls.IOControls.AnalogOutput(State, shading, !State.Init.resonantScanner);
+                        AO_Mirror_EOM.FrameDone += new HardwareControls.IOControls.AnalogOutput.FrameDoneHandler(mirrorAOFrameDoneEvent);
 
                         if (State.Init.DO_uncagingShutter)
                         {
@@ -288,10 +311,10 @@ namespace FLIMage
 
         void StartPrepAllPanels()
         {
-            if (FLIMage.uncaging_panel != null)
+            if (FLIMage.uncaging_panel != null && !focusing)
                 FLIMage.uncaging_panel.StartPrep();
 
-            if (FLIMage.digital_panel != null)
+            if (FLIMage.digital_panel != null && !focusing)
                 FLIMage.digital_panel.StartPrep();
 
             FLIMage.InitializeCounter_GUI_Update();
@@ -365,7 +388,11 @@ namespace FLIMage
             {
                 StopFocus();
                 System.Threading.Thread.Sleep(100);
-                StartGrab(true);
+
+                Task.Factory.StartNew(() =>
+                {
+                    StartGrab(true);
+                });
             }
         }
 
@@ -443,6 +470,14 @@ namespace FLIMage
             }
         }
 
+        public void ECU_Close()
+        {
+            if (thorECU != null)
+                thorECU.ClosePort();
+
+            thorECU_on = false;
+        }
+
         public void TCSPC_Close()
         {
             StopRateTimer();
@@ -467,7 +502,7 @@ namespace FLIMage
         }
 
         //
-        public void StartDAQ(bool[] eraseSPCmemory, bool putValue, bool recordTriggerTime)
+        public void StartDAQ(bool[] eraseSPCmemory, bool recordTriggerTime)
         {
             runningImgAcq = true;
             waitForAcquisitionTaskCompleted();
@@ -477,29 +512,31 @@ namespace FLIMage
 
             if (use_nidaq && !stopGrabActivated)
             {
-                bool use_clock = State.Init.use_digitalLineClock;
-                bool use_uncaging = State.Uncaging.uncage_whileImage && grabbing && State.Uncaging.sync_withFrame;
-                bool use_digital = State.DO.DO_whileImage && grabbing && State.DO.sync_withFrame;
-
-                if (putValue)
+                if (!State.Init.resonantScanner)
                 {
+                    bool use_clock = State.Init.use_digitalLineClock;
+                    bool use_uncaging = State.Uncaging.uncage_whileImage && grabbing && State.Uncaging.sync_withFrame;
+                    bool use_digital = State.DO.DO_whileImage && grabbing && State.DO.sync_withFrame;
+
                     if (!State.Init.use_digitalLineClock)
                     {
-                        lineClock.Dispose();
-                        lineClock = new HardwareControls.IOControls.LineClockByCounter(State, focusing);
+                        //lineClock.Dispose();
+                        //lineClock = new HardwareControls.IOControls.LineClockByCounter(State); //required.
+                        lineClock.Setup(State);
                     }
 
                     if (use_clock || use_uncaging || use_digital)
                     {
-                        digitalOutput_WClock.Dispose();
-                        digitalOutput_WClock = new HardwareControls.IOControls.DigitalOutputControl(State);
+                        //digitalOutput_WClock.Dispose();
+                        //digitalOutput_WClock = new HardwareControls.IOControls.DigitalOutputControl(State);
                         digitalOutput_WClock.PutValue(use_clock, use_uncaging,
                             use_digital, grabbing, focusing);
                     }
 
-                    AO_Mirror_EOM.Dispose();
-                    AO_Mirror_EOM = new HardwareControls.IOControls.AnalogOutput(State, shading, true);
-                    AO_Mirror_EOM.FrameDone += new HardwareControls.IOControls.AnalogOutput.FrameDoneHandler(mirrorAOFrameDoneEvent);
+                    //Perhaps these are not necessary... Anyway....
+                    //AO_Mirror_EOM.Dispose();
+                    //AO_Mirror_EOM = new HardwareControls.IOControls.AnalogOutput(State, shading, !State.Init.resonantScanner);
+                    //AO_Mirror_EOM.FrameDone += new HardwareControls.IOControls.AnalogOutput.FrameDoneHandler(mirrorAOFrameDoneEvent);
 
                     if (!focusing && State.Uncaging.sync_withFrame && State.Uncaging.uncage_whileImage)
                     {
@@ -523,31 +560,46 @@ namespace FLIMage
                     }
 
                     FLIM_ImgData.copyState(State);
-                } //put value.
 
-                AO_Mirror_EOM.Start(State.Acq.externalTrigger);
+                    AO_Mirror_EOM.Start();
 
-                if (use_clock || use_uncaging || use_digital)
-                    digitalOutput_WClock.Start(State.Acq.externalTrigger);
+                    if (use_clock || use_uncaging || use_digital)
+                        digitalOutput_WClock.Start();
 
-                if (!State.Init.use_digitalLineClock)
-                    lineClock.Start(State.Acq.externalTrigger);
+                    if (!State.Init.use_digitalLineClock)
+                        lineClock.Start();
+                }
+                else //Resonant scanning.
+                {
+                    lineCounter.Start();
+                    AO_Mirror_EOM.putValue_S_ToStartPos(false, false);
+                    thorECU.SetZoomOfScanner((int)(255.0 / State.Acq.zoom));
+                }
             }
 
             FiFo_acquire.StartMeas(eraseSPCmemory, focusing, false);
 
             if (use_nidaq)
             {
-                if (putValue)
+                shutterCtrl.open();
+                System.Threading.Thread.Sleep(2); //shutter open.
+
+                DateTime at = new DateTime();
+
+                if (!State.Acq.externalTrigger) //Not allowing ext trigger yet.
                 {
-                    shutterCtrl.open();
-                    System.Threading.Thread.Sleep(2); //shutter open.
+                    if (State.Init.resonantScanner)
+                        thorECU.EnableScanner(true);
+                    else
+                        dioTrigger.Evoke(); //for Resonant scanning, frame clock should be used for trigger.
 
-                    if (!State.Acq.externalTrigger)
-                        dioTrigger.Evoke();
-
-                    DateTime at = new DateTime();
                     at = DateTime.Now;
+
+                    if (physWaitforTrigger)
+                    {
+                        FLIMage.physiology.io_controls.triggerTime = at;
+                        physWaitforTrigger = false;
+                    }
 
                     if (eraseSPCmemory.Any(x => x == true))
                     {
@@ -555,18 +607,19 @@ namespace FLIMage
                         Debug.WriteLine("Triggered..." + acquiredTime.ToString("yyyy-MM-ddTHH:mm:ss.fff"));
                     }
 
-                    //if (eraseSPCmemory || internalSliceCounter == 0)
-                    //{
-                    //    acquiredTime = at;
-                    //    Debug.WriteLine("Triggered..." + acquiredTime.ToString("yyyy-MM-ddTHH:mm:ss.fff"));
-                    //}
                     if (recordTriggerTime)
                     {
                         State.Acq.triggerTime = acquiredTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
                         FLIM_ImgData.State.Acq.triggerTime = State.Acq.triggerTime;
                     }
+                }
+                else
+                {
+                    //For external trigger what should we do?
+                    //For now we don't have setting.
+                }
 
-                } //put value
+
             } //nidaq
         }
 
@@ -579,7 +632,7 @@ namespace FLIMage
             FLIMage.ImageDisplayOpen();
             FLIMage.GetParametersFromGUI(this); //Setup all parameters.
 
-            if (State.Uncaging.uncage_whileImage && FLIMage.uncaging_panel != null)
+            if (State.Uncaging.uncage_whileImage && FLIMage.uncaging_panel != null && !focus)
                 FLIMage.uncaging_panel.SetupUncage(this); //Invoke not necessary
 
             if (State.Acq.XOffset > State.Acq.XMaxVoltage || State.Acq.YOffset > State.Acq.YMaxVoltage)
@@ -639,7 +692,6 @@ namespace FLIMage
                 grabbing = true;
                 post_grabbing_process = false;
                 focusing = false;
-                //RateTimer.Stop();
                 EventNotify?.Invoke(this, new ProcessEventArgs("GrabStart", null));
             }
 
@@ -673,9 +725,12 @@ namespace FLIMage
                 UIstopWatch_Image.Reset();
 
                 if (FLIMage.physiology != null && FLIMage.physiology.image_trigger_waiting)
+                {
                     FLIMage.physiology.StartAcq();
+                    physWaitforTrigger = true;
+                }
 
-                StartDAQ(eraseMemoryA, true, true); //Including trigger.
+                StartDAQ(eraseMemoryA, true); //Including trigger.
 
                 if (internalImageCounter == 0)
                 {
@@ -686,7 +741,7 @@ namespace FLIMage
             }
             else
             {
-                StartDAQ(eraseMemoryA, true, false); //Including trigger.
+                StartDAQ(eraseMemoryA, false); //Including trigger.
             }
 
             SW_PerformanceMonitor.Start();
@@ -707,8 +762,11 @@ namespace FLIMage
             if (digitalOutput_WClock != null)
                 digitalOutput_WClock.Dispose();
 
+            if (lineCounter != null)
+                lineCounter.Stop();
+
             if (lineClock != null)
-                lineClock.Dispose();
+                lineClock.Stop();
 
             if (AO_Mirror_EOM != null)
                 AO_Mirror_EOM.Dispose(); //parking mirror
@@ -723,12 +781,24 @@ namespace FLIMage
             {
                 shutterCtrl.Close();
 
-                if (!State.Init.use_digitalLineClock)
-                    lineClock.Stop();
+                if (State.Init.resonantScanner)
+                {
+                    thorECU.EnableScanner(false);
+                    if (lineCounter != null)
+                        lineCounter.Stop();
+                    AO_Mirror_EOM.putValue_S_ToStartPos(false, false);
+                }
+                else
+                {
+                    if (!State.Init.use_digitalLineClock && lineClock != null)
+                        lineClock.Stop();
 
-                digitalOutput_WClock.Stop();
+                    if (digitalOutput_WClock != null)
+                        digitalOutput_WClock.Stop();
 
-                AO_Mirror_EOM.Stop();
+                    if (AO_Mirror_EOM != null)
+                        AO_Mirror_EOM.Stop();
+                }
             }
             runningImgAcq = false;
         }
@@ -784,7 +854,7 @@ namespace FLIMage
         /// </summary>
         public void ParkMirrors(bool zeroEOM)
         {
-            bool shutterAO = FLIMage.uncaging_panel != null && State.Init.DO_uncagingShutter;
+            bool shutterAO = FLIMage.uncaging_panel != null && State.Init.AO_uncagingShutter && FLIMage.uncaging_panel.UncagingShutter;
             AO_Mirror_EOM.putValue_S_ToStartPos(zeroEOM, shutterAO);
             if (FLIMage.uncaging_panel != null && State.Init.DO_uncagingShutter)
                 uncagingShutterCtrl(FLIMage.uncaging_panel.UncagingShutter, true, true);
@@ -894,7 +964,7 @@ namespace FLIMage
                     {
                         if (FLIMage.uncaging_panel != null)
                         {
-                            FLIMage.uncaging_panel.UncageOnce(false, this);
+                            FLIMage.uncaging_panel.UncageOnce(true, true);
                         }
                     }
                     else
@@ -908,7 +978,7 @@ namespace FLIMage
                     if (fire)
                     {
                         if (FLIMage.digital_panel != null)
-                            FLIMage.digital_panel.DigitalOutOnce(false, this); //Takes 40 + uncaging ms.
+                            FLIMage.digital_panel.DigitalOutOnce(true); //Takes 40 + uncaging ms.
                     }
                     else
                         System.Threading.Thread.Sleep((int)(State.DO.sampleLength + overHead_ms));
@@ -963,7 +1033,7 @@ namespace FLIMage
             if (!stopGrabActivated)
             {
                 ParkMirrors(false);
-                StartDAQ(eraseMemoryA, true, false);
+                StartDAQ(eraseMemoryA, false);
                 EventNotify?.Invoke(this, new ProcessEventArgs("SliceAcquisitionStart", null));
             }
 
@@ -1052,18 +1122,18 @@ namespace FLIMage
             try
             {
 #endif
-                if (FLIMage.fastZcontrol != null)
+            if (FLIMage.fastZcontrol != null)
+            {
+                //BeginInvoke is correct.
+                FLIMage.fastZcontrol.Invoke((Action)delegate
                 {
-                    //BeginInvoke is correct.
-                    FLIMage.fastZcontrol.BeginInvoke((Action)delegate
-                    {
-                        FLIMage.fastZcontrol.Enabled = true;
-                        if (parameters.fastZScan.measureTagParameters)
-                            FLIMage.fastZcontrol.CalculateFastZParameters();
-                    });
-                }
-                else
-                    State.Acq.fastZScan = false;
+                    FLIMage.fastZcontrol.Enabled = true;
+                    if (parameters.fastZScan.measureTagParameters)
+                        FLIMage.fastZcontrol.CalculateFastZParameters();
+                });
+            }
+            else
+                State.Acq.fastZScan = false;
 #if !DEBUG
             }
             catch (Exception EX)
@@ -1102,15 +1172,19 @@ namespace FLIMage
 #endif
             if (FLIMage.snapShot & (use_pq || use_bh))
             {
-                UInt16[][][,,] FLIMTemp = e.data;
+                UInt16[][][,,] FLIMTemp = e.data; //order = c, z, [y,x,t]
 
                 FLIM_ImgData.LoadFLIMdata5D_Realtime(FLIMTemp); //Save in FLIM_ImgData class.
-                var flimZdata = ImageProcessing.PermuteFLIM5D(FLIM_ImgData.FLIMRaw5D, true); //Copy to FLIMPage.
+                
 
                 if (!State.Acq.fastZScan)
-                    FLIM_ImgData.LoadFLIMRawFromDataAllChannels(flimZdata[0]);  //will becopied.
+                {
+                    var flimZdata = ImageProcessing.PermuteFLIM5D(FLIM_ImgData.FLIMRaw5D, false); 
+                    FLIM_ImgData.LoadFLIMRawFromDataAllChannels(flimZdata[0]);  //will be copied.
+                }
                 else
                 {
+                    var flimZdata = ImageProcessing.PermuteFLIM5D(FLIM_ImgData.FLIMRaw5D, true); //Copy to FLIMPage.
                     FLIM_ImgData.SetupPagesFromZProject(flimZdata, acquiredTime); //not copied.
                     FLIMage.image_display.calcZProjection();
                 }
@@ -1148,14 +1222,16 @@ namespace FLIMage
 
                     FLIM_ImgData.LoadFLIMdata5D_Realtime(FLIMTemp); //Save in FLIM_ImgData class. 
 
-                    var flimZdata = ImageProcessing.PermuteFLIM5D(FLIM_ImgData.FLIMRaw5D, true);
-
                     if (!State.Acq.fastZScan)
-                        FLIM_ImgData.LoadFLIMRawFromDataAllChannels(flimZdata[0]);
+                    {
+                        var flimZdata = ImageProcessing.PermuteFLIM5D(FLIM_ImgData.FLIMRaw5D, false); 
+                        FLIM_ImgData.LoadFLIMRawFromDataAllChannels(flimZdata[0]);  //will be copied.
+                    }
                     else
                     {
-                        FLIM_ImgData.SetupPagesFromZProject(flimZdata, acquiredTime);
-                        //image_display.calcZProjection();
+                        var flimZdata = ImageProcessing.PermuteFLIM5D(FLIM_ImgData.FLIMRaw5D, true); //Copy to FLIMPage.
+                        FLIM_ImgData.SetupPagesFromZProject(flimZdata, acquiredTime); //not copied.
+                        FLIMage.image_display.calcZProjection();
                     }
 
                     bool[] savebool = boolAllChannels(false);
@@ -1217,22 +1293,21 @@ namespace FLIMage
                     } //if focus.
 
 #if DEBUG
-                    if (DEBUGMODE != 0)
-                        Debug.WriteLine("Debug: C# Frame Done process 1");
+                    if (force_stop || stopGrabActivated)
+                        Debug.WriteLine("Force stop activated");
+                    Debug.WriteLine("Debug: C# Frame Done process 1");
 #endif
-
                     if (grabbing || focusing)
                     {
                         FLIM_ImgData.saveChannels = (bool[])savebool.Clone();
                         SaveUpdateAcquiredImage(savebool, protecting_save_task);
                     }
 
-
                     if (grabbing || focusing)
                         FLIMProgressChanged();
+                    else
+                        Debug.WriteLine("No progress");
 
-                    //if (DEBUGMODE != 0)
-                    //    Debug.WriteLine("Debug: C# Frame Done Event Done");
                 } //Running
             } //if (use_bh || use_pq)
 
@@ -1281,6 +1356,11 @@ namespace FLIMage
             DateTime acTime;
             double msPerLine = State.Acq.fastZScan ? State.Acq.FastZ_msPerLine : State.Acq.msPerLine;
 
+
+#if DEBUG
+            Debug.WriteLine("Debug: C# SaveUpdateAcquiredImage process 1");
+#endif
+
             //Deepcopy of FLIMRaw5D.
             if (saveFileBools.Any(x => x == true)) //If any savefile exists.
             {
@@ -1297,7 +1377,6 @@ namespace FLIMage
                         FLIMForSave[i] = null;
                     }
                 }
-
 
                 lock (saveBufferObj)
                 {
@@ -1317,12 +1396,16 @@ namespace FLIMage
             bool busy = AO_FrameCounter - internalFrameCounter > 3;
 
 #if DEBUG
-            if (DEBUGMODE != 0 && busy)
-                Debug.WriteLine("Busy!! ---- FrameCounter = " + internalFrameCounter + ", AO frame counter = " + AO_FrameCounter);
+            Debug.WriteLine("Debug: C# SaveUpdateAcquiredImage process 2");
 #endif
 
             if (focusing || grabbing)
                 UpdateImages();
+
+#if DEBUG
+            Debug.WriteLine("Debug: C# SaveUpdateAcquiredImage process 3");
+#endif
+
 
             if (grabbing && saveFileBools.Any(x => x == true))
             {
@@ -1416,7 +1499,7 @@ namespace FLIMage
                 Debug.WriteLine("Saving BUSY***************************Could not save:" + (savePageCounterTotal + 1) + " (" + (savePageCounter + 1) + "/" + FLIM_ImgData.FLIM_Pages5D.Count() + ")");
             }
 
-            FLIMage.InvokeIfRequired(o => o.UpdateSavedNumberOfFile());
+            FLIMage.InvokeAnyway(o => o.UpdateSavedNumberOfFile());
         }
 
         /// <summary>
@@ -1910,10 +1993,8 @@ namespace FLIMage
                     });
                 }
 
-                FLIMage.image_display.Invoke((Action)delegate
-                {
-                    FLIMage.image_display.UpdateImages(true, true, focusing, true);
-                });
+                FLIMage.image_display.UpdateImages(true, true, focusing, true);
+
             }
             else
             {

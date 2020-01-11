@@ -20,7 +20,6 @@ namespace FLIMage.Uncaging
         FLIMageMain FLIMage;
 
 
-        Timer UncagingTimer = new Timer();
         public double[] uncaging_Calib = new double[2];
         public int uncaging_count = 0;
 
@@ -29,10 +28,17 @@ namespace FLIMage.Uncaging
 
         PlotOnPictureBox plot1, plot2;
 
+        public int waitTime = 50;
+
         public bool UncagingShutter = false;
         public bool uncaging_running = false;
 
+        public bool uncagingOnce_running = false;
+        public Task waitUncagingTask;
+        public Stopwatch uncagingSW;
+
         UncagingCalibration uc;
+        Timer ElapsedTimer;
 
         WindowLocManager winManager;
         String WindowName = "UncagingPanel.loc";
@@ -432,8 +438,8 @@ namespace FLIMage.Uncaging
             }
 
 
-            U_counter.Text = "0 /" + State.Uncaging.trainRepeat.ToString();
-            U_counter2.Text = "0 /" + State.Uncaging.trainRepeat.ToString();
+            U_counter.Text = String.Format("{0} / {1}", uncaging_count, State.Uncaging.trainRepeat);
+            U_counter2.Text = String.Format("{0} / {1}", uncaging_count, State.Uncaging.trainRepeat);
             RepeatFrame.Text = State.Uncaging.trainRepeat.ToString();
 
             Shutter2.Checked = UncagingShutter;
@@ -509,23 +515,19 @@ namespace FLIMage.Uncaging
             plot.UpdatePlot();
         }
 
-        void UncagingTimerEvent(Object myObject, EventArgs myEventArgs)
-        {
-            UncageOnce(true, this);
-            if (uncaging_count == State.Uncaging.trainRepeat)
-            {
-                UncagingTimer.Stop();
-                UncagingTimer.Dispose();
-                StartUncaging_button.InvokeIfRequired(o => o.Text = "Start");
-                FLIMage.ExternalCommand("UncagingDone");
-                uncaging_running = false;
-            }
-        }
 
         public void StartPrep()
         {
             uncaging_count = 0;
             UpdateUncagingCounter();
+            SetupUncage(this);
+
+            CleanBufferForUncaging(); //It is not necessary, but...
+            FLIMage.flimage_io.shading.applyCalibration(State);
+            UncageMirrorAO = new HardwareControls.IOControls.AnalogOutput(State, FLIMage.flimage_io.shading, true);
+            digitalOutput = new HardwareControls.IOControls.DigitalOutputControl(State);
+
+            uncagingSW = new Stopwatch();
         }
 
         public void StartUncaging_button_Click(object sender, EventArgs e)
@@ -533,28 +535,26 @@ namespace FLIMage.Uncaging
             uncaging_running = true;
             abort_uncaging = false;
 
-            SetupUncage(sender);
-
             if (StartUncaging_button.Text.Equals("Start"))
             {
-                StartPrep();
                 StartUncaging_button.InvokeIfRequired(o => o.Text = "Stop");
+                Application.DoEvents();
+                StartPrep();
 
-                if (State.Uncaging.trainRepeat > 1)
-                {
-                    UncagingTimer = new Timer();
-                    UncagingTimer.Tick += new EventHandler(UncagingTimerEvent);
-                    UncagingTimer.Interval = (int)State.Uncaging.trainInterval;
-                    UncagingTimer.Start();
-                }
-
-                UncageOnce(true, this);
-
+                uncagingSW.Start();
+                UncageOnce(true, false);
                 if (State.Uncaging.trainRepeat <= 1)
                 {
-                    StartUncaging_button.InvokeIfRequired(o => o.Text = "Start");
+                    StartUncaging_button.InvokeAnyway(o => o.Text = "Start");
+                    Application.DoEvents();
                     State.Uncaging.trainRepeat = 1;
-
+                }
+                else
+                {
+                    ElapsedTimer = new Timer();
+                    ElapsedTimer.Tick += new EventHandler(ElapsedTimerEvent);
+                    ElapsedTimer.Interval = 1;
+                    ElapsedTimer.Start();
                 }
             }
             else
@@ -563,12 +563,27 @@ namespace FLIMage.Uncaging
             }
         }
 
+        private void ElapsedTimerEvent(object sender, EventArgs e)
+        {
+            elapsedTimeLabel.BeginInvokeIfRequired(o => o.Text = (uncagingSW.ElapsedMilliseconds / 1000).ToString() + " s");
+        }
+
         public void StopUncaging()
         {
-            StartUncaging_button.Text = "Start";
-            UncagingTimer.Stop();
-            UncagingTimer.Dispose();
+            if (uncagingSW != null)
+                uncagingSW.Stop();
+
+            if (ElapsedTimer != null)
+            {
+                ElapsedTimer.Stop();
+                ElapsedTimer.Dispose();
+            }
+
             abort_uncaging = true;
+
+            CleanBufferForUncaging();
+            FLIMage.ExternalCommand("UncagingDone");
+            StartUncaging_button.InvokeIfRequired(o => o.Text = "Start");
             uncaging_running = false;
         }
 
@@ -591,82 +606,111 @@ namespace FLIMage.Uncaging
         /// </summary>
         /// <param name="mainShutterCtrl">if you want to open/close shutter within this function, it is true</param>
         /// <param name="sender">is it from uncaging_panel or FLIMage window?</param>
-        public void UncageOnce(bool mainShutterCtrl, object sender)
+        public void UncageOnce(bool mainShutterCtrl, bool imaging_page)
         {
-            CleanBufferForUncaging();
+            Debug.WriteLine("Starting uncage once: count = " + uncaging_count);
 
             int pos = State.Uncaging.currentPosition;
 
             double[,] uncagingPos = HardwareControls.IOControls.DefinePulsePosition(State);
 
             //Put static values first.
-            FLIMage.flimage_io.AO_Mirror_EOM.putValue_Single(new double[] { uncagingPos[0, 0], uncagingPos[1, 0] }, true, false);
-            FLIMage.flimage_io.uncagingShutterCtrl(false, true, true); //Close uncaging shutter.
+            UncageMirrorAO.putValue_Single(new double[] { uncagingPos[0, 0], uncagingPos[1, 0] }, false, false);
 
             if (State.Init.DO_uncagingShutter)
             {
-                digitalOutput = new HardwareControls.IOControls.DigitalOutputControl(State);
+                digitalOutput.PutSingleValue(false);
+                Debug.WriteLine("Digital shutter closed");
+
                 digitalOutput.PutValue(false, true, false, false, false);
-                digitalOutput.Start(false);
+                digitalOutput.Start();
             }
 
             if (mainShutterCtrl)
             {
                 FLIMage.flimage_io.shutterCtrl.open();
-                System.Threading.Thread.Sleep(1); //Wait for shutter open.
+                System.Threading.Thread.Sleep(4); //Wait for shutter open.
             }
 
-            UncageMirrorAO = new HardwareControls.IOControls.AnalogOutput(State, FLIMage.flimage_io.shading, true);
-            FLIMage.flimage_io.shading.applyCalibration(State);
             double[,] dataXY = UncageMirrorAO.putvalueUncageOnce();
-            UncageMirrorAO.Start(false);
+            UncageMirrorAO.Start();
+
+            bool waitTrigger_physiology = false;
+            if (FLIMage.physiology != null && FLIMage.physiology.uncage_trigger_waiting)
+            {
+                FLIMage.physiology.StartAcq();
+                waitTrigger_physiology = true;
+            }
+#if DEBUG
+            System.Threading.Thread.Sleep(1);
+            UncageMirrorAO.analog_output.CheckCurrentStatus(1); //Does not help much...
+            Debug.WriteLine("Triggered " + DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss.fff"));
+#endif
 
             FLIMage.flimage_io.dioTrigger.Evoke();
 
-            int timeout = (int)(State.Uncaging.sampleLength + 10.0);
+            if (waitTrigger_physiology)
+                FLIMage.physiology.io_controls.triggerTime = DateTime.Now;
 
-            bool forcestop = false;
+            int timeout = (int)(State.Uncaging.sampleLength) + waitTime;
 
             //For a long call, you may want to terminate in the middle. 
             Stopwatch sw1 = new Stopwatch();
             sw1.Restart();
             while (sw1.ElapsedMilliseconds < timeout)
             {
-                System.Threading.Thread.Sleep(10);
-                //abort_uncaging becomes true when stop button is pressed.
+                System.Threading.Thread.Sleep(waitTime);
                 if (abort_uncaging)
-                {
-                    forcestop = true;
                     break;
-                }
             }
 
-            if (!forcestop)
-            {
-                UncageMirrorAO.WaitUntilDone(timeout); //Should be immediate but anyway....
-            }
-            else
-            {
+            if (abort_uncaging)
                 UncageMirrorAO.Stop();
-            }
+            else
+                UncageMirrorAO.WaitUntilDone(waitTime * 5); //wait for 250 ms more...
 
             if (State.Init.DO_uncagingShutter)
-            {
                 digitalOutput.Stop();
-                digitalOutput.Dispose();
-            }
 
             if (mainShutterCtrl)
                 FLIMage.flimage_io.shutterCtrl.Close();
 
-            UncageMirrorAO.Dispose();
-
             uncaging_count++;
             Debug.WriteLine("Uncaging counter = " + uncaging_count);
-
-            System.Threading.Thread.Sleep(1);
-
             this.InvokeIfRequired(o => o.UpdateUncagingCounter());
+
+            CleanBufferForUncaging();
+
+            if (uncaging_count == State.Uncaging.trainRepeat || abort_uncaging || imaging_page)
+                StopUncaging();
+            else
+            {
+                waitUncagingTask = Task.Factory.StartNew(() =>
+                {
+                    WaitUncaging();
+                });
+            }
+        }
+
+        public void WaitUncaging()
+        {
+            var on_time = State.Uncaging.trainInterval * uncaging_count;
+            var timeToNextEvent = (int)(on_time - uncagingSW.ElapsedMilliseconds);
+            while (timeToNextEvent - waitTime > 0)
+            {
+                timeToNextEvent = (int)(on_time - uncagingSW.ElapsedMilliseconds);
+                if (abort_uncaging)
+                    break;
+                System.Threading.Thread.Sleep(waitTime);
+            }
+
+            timeToNextEvent = (int)(on_time - uncagingSW.ElapsedMilliseconds);
+
+            if (timeToNextEvent > 0 && !abort_uncaging)
+                System.Threading.Thread.Sleep(timeToNextEvent);
+
+            if (!abort_uncaging)
+                UncageOnce(true, false);
         }
 
         public void PulseNumber_ValueChanged(object sender, EventArgs e)
@@ -714,6 +758,7 @@ namespace FLIMage.Uncaging
 
         public void Shutter2_Click(object sender, EventArgs e)
         {
+            UncagingShutter = Shutter2.Checked;
             FLIMage.flimage_io.uncagingShutterCtrl(Shutter2.Checked, !FLIMage.flimage_io.grabbing && !FLIMage.flimage_io.focusing, true);
         }
 

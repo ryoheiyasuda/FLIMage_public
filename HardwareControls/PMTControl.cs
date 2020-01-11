@@ -48,6 +48,10 @@ namespace FLIMage.HardwareControls
 
         ScanParameters State;
 
+        bool thorECU_scan_on = false;
+        bool thorECU_pmt_on = false;
+        bool thorECU_scan_pmt_samePort = false;
+
         ThorECU thorECU_d; //direct
         ThorBCM ThorBCM_g; //Galvo
         ThorBCM ThorBCM_r; //reso
@@ -55,34 +59,38 @@ namespace FLIMage.HardwareControls
 
         ThorDLL thorBCM;
 
-        public PMTControl(ScanParameters state)
+        FLIMageMain FLIMage;
+
+        public PMTControl(ScanParameters state, FLIMageMain flim)
         {
             InitializeComponent();
             PMTPanel.Enabled = false;
             GalvoPanel.Enabled = false;
             State = state;
+            FLIMage = flim;
+            thorECU_scan_on = FLIMage.flimage_io.thorECU_on;
 
-            if (State.Init.ThorPMTModule == "ThorECU")
-            {
-                thorECU_d = new ThorECU("COM29");
-            }
-            else if (State.Init.ThorPMTModule == "ThorBScope") //perhaps just different com port.
-            {
-                thorECU_d = new ThorECU("COM31");
-            }
-            else
-            {
-                MessageBox.Show("There is no PMT module DLL for " + state);
-                return;
-            }
+            if (State.Init.PMTModule == "ThorECU")
+                if (thorECU_scan_on && State.Init.PMTModule_COMPort == State.Init.resonantScanner_COMPort)
+                {
+                    thorECU_d = FLIMage.flimage_io.thorECU;
+                    thorECU_scan_pmt_samePort = true;
+                    thorECU_pmt_on = true;
+                }
+                else
+                {
+                    thorECU_d = new ThorECU(State.Init.PMTModule_COMPort);
+                    thorECU_scan_pmt_samePort = false;
+                    thorECU_pmt_on = true;
+                }
 
-            if (State.Init.ThorFlipper == "ThorBCM")
+            if (State.Init.MicroscopeFlipper == "ThorBCM")
             {
                 ThorBCM_g = new ThorBCM("COM33");
                 ThorBCM_r = new ThorBCM("COM34");
                 ThorBCM_c = new ThorBCM("COM35");
             }
-            else if (State.Init.ThorFlipper == "ThorBScope")
+            else if (State.Init.MicroscopeFlipper == "ThorBScope")
                 thorBCM = ThorDLL.ThorDLL_Load(ThorDLL.DLLType.ThorBScope);
 
             initFolder = State.Files.initFolderPath;
@@ -91,7 +99,7 @@ namespace FLIMage.HardwareControls
 
         public void ClosePorts()
         {
-            if (PMTPanel.Enabled)
+            if (!thorECU_scan_pmt_samePort && PMTPanel.Enabled)
                 thorECU_d.ClosePort();
 
             if (GalvoPanel.Enabled)
@@ -106,11 +114,21 @@ namespace FLIMage.HardwareControls
 
         public void connectToSerial()
         {
-
-            if (thorECU_d.OpenPort() == 1)
+            if (thorECU_pmt_on)
             {
-                PMTPanel.Enabled = true;
-                TurnOnPMT(false);
+                if (thorECU_scan_pmt_samePort)
+                {
+                    PMTPanel.Enabled = true;
+                    TurnOnPMT(false);
+                }
+                else
+                {
+                    if (thorECU_d.OpenPort() == 1)
+                    {
+                        PMTPanel.Enabled = true;
+                        TurnOnPMT(false);
+                    }
+                }
             }
 
             if (ThorBCM_g.OpenPort() == 1)

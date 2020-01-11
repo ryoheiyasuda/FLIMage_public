@@ -19,14 +19,18 @@ namespace FLIMage.HardwareControls
         FLIMageMain FLIMage;
 
 
-        Timer DigitalTimer = new Timer();
+        //Timer DigitalTimer = new Timer();
         public int DO_count = 0;
+        public Stopwatch SW;
+        public Task waitDO;
+        public int waitTime = 50; //Set the update time for uncaging
 
         IOControls.DigitalOutputControl digitalOutput;
 
         PlotOnPictureBox plot;
 
         public bool digital_running = false;
+        public bool mainShutterCtrl = false;
 
         WindowLocManager winManager;
         String WindowName = "DigitalPanel.loc";
@@ -270,33 +274,26 @@ namespace FLIMage.HardwareControls
 
             UpdatePlot();
 
-            if (FLIMage.flimage_io.use_nidaq)
+            if (FLIMage.flimage_io.use_nidaq && !digital_running)
             {
-                var DO1 = new IOControls.DigitalOutputControl(State);
-                DO1.PutSingleValue(false);
-                DO1.Dispose();
+                CleanBufferForDO();
+                digitalOutput = new IOControls.DigitalOutputControl(State);
+                digitalOutput.PutSingleValue(false);
             }
         }
 
-        void DigitalTimerEvent(Object myObject, EventArgs myEventArgs)
-        {
-            DigitalOutOnce(true, this);
-            if (DO_count == State.DO.trainRepeat)
-            {
-                DigitalTimer.Stop();
-                DigitalTimer.Dispose();
-                StartDO_button.InvokeIfRequired(o => o.Text = "Start");
-                digital_running = false;
-                FLIMage.ExternalCommand("DO_Done");
-            }
-        }
 
         public void StartPrep()
         {
+            CleanBufferForDO();
+            digitalOutput = new IOControls.DigitalOutputControl(State);
+
             DO_count = 0;
             abort_digital = false;
             SetupDO(this);
             this.BeginInvokeIfRequired(o => o.UpdateDOCounter());
+
+            SW = new Stopwatch();
         }
 
         public void Start_button_Click(object sender, EventArgs e)
@@ -308,15 +305,8 @@ namespace FLIMage.HardwareControls
                 StartPrep();
                 StartDO_button.InvokeIfRequired(o => o.Text = "Stop");
 
-                if (State.DO.trainRepeat > 1)
-                {
-                    DigitalTimer = new Timer();
-                    DigitalTimer.Tick += new EventHandler(DigitalTimerEvent);
-                    DigitalTimer.Interval = (int)State.DO.trainInterval;
-                    DigitalTimer.Start();
-                }
-
-                DigitalOutOnce(true, this);
+                SW.Start();
+                DigitalOutOnce(false);
 
                 if (State.DO.trainRepeat <= 1)
                 {
@@ -332,10 +322,13 @@ namespace FLIMage.HardwareControls
 
         public void Stop_DO()
         {
-            StartDO_button.Text = "Start";
-            DigitalTimer.Stop();
-            DigitalTimer.Dispose();
             abort_digital = true;
+            if (waitDO != null)
+                waitDO.Wait();
+
+            CleanBufferForDO();
+            StartDO_button.InvokeIfRequired(o => o.Text = "Start");
+
             digital_running = false;
             this.BeginInvokeIfRequired(o => o.UpdateDOCounter());
         }
@@ -357,13 +350,10 @@ namespace FLIMage.HardwareControls
         /// </summary>
         /// <param name="mainShutterCtrl">if you want to open/close shutter within this function, it is true</param>
         /// <param name="sender">is it from uncaging_panel or FLIMage window?</param>
-        public void DigitalOutOnce(bool mainShutterCtrl, object sender)
+        public void DigitalOutOnce(bool imaging_page)
         {
-            CleanBufferForDO();
-
-            digitalOutput = new IOControls.DigitalOutputControl(State);
             digitalOutput.PutValue(false, false, true, false, false);
-            digitalOutput.Start(false);
+            digitalOutput.Start();
 
             if (mainShutterCtrl)
             {
@@ -374,29 +364,26 @@ namespace FLIMage.HardwareControls
 
             FLIMage.flimage_io.dioTrigger.Evoke();
 
-            int timeout = (int)(State.DO.sampleLength + 10.0);
-
-            bool forcestop = false;
+            int timeout = (int)State.DO.sampleLength + waitTime;
 
             //For a long call, you may want to terminate in the middle. 
             Stopwatch sw1 = new Stopwatch();
             sw1.Restart();
             while (sw1.ElapsedMilliseconds < timeout)
             {
-                System.Threading.Thread.Sleep(10);
+                System.Threading.Thread.Sleep(waitTime);
                 //abort_digital becomes true when stop button is pressed.
                 if (abort_digital)
-                {
-                    forcestop = true;
                     break;
-                }
             }
 
 
             if (digitalOutput != null)
             {
-                digitalOutput.Stop();
-                digitalOutput.Dispose();
+                if (abort_digital)
+                    digitalOutput.Stop();
+                else
+                    digitalOutput.WaitUntilDone(waitTime * 5);
             }
 
             if (mainShutterCtrl)
@@ -404,10 +391,41 @@ namespace FLIMage.HardwareControls
 
             DO_count++;
             Debug.WriteLine("DO counter = " + DO_count);
-
             System.Threading.Thread.Sleep(1);
-
             this.BeginInvokeIfRequired(o => o.UpdateDOCounter());
+
+
+            if (DO_count == State.DO.trainRepeat || abort_digital || imaging_page)
+                Stop_DO();
+            else
+            {
+                waitDO = Task.Factory.StartNew(() =>
+                {
+                    waitDOFuc();
+                });
+            }
+        }
+
+
+        public void waitDOFuc()
+        {
+            var on_time = State.DO.trainInterval * DO_count;
+            var timeToNextEvent = (int)(on_time - SW.ElapsedMilliseconds);
+            while (timeToNextEvent - waitTime > 0)
+            {
+                timeToNextEvent = (int)(on_time - SW.ElapsedMilliseconds);
+                if (abort_digital)
+                    break;
+                System.Threading.Thread.Sleep(waitTime);
+            }
+
+            timeToNextEvent = (int)(on_time - SW.ElapsedMilliseconds);
+
+            if (timeToNextEvent > 0 && !abort_digital)
+                System.Threading.Thread.Sleep(timeToNextEvent);
+
+            if (!abort_digital)
+                DigitalOutOnce(false);
         }
 
         public void PulseNumber_ValueChanged(object sender, EventArgs e)

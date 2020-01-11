@@ -96,6 +96,8 @@
             this.label2 = new System.Windows.Forms.Label();
             this.ShowShutter = new System.Windows.Forms.CheckBox();
             this.UncageOnlyPanel = new System.Windows.Forms.GroupBox();
+            this.label21 = new System.Windows.Forms.Label();
+            this.elapsedTimeLabel = new System.Windows.Forms.Label();
             this.label15 = new System.Windows.Forms.Label();
             this.U_counter2 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
@@ -904,6 +906,8 @@
             // 
             // UncageOnlyPanel
             // 
+            this.UncageOnlyPanel.Controls.Add(this.label21);
+            this.UncageOnlyPanel.Controls.Add(this.elapsedTimeLabel);
             this.UncageOnlyPanel.Controls.Add(this.label15);
             this.UncageOnlyPanel.Controls.Add(this.U_counter2);
             this.UncageOnlyPanel.Controls.Add(this.label6);
@@ -917,6 +921,28 @@
             this.UncageOnlyPanel.TabIndex = 369;
             this.UncageOnlyPanel.TabStop = false;
             this.UncageOnlyPanel.Text = "Uncage now";
+            // 
+            // label21
+            // 
+            this.label21.AutoSize = true;
+            this.label21.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label21.Location = new System.Drawing.Point(156, 31);
+            this.label21.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.label21.Name = "label21";
+            this.label21.Size = new System.Drawing.Size(32, 14);
+            this.label21.TabIndex = 415;
+            this.label21.Text = "Time:";
+            // 
+            // elapsedTimeLabel
+            // 
+            this.elapsedTimeLabel.AutoSize = true;
+            this.elapsedTimeLabel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.elapsedTimeLabel.Location = new System.Drawing.Point(185, 31);
+            this.elapsedTimeLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.elapsedTimeLabel.Name = "elapsedTimeLabel";
+            this.elapsedTimeLabel.Size = new System.Drawing.Size(22, 14);
+            this.elapsedTimeLabel.TabIndex = 414;
+            this.elapsedTimeLabel.Text = "0 s";
             // 
             // label15
             // 
@@ -934,7 +960,7 @@
             // 
             this.U_counter2.AutoSize = true;
             this.U_counter2.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.U_counter2.Location = new System.Drawing.Point(185, 23);
+            this.U_counter2.Location = new System.Drawing.Point(185, 15);
             this.U_counter2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.U_counter2.Name = "U_counter2";
             this.U_counter2.Size = new System.Drawing.Size(22, 14);
@@ -945,7 +971,7 @@
             // 
             this.label6.AutoSize = true;
             this.label6.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label6.Location = new System.Drawing.Point(144, 23);
+            this.label6.Location = new System.Drawing.Point(144, 15);
             this.label6.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(44, 14);
@@ -1212,5 +1238,7 @@
         public System.Windows.Forms.Label label18;
         public System.Windows.Forms.Label SliceNote;
         public System.Windows.Forms.Label FrameNote;
+        public System.Windows.Forms.Label label21;
+        public System.Windows.Forms.Label elapsedTimeLabel;
     }
 }

@@ -439,6 +439,7 @@ namespace FLIMage.Analysis
             fit_start.Text = (FLIM_ImgData.fit_range[c][0] + 1).ToString(); //1 base.
             fit_end.Text = FLIM_ImgData.fit_range[c][1].ToString(); //If 1-64, this means 0 <= x < 64)
 
+            FLIM_ImgData.psPerUnit = FLIM_ImgData.State.Spc.spcData.resolution[c];
             psPerUnit.Text = String.Format("{0:0.00} ps", FLIM_ImgData.psPerUnit);
 
             bool showFit = false;
@@ -517,7 +518,7 @@ namespace FLIMage.Analysis
             imgOffset1.Text = String.Format("{0:0.00}", FLIM_ImgData.offset[c]);
             //imgOffset2.Text = String.Format("{0:0.00}", FLIM_ImgData.offset[0]);
 
-            //filterWindow.Text = FLIM_ImgData.State.Display.filterWindow_FLIM.ToString(); So that it does not change...
+            filterWindow.Text = FLIM_ImgData.State.Display.filterWindow_FLIM.ToString();
 
             Roi_SelectA.Items.Clear();
             for (int i = 0; i < FLIM_ImgData.ROIs.Count; i++)
@@ -602,6 +603,8 @@ namespace FLIMage.Analysis
             ScanParameters State = Scan;
             FLIM_ImgData = flimdata;
 
+            FLIM_ImgData.psPerUnit = FLIM_ImgData.State.Spc.spcData.resolution[currentChannel];
+            psPerUnit.Text = String.Format("{0:0.00} ps", FLIM_ImgData.psPerUnit);
 
             UpdateImages(true, false, false, true); //30 ms.            
             Refresh();
@@ -2581,6 +2584,10 @@ namespace FLIMage.Analysis
                 String SaveText = tb.Text;
                 try
                 {
+                    if (!Int32.TryParse(filterWindow.Text, out int fw))
+                        fw = 0;
+                    FLIM_ImgData.State.Display.filterWindow_FLIM = fw;
+
                     if (sender.Equals(c_page))
                     {
                         int currentPage = FLIM_ImgData.currentPage; //(FLIM_ImgData.nFastZ > 1) ? FLIM_ImgData.currentFastZ : FLIM_ImgData.currentPage;
@@ -5909,10 +5916,6 @@ namespace FLIMage.Analysis
         public void UpdateImages(bool calcLifetimeMap, bool realtime1, bool focus, bool calcLifetime, bool calcProject) //Can be slow. //Done with timer.
         {
             update_image_busy = true;
-
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-
             realtime = realtime1;
             focusing = focus;
 
@@ -5921,9 +5924,9 @@ namespace FLIMage.Analysis
             if (!FLIM_ImgData.FLIM_on.Any(x => x == true))
             {
                 if (plot_realtime != null && realtime)
-                    plot_realtime.intensity_onlyData();
+                    plot_realtime.InvokeIfRequired(o => o.intensity_onlyData());
                 if (plot_regular != null && !realtime)
-                    plot_regular.intensity_onlyData();
+                    plot_regular.InvokeIfRequired(o => o.intensity_onlyData());
             }
 
             int height = FLIM_ImgData.height;
@@ -5933,7 +5936,7 @@ namespace FLIMage.Analysis
             int nChannels = FLIM_ImgData.nChannels;
 
             int c = currentChannel;
-            bool ch12_checked = Channel12.Checked; //When Ch12 is clicked.
+            bool ch12_checked = Channel12.Checked; //When Ch12 is clicked.         
 
             if (Channel1.Checked)
                 c = 0;
@@ -5978,6 +5981,7 @@ namespace FLIMage.Analysis
 
             bool showFLIM = ShowFLIM.Checked;
 
+
             if (Auto1.Checked)
                 Auto_contrast(); //Save Intensity_range too.
 
@@ -5994,12 +5998,8 @@ namespace FLIMage.Analysis
                     FLIM_ImgData.calculateLifetimeMapCh(c);
 
                 FLIM_ImgData.low_threshold[c] = State_FLIM_intensity_range[c][0];
-                int fw = 0;
-                if (!Int32.TryParse(filterWindow.Text, out fw))
-                    fw = 0;
 
-                FLIM_ImgData.State.Display.filterWindow_FLIM = fw;
-                FLIM_ImgData.filterMAP(fw, c); //Subract and filter.
+                FLIM_ImgData.filterMAP(FLIM_ImgData.State.Display.filterWindow_FLIM, c); //Subract and filter.
 
                 lock (syncBmpFLIM)
                 {
@@ -6013,7 +6013,6 @@ namespace FLIMage.Analysis
                 //    FLIM_ImgData.Fit_type = FLIMData.FitType.WholeImage;
                 else if (AllRois.Checked)
                     FLIM_ImgData.Fit_type = FLIMData.FitType.GlobalRois;
-
 
                 if (calcLifetime)
                 {
@@ -6091,9 +6090,6 @@ namespace FLIMage.Analysis
                     Debug.WriteLine("Error in Invoking Update ImageDisplay" + e.Message);
                 }
             });
-
-            //Debug.WriteLine("4 Elapsed time = " + sw.ElapsedMilliseconds + " ms");
-            //sw.Restart();
 
             try
             {

@@ -124,6 +124,7 @@
   <PropertyGroup />
   <PropertyGroup />
   <PropertyGroup />
+  <PropertyGroup />
   <PropertyGroup>
     <ApplicationManifest>flimage.manifest</ApplicationManifest>
   </PropertyGroup>

@@ -87,9 +87,13 @@ namespace FLIMage
             public int MotorDisplayUpdateTime_ms = 1000;
             public double[] MotorConversionFactor = { 0, 0, 0 };
 
-            public String MicroscopeSystem = ""; //"ThorBScopeGG"; //"THorBScopeRG" or None
-            public String ThorPMTModule = "ThorECU"; //or ThorPMT21000
-            public String ThorFlipper = "ThorBCA"; // or ThorBScope
+            public String MicroscopeSystem = "ThorBScopeGG"; //"ThorBScopeGG"; //"THorBScopeRG" or None
+            public String PMTModule = "ThorECU"; //or ThorPMT21000
+            public String MicroscopeFlipper = "ThorBCM"; // or ThorBScope ThorBCA?
+            public String PMTModule_COMPort = "COM29";
+            public String resonantScanner_COMPort = "COM29";
+            public bool resonantScanner = false;
+            public double resonantFreq = 8000; //KHz.
             public bool Use_EPhys = true;
 
             public bool usePiezo = false;

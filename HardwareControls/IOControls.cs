@@ -85,7 +85,10 @@ namespace FLIMage.HardwareControls
 
             public double GetEOMVoltageByFitting(double percent, int ch)
             {
-                double val = MatrixCalc.InverseSinusoidal(beta[ch], percent);
+                double val = 0;
+                if (beta != null && beta[ch] != null)
+                    MatrixCalc.InverseSinusoidal(beta[ch], percent);
+
                 if (val > 2)
                     val = 2;
                 if (val < -2)
@@ -100,8 +103,9 @@ namespace FLIMage.HardwareControls
                 for (int ch = 0; ch < calibrationCurve.Length; ch++)
                 {
                     calibrationCurveFit[ch] = new double[101];
-                    for (int j = 0; j < 101; j++)
-                        calibrationCurveFit[ch][j] = MatrixCalc.InverseSinusoidal(beta[ch], j);
+                    if (beta != null && beta[ch] != null)
+                        for (int j = 0; j < 101; j++)
+                            calibrationCurveFit[ch][j] = MatrixCalc.InverseSinusoidal(beta[ch], j);
                 }
             }
 
@@ -114,12 +118,14 @@ namespace FLIMage.HardwareControls
                 calib.noiseThreshold = noiseThreshold;
                 calib.contrastThreshold = contrastThreshold;
                 success = calib.calcibrateEOMs(plot);
-                beta = calib.beta;
-                calibrationCurve = calib.calibrationCurve;
-                MakeCalibrationCurveFit();
-                calibrationOutput = calib.calibrationOutput;
-                noiseValue = calib.noiseValue;
-
+                if (beta != null)
+                {
+                    beta = calib.beta;
+                    calibrationCurve = calib.calibrationCurve;
+                    MakeCalibrationCurveFit();
+                    calibrationOutput = calib.calibrationOutput;
+                    noiseValue = calib.noiseValue;
+                }
                 return success;
 #if !DEBUG
                 }
@@ -162,9 +168,6 @@ namespace FLIMage.HardwareControls
                 success = new bool[State.Init.EOM_nChannels];
                 createFalseCurves();
 
-                EOM_AI = new pockelAI(State);
-                EOM_AO = new AnalogOutput(State, shading, false);
-
                 DigitalUncagingShutterPort = State.Init.MirrorAOBoard + "/port0/" + State.Init.DigitalShutterPort;
             }
 
@@ -188,12 +191,14 @@ namespace FLIMage.HardwareControls
             public bool[] calcibrateEOMs(bool plot)
             {
                 //dioTrigger dio = new dioTrigger(State);
+                EOM_AI = new pockelAI(State);
                 EOM_AO = new AnalogOutput(State, shading, false);
 
                 double maxV = 1.9;
-                double minV = 0;
+                double minV = -0.1;
                 int nChannels = State.Init.EOM_nChannels;
-                int sampleN = 1000;
+                double outputRate = 4000;
+                int sampleN = 2000;
                 int repeat = 4;
 
                 int addUncageChannel = 0;
@@ -236,11 +241,10 @@ namespace FLIMage.HardwareControls
 
                 if (State.Init.AO_uncagingShutter)
                     inputValue[nChannels] = 5;
-
                 if (State.Init.DO_uncagingShutter)
                     new Digital_Out(DigitalUncagingShutterPort, true);
-
                 EOM_AO.putValue_Single_EOM(inputValue);
+
                 double[,] values = new double[nChannels + addUncageChannel, sampleN * repeat];
 
 
@@ -254,42 +258,52 @@ namespace FLIMage.HardwareControls
                                 values[i, j * repeat + k] = 5;
                         }
 
-                double outputRate = 5000;
-                EOM_AI.setupAI(sampleN * repeat, outputRate);
-                EOM_AO.putvalue(values, outputRate);
+                bool syncClock = true;
+                int nSamples = values.GetLength(1);
+                var AIThread = System.Threading.Tasks.Task.Factory.StartNew((Action)delegate
+                {
+                    EOM_AI.TurnExportClock(syncClock);
+                    EOM_AI.SetupAI(nSamples + 1, outputRate); //It seems like there is 1 clock delay?
+                    EOM_AI.Start();
+                    EOM_AO.PutValue(values, outputRate, syncClock);
+                    EOM_AO.Start();
+                    if (State.Init.DO_uncagingShutter)
+                        new Digital_Out(DigitalUncagingShutterPort, false);
+                    dio.Evoke();
+                });
 
-                EOM_AI.start(false);
-                EOM_AO.Start(false);
-                dio.Evoke();
+                AIThread.Wait();
 
-                int timeout = 5000;
-                bool success1 = EOM_AO.WaitUntilDone(timeout);
-                bool success2 = EOM_AI.WaitUntilDone(timeout);
+                int timeout = (int)(nSamples / outputRate * 1000.0);
+                System.Threading.Thread.Sleep(timeout);
 
-                if (!success1 || !success2)
-                    return success;
-
+                bool success1 = EOM_AI.WaitUntilDone(1000);
+                System.Threading.Thread.Sleep(5);
                 EOM_AO.Stop();
-                EOM_AO.Dispose();
+
+                if (!success1)
+                {
+                    EOM_AI.Dispose();
+                    EOM_AO.Dispose();
+                    EOM_AO.putValue_Single_EOM(inputValue);
+                    return success;
+                }
 
                 var AIResult = EOM_AI.readSample();
-
-                EOM_AI.stop();
-
-
                 ///
                 for (int ch = 0; ch < nChannels; ch++)
                 {
                     for (int j = 0; j < sampleN; j++)
+                    {
                         for (int k = 0; k < repeat; k++)
                         {
-                            {
-                                if (k == 0)
-                                    outputValues[ch][j] = AIResult[ch, j * repeat] / repeat;
-                                else
-                                    outputValues[ch][j] += AIResult[ch, j * repeat + k] / repeat;
-                            }
+                            if (k == 0)
+                                outputValues[ch][j] = AIResult[ch, j * repeat];
+                            else
+                                outputValues[ch][j] += AIResult[ch, j * repeat + k];
                         }
+                        outputValues[ch][j] /= repeat;
+                    }
                 }
 
                 Debug.WriteLine("Calibration finished...");
@@ -407,10 +421,6 @@ namespace FLIMage.HardwareControls
                     success[ch] = (noiseValue[ch] < noiseThreshold && contrast[ch] < contrastThreshold);
                 }
 
-
-                if (State.Init.DO_uncagingShutter)
-                    new Digital_Out(DigitalUncagingShutterPort, false);
-
                 for (int i = 0; i < nChannels; i++)
                 {
                     inputValue[i] = calibEOM[i][0];
@@ -418,7 +428,11 @@ namespace FLIMage.HardwareControls
                 if (State.Init.AO_uncagingShutter)
                     inputValue[nChannels] = 0; //Close shutter.
 
+                EOM_AI.Dispose();
+                EOM_AO.Dispose();
                 EOM_AO.putValue_Single_EOM(inputValue);
+                if (State.Init.DO_uncagingShutter)
+                    new Digital_Out(DigitalUncagingShutterPort, false);
 
                 if (plot)
                 {
@@ -431,6 +445,7 @@ namespace FLIMage.HardwareControls
                     var plot1 = new FLIMage.Plotting.Plot(inputValues, outputValues, "Applied voltage (V)", "Photodiode (V)", (double)sampleN / maxV, LegendStr);
                     plot1.Show();
                 }
+
 
                 return success;
             }
@@ -502,17 +517,25 @@ namespace FLIMage.HardwareControls
 
             public double getZeroEOMVoltage(int LaserN)
             {
-                double returnValue = calib1[LaserN][0];
-                if (returnValue > 2)
-                    returnValue = 2;
-                else if (returnValue < -2)
-                    returnValue = -2;
+                if (LaserN < State.Init.EOM_nChannels)
+                {
+                    double returnValue = calib1[LaserN][0];
+                    if (returnValue > 2)
+                        returnValue = 2;
+                    else if (returnValue < -2)
+                        returnValue = -2;
 
-                return returnValue;
+                    return returnValue;
+                }
+                else
+                    return 0;
             }
 
             public double getEOMVoltage(double Xvol, double Yvol, int LaserN, double power, bool uncaging)
             {
+                if (LaserN >= State.Init.EOM_nChannels)
+                    return 0;
+
                 double val = 1;
                 double returnValue;
                 if ((shading_on && !uncaging) || (shading_uncaging && uncaging) && calibration_exist)
@@ -970,6 +993,7 @@ namespace FLIMage.HardwareControls
 
             NiDaq.DigitalOutputSignal hDO;
             private String sampleClockPort = "";
+            private String triggerPort = "";
             private ScanParameters State;
             private String Board;
 
@@ -1012,23 +1036,27 @@ namespace FLIMage.HardwareControls
                     }
                 }
 
+                Stop();
+                Dispose();
                 hDO = new NiDaq.DigitalOutputSignal(ports.ToArray());
+                triggerPort = State.Init.TriggerInput;
+                if (State.Acq.externalTrigger)
+                    triggerPort = State.Init.ExternalTriggerInputPort;
+                sampleClockPort = "";
 
-                hDO.PutValue(data1, outputRate, sampleClockPort, !continuous);
+                hDO.PutValue(data1, outputRate, sampleClockPort, triggerPort, continuous);
             }
 
-            public void Start(bool ext_trigger)
+            public void Start()
             {
-                String trig_port = State.Init.TriggerInput;
-                if (ext_trigger)
-                    trig_port = State.Init.ExternalTriggerInputPort;
-
                 if (hDO != null)
-                    hDO.Start(trig_port);
+                    hDO.Start();
             }
 
             public void PutSingleValue(bool ON)
             {
+                Dispose();
+
                 List<string> ports = new List<string>();
                 ports.Add(digitalLinePort);
                 ports.Add(DO_ShutterPort);
@@ -1053,7 +1081,14 @@ namespace FLIMage.HardwareControls
                         data[i] = !data[i];
                 }
 
-                hDO.PutSingleValue(data);
+                hDO.PutSingleValue(data); //Inclde dispose.
+
+            }
+
+            public void WaitUntilDone(int timeout)
+            {
+                if (hDO != null)
+                    hDO.WaitUntilDone(timeout);
             }
 
             public void Stop()
@@ -1181,12 +1216,19 @@ namespace FLIMage.HardwareControls
 
                 DataAll = ConcatChannels(DataXY, DataEOM);
 
-#if DEBUG
-                analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, true);
-#else
-                if (DataAll != null)
-                    analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, true);
-#endif
+                String triggerP = State.Init.TriggerInput;
+                if (State.Acq.externalTrigger)
+                    triggerP = State.Init.ExternalTriggerInputPort;
+
+                String sampleClockP = State.Init.SampleClockPort;
+
+                var error = analog_output.PutValue(DataAll, outputRate, sampleClockP, triggerP, true, false);
+                if (error < 0)
+                {
+                    MessageBox.Show("Error in Put Value: error code: " + error);
+                    return null;
+                }
+
                 if (includeMirror)
                 {
                     analog_output.SetReturnFunction(DataXY.GetLength(1));
@@ -1195,11 +1237,23 @@ namespace FLIMage.HardwareControls
                 return DataXY;
             }
 
-            public void putvalue(double[,] values, double outputRate1)
+            public void PutValue(double[,] values, double outputRate1, bool slaveMode)
             {
+                String triggerP = State.Init.TriggerInput;
+                if (State.Acq.externalTrigger)
+                    triggerP = State.Init.ExternalTriggerInputPort;
+
                 outputRate = outputRate1;
                 int samplesPerChannel = (int)(values.GetLength(1));
-                analog_output.Putvalue(values, outputRate, State.Init.SampleClockPort, false);
+
+                var sampleClockP = State.Init.SampleClockPort;
+
+                var error = analog_output.PutValue(values, outputRate, sampleClockP, triggerP, false, slaveMode);
+
+                if (error < 0)
+                {
+                    MessageBox.Show("Error in Put Value: error code: " + error);
+                }
             }
 
             void EveryNSampleEvent(object sender, EventArgs e)
@@ -1224,13 +1278,20 @@ namespace FLIMage.HardwareControls
                     DataEOM = null;
 
                 DataAll = ConcatChannels(DataXY, DataEOM);
+                String triggerP = State.Init.TriggerInput;
+                if (State.Acq.externalTrigger)
+                    triggerP = State.Init.ExternalTriggerInputPort;
 
-#if DEBUG
-                analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false);
-#else
-                if (DataAll != null)
-                    analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false);
-#endif
+                string sampleClockP = State.Init.SampleClockPort;
+
+                var error = analog_output.PutValue(DataAll, outputRate, sampleClockP, triggerP, false, false);
+
+                if (error < 0)
+                {
+                    MessageBox.Show("Error in Put Value: error code: " + error);
+                    return;
+                }
+
                 if (includeMirror)
                 {
                     analog_output.SetReturnFunction(GetNSamplesScan(State));
@@ -1257,12 +1318,20 @@ namespace FLIMage.HardwareControls
 
                 DataAll = ConcatChannels(DataXY, DataEOM);
 
-#if DEBUG
-                analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false);
-#else
-                if (DataAll != null)
-                    analog_output.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false);
-#endif
+                String triggerP = State.Init.TriggerInput;
+                if (State.Acq.externalTrigger)
+                    triggerP = State.Init.ExternalTriggerInputPort;
+
+                String sampleClockP = State.Init.SampleClockPort;
+
+                var error = analog_output.PutValue(DataAll, outputRate, sampleClockP, triggerP, false, false);
+
+                if (error < 0)
+                {
+                    MessageBox.Show("Error in Put Value: error code: " + error);
+                    return null;
+                }
+
                 return DataAll;
             }
 
@@ -1355,12 +1424,9 @@ namespace FLIMage.HardwareControls
             }
 
 
-            public void Start(bool externalTrigger)
+            public void Start()
             {
-                if (externalTrigger)
-                    analog_output.Start(State.Init.ExternalTriggerInputPort);
-                else
-                    analog_output.Start(State.Init.TriggerInput);
+                analog_output.Start();
             }
 
             public bool WaitUntilDone(int timeout)
@@ -1370,7 +1436,8 @@ namespace FLIMage.HardwareControls
 
             public void Stop()
             {
-                analog_output.Stop();
+                if (analog_output != null)
+                    analog_output.Stop();
             }
 
             public void Dispose()
@@ -1418,8 +1485,16 @@ namespace FLIMage.HardwareControls
                 for (int i = 0; i < nSamples; i++)
                     DataAll[0, i] = currentPos_V + i * movement_V / nSamples;
 
-                PiezoAO.Putvalue(DataAll, outputRate, State.Init.SampleClockPort, false); //immediately move. Trigger is not necessary since it is only 1 channel.
+                String triggerP = State.Init.TriggerInput;
+                if (State.Acq.externalTrigger)
+                    triggerP = State.Init.ExternalTriggerInputPort;
+                String sampleClockP = ""; // State.Init.SampleClockPort;
 
+                var error = PiezoAO.PutValue(DataAll, outputRate, sampleClockP, triggerP, false, false); //immediately move. Trigger is not necessary since it is only 1 channel.
+                if (error < 0)
+                {
+                    MessageBox.Show("Error in Put Value: error code: " + error);
+                }
                 PiezoAO.Dispose();
             }
 
@@ -1849,14 +1924,20 @@ namespace FLIMage.HardwareControls
                 return analog_input.WaitUntilDone(timeout);
             }
 
-            public void setupAI(int samplesPerChannel, double inputRate)
+            public void TurnExportClock(bool ON)
             {
-                samplesPerTrigger = samplesPerChannel;
-                analog_input.SetupAI(samplesPerTrigger, inputRate, State.Init.SampleClockPort, false);
+                analog_input.ExportClock = ON;
             }
 
-            public void start(bool externalTrigger)
+            public void SetupAI(int samplesPerChannel, double inputRate)
             {
+                samplesPerTrigger = samplesPerChannel;
+                analog_input.SetupAI(samplesPerTrigger, inputRate, State.Init.SampleClockPort, State.Init.TriggerInput, false);
+            }
+
+            public void Start()
+            {
+                bool externalTrigger = State.Acq.externalTrigger;
                 string trig_port = State.Init.TriggerInput;
                 if (externalTrigger)
                     trig_port = State.Init.ExternalTriggerInputPort;
@@ -1869,11 +1950,11 @@ namespace FLIMage.HardwareControls
                 return analog_input.GetSingleValue();
             }
 
-            public void stop()
+            public void Stop()
             {
                 analog_input.Stop();
             }
-            public void dispose()
+            public void Dispose()
             {
                 analog_input.Dispose();
             }
@@ -1882,6 +1963,60 @@ namespace FLIMage.HardwareControls
             {
                 var result = analog_input.ReadSample();
                 return result;
+            }
+        }
+
+        public class LineInputCounter
+        {
+            public NiDaq.CounterInput lineClockCounter;
+            public String lineClockPort;
+            public String frameClockPort;
+
+            public ScanParameters State;
+            public String Board;
+
+            public event FrameDoneHandler FrameDone;
+            public delegate void FrameDoneHandler(LineInputCounter lineCounter, EventArgs e);
+            public bool running = false;
+
+            public LineInputCounter(ScanParameters State_in) //Constructor
+            {
+                State = State_in;
+
+                lineClockPort = State.Init.lineClockPort;
+                frameClockPort = State.Init.frameClockPort;
+            }
+
+            public void Start()
+            {
+                Stop();
+                lineClockCounter = new NiDaq.CounterInput(lineClockPort);
+                lineClockCounter.EveryNSamplesEvent += EveryNSampleEvent;
+                lineClockCounter.Start();
+                running = true;
+            }
+
+            public void EveryNSampleEvent(object sender, EventArgs e)
+            {
+                FrameDone?.Invoke(this, null);
+            }
+
+            public void Stop()
+            {
+                if (lineClockCounter != null)
+                {
+                    if (running)
+                        lineClockCounter.Stop();
+                    running = false;
+                    Dispose();
+                }
+            }
+
+            public void Dispose()
+            {
+                if (lineClockCounter != null)
+                    lineClockCounter.Dispose();
+                running = false;
             }
         }
 
@@ -1901,13 +2036,16 @@ namespace FLIMage.HardwareControls
 
             public ScanParameters State;
             public String Board;
-            public String ExternalTriggerInputPort;
             public String sampleClockPort;
+            public bool running = false;
 
-            public LineClockByCounter(ScanParameters State_in, bool focus) //Constructor
+            public LineClockByCounter() //Constructor
+            {
+            }
+
+            public void Setup(ScanParameters State_in)
             {
                 State = State_in;
-
                 lineClockPort = State.Init.lineClockPort;
                 frameClockPort = State.Init.frameClockPort;
 
@@ -1924,15 +2062,20 @@ namespace FLIMage.HardwareControls
                 dutyFrame = dutyCycle / State.Acq.linesPerFrame;
 
                 delay = State.Acq.LineClockDelay / 1000.0;
+
+                TriggerPort = State.Init.TriggerInput;
+                if (State.Acq.externalTrigger)
+                    TriggerPort = State.Init.ExternalTriggerInputPort;
+
+                Stop();
+                Dispose();
+                lineClockCounter = new NiDaq.CounterOutput(lineClockPort, TriggerPort, delay, frequency, dutyCycle);
             }
 
-            public void Start(bool externalTrigger)
+            public void Start()
             {
-                lineClockCounter = new NiDaq.CounterOutput(lineClockPort, State.Init.TriggerInput, delay, frequency, dutyCycle);
-                if (externalTrigger)
-                    lineClockCounter.Start(State.Init.ExternalTriggerInputPort);
-                else
-                    lineClockCounter.Start(State.Init.TriggerInput);
+                lineClockCounter.Start();
+                running = true;
             }
 
             public void Stop()
@@ -1940,7 +2083,9 @@ namespace FLIMage.HardwareControls
 #if DEBUG
                 if (lineClockCounter != null)
                 {
-                    lineClockCounter.Stop();
+                    if (running)
+                        lineClockCounter.Stop();
+                    running = false;
                     Dispose();
                 }
 #else
@@ -1963,6 +2108,7 @@ namespace FLIMage.HardwareControls
             {
                 if (lineClockCounter != null)
                     lineClockCounter.Dispose();
+                running = false;
             }
         }
 

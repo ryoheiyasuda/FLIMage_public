@@ -89,8 +89,8 @@ namespace FLIMage.HardwareControls
             State.Init.SampleClockPort = SampleClkPort.Text;
             State.Init.TriggerInput = TriggerInput.Text;
 
-            State.Init.shutterPort = ShutterOutputBoard.Text + "/Port0/" + ShutterOutputChannel.Text;
-            State.Init.triggerPort = TriggerOutputBoard.Text + "/Port0/" + TriggerOutputChannel.Text;
+            State.Init.shutterPort = ShutterOutputBoard.Text + "/port0/" + ShutterOutputChannel.Text;
+            State.Init.triggerPort = TriggerOutputBoard.Text + "/port0/" + TriggerOutputChannel.Text;
 
             State.Init.MarkerInput = MarkerInput.Text;
             State.Init.ExternalTriggerInputPort = ExternalTriggerChannel.Text;

@@ -61,7 +61,7 @@ namespace FLIMage.FlowControls
             eventNotifyTable.Rows.Add(10, "UncagingDone", true);
             eventNotifyTable.Rows.Add(11, "DODone", false);
             eventNotifyTable.Rows.Add(12, "StageMoveStart", false);
-            eventNotifyTable.Rows.Add(13, "StageMoveDone", true);
+            eventNotifyTable.Rows.Add(13, "StageMoveDone", false);
             eventNotifyTable.Rows.Add(14, "ParametersChanged", false);
             eventNotifyTable.Rows.Add(15, "SaveImageDone", false);
             eventNotifyTable.Rows.Add(16, "ExtCommandExecuted", false);
@@ -630,6 +630,9 @@ namespace FLIMage.FlowControls
                         double[] XYZ = motorCtrl.convertToUncalibratedPosition(values, true);
                         motorCtrl.SetNewPosition(XYZ);
                         FLIMage.ExternalCommand("SetMotorPosition");
+                        motorCtrl.GetPosition();
+                        double[] motorPos = motorCtrl.getCalibratedAbsolutePosition();
+                        writeString = String.Format("SetMotorPositionDone, {0}, {1}, {2}", motorPos[0], motorPos[1], motorPos[2]);
                         cm = CommandMode.Execution; //It is execution and set parameter.
                         break;
                     }
@@ -637,11 +640,6 @@ namespace FLIMage.FlowControls
                     {
                         FLIMage.ExternalCommand("StartLoop");
                         cm = CommandMode.Execution;
-                        //while (FLIMage.flimage_io.looping)
-                        //{
-                        //    System.Threading.Thread.Sleep(wait_interval);
-                        //    Application.DoEvents();
-                        //}
                         break;
                     }
                 case "StopLoop":
@@ -774,6 +772,13 @@ namespace FLIMage.FlowControls
                         writeString = String.Format("Setting, {0}", valueStack[0]);
                         break;
 
+                    }
+                case "Uncaging":
+                    {
+                        int value = Convert.ToInt32(valueStack[0]);
+                        FLIMage.State.Uncaging.uncage_whileImage = !(value == 0);
+                        cm = CommandMode.Set_Parameter;
+                        break;
                     }
                 case "GetIntensityFilePath":
                     {
