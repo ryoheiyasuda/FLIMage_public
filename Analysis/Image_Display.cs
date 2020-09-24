@@ -3820,7 +3820,14 @@ namespace FLIMage.Analysis
 
             SetupOpenedFile();
 
-            ReadTimeCourse();
+            try
+            {
+                ReadTimeCourse();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Problem in Reading time course (...), " + ex.Message);
+            }
 
             if (FLIM_ImgData.ROIs.Count == 0 || oldBaseName != FLIM_ImgData.baseName)
             {
@@ -4029,9 +4036,6 @@ namespace FLIMage.Analysis
             }
 
             displayFastZParam(); //only if FastZStack == true. Included in the function.
-
-            if (FLIMage.drift_correction != null)
-                FLIMage.drift_correction.calculateDriftXYZ();
 
             TurnOnOffThreeD(ThreeDRoi);
 
@@ -5899,10 +5903,6 @@ namespace FLIMage.Analysis
 
         public void PostImageUserFunction()
         {
-            if (FLIMage.drift_correction != null && FLIMage.drift_correction.Visible)
-            {
-                FLIMage.drift_correction.calculateDriftXYZ();
-            }
         }
 
         ////////////////////////////////////////////////////////////////////////////////////              
@@ -6090,15 +6090,6 @@ namespace FLIMage.Analysis
                     Debug.WriteLine("Error in Invoking Update ImageDisplay" + e.Message);
                 }
             });
-
-            try
-            {
-                PostImageUserFunction();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("Problem in Post Open User Function:" + e.Message);
-            }
 
             update_image_busy = false;
         } //UpdateImges

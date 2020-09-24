@@ -42,6 +42,7 @@
             this.Status_Z = new System.Windows.Forms.Label();
             this.Status_V = new System.Windows.Forms.Label();
             this.MoveOposite_Z = new System.Windows.Forms.CheckBox();
+            this.Status_um = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.TemplateImage_PB)).BeginInit();
             this.SuspendLayout();
             // 
@@ -102,7 +103,7 @@
             // TemplateFileName
             // 
             this.TemplateFileName.AutoSize = true;
-            this.TemplateFileName.Location = new System.Drawing.Point(10, 200);
+            this.TemplateFileName.Location = new System.Drawing.Point(10, 194);
             this.TemplateFileName.Name = "TemplateFileName";
             this.TemplateFileName.Size = new System.Drawing.Size(54, 13);
             this.TemplateFileName.TabIndex = 5;
@@ -144,7 +145,7 @@
             // Status_XY
             // 
             this.Status_XY.AutoSize = true;
-            this.Status_XY.Location = new System.Drawing.Point(10, 222);
+            this.Status_XY.Location = new System.Drawing.Point(10, 215);
             this.Status_XY.Name = "Status_XY";
             this.Status_XY.Size = new System.Drawing.Size(44, 13);
             this.Status_XY.TabIndex = 266;
@@ -153,7 +154,7 @@
             // Status_Z
             // 
             this.Status_Z.AutoSize = true;
-            this.Status_Z.Location = new System.Drawing.Point(13, 255);
+            this.Status_Z.Location = new System.Drawing.Point(15, 258);
             this.Status_Z.Name = "Status_Z";
             this.Status_Z.Size = new System.Drawing.Size(37, 13);
             this.Status_Z.TabIndex = 267;
@@ -162,7 +163,7 @@
             // Status_V
             // 
             this.Status_V.AutoSize = true;
-            this.Status_V.Location = new System.Drawing.Point(10, 238);
+            this.Status_V.Location = new System.Drawing.Point(10, 229);
             this.Status_V.Name = "Status_V";
             this.Status_V.Size = new System.Drawing.Size(49, 13);
             this.Status_V.TabIndex = 268;
@@ -171,8 +172,6 @@
             // MoveOposite_Z
             // 
             this.MoveOposite_Z.AutoSize = true;
-            this.MoveOposite_Z.Checked = true;
-            this.MoveOposite_Z.CheckState = System.Windows.Forms.CheckState.Checked;
             this.MoveOposite_Z.Location = new System.Drawing.Point(77, 103);
             this.MoveOposite_Z.Name = "MoveOposite_Z";
             this.MoveOposite_Z.Size = new System.Drawing.Size(161, 17);
@@ -180,11 +179,21 @@
             this.MoveOposite_Z.Text = "Move to oposite direction (Z)";
             this.MoveOposite_Z.UseVisualStyleBackColor = true;
             // 
+            // Status_um
+            // 
+            this.Status_um.AutoSize = true;
+            this.Status_um.Location = new System.Drawing.Point(9, 242);
+            this.Status_um.Name = "Status_um";
+            this.Status_um.Size = new System.Drawing.Size(70, 13);
+            this.Status_um.TabIndex = 270;
+            this.Status_um.Text = "Micrometers: ";
+            // 
             // DriftCorrection
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(537, 282);
+            this.Controls.Add(this.Status_um);
             this.Controls.Add(this.MoveOposite_Z);
             this.Controls.Add(this.Status_V);
             this.Controls.Add(this.Status_Z);
@@ -224,5 +233,6 @@
         public System.Windows.Forms.Label Status_Z;
         public System.Windows.Forms.Label Status_V;
         public System.Windows.Forms.CheckBox MoveOposite_Z;
+        public System.Windows.Forms.Label Status_um;
     }
 }

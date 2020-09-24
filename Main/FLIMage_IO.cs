@@ -1894,7 +1894,7 @@ namespace FLIMage
 
                         if (FLIMage.analyzeAfterEachAcquisiiton && image_display != null)
                         {
-                            image_display.BeginInvokeIfRequired(o =>
+                            image_display.InvokeIfRequired(o =>
                             {
                                 o.plot_regular.Show();
                                 o.plot_regular.Activate();

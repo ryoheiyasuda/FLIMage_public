@@ -124,10 +124,11 @@ namespace FLIMage.HardwareControls.StageControls
             if (!moving)
                 return;
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 50; i++)
             {
                 int[] position = new int[3];
                 GetPosition();
+                System.Threading.Thread.Sleep(100);
                 if (Math.Abs(XPos - XNewPos) <= AllowError && Math.Abs(YPos - YNewPos) <= AllowError && Math.Abs(ZPos - ZNewPos) <= AllowError)
                 {
                     break;

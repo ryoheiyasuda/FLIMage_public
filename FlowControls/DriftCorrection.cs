@@ -33,6 +33,8 @@ namespace FLIMage.FlowControls
         int correctionChannel = 0;
         WindowLocManager winManager;
         String WindowName = "DriftCorrection.loc";
+        SettingManager settingManager;
+        String settingName = "DriftCorrection";
 
         public DriftCorrection(FLIMageMain FLIMage_in)
         {
@@ -47,6 +49,24 @@ namespace FLIMage.FlowControls
             template_image = new ushort[128, 128];
             template_z_profile = new double[16];
             ApplyBMP();
+        }
+
+        void InitializeSetting()
+        {
+            settingManager = new SettingManager(settingName, FLIMage.State.Files.initFolderPath);
+            settingManager.AddToDict(XYCorrect_CB);
+            settingManager.AddToDict(ZCorrect_CB);
+            settingManager.AddToDict(MoveOposite_Z);
+            settingManager.AddToDict(UseMirror_CB);
+            settingManager.LoadToObject();
+        }
+
+        public void SaveSetting()
+        {
+            if (settingManager != null)
+            {
+                settingManager.SaveFromObject();
+            }
         }
 
         public void SelectCurrentImage_Click(object sender, EventArgs e)
@@ -119,8 +139,6 @@ namespace FLIMage.FlowControls
                 xyz_drift[2] = CalculateZdrift();
             }
 
-            this.BeginInvokeIfRequired(o => o.DisplayDriftXYZ(xyz_drift));
-
             return xyz_drift;
         }
 
@@ -140,12 +158,6 @@ namespace FLIMage.FlowControls
             return z_drift;
         }
 
-        public void DisplayDriftXYZ(double[] xyz_drift)
-        {
-            Status_XY.Text = String.Format("X, Y drift = {0:0}, {1:0} pixels", xyz_drift[0], xyz_drift[1]);
-            Status_Z.Text = String.Format("Z drift = {0:0.00}", xyz_drift[2]);
-        }
-
         public void CalculateDrift()
         {
             if (!template_image_set)
@@ -159,7 +171,14 @@ namespace FLIMage.FlowControls
             voltage_xy[1] = xyz_drift[1] / height / State.Acq.zoom * State.Acq.scanVoltageMultiplier[1] * State.Acq.YMaxVoltage;
             voltage_xy = MatrixCalc.Rotate(voltage_xy, State.Acq.Rotation);
 
-            Status_V.BeginInvokeIfRequired(o => o.Text = String.Format("Votlage = {0:0.000} V, {1:0.000} V", voltage_xy[0], voltage_xy[1]));
+            double[] xy_um = new double[2];
+            xy_um[0] = voltage_xy[0] / State.Acq.XMaxVoltage * State.Acq.field_of_view[0];
+            xy_um[1] = voltage_xy[1] / State.Acq.YMaxVoltage * State.Acq.field_of_view[1];
+
+            Status_XY.BeginInvokeIfRequired(o => o.Text = String.Format("X, Y drift = {0:0}, {1:0} pixels", xyz_drift[0], xyz_drift[1]));
+            Status_Z.BeginInvokeIfRequired(o => o.Text = String.Format("Z drift = {0:0.00}", xyz_drift[2]));
+            Status_V.BeginInvokeIfRequired(o => o.Text = String.Format("Voltage = {0:0.000} V, {1:0.000} V", voltage_xy[0], voltage_xy[1]));
+            Status_um.BeginInvokeIfRequired(o => o.Text = String.Format("Micrometers = {0:0.000} um, {1:0.000} um", xy_um[0], xy_um[1]));
 
             if (DriftCorrection_CB.Checked)
             {
@@ -168,6 +187,11 @@ namespace FLIMage.FlowControls
                     State.Acq.XOffset = State.Acq.XOffset + voltage_xy[0];
                     State.Acq.YOffset = State.Acq.YOffset + voltage_xy[1];
                     FLIMage.ReSetupValues(false);
+                }
+                else
+                {
+                    FLIMage.motorCtrl.SetNewPosition_StepSize_um(new double[] { -xy_um[0], -xy_um[1], 0 });
+                    FLIMage.SetMotorPosition(true, true);
                 }
 
                 if (ZCorrect_CB.Checked)
@@ -191,7 +215,7 @@ namespace FLIMage.FlowControls
             else if (State.Acq.ZStack)
                 eventName = "AcquisitionDone";
             else
-                return;
+                eventName = "AcquisitionDone";
 
             if (eventStr == eventName)
             {
@@ -213,6 +237,7 @@ namespace FLIMage.FlowControls
         public void DriftCorrection_FormClosing(object sender, FormClosingEventArgs e)
         {
             FLIMage.flimage_io.EventNotify -= EventHandling;
+            SaveSetting();
             SaveWindowLocation();
             Hide();
             FLIMage.ToolWindowClosed();

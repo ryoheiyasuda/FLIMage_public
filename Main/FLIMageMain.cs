@@ -647,6 +647,7 @@ namespace FLIMage
             }
             if (drift_correction != null && drift_correction.Visible)
             {
+                drift_correction.SaveSetting();
                 drift_correction.SaveWindowLocation();
                 sb.Append("drift_correction");
                 sb.Append(",");

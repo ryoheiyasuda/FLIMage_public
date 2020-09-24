@@ -2570,7 +2570,7 @@ namespace FLIMage.HardwareControls
             return mirrorOutput;
         }
 
-        public static double[] pixelsOnImageToVoltage(double[] xy_pixel, ScanParameters State)
+        public static double[] pixelOnImageToVoltage(double[] xy_pixel, ScanParameters State)
         {
             double[] frac = new double[2];
             frac[0] = xy_pixel[0] / (double)State.Acq.pixelsPerLine;
