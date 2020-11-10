@@ -31,4 +31,6 @@ It is possible to scan in Z-axis extremely fast (~200-1000KHz) with Tag-lens. Th
 * Resonant scanning:
 We are aiming to implement it in next version.
 
+* Matlab code:
+File created by FLIMage can be read and analyzed with Matlab. Source code is: https://github.com/ryoheiyasuda/FLIMage_Matlab_Script
 
