@@ -17,7 +17,7 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 
 * In default setting, binary will be created in ${SolutionDir}..\\..\\bin folder. You may need to create the folder before building.
 
-* NI-card: If you want to use National Instruments cards, you need to install National instrument driver with DotNet support (we use version 18.6). Then, put their DotNet assembly DLL in $(ProjectDir)..\\Libraries. We tested with PCIe-6231/6233 and PCI-6371/6373. It should compile without these libraries for analysis. 
+* NI-card: If you want to use National Instruments cards, you need to install National instrument driver with DotNet support (we use version 18.6). Then, put their DotNet assembly DLL in $(ProjectDir)..\\Libraries. We tested with PCIe-6231/6232 and PCI-6371/6373. It should compile without these libraries for analysis. 
 
 * TCSPC card: If you want to use TCSPC card from PicoQuant (TimeHarp 260 / MultiHarp) or Becker Hickl (SPC-150), you need to install the device drivers and DLLs. Contact these companies for purchasing DLL. Contact Florida Lifetime Imaging LLC for support (info@lifetime-imaging.com).
 
