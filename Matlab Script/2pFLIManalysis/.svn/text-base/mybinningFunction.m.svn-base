@@ -1,0 +1,5 @@
+function a = mybinningFunction(x)
+a = binning2(binning2(x))
+function bin2 = binning2 (y)
+d = size(y)
+bin2 = y(1:2:d(1), 1:2:d(2)) + y(2:2:d(1), 1:2:d(2)) + y(1:2:d(1), 2:2:d(1)) + y(2:2:d(1), 2:2:d(2))

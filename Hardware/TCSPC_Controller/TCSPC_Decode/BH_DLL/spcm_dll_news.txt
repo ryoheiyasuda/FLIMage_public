@@ -1,0 +1,331 @@
+--------------------------------------------------------------------------
+SPCM DLL 4.4.1   released on 12.07.2018:
+  * support for SPC-150NX-12 added: 
+         SPC-150NX-12 = SPC-150NX with TAC Range 12.5-1250ns
+  * max number of SPC modules controlled by DLL is increased to 32
+
+--------------------------------------------------------------------------
+SPCM DLL 4.4.0   released on 12.04.2018:
+  * support for new modules types added: 
+         SPC-130-EMN = SPC-130-EM with faster discriminators and reduced timing wobble
+         SPC-160PCIE   = SPC-160   on PCI-EX bus
+  * new default Xilinx FPGA version ( B8) for SPC-16x modules - upgrade of SPC-16x FPGA may be required
+  * disable getting data from SPC_read_fifo is possible ( fifo read pointer is updated to avoid fifo overruns) - 
+         - the feature is used by SPCM to supress not needed data while waiting for 1st Frame clock 
+                 to start FIFO IMAGE measurement, or after scanner has finished scan sequence
+  * clear Scan Clocks hardware flags after Scanner has finished a scan sequence - 
+          -  the feature is used by SPCM to find start of the next scan sequence
+
+--------------------------------------------------------------------------
+SPCM DLL 4.3.0   released on 24.03.2017:
+  * uses new CVI RTE v.15.0.1 instead of v.15.0.0
+  * uses new signed driver BH Driver v.123 (bhdrvr1230.sys) to solve BH drivers installation problems 
+        on computers with Windows 10 Anniversary Update and SecureBoot Enabled ( in BIOS)
+  * fixed: FIFO overflow could happen while waiting for scan signals to start FIFO_IMG meas.
+  * fixed: saving .sdt in simulation mode with number of modules > 4
+  * fixed: stop_on_time stops the measurement in simulation mode after collection time
+
+--------------------------------------------------------------------------
+SPCM DLL 4.2.1   released on 16.03.2016:
+  * fixed - extracting photons from stream of .spc files ( more than 1) 
+                          was not possible ( bug since 11.2014)
+  * support for new modules types added: 
+         SPC-150NX = SPC-150N with TAC Range 25-2500ns
+         SPC-160X    = SPC-160    with TAC Range 25-2500ns
+
+--------------------------------------------------------------------------
+SPCM DLL 4.2.0  released on 20.10.2015:
+  * uses new CVI RTE v.15.0.0 instead of v.12.1.0
+  * uses new signed driver BH Driver v.12.0 (bhdrvr1200.sys) for compatibility with Windows 10
+  * minor bugs fixes
+
+--------------------------------------------------------------------------
+SPCM DLL 4.1.1  released on 06.01.2015:
+  * minor bugs fixes
+
+--------------------------------------------------------------------------
+SPCM DLL 4.1  released on 10.07.2014:
+  * uses new signed driver BHDriver v.11.6
+  * fixed: for SPC-160 - setting of MacroTime clock changed according to FPGA state
+
+--------------------------------------------------------------------------
+SPCM DLL 4.00  released on 28.04.2014:
+  * fixed: alignment problems in LabView for 64bit DLL
+                  ( changed fields order in structures SPCdata and PhotStreamInfo )
+  * fixed: SPC_init_phot_stream when both SPC & DPC modules present in computer
+  *  new set of functions to control FIFO measurements is available 
+        The functions use stream of photons inserted to the buffers ( called as 'buffered stream')
+          instead of stream of .spc files
+       This simplifies extracting photons information from the FIFO data even during
+            running measurements, without necessity to create .spc files
+        The functions dedicated to use with buffered streams are :
+            SPC_init_buf_stream, SPC_add_data_to_stream, SPC_read_fifo_to_stream, SPC_stream_reset
+            SPC_stream_start(stop)_condition, SPC_get_photons_from_stream, SPC_get_buffer_from_stream,
+            SPC_get_fifo_init_vars
+  * support for new SPC-150N module
+      SPC-150N = SPC-150 with faster discriminators and reduced timing wobble
+  * support for new SPC-160 module
+  * fixed: Continuous Flow mode with accumulation 
+                      didn't work correctly for SPC-150 and SPC-130EM
+  * fixed: SPC_get_actual_coltime does not deliver correct results for SPC-630
+
+--------------------------------------------------------------------------
+SPCM DLL 3.31  released on 25.03.2013:
+  * uses new CVI RTE v.12.0.1 instead of v.9.1.1
+  * works on Windows XP and newer ( no support for Windows NT/2000)
+  * fixed: DPC-230 doen't show rates after the measurement
+
+--------------------------------------------------------------------------
+SPCM DLL 3.30  released on 15.11.2012:
+  * new feature: Frame marker in Fifo Image mode can be defined on M2(default)
+       or M3( useful in FLITS measurement setup)
+
+--------------------------------------------------------------------------
+SPCM DLL 3.20  released on 14.06.2012:
+  *  fixed for SPC-830 with FPGA v.Ax - SPC_read_fifo could not read rest photons correctly - 
+          it was not done correctly in v.3.10
+--------------------------------------------------------------------------
+SPCM DLL 3.10  released on 27.04.2012 :
+  *  spcm64.dll    - 64-bit DLL (to be used only on 64-bit Windows) is ready for use
+  *  fixed for SPC-830 with FPGA v.Ax - SPC_read_fifo could not read rest photons correctly
+
+--------------------------------------------------------------------------
+SPCM DLL 3.01  released on 24.10.2011 :
+  * fixed - SPC_start_measurement on SPC-150 in scan mode reverses (0<->1) memory bank 
+                 parameter setting 
+  * fixed - SPC_read_fifo - entries with Invalid + MTOV + OVR bits were not treated correctly
+
+--------------------------------------------------------------------------
+SPCM DLL 3.00  released on 10.05.2011 :
+  * SPC-150/130EM lower TAC offset noise software support in new modules
+  * fixed - once more - wrong allocation of DLL DMA buffer when using .ini file 
+              with parameter mode = 5
+  * fixed - at the end of fifo mode measurement with stop on time  last photons( up to 128)  
+                 were not read ( modules SPC-140/150/830 affected ) - function  SPC_read_fifo
+  * fixed - SPC_get_photon for DPC modules - channel 20 in Absolute Time mode
+               was not extracted, changed meaning of stream_type in PhotStreamInfo structure
+  * Max Chan No ( curve length ) for DPC modules = 65536
+  * SPCMemConfig definition changed
+
+--------------------------------------------------------------------------
+SPCM DLL 2.90 released on 10.12.2010 :
+  * fixed - bug since v.2.80 - wrong start offset while reading data from SPC-130/140
+  * fixed - wrong allocation of DLL DMA buffer when using .ini file 
+              with parameter mode = 5
+
+--------------------------------------------------------------------------
+SPCM DLL 2.80 released on 24.09.2010 :
+  * uses new CVI RTE v.9.1.1 instead of v.9.0.1
+  * uses new Windriver 10.2
+  * prepared for using on Windows x64 versions
+  * new naming convention for different DLL versions
+      spcm32.dll    - 32-bit DLL to be used only on 32-bit Windows
+      spcm32x64.dll - 32-bit DLL to be used only on 64-bit Windows
+      spcm64.dll    - 64-bit DLL to be used only on 64-bit Windows ( not ready yet)
+  * support for SPC-160 added ( special version for optical tomography )
+
+--------------------------------------------------------------------------
+SPCM DLL 2.75 released on 20.04.2010 :
+  * changing active edge of markers in Fifo and Fifo Image modes possible
+  * fixes bug in SPCM_init ( since v.2.72 ) - subsequent calls to SPCM_init 
+      with different .ini files (to initialize only one module with pci_card_no parameter)
+         did not work
+
+--------------------------------------------------------------------------
+SPCM DLL 2.74 released on 21.10.2009:
+  * support for special test version of DPC-230
+  * uses new CVI RTE v.9.0.1 instead of v.9.0
+
+--------------------------------------------------------------------------
+SPCM DLL 2.73 released on 15.01.2009:
+  * minor bugs fixs
+  * DMA transfers put a calling thread to sleep for a time which 
+           depends on transfer size
+                         - this gives other threads more execution time
+
+--------------------------------------------------------------------------
+SPCM DLL 2.72 released on 21.10.2008:
+ * minor bugs fixs
+  * further improvements for configuration with more than 4 SPC/DPC modules
+
+--------------------------------------------------------------------------
+SPCM DLL 2.71 released on 09.09.2008:
+ * Support for SPC-130-EM added ( SPC-130 with extended memory)
+  * new initialisation error codes added to explain license key problems 
+  * Windriver 9.2.1 (or newer) is now standard driver for SPC modules 
+  * changes required for Windriver 9.2.1,
+  *    spcm32.dll uses Windriver 9.2.1,  spcm_w5.dll uses Windriver 5.2
+  * better support for configuration with more than 4 SPC/DPC modules
+
+
+--------------------------------------------------------------------------
+SPCM DLL 2.70 released on 04.07.2008:
+  * better handling of DMA errors
+  * uses new CVI RTE v.8.51 instead of v.8.50
+  * support for SPC-130 FPGA v.C6 and bigger - Stop on time in Fifo mode possible
+  * some defines are changed in spcm_def.h file for better compatibility 
+       with other BH DLLs
+  * better error messages for WinDriver initialization problems
+
+--------------------------------------------------------------------------
+SPCM DLL 2.68  released on 25.03.2008:
+  * changes required for upgrading DPC-230 firmware 
+
+--------------------------------------------------------------------------
+SPCM DLL 2.67  released on 26.02.2008:
+  * uses new CVI RTE v.8.50 instead of v.8.01
+  * FIFO_IMAGE mode implemented for DPC-230 module
+  * FIFO_IMAGE mode waits for scan signals to start and to stop
+     the measurement - whole frames are used to build the image (SPC & DPC )
+
+--------------------------------------------------------------------------
+SPCM DLL 2.66  released on 10.08.2007:
+  * max value of TAC Range changed to 5e-6s ( all SPC modules )
+  * Stop on Time possible in Fifo modes for modules SPC-140,150,830
+  * DPC-230 support for TCSPC mode on LVTTL inputs
+  * changes required for Windriver 9.0,
+  *    spcm_w9.dll uses Windriver 9.0,  spcm32.dll uses Windriver 5.2
+
+
+--------------------------------------------------------------------------
+SPCM DLL 2.65  released on 10.05.2007:
+  * Support for SPC-830 with FIFO_IMAGE mode added
+  * Support for DPC-230 modules improved
+  * small bug fixes for SPC-150 module
+
+--------------------------------------------------------------------------
+SPCM DLL 2.64  released on 04.04.2007:
+  * Support for DPC-230 modules improved
+  * small bug fixes for SPC-150 module
+
+--------------------------------------------------------------------------
+SPCM DLL 2.63  released on 19.02.2007:
+  * Support for DPC-230 modules added
+  * small bug fixes for SPC-150 module
+
+--------------------------------------------------------------------------
+SPCM DLL 2.62  released on 17.11.2006:
+  * small bug fixes for SPC-150 module
+
+--------------------------------------------------------------------------
+SPCM DLL 2.61  released on 25.09.2006:
+  * uses new CVI RTE v.8.01 instead of v.7.0
+  * Support for SPC-150 modules added
+  * Support for SPC-140 with FPGA v. > B0  added
+       FIFO_32M mode -  frame/line/pixel markers can be recorded in FIFO
+  * SPC_init_phot_stream - 'what_to_read' parameter defines what is to extract
+                                           ( photons, markers )
+  * small bugs fixups
+
+--------------------------------------------------------------------------
+SPCM DLL 2.41  released on 30.09.2005:
+  * module FPGA version added into measurement description block
+       in SPC_save_data_to_sdtfile function
+  * small bugs fixups
+
+--------------------------------------------------------------------------
+SPCM DLL 2.4  released on 25.05.2005:
+  * Support for SPC-130 with FPGA v. > C1  added
+  * Master Trigger feature added for SPC-130 ( FPGA v. > C1 )
+               in multi-module configuration
+  * small bugs fixups
+  * LabView library modified in LabView v.7.1 ( before 6.0 )
+--------------------------------------------------------------------------
+SPCM DLL 2.3  released on 21.01.2005:
+  * new DLL function SPC_get_detector_info to be used for SPC-930
+  * Master Clock feature added for SPC-140 multi-module configuration
+  * SPCdata structure changed - new parameters added for SPC-930 
+  * small bugs fixups
+
+--------------------------------------------------------------------------
+SPCM DLL 2.22  released on 01.10.2004:
+  * small bugs fixups
+  * SPCdata structure changed - new parameters added for SPC-930 
+
+--------------------------------------------------------------------------
+SPCM DLL 2.2  released on 28.11.2003:
+  * set of functions added for extracting photons information from .spc files
+      ( created in main software in FIFO mode ) - SPC_init_phot_stream,
+      SPC_close_phot_stream, SPC_get_phot_stream_info, SPC_get_photon
+  * new DLL function SPC_get_fifo_usage to test fifo usage during 
+            the measurement
+  * new DLL function SPC_save_data_to_sdtfile to save measurements results
+     in .sdt format
+  * link libraries for Borland and Microsoft MSVC compilers 
+             ( Watcom and Symantec compilers are not supported anymore ) 
+  * uses new CVI RTE v.7.0 instead of v.5.5.1
+  
+--------------------------------------------------------------------------
+SPCM DLL 2.1   released  on 26.08.2003:
+  * Support for new SPC-140 module added
+  * fixed - SPC_init returned error when using .ini files with mode != 0
+ 
+--------------------------------------------------------------------------
+SPCM DLL 2.02   released  on :
+  * fixed - SPC_init returned error when using .ini files with mode != 0
+ 
+--------------------------------------------------------------------------
+SPCM DLL 2.01   released  on 02.04.2003:
+  * fixed - bug in SPC_read_data_block for SPC-130 and SPC-830 -
+                  function could cause crash due to one internal noninitialized variable
+
+--------------------------------------------------------------------------
+SPCM DLL 2.0   released  on 28.03.2003:
+  * New functions added : SPC_read_parameters_from_inifile and
+      SPC_save_parameters_to_inifile
+  * fixed SPC_pause_measurement - bug visible, when multi-module configuration and signals 
+                count rates of the modules differ signaficantly while dead_time_compensation is on 
+
+--------------------------------------------------------------------------
+SPCM DLL 1.9   released  on 29.01.2003:
+  * SPC_init checks now whether DLL was registered ( using license string )
+  * SPC_enable_sequencer - enable = 2 changes behaviour of continous flow measurements
+        for SPC-130, SPC6x0  ( used for continous flow measurements with accumulation)
+
+--------------------------------------------------------------------------
+SPCM DLL 1.8   released  on 11.07.2002:
+  * Support for new SPC-830 module added
+  * Bus master DMA transfer of measurement data implemented for SPC-830 module
+  * Fixed - Collection time in Scan Sync In mode >  80 sec didn't work
+
+--------------------------------------------------------------------------
+SPCM DLL 1.7   released  on 28.03.2002:
+  * For SPC-7x0 with FPGA version >= 0x31 Scaning clocks presence can be checked 
+        in ScanSyncIn mode using new function SPC_get_scan_clk_state
+
+--------------------------------------------------------------------------
+SPCM DLL 1.61   released  on 15.02.2002:
+  * fixed : SPC_fill_memory - clearing memory for one page is done only for the 1st frame 
+  ( when page size < 1MB) - only for modules SPC7x0 
+
+--------------------------------------------------------------------------
+SPCM DLL 1.6   released 14.12.2001:
+  * Modules on the same bus are ordered using serial number
+    M1 - lowest serial number, M4 - highest serial number
+  * Collection time in Scan Sync In mode not limited to 80 sec
+
+--------------------------------------------------------------------------
+SPCM DLL 1.5   released 25.09.2001:
+  * subsequent SPC_init calls with different modules numbers in ini file are now accepted 
+  * fixed : SPC_fill_memory for one block with SPC-130 didn't work correctly  
+  * fields of SPCdata and SPCMemConfig  structures are reordered to avoid padding of the data when
+           using in Visual Basic or Pascal 
+  * Set of functions SPCstd_.. is added for using in Visual Basic 
+        with _stdcall calling convention.
+       The only difference beetween these functions and original set of functions
+          is calling convention.
+
+--------------------------------------------------------------------------
+SPCM DLL 1.41  :
+  * fixed : bug in SPC_pause_measurement 
+  * fixed : module resources were disabled, when in computer BIOS 
+                       the item  Plug & Play OS was set to YES 
+
+--------------------------------------------------------------------------
+SPCM DLL 1.4  :
+  * Scan modes with routing possible for SPC7x0 modules
+  * new function SPC_read_block - to read one block of data in scanning mode
+     with routing ( frame parameter added)
+--------------------------------------------------------------------------
+SPCM DLL 1.31 :
+  * bug fixup in register test procedure for SPC600 multiple module configuration

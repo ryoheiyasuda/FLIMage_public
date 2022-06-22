@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ThorBScopeSettings>
+
+  <Connection portID="31" baudRate="9600" address="1" />
+
+  <XRangeConfig minMM="-10" maxMM="10" threshold="2" invert="0"/>
+
+  <YRangeConfig minMM="-10" maxMM="10" threshold="2" invert="0"/>
+
+  <ZRangeConfig minMM="-3" maxMM="3" threshold="1" invert="0"/>
+
+  <RRangeConfig minMM="-10" maxMM="10"/>
+
+</ThorBScopeSettings>

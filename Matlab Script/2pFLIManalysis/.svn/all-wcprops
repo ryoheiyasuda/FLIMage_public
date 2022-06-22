@@ -1,0 +1,779 @@
+K 25
+svn:wc:ra_dav:version-url
+V 30
+/svn/!svn/ver/23/FLIM-analysis
+END
+spc_initialValue_double.m
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/23/FLIM-analysis/spc_initialValue_double.m
+END
+countTheElements.m
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/3/FLIM-analysis/countTheElements.m
+END
+spc_makeRoi.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_makeRoi.m
+END
+spc_loadTiff.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/spc_loadTiff.m
+END
+spc_logscale.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/spc_logscale.m
+END
+draw_fit.m
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3/FLIM-analysis/draw_fit.m
+END
+spc_adjustRange_All.m
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/3/FLIM-analysis/spc_adjustRange_All.m
+END
+prf-short.mat
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/prf-short.mat
+END
+simFRET.m
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/3/FLIM-analysis/simFRET.m
+END
+spc_drawLifetimeMap.m
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/3/FLIM-analysis/spc_drawLifetimeMap.m
+END
+expTripleGauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3/FLIM-analysis/expTripleGauss.m
+END
+spc_fileList.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/spc_fileList.m
+END
+spc_lifetimeRange.m
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/3/FLIM-analysis/spc_lifetimeRange.m
+END
+spc_multiopen.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3/FLIM-analysis/spc_multiopen.m
+END
+spc_closereq.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/spc_closereq.m
+END
+spc_test.m
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3/FLIM-analysis/spc_test.m
+END
+im2_ratio.m
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3/FLIM-analysis/im2_ratio.m
+END
+spc_redrawSetting.m
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/3/FLIM-analysis/spc_redrawSetting.m
+END
+spc_fitexp2gauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/3/FLIM-analysis/spc_fitexp2gauss.m
+END
+computeStats.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/computeStats.m
+END
+spc_makeRoiA.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/25/FLIM-analysis/spc_makeRoiA.m
+END
+spc_spline.m
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3/FLIM-analysis/spc_spline.m
+END
+cfp-single.fig
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/cfp-single.fig
+END
+exp2TripleGauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3/FLIM-analysis/exp2TripleGauss.m
+END
+figures.m
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/3/FLIM-analysis/figures.m
+END
+spc_opennext.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/16/FLIM-analysis/spc_opennext.m
+END
+spc_calcpolyLines.m
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/3/FLIM-analysis/spc_calcpolyLines.m
+END
+test.m
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/svn/!svn/ver/3/FLIM-analysis/test.m
+END
+spc_adjustTauOffset.m
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/3/FLIM-analysis/spc_adjustTauOffset.m
+END
+exp2gauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3/FLIM-analysis/exp2gauss.m
+END
+spc_maximum.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_maximum.m
+END
+spc_ratio.m
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3/FLIM-analysis/spc_ratio.m
+END
+spc_shiftSPC.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/spc_shiftSPC.m
+END
+twodialog.m
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3/FLIM-analysis/twodialog.m
+END
+oddOneOut.m
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3/FLIM-analysis/oddOneOut.m
+END
+squregauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3/FLIM-analysis/squregauss.m
+END
+spc_dendrite.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/spc_dendrite.m
+END
+spc_openfileUI.m
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3/FLIM-analysis/spc_openfileUI.m
+END
+spc_drawfit.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_drawfit.m
+END
+spc_rangeDlog.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3/FLIM-analysis/spc_rangeDlog.m
+END
+spc_fitWithDoubleExp_triple.m
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/3/FLIM-analysis/spc_fitWithDoubleExp_triple.m
+END
+spc_undo.m
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3/FLIM-analysis/spc_undo.m
+END
+spc_cfpFit.m
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3/FLIM-analysis/spc_cfpFit.m
+END
+spc_drawLifetime.m
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/3/FLIM-analysis/spc_drawLifetime.m
+END
+spc_figures.fig
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3/FLIM-analysis/spc_figures.fig
+END
+spc_fitWithDoubleExp_All.m
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/3/FLIM-analysis/spc_fitWithDoubleExp_All.m
+END
+cfpExp.m
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/svn/!svn/ver/3/FLIM-analysis/cfpExp.m
+END
+spc_main.m
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/16/FLIM-analysis/spc_main.m
+END
+spc_changeCurrent.m
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/3/FLIM-analysis/spc_changeCurrent.m
+END
+spc_selectRoi.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3/FLIM-analysis/spc_selectRoi.m
+END
+spc_spec.m
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3/FLIM-analysis/spc_spec.m
+END
+spc_openAll.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_openAll.m
+END
+spc_drawSetting.m
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3/FLIM-analysis/spc_drawSetting.m
+END
+spc_updateMainStrings.m
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/3/FLIM-analysis/spc_updateMainStrings.m
+END
+spc_doSameAll.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3/FLIM-analysis/spc_doSameAll.m
+END
+spc_recoverRois.m
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/26/FLIM-analysis/spc_recoverRois.m
+END
+spc_nlinfit.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_nlinfit.m
+END
+spc_AnalyzeFilename.m
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/19/FLIM-analysis/spc_AnalyzeFilename.m
+END
+spc_selectAll.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3/FLIM-analysis/spc_selectAll.m
+END
+spc_fit3gauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3/FLIM-analysis/spc_fit3gauss.m
+END
+exp2.m
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/svn/!svn/ver/3/FLIM-analysis/exp2.m
+END
+spc_calcRoi.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/26/FLIM-analysis/spc_calcRoi.m
+END
+exp2TripleGauss_tauFix.m
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/3/FLIM-analysis/exp2TripleGauss_tauFix.m
+END
+spc_binningAll.m
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3/FLIM-analysis/spc_binningAll.m
+END
+spc_fitWithDoubleExp.m
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/3/FLIM-analysis/spc_fitWithDoubleExp.m
+END
+expgauss_wf.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/expgauss_wf.m
+END
+prf-new.mat
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3/FLIM-analysis/prf-new.mat
+END
+spc_undoAll.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_undoAll.m
+END
+spc_fitexpgauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/23/FLIM-analysis/spc_fitexpgauss.m
+END
+spc_smoothAll.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3/FLIM-analysis/spc_smoothAll.m
+END
+prf-pmt.mat
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/3/FLIM-analysis/prf-pmt.mat
+END
+spc_fit2gauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/3/FLIM-analysis/spc_fit2gauss.m
+END
+Twogauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3/FLIM-analysis/Twogauss.m
+END
+prf.mat
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/svn/!svn/ver/3/FLIM-analysis/prf.mat
+END
+spc_drawPopulation.m
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/3/FLIM-analysis/spc_drawPopulation.m
+END
+spc_loadMaximum.m
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3/FLIM-analysis/spc_loadMaximum.m
+END
+spc_reconv2.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_reconv2.m
+END
+spc_makeheaderstr.m
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/3/FLIM-analysis/spc_makeheaderstr.m
+END
+xexp.m
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/svn/!svn/ver/3/FLIM-analysis/xexp.m
+END
+spc_drawInit.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/16/FLIM-analysis/spc_drawInit.m
+END
+spc_binning.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_binning.m
+END
+spc_makeRGBLifetimeMap.m
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/3/FLIM-analysis/spc_makeRGBLifetimeMap.m
+END
+spc_fitgauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/spc_fitgauss.m
+END
+spc_dragRoi.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_dragRoi.m
+END
+spc_openCurves.m
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/26/FLIM-analysis/spc_openCurves.m
+END
+expgauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/3/FLIM-analysis/expgauss.m
+END
+spc_dispbeta.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/23/FLIM-analysis/spc_dispbeta.m
+END
+spc_calcSmooth.m
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3/FLIM-analysis/spc_calcSmooth.m
+END
+spc_reconv.m
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3/FLIM-analysis/spc_reconv.m
+END
+twodialog.fig
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/twodialog.fig
+END
+spc_deletepolyLines.m
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/3/FLIM-analysis/spc_deletepolyLines.m
+END
+TripleToPrf.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/TripleToPrf.m
+END
+exp3.m
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/svn/!svn/ver/3/FLIM-analysis/exp3.m
+END
+spc_spcsUpdate.m
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3/FLIM-analysis/spc_spcsUpdate.m
+END
+ndimsbetter.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/ndimsbetter.m
+END
+readSPC.m
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/3/FLIM-analysis/readSPC.m
+END
+spc_deleteRoiA.m
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3/FLIM-analysis/spc_deleteRoiA.m
+END
+gauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/svn/!svn/ver/3/FLIM-analysis/gauss.m
+END
+spc_im2rgb.m
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3/FLIM-analysis/spc_im2rgb.m
+END
+spc_drawAll.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_drawAll.m
+END
+spc_ROIcalcium.m
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3/FLIM-analysis/spc_ROIcalcium.m
+END
+spc_dragRoiA.m
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/24/FLIM-analysis/spc_dragRoiA.m
+END
+spc_clipRoiData.m
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3/FLIM-analysis/spc_clipRoiData.m
+END
+mybinningFunction.m
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/3/FLIM-analysis/mybinningFunction.m
+END
+spc_main.fig
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/19/FLIM-analysis/spc_main.fig
+END
+spc_openprevious.m
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/16/FLIM-analysis/spc_openprevious.m
+END
+spc_openfile.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/spc_openfile.m
+END
+simGaussExp.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/simGaussExp.m
+END
+spc_readdata.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/spc_readdata.m
+END
+Threegauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3/FLIM-analysis/Threegauss.m
+END
+im2_opentif.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/im2_opentif.m
+END
+spc_calcBinning.m
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3/FLIM-analysis/spc_calcBinning.m
+END
+spc_smooth.m
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3/FLIM-analysis/spc_smooth.m
+END
+spc_fitWithSingleExp_triple.m
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/3/FLIM-analysis/spc_fitWithSingleExp_triple.m
+END
+spc_mkanim.m
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3/FLIM-analysis/spc_mkanim.m
+END
+spc_reconv3.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_reconv3.m
+END
+spc_calcLifetimeMap.m
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/3/FLIM-analysis/spc_calcLifetimeMap.m
+END
+spc_polyDrag.m
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/3/FLIM-analysis/spc_polyDrag.m
+END
+spc_drawProject.m
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/3/FLIM-analysis/spc_drawProject.m
+END
+spc_saveAsTiff.m
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3/FLIM-analysis/spc_saveAsTiff.m
+END
+spc_prfdefault.m
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/3/FLIM-analysis/spc_prfdefault.m
+END
+spc_draw2LifetimeMap.m
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/3/FLIM-analysis/spc_draw2LifetimeMap.m
+END
+spc_fitWithSingleExp.m
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/3/FLIM-analysis/spc_fitWithSingleExp.m
+END
+squaregauss.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/squaregauss.m
+END
+filename.mat
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3/FLIM-analysis/filename.mat
+END
+spc_drawLifetimeMap_All.m
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/3/FLIM-analysis/spc_drawLifetimeMap_All.m
+END
+spc_figures.m
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/3/FLIM-analysis/spc_figures.m
+END
+im2_smooth.m
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/3/FLIM-analysis/im2_smooth.m
+END
+spc_makepolyLines.m
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/3/FLIM-analysis/spc_makepolyLines.m
+END
