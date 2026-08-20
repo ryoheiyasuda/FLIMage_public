@@ -5,7 +5,7 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 
 * The code is under BSD free software license.
 
-* The compilation time is typically ~10 min on a reasonable desktop (like iCore7 3GHz).
+* The compilation time is typically ~2 min on a reasonable desktop (like iCore7 3GHz).
 
 * For support, please contact Florida Lifetime Imaging LLC (http://www.lifetime-imaging.com/).
 
@@ -14,6 +14,8 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 * To build this software, please get the following packages, either by direct download or NuGet: BitMiracle.LibTiff.NET 2.4.626 or higher, System.Numerics.Vector.4.5.0 or higher, and C# DotNet 4.6.1 or higher. It will compile only on x64 mode. If you like to speed-up some calculation, you could install Intel MKL library (the same library used in Numpy and Matlab). Some calculations (FFT etc) will use the library when available.
 
 * Please copy DLL in "External" into output folder. Alternatively you can add pre-build event command -- copy "$(ProjectDir)\\External\\$(Configuration)\\*" "$(OutDir)"
+
+* Source code for MathLibrary.dll is available in https://github.com/ryoheiyasuda/MathLibrary (MathLibrary.dll is included in this package)
 
 * You may need to edit prebuild events, depending on where you store your external libraries.
 
