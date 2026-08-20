@@ -15,8 +15,6 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 
 * Please copy DLL in "External" into output folder. Alternatively you can add pre-build event command -- copy "$(ProjectDir)\\External\\$(Configuration)\\*" "$(OutDir)"
 
-* Source code for MathLibrary.dll is available in https://github.com/ryoheiyasuda/MathLibrary (MathLibrary.dll is included in this package)
-
 * You may need to edit prebuild events, depending on where you store your external libraries.
 
 * In default setting, binary will be created in ${SolutionDir}\\bin folder. You may need to create the folder before building.
