@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
@@ -11,100 +12,277 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace FLIMage.FlowControls
 {
+    // Multi-client pipe server (stage 2).
+    //
+    // Each client owns two named pipes: "FLIMageR" (FLIMage -> client, events)
+    // and "FLIMageW" (client -> FLIMage, commands and their replies). One
+    // accept loop per pipe name keeps re-arming WaitForConnection so any number
+    // of clients (up to MAX_INSTANCES) can connect while the server is on.
+    //
+    // Pairing the two pipes of one client uses arrival order (v1): the first
+    // unmatched "FLIMageR" connection is paired with the first unmatched
+    // "FLIMageW" connection. The handshake carries no client ID, so two clients
+    // connecting at the exact same moment could in principle cross their pipes;
+    // existing Python/Matlab clients connect both pipes back-to-back, which
+    // pairs correctly. If simultaneous connects become a problem, add a client
+    // ID to the handshake (v2) and fall back to arrival order when absent.
+    //
+    // Commands are executed through FLIMage_Event's serializing worker: each
+    // session's receive thread calls CommandHandler (blocking until the worker
+    // produces the reply) and writes the reply back on its own command pipe, so
+    // replies always reach the client that sent the command. Events are
+    // broadcast to every connected session.
+    // by Kengo(Claude) 06-11-2026
     public class COMserver
     {
+        const int MAX_INSTANCES = 254;
+
         FLIMageMain flimage;
-        public Boolean connected = false;
-        public Boolean connectedR = false;
 
-        bool connecting = false;
-        bool connectingR = false;
+        // True while accept loops should keep listening for new clients.
+        public volatile bool Listening = false;
 
-        NamedPipeServerStream pipeServer, pipeServerR;
-        public StreamString ss, ssR;
-        public String Received, ReceivedR;
+        // Kept as properties so existing call sites (event sending, status
+        // display) still read "is at least one client connected".
+        public Boolean connected { get { return !sessions.IsEmpty; } }
+        public Boolean connectedR { get { return !sessions.IsEmpty; } }
 
-        public event ReadHandler r_tick;
-        public EventArgs e = EventArgs.Empty;
-        public delegate void ReadHandler(COMserver cs, EventArgs e);
+        // Executes one received command and returns the reply. Assigned by
+        // FLIMage_Event; called concurrently from each session's receive
+        // thread (the handler itself serializes execution).
+        public Func<String, String> CommandHandler;
 
         String SNameR = "FLIMageW"; //Name must be opposite from Client for writing and reading
         String SName = "FLIMageR";
+
+        readonly ConcurrentDictionary<int, ClientSession> sessions = new ConcurrentDictionary<int, ClientSession>();
+        int sessionCounter = 0;
+
+        // Pipe halves that completed the handshake and are waiting for their
+        // partner pipe to form a session. Guarded by pairLock.
+        readonly object pairLock = new object();
+        readonly Queue<PendingHalf> waitingW = new Queue<PendingHalf>();
+        readonly Queue<PendingHalf> waitingR = new Queue<PendingHalf>();
+
+        // Pipe instances currently blocked in WaitForConnection, so Close()
+        // can dispose them to unblock the accept loops. Guarded by acceptLock.
+        readonly object acceptLock = new object();
+        NamedPipeServerStream pendingServerW, pendingServerR;
+
+        class PendingHalf
+        {
+            public NamedPipeServerStream Pipe;
+            public StreamString Ss;
+        }
+
+        public class ClientSession
+        {
+            public readonly int Id;
+            public readonly NamedPipeServerStream PipeW; // "FLIMageR": events to client
+            public readonly NamedPipeServerStream PipeR; // "FLIMageW": commands from client
+            public readonly StreamString SsW;
+            public readonly StreamString SsR;
+
+            // Serializes event writes to SsW (broadcasts can come from
+            // concurrent threads). Replies on SsR need no lock: only this
+            // session's receive thread writes there.
+            public readonly object WriteLock = new object();
+
+            public volatile bool Connected;
+            public Thread ReceiveThread;
+
+            public ClientSession(int id, NamedPipeServerStream pipeW, StreamString ssW,
+                                         NamedPipeServerStream pipeR, StreamString ssR)
+            {
+                Id = id;
+                PipeW = pipeW;
+                SsW = ssW;
+                PipeR = pipeR;
+                SsR = ssR;
+                Connected = true;
+            }
+
+            // Disposing the pipes unblocks a pending synchronous ReadString()
+            // on the receive thread (same shutdown strategy as the
+            // single-client server). Safe to call more than once.
+            public void Dispose()
+            {
+                Connected = false;
+                try { PipeW.Close(); PipeW.Dispose(); }
+                catch (Exception ex) { Debug.WriteLine("Closing session pipeW: " + ex.Message); }
+                try { PipeR.Close(); PipeR.Dispose(); }
+                catch (Exception ex) { Debug.WriteLine("Closing session pipeR: " + ex.Message); }
+            }
+        }
 
         public COMserver(FLIMageMain f)
         {
             flimage = f;
         }
 
+        public int NConnectedClients { get { return sessions.Count; } }
+
         public void start()
         {
-            start(FLIMage_Event.CommandReceivedFrom.Client);
-            start(FLIMage_Event.CommandReceivedFrom.FLIMage);
+            if (Listening)
+                return;
+            Listening = true;
+
+            flimage.script?.status_ComServer(false, FLIMage_Event.CommandReceivedFrom.Client);
+            flimage.script?.status_ComServer(false, FLIMage_Event.CommandReceivedFrom.FLIMage);
+
+            Thread tW = new Thread(() => AcceptLoop(SName, true));
+            tW.IsBackground = true;
+            tW.Name = "PipeAccept-" + SName;
+            tW.Start();
+
+            Thread tR = new Thread(() => AcceptLoop(SNameR, false));
+            tR.IsBackground = true;
+            tR.Name = "PipeAccept-" + SNameR;
+            tR.Start();
         }
 
-        public void start(FLIMage_Event.CommandReceivedFrom rw)
+        // One loop per pipe name. Re-arms after every accepted connection so
+        // additional clients can connect at any time while the server is on.
+        void AcceptLoop(String pipeName, bool isWriteSide)
         {
-            flimage.script.status_ComServer(false, rw);
-            Thread t1;
-
-            if (rw == FLIMage_Event.CommandReceivedFrom.Client)
+            while (Listening)
             {
-                pipeServer = new NamedPipeServerStream(SName, PipeDirection.InOut, 254, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-                connecting = true;
-                t1 = new Thread(() => startEach(SName, pipeServer));
-            }
-            else
-            {
-                pipeServerR = new NamedPipeServerStream(SNameR, PipeDirection.InOut, 254, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-                connectingR = true;
-                t1 = new Thread(() => startEach(SNameR, pipeServerR));
-            }
-
-            t1.Start();
-        }
-
-        public void startEach(string str, NamedPipeServerStream pp)
-        {
-            try
-            {
-                pp.WaitForConnection();
-
-                if (str == SName)
-                    connecting = false;
-                else
-                    connectingR = false;
-
-                StreamString ss1 = new StreamString(pp);
-                Boolean success = handShake(ss1);
-
-                if (str == SName)
+                NamedPipeServerStream pipe;
+                try
                 {
-                    connected = success;
-                    flimage.script.status_ComServer(success, FLIMage_Event.CommandReceivedFrom.Client);
-                    ss = ss1;
+                    pipe = new NamedPipeServerStream(pipeName, PipeDirection.InOut, MAX_INSTANCES,
+                        PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                }
+                catch (IOException ex)
+                {
+                    Debug.WriteLine("Pipe busy: " + ex.Message);
+                    break;
+                }
+
+                lock (acceptLock)
+                {
+                    if (!Listening)
+                    {
+                        pipe.Dispose();
+                        break;
+                    }
+                    if (isWriteSide) pendingServerW = pipe; else pendingServerR = pipe;
+                }
+
+                try
+                {
+                    pipe.WaitForConnection();
+                }
+                catch (ObjectDisposedException e)
+                {
+                    Debug.WriteLine("Already Closed: " + e.Message);
+                    break;
+                }
+                catch (IOException e)
+                {
+                    Debug.WriteLine("Pipe busy: " + e.Message);
+                    try { pipe.Dispose(); } catch { }
+                    continue;
+                }
+                finally
+                {
+                    lock (acceptLock)
+                    {
+                        if (isWriteSide) pendingServerW = null; else pendingServerR = null;
+                    }
+                }
+
+                if (!Listening)
+                {
+                    try { pipe.Dispose(); } catch { }
+                    break;
+                }
+
+                StreamString ss1 = new StreamString(pipe);
+                if (!handShake(ss1))
+                {
+                    Debug.WriteLine("Handshake failed: " + pipeName);
+                    try { pipe.Dispose(); } catch { }
+                    continue;
+                }
+
+                Debug.WriteLine("Connected: " + pipeName);
+                PairHalf(isWriteSide, new PendingHalf { Pipe = pipe, Ss = ss1 });
+            }
+        }
+
+        // Arrival-order pairing (v1): join this half with the oldest waiting
+        // half of the other pipe, or queue it until its partner arrives.
+        void PairHalf(bool isWriteSide, PendingHalf half)
+        {
+            ClientSession session = null;
+            lock (pairLock)
+            {
+                // A handshake can finish while Close() is tearing down. Without
+                // this check the half would be queued after Close() cleared the
+                // queues and could be mispaired with a client of a later start().
+                if (!Listening)
+                {
+                    try { half.Pipe.Dispose(); } catch { }
+                    return;
+                }
+
+                Queue<PendingHalf> own = isWriteSide ? waitingW : waitingR;
+                Queue<PendingHalf> other = isWriteSide ? waitingR : waitingW;
+
+                // Drop waiting halves whose client already went away, so a
+                // stale half cannot be paired with the next client.
+                while (other.Count > 0 && !other.Peek().Pipe.IsConnected)
+                {
+                    PendingHalf dead = other.Dequeue();
+                    try { dead.Pipe.Dispose(); } catch { }
+                }
+
+                if (other.Count > 0)
+                {
+                    PendingHalf partner = other.Dequeue();
+                    PendingHalf w = isWriteSide ? half : partner;
+                    PendingHalf r = isWriteSide ? partner : half;
+                    int id = Interlocked.Increment(ref sessionCounter);
+                    session = new ClientSession(id, w.Pipe, w.Ss, r.Pipe, r.Ss);
                 }
                 else
                 {
-                    connectedR = success;
-                    flimage.script.status_ComServer(success, FLIMage_Event.CommandReceivedFrom.FLIMage);
-                    ssR = ss1;
-                    StartReceiveThread();
+                    own.Enqueue(half);
                 }
-
-                if (success)
-                    Debug.WriteLine("Connected: " + str);
-                else
-                    Debug.WriteLine("Failed: " + str);
-            }
-            catch (IOException e)
-            {
-                Debug.WriteLine("Pipe busy: " + e.Message);
-            }
-            catch (ObjectDisposedException e)
-            {
-                Debug.WriteLine("Already Closed: " + e.Message);
             }
 
+            if (session != null)
+                AddSession(session);
+        }
+
+        void AddSession(ClientSession session)
+        {
+            sessions[session.Id] = session;
+
+            session.ReceiveThread = new Thread(() => ReceiveLoop(session));
+            session.ReceiveThread.IsBackground = true;
+            session.ReceiveThread.Name = "PipeReceive-" + session.Id;
+            session.ReceiveThread.Start();
+
+            Debug.WriteLine("PIPE client #" + session.Id + " connected. Total: " + sessions.Count);
+            UpdateConnectionStatus();
+        }
+
+        void RemoveSession(ClientSession session)
+        {
+            if (sessions.TryRemove(session.Id, out _))
+                Debug.WriteLine("PIPE client #" + session.Id + " disconnected. Total: " + sessions.Count);
+            session.Dispose();
+            UpdateConnectionStatus();
+        }
+
+        void UpdateConnectionStatus()
+        {
+            int n = sessions.Count;
+            flimage.script?.status_ComServer(n > 0, FLIMage_Event.CommandReceivedFrom.Client, n);
+            flimage.script?.status_ComServer(n > 0, FLIMage_Event.CommandReceivedFrom.FLIMage, n);
         }
 
         Boolean handShake(StreamString ss0)
@@ -113,8 +291,8 @@ namespace FLIMage.FlowControls
             try
             {
                 ss0.WriteString("FLIMage");
-                Received = ss0.ReadString();
-                if (Received == "FLIMage")
+                String received = ss0.ReadString();
+                if (received == "FLIMage")
                 {
                     result = true;
                     ss0.WriteString("Connected");
@@ -127,48 +305,88 @@ namespace FLIMage.FlowControls
             return result;
         }
 
-        void StartReceiveThread()
+        // Request/reply loop for one client. Blocking on CommandHandler is
+        // fine: this is the session's own thread, and the handler routes the
+        // command through the serializing worker, so the reply written here
+        // always belongs to the command this client sent.
+        void ReceiveLoop(ClientSession session)
         {
-            Thread th = new Thread(receivingCommands);
+            try
+            {
+                while (Listening && session.Connected)
+                {
+                    String received;
+                    try
+                    {
+                        received = session.SsR.ReadString();
+                    }
+                    catch (IOException e)
+                    {
+                        Debug.WriteLine("Failed receiving commands: " + e.Message);
+                        break;
+                    }
+
+                    if (!Listening || !session.Connected)
+                        break;
+
+                    // ReadString returns "" when the pipe is closed or broken
+                    // (EOF). Treat it as a disconnect of this client only.
+                    if (String.IsNullOrEmpty(received))
+                        break;
+
+                    // "Disconnect" from a pipe client ends only this session.
+                    // The command table's "Disconnect" case (TurnOnServer(false))
+                    // would shut down the whole server and kick every other
+                    // client, so it must not reach the worker from here; it
+                    // remains available from the RemoteControl window.
+                    if (received == "Disconnect")
+                        break;
+
+                    Func<String, String> handler = CommandHandler;
+                    String replyMessage = handler != null ? handler(received) : "";
+
+                    if (session.SsR.WriteString(replyMessage) == 0)
+                        break;
+                }
+            }
+            finally
+            {
+                RemoveSession(session);
+            }
+        }
+
+        // Send an event to every connected client. Named sendCommand
+        // historically; Broadcast is the multi-client behavior.
+        public void sendCommand(string str)
+        {
+            Broadcast(str);
+        }
+
+        public void Broadcast(string str)
+        {
+            if (String.IsNullOrEmpty(str) || sessions.IsEmpty)
+                return;
+
+            Thread th = new Thread(() => BroadcastThread(str));
+            th.IsBackground = true;
             th.Start();
         }
 
-        void receivingCommands()
+        private void BroadcastThread(string str)
         {
-            while (connectedR)
+            foreach (ClientSession session in sessions.Values)
             {
-                try
+                int ret;
+                lock (session.WriteLock)
                 {
-                    ReceivedR = ssR.ReadString();
-                    r_tick?.Invoke(this, e);
-                    //if (r_tick != null) 
-                    //    r_tick(this, e);
+                    ret = session.SsW.WriteString(str);
                 }
-                catch (IOException e)
+                if (ret == 0)
                 {
-                    Debug.WriteLine("Failed receiving commands: " + e.Message);
-                    connectedR = false;
-                    //Restart();
+                    Debug.WriteLine("Failed PIPE broadcast to client #" + session.Id + ": " + str);
+                    RemoveSession(session);
                 }
             }
-        }
-
-        public void sendCommand(string str)
-        {
-            if (str != "" && connected)
-            {
-                connected = false;
-                Thread th = new Thread(() => sendCommandThread(str));
-                th.Start();
-                //                ss.WriteString(str);
-            }
-        }
-
-        private void sendCommandThread(string str)
-        {
-            int ret = ss.WriteString(str);
-            if (ret != 0)
-                connected = true;
         }
 
         public void Restart()
@@ -180,36 +398,46 @@ namespace FLIMage.FlowControls
         public void Close()
         {
             Debug.WriteLine("PIPE close signal received.");
-            if (connecting)
+
+            // Stop accept loops and receive loops before disposing streams.
+            Listening = false;
+
+            // Disposing the pending pipe servers unblocks WaitForConnection()
+            // (throws ObjectDisposedException, which AcceptLoop catches), and
+            // disposing each session's pipes unblocks its synchronous
+            // ReadString(). Same strategy as the single-client server: never
+            // wait on the blocked threads themselves, just dispose and let
+            // them exit. by Kengo(Claude) 06-09-2026 / 06-11-2026
+            lock (acceptLock)
             {
-                NamedPipeClientStream clt = new NamedPipeClientStream(".", SName);
-                clt.Connect();
-                clt.Close();
-                connecting = false;
+                if (pendingServerW != null)
+                {
+                    try { pendingServerW.Dispose(); }
+                    catch (Exception ex) { Debug.WriteLine("Closing pipeServer: " + ex.Message); }
+                    pendingServerW = null;
+                }
+                if (pendingServerR != null)
+                {
+                    try { pendingServerR.Dispose(); }
+                    catch (Exception ex) { Debug.WriteLine("Closing pipeServerR: " + ex.Message); }
+                    pendingServerR = null;
+                }
             }
 
-            if (connectingR)
+            lock (pairLock)
             {
-                NamedPipeClientStream clt = new NamedPipeClientStream(".", SNameR);
-                clt.Connect();
-                clt.Close();
-                connectingR = false;
+                while (waitingW.Count > 0)
+                {
+                    try { waitingW.Dequeue().Pipe.Dispose(); } catch { }
+                }
+                while (waitingR.Count > 0)
+                {
+                    try { waitingR.Dequeue().Pipe.Dispose(); } catch { }
+                }
             }
 
-            if (pipeServer != null)
-            {
-                pipeServer.Close();
-                pipeServer.Dispose();
-            }
-
-            if (pipeServerR != null)
-            {
-                pipeServerR.Close();
-                pipeServerR.Dispose();
-            }
-
-            connected = false;
-            connectedR = false;
+            foreach (ClientSession session in sessions.Values)
+                RemoveSession(session);
         }
 
         public class StreamString
@@ -284,7 +512,7 @@ namespace FLIMage.FlowControls
             public int WriteString(byte[] outBuffer)
             {
                 int len = outBuffer.Length;
-                if (len < 0)
+                if (len <= 0)
                     return 0;
 
                 if (len > UInt16.MaxValue)
@@ -328,4 +556,3 @@ namespace FLIMage.FlowControls
     }
 
 } //Name space
-

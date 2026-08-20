@@ -33,11 +33,16 @@
             this.SumProc = new System.Windows.Forms.RadioButton();
             this.SaveButton = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.Message = new System.Windows.Forms.Label();
             this.SaveChannel4 = new System.Windows.Forms.CheckBox();
             this.SaveChannel3 = new System.Windows.Forms.CheckBox();
             this.SaveChannel2 = new System.Windows.Forms.CheckBox();
             this.SaveChannel1 = new System.Windows.Forms.CheckBox();
             this.ProjectionBox = new System.Windows.Forms.GroupBox();
+            this.Message_Projection = new System.Windows.Forms.Label();
+            this.ZProjectionCheckBox = new System.Windows.Forms.RadioButton();
+            this.NoProjection = new System.Windows.Forms.RadioButton();
+            this.ProjectionTypePanel = new System.Windows.Forms.Panel();
             this.AllFiles = new System.Windows.Forms.CheckBox();
             this.FastZGroup = new System.Windows.Forms.GroupBox();
             this.label3 = new System.Windows.Forms.Label();
@@ -49,15 +54,10 @@
             this.Row = new System.Windows.Forms.TextBox();
             this.Column = new System.Windows.Forms.TextBox();
             this.CorrectT0EachPageCheck = new System.Windows.Forms.CheckBox();
-            this.ProjectionTypePanel = new System.Windows.Forms.Panel();
-            this.NoProjection = new System.Windows.Forms.RadioButton();
-            this.ZProjectionCheckBox = new System.Windows.Forms.RadioButton();
-            this.Message = new System.Windows.Forms.Label();
-            this.Message_Projection = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.ProjectionBox.SuspendLayout();
-            this.FastZGroup.SuspendLayout();
             this.ProjectionTypePanel.SuspendLayout();
+            this.FastZGroup.SuspendLayout();
             this.SuspendLayout();
             // 
             // MaxProc
@@ -105,6 +105,15 @@
             this.groupBox1.TabIndex = 12;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Save Channel";
+            // 
+            // Message
+            // 
+            this.Message.AutoSize = true;
+            this.Message.ForeColor = System.Drawing.Color.Red;
+            this.Message.Location = new System.Drawing.Point(6, 59);
+            this.Message.Name = "Message";
+            this.Message.Size = new System.Drawing.Size(0, 13);
+            this.Message.TabIndex = 16;
             // 
             // SaveChannel4
             // 
@@ -158,6 +167,47 @@
             this.ProjectionBox.TabIndex = 13;
             this.ProjectionBox.TabStop = false;
             this.ProjectionBox.Text = "Projection";
+            // 
+            // Message_Projection
+            // 
+            this.Message_Projection.AutoSize = true;
+            this.Message_Projection.ForeColor = System.Drawing.Color.Red;
+            this.Message_Projection.Location = new System.Drawing.Point(11, 63);
+            this.Message_Projection.Name = "Message_Projection";
+            this.Message_Projection.Size = new System.Drawing.Size(0, 13);
+            this.Message_Projection.TabIndex = 18;
+            // 
+            // ZProjectionCheckBox
+            // 
+            this.ZProjectionCheckBox.AutoSize = true;
+            this.ZProjectionCheckBox.Location = new System.Drawing.Point(14, 41);
+            this.ZProjectionCheckBox.Name = "ZProjectionCheckBox";
+            this.ZProjectionCheckBox.Size = new System.Drawing.Size(81, 17);
+            this.ZProjectionCheckBox.TabIndex = 18;
+            this.ZProjectionCheckBox.Text = "Z projection";
+            this.ZProjectionCheckBox.UseVisualStyleBackColor = true;
+            this.ZProjectionCheckBox.CheckedChanged += new System.EventHandler(this.ZProjectionCheckBox_CheckedChanged);
+            // 
+            // NoProjection
+            // 
+            this.NoProjection.AutoSize = true;
+            this.NoProjection.Checked = true;
+            this.NoProjection.Location = new System.Drawing.Point(14, 21);
+            this.NoProjection.Name = "NoProjection";
+            this.NoProjection.Size = new System.Drawing.Size(105, 17);
+            this.NoProjection.TabIndex = 17;
+            this.NoProjection.TabStop = true;
+            this.NoProjection.Text = "All pages / slices";
+            this.NoProjection.UseVisualStyleBackColor = true;
+            // 
+            // ProjectionTypePanel
+            // 
+            this.ProjectionTypePanel.Controls.Add(this.MaxProc);
+            this.ProjectionTypePanel.Controls.Add(this.SumProc);
+            this.ProjectionTypePanel.Location = new System.Drawing.Point(135, 20);
+            this.ProjectionTypePanel.Name = "ProjectionTypePanel";
+            this.ProjectionTypePanel.Size = new System.Drawing.Size(85, 56);
+            this.ProjectionTypePanel.TabIndex = 16;
             // 
             // AllFiles
             // 
@@ -262,56 +312,6 @@
             this.CorrectT0EachPageCheck.Text = "Correct T0 for each page";
             this.CorrectT0EachPageCheck.UseVisualStyleBackColor = true;
             // 
-            // ProjectionTypePanel
-            // 
-            this.ProjectionTypePanel.Controls.Add(this.MaxProc);
-            this.ProjectionTypePanel.Controls.Add(this.SumProc);
-            this.ProjectionTypePanel.Location = new System.Drawing.Point(135, 20);
-            this.ProjectionTypePanel.Name = "ProjectionTypePanel";
-            this.ProjectionTypePanel.Size = new System.Drawing.Size(85, 56);
-            this.ProjectionTypePanel.TabIndex = 16;
-            // 
-            // NoProjection
-            // 
-            this.NoProjection.AutoSize = true;
-            this.NoProjection.Checked = true;
-            this.NoProjection.Location = new System.Drawing.Point(14, 21);
-            this.NoProjection.Name = "NoProjection";
-            this.NoProjection.Size = new System.Drawing.Size(105, 17);
-            this.NoProjection.TabIndex = 17;
-            this.NoProjection.TabStop = true;
-            this.NoProjection.Text = "All pages / slices";
-            this.NoProjection.UseVisualStyleBackColor = true;
-            // 
-            // ZProjectionCheckBox
-            // 
-            this.ZProjectionCheckBox.AutoSize = true;
-            this.ZProjectionCheckBox.Location = new System.Drawing.Point(14, 41);
-            this.ZProjectionCheckBox.Name = "ZProjectionCheckBox";
-            this.ZProjectionCheckBox.Size = new System.Drawing.Size(81, 17);
-            this.ZProjectionCheckBox.TabIndex = 18;
-            this.ZProjectionCheckBox.Text = "Z projection";
-            this.ZProjectionCheckBox.UseVisualStyleBackColor = true;
-            this.ZProjectionCheckBox.CheckedChanged += new System.EventHandler(this.ZProjectionCheckBox_CheckedChanged);
-            // 
-            // Message
-            // 
-            this.Message.AutoSize = true;
-            this.Message.ForeColor = System.Drawing.Color.Red;
-            this.Message.Location = new System.Drawing.Point(6, 59);
-            this.Message.Name = "Message";
-            this.Message.Size = new System.Drawing.Size(0, 13);
-            this.Message.TabIndex = 16;
-            // 
-            // Message_Projection
-            // 
-            this.Message_Projection.AutoSize = true;
-            this.Message_Projection.ForeColor = System.Drawing.Color.Red;
-            this.Message_Projection.Location = new System.Drawing.Point(11, 63);
-            this.Message_Projection.Name = "Message_Projection";
-            this.Message_Projection.Size = new System.Drawing.Size(0, 13);
-            this.Message_Projection.TabIndex = 18;
-            // 
             // ExportForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -332,10 +332,10 @@
             this.groupBox1.PerformLayout();
             this.ProjectionBox.ResumeLayout(false);
             this.ProjectionBox.PerformLayout();
-            this.FastZGroup.ResumeLayout(false);
-            this.FastZGroup.PerformLayout();
             this.ProjectionTypePanel.ResumeLayout(false);
             this.ProjectionTypePanel.PerformLayout();
+            this.FastZGroup.ResumeLayout(false);
+            this.FastZGroup.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 

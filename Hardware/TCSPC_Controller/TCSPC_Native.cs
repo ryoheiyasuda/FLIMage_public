@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,6 +19,9 @@ namespace TCSPC_controls
     {
         public static TCSPC_Native[] refPQ = new TCSPC_Native[3];
         public static int maxNChannels = 4;
+        public static bool DLL_Busy = false;
+        private const int ExpectedTcspcDecodeAbiVersion = 2;
+        private const int TcspcDecodeAbiMismatchRetCode = -102;
 
 #if DEBUG
         public static int DEBUGMODE = 1; //Debug 2: line-specific event, 3: all photons. Debug 4: all events. Debug 5: Line only.
@@ -29,6 +32,8 @@ namespace TCSPC_controls
         public bool Running = false;
         public bool DLLActive = false;
         public bool DLLSerialGoThrough = false;
+
+        public bool force_stop_event_received = false;
 
         public FLIM_Parameters parameters = new FLIM_Parameters();
 
@@ -56,6 +61,8 @@ namespace TCSPC_controls
 
         public bool completed_acq = true;
 
+        public bool photon_file_saving_mode = false;
+
         public event FrameDoneHandler FrameDone;
         public FrameEventArgs e_frame;
         public delegate void FrameDoneHandler(TCSPC_Native tcspc, FrameEventArgs e_frame);
@@ -67,8 +74,18 @@ namespace TCSPC_controls
         public StripeEventArgs e_my;
         public delegate void StripeDoneHandler(TCSPC_Native tcspc, StripeEventArgs e_my);
 
-        public delegate void GetMessageDelegate(int id, String str);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public delegate void GetMessageDelegate(int id, [MarshalAs(UnmanagedType.LPStr)] string str, int frame);
         public GetMessageDelegate callback;
+
+        public GCHandle photon_binary_handle;
+        private GCHandle photon_write_callback_handle;
+        private Stream photon_write_stream;
+        private byte[] photon_write_buffer;
+        private readonly object photon_write_lock = new object();
+        private readonly object photon_stream_lock = new object();
+        private readonly HashSet<IntPtr> photon_stream_handles = new HashSet<IntPtr>();
+        private readonly IntPtr[] photon_stream_release_buffer = new IntPtr[32];
 
 
         /////////////////////////////////////////////////////////
@@ -81,8 +98,8 @@ namespace TCSPC_controls
                 tcspc = new TCSPC_Native(flim_parameters, device);
                 refPQ[device] = tcspc;
 
-                if (tcspc.DLLActive)
-                    createNew = true;
+                //if (tcspc.DLLActive)
+                createNew = true;
             }
 
             return createNew;
@@ -95,53 +112,104 @@ namespace TCSPC_controls
             deviceID = device; // parameters.device
 
 
-            if (parameters.spcData.BoardType == "BH")
+            // Optimized: Use string comparison with StringComparison.Ordinal for better performance
+            string boardType = parameters.spcData.BoardType;
+            if (string.Equals(boardType, "BH", StringComparison.OrdinalIgnoreCase))
             {
                 acq_type = TCSPCType.BH_SPC150;
                 nChannelsPerDevice = parameters.spcData.channelPerDeviceBH;
-
             }
-            else if (parameters.spcData.BoardType == "MH")
+            else if (string.Equals(boardType, "MH", StringComparison.OrdinalIgnoreCase))
             {
                 acq_type = TCSPCType.PQ_MultiHarp;
                 nChannelsPerDevice = parameters.spcData.channelPerDevicePQ;
             }
-            else if (parameters.spcData.BoardType == "PQ")
+            else if (string.Equals(boardType, "PQ", StringComparison.OrdinalIgnoreCase))
             {
                 acq_type = TCSPCType.PQ_Th260;
+                nChannelsPerDevice = parameters.spcData.channelPerDevicePQ;
+            }
+            else if (string.Equals(boardType, "PH", StringComparison.OrdinalIgnoreCase))
+            {
+                acq_type = TCSPCType.PQ_PH330;
+                nChannelsPerDevice = parameters.spcData.channelPerDevicePQ;
+            }
+            else if (string.Equals(boardType, "HH", StringComparison.OrdinalIgnoreCase))
+            {
+                acq_type = TCSPCType.PQ_HH500;
+                nChannelsPerDevice = parameters.spcData.channelPerDevicePQ;
+            }
+            else if (string.Equals(boardType, "SimPQ", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(boardType, "SymPQ", StringComparison.OrdinalIgnoreCase))
+            {
+                acq_type = TCSPCType.simpq;
                 nChannelsPerDevice = parameters.spcData.channelPerDevicePQ;
             }
 
             if (nChannelsPerDevice > maxNChannels)
                 nChannelsPerDevice = maxNChannels;
 
-            _setParameters(Enumerable.Repeat(true, maxNChannels).ToArray());
+            // Optimized: Pre-allocate array instead of LINQ
+            bool[] eraseMemory = new bool[maxNChannels];
+            for (int i = 0; i < maxNChannels; i++)
+                eraseMemory[i] = true;
+            _setParameters(eraseMemory);
 
             callback = new GetMessageDelegate(CallbackReturn);
 
-            StringBuilder dll_path = new StringBuilder(260); //260 is for maximum path length for C++
-
+            // Optimized: Pre-calculate DLL path to avoid StringBuilder overhead
+            string dll_path_str;
 #if _x64
             if (acq_type == TCSPCType.BH_SPC150)
-                dll_path.Append(Path.Combine(parameters.spcData.BH_DLLDir, "spcm64.dll"));
+                dll_path_str = Path.Combine(parameters.spcData.BH_DLLDir, "spcm64.dll");
             else if (acq_type == TCSPCType.PQ_Th260)
-                dll_path.Append("th260lib64");
+                dll_path_str = "th260lib64";
+            else if (acq_type == TCSPCType.PQ_MultiHarp)
+                dll_path_str = "mhlib64";
+            else if (acq_type == TCSPCType.PQ_PH330)
+                dll_path_str = "PH330Lib";
+            else if (acq_type == TCSPCType.PQ_HH500)
+                dll_path_str = "hh500lib";
+            else if (acq_type == TCSPCType.SPAD23)
+                dll_path_str = string.Empty;
             else
-                dll_path.Append("mhlib64");
+                dll_path_str = string.Empty;
 #else
             if (acq_type == TCSPCType.BH_SPC150)
-                dll_path.Append(Path.Combine(parameters.spcData.BH_DLLDir, "spcm32.dll"));
+                dll_path_str = Path.Combine(parameters.spcData.BH_DLLDir, "spcm32.dll");
             else if (acq_type == TCSPCType.PQ_Th260)
-                dll_path.Append("th260lib");
+                dll_path_str = "th260lib";
             else
-                dll_path.Append("mhlib");
+                dll_path_str = "mhlib";
 #endif
+            StringBuilder dll_path = new StringBuilder(260); //260 is for maximum path length for C++
+            dll_path.Append(dll_path_str);
 
             int retcode = -101;
+            bool startAttempted = false;
 
             try
             {
-                retcode = Start_TCSPC_Decode(deviceID, callback, ref pm, ref compID, dll_path);
+                int abiVersion = Get_TCSPC_Decode_ABI_Version();
+                if (abiVersion != ExpectedTcspcDecodeAbiVersion)
+                {
+                    retcode = TcspcDecodeAbiMismatchRetCode;
+                    Debug.WriteLine($"TCSPC_Decode ABI mismatch: expected {ExpectedTcspcDecodeAbiVersion}, got {abiVersion}.");
+                }
+                else
+                {
+                    startAttempted = true;
+                    retcode = Start_TCSPC_Decode(deviceID, callback, ref pm, ref compID, dll_path);
+                }
+            }
+            catch (EntryPointNotFoundException ex)
+            {
+                retcode = TcspcDecodeAbiMismatchRetCode;
+                Debug.WriteLine("TCSPC_Decode ABI check failed: missing required entry point. " + ex.Message);
+            }
+            catch (DllNotFoundException ex)
+            {
+                Debug.WriteLine("Did not find DLL: " + ex.Message);
             }
             catch (Exception EX)
             {
@@ -153,115 +221,129 @@ namespace TCSPC_controls
             completed_acq = true;
 
             DLLActive = (retcode == 0);
-            DLLSerialGoThrough = (retcode != -101);
+            DLLSerialGoThrough = startAttempted && retcode != -101;
         }
 
-        public void CallbackReturn(int id, String str)
+        // Optimized: Cache common string comparisons
+        private static readonly string FrameDoneStr = "FrameDone";
+        private static readonly string StripeDoneStr = "StripeDone";
+        private static readonly string SaturatedStr = "Saturated";
+        private static readonly string MeasurementDoneStr = "MeasurementDone";
+        private static readonly string GetSyncRateStr = "GetSyncRate";
+
+        public void CallbackReturn(int id, String str, int frame)
         {
+            // Optimized: Early return for null reference
+            if (refPQ[id] == null)
+                return;
+
 #if DEBUG
             if (DEBUGMODE >= 1)
-                Debug.WriteLine(id + ": " + str);
-#endif
-            bool busy = false;
-            if (refPQ[id] != null)
             {
-                if (str == "FrameDone")
+                // Optimized: Use IndexOf instead of Contains for better performance
+                if (str.IndexOf(GetSyncRateStr, StringComparison.Ordinal) < 0)
+                    Debug.WriteLine("Debug: C# CallbackReturn" + id + ": " + str);
+            }
+#endif
+
+            // Allow trailing payloads/garbage in the callback string.
+            if (!string.IsNullOrEmpty(str) && str.StartsWith(FrameDoneStr, StringComparison.Ordinal))
+            {
+                if (force_stop_event_received)
+                    return;
+
+                frameCounter = frame;
+
+                // Optimized: Pre-calculate condition to avoid repeated evaluation
+                bool process_event = parameters.read_from_file || (!DLL_Busy || !photon_file_saving_mode) || frameCounter == parameters.nFrames;
+                if (process_event)
                 {
-                    if (frameCounter > 1 && frame_event != null)
-                    {
-                        frame_event.Wait();
-                        busy = false;
-                    }
-
-                    bool skip_process = focusing && busy;
-
-                    frameCounter++;
-                    frameAveCounter++;
-                    if (parameters.focusAverage <= 1 || (parameters.focusAverage > 1 && frameAveCounter == parameters.focusAverage))
-                    {
-                        frameAveCounter = 0;
-                    }
-                    else
-                    {
-                        if (frameCounter != 1)
-                            skip_process = true;
-                    }
-
-                    //To speed up, we should skip this during "n_average"
-                    if (!skip_process)
-                    {
-                        GetData(); //Bringing data from DLL. (Copy from C++ memory bank)
-                    }
+                    GetData(); //Bringing data from DLL. (Copy from C++ memory bank)
 #if DEBUG
                     if (DEBUGMODE >= 1)
                         Debug.WriteLine("Debug: C# Finished reading frames (GetData) = " + frameCounter);
 #endif
-
-                    frame_event = Task.Factory.StartNew(() =>
-                    {
-#if DEBUG
-                        if (DEBUGMODE >= 1)
-                            Debug.WriteLine("Debug: C# FrameDone event detected. frame = " + frameCounter);
-
-                        if (DEBUGMODE >= 2)
-                        {
-                            ushort[,,] a = FLIMData[0][0];
-                            ushort[] b = new ushort[a.Length];
-                            Buffer.BlockCopy(a, 0, b, 0, a.Length);
-                            var c = Array.ConvertAll<ushort, int>(b, new Converter<ushort, int>(x => (int)x));
-                            Debug.WriteLine("NPhoton = " + c.Sum() + "; Frame = " + frameCounter);
-
-                        }
-#endif
-                            FrameDone?.Invoke(this, new FrameEventArgs(frameCounter, id, FLIMData));
-
-#if DEBUG
-                        if (DEBUGMODE >= 1)
-                            Debug.WriteLine("Debug: C# FrameDone Event came back...");
-#endif
-                        });
-
-                }
-                else if (str.StartsWith("StripeDone"))
-                {
-                    var sP = str.Split(',');
-                    int startL = Convert.ToInt32(sP[1]);
-                    int endL = Convert.ToInt32(sP[2]);
-                    _CopyIntoStripe(startL, endL);
-                    StripeDone(this, new StripeEventArgs(startL, endL, StripeBuffer));
-                }
-                else if (str == "Saturated")
-                {
-#if DEBUG
-                    if (DEBUGMODE >= 1)
-                        Console.WriteLine("Debug: Saturated!!");
-#endif
-                    saturated = true;
-                    //FrameDone(this, new FrameEventArgs(frameCounter, id, FLIMData));
-                    //Running = false;
-                    //Do something.
-                }
-                else if (str == "MeasurementDone")
-                {
-#if DEBUG
-                    if (DEBUGMODE >= 1)
-                        Debug.WriteLine("Debug: MeasurementDone event detected. frame = " + frameCounter);
-#endif
-
-                    var t1 = Task.Factory.StartNew((Action)delegate
-                    {
-                        MeasDone?.Invoke(this, null);
-                    });
-
-                    t1.Wait(100); //Wait for 100 ms, just in case....
-                    completed_acq = true;
-                    Running = false;
+                    HandleFrameEvent(id);
                 }
             }
-            else
+            else if (str.Length >= 10 && str.StartsWith(StripeDoneStr, StringComparison.Ordinal))
             {
-                //Console.WriteLine("No instance for ID = " + id + " found!");
+                // Optimized: Manual parsing instead of Split to avoid allocation
+                int comma1 = str.IndexOf(',', 10);
+                int comma2 = str.IndexOf(',', comma1 + 1);
+                if (comma1 > 0 && comma2 > comma1)
+                {
+                    int startL = int.Parse(str.Substring(comma1 + 1, comma2 - comma1 - 1));
+                    int endL = int.Parse(str.Substring(comma2 + 1));
+                    _CopyIntoStripe(startL, endL);
+                    StripeDone?.Invoke(this, new StripeEventArgs(startL, endL, StripeBuffer));
+                }
             }
+            else if (ReferenceEquals(str, SaturatedStr) || str == SaturatedStr)
+            {
+#if DEBUG
+                if (DEBUGMODE >= 1)
+                    Console.WriteLine("Debug: Saturated!!");
+#endif
+                saturated = true;
+                force_stop_event_received = true;
+            }
+            else if (str.StartsWith(MeasurementDoneStr, StringComparison.Ordinal))
+            {
+                //Note that frameCounter is read only for "FrameDone" event.
+                if (frameCounter < frame)
+                    FrameDone?.Invoke(this, new FrameEventArgs(frame, id, FLIMData, false));
+#if DEBUG
+                if (DEBUGMODE >= 1)
+                    Debug.WriteLine("Debug: MeasurementDone event detected. frame = " + frameCounter);
+#endif
+                completed_acq = true;
+                Running = false;
+                DrainReleasedPhotonStreamHandles();
+
+                MeasDone?.Invoke(this, null);
+            }
+        }
+
+        public void HandleFrameEvent(int id)
+        {
+#if DEBUG
+            Stopwatch sw = null;
+            if (DEBUGMODE >= 1)
+            {
+                sw = Stopwatch.StartNew();
+                Debug.WriteLine("Debug: C# FrameDone event detected. frame = " + frameCounter);
+            }
+
+            if (DEBUGMODE >= 2 && FLIMData != null && FLIMData.Length > 0 && FLIMData[0] != null && FLIMData[0].Length > 0)
+            {
+                // Optimized: Use direct array access instead of BlockCopy + ConvertAll + Sum
+                ushort[,,] a = FLIMData[0][0];
+                long sum = 0;
+                int len0 = a.GetLength(0);
+                int len1 = a.GetLength(1);
+                int len2 = a.GetLength(2);
+                for (int i = 0; i < len0; i++)
+                    for (int j = 0; j < len1; j++)
+                        for (int k = 0; k < len2; k++)
+                            sum += a[i, j, k];
+                Debug.WriteLine("NPhoton = " + sum + "; Frame = " + frameCounter);
+            }
+
+            if (DEBUGMODE >= 1 && sw != null)
+                Debug.WriteLine("Debug:Time# 3 = " + sw.ElapsedMilliseconds);
+#endif
+
+            //if (focusing || photon_file_saving_mode)
+            FrameDone?.Invoke(this, new FrameEventArgs(frameCounter, id, FLIMData, false));
+
+#if DEBUG
+            if (DEBUGMODE >= 1 && sw != null)
+            {
+                Debug.WriteLine("Debug:Time# 4 = " + sw.ElapsedMilliseconds);
+                Debug.WriteLine("Debug: C# FrameDone Event came back...");
+            }
+#endif
         }
 
         public bool IsCompleted()
@@ -279,19 +361,35 @@ namespace TCSPC_controls
 
         private bool _checkBuffer(ushort[][][,,] buf)
         {
-            if (pm.nChannels != buf.Length)
+            // Optimized: Early return for null or mismatched channel count
+            if (buf == null || pm.nChannels != buf.Length)
                 return false;
 
-            for (int c = 0; c < pm.nChannels; c++)
+            // Optimized: Cache frequently accessed values
+            int nChannels = pm.nChannels;
+            int nZlocs = pm.nZlocs;
+            int nLines = pm.nLines;
+            int nPixels = pm.nPixels;
+
+            for (int c = 0; c < nChannels; c++)
             {
                 if (nDtime[c] != 0)
                 {
-                    if (pm.nZlocs != buf[c].Length)
+                    // Optimized: Early return for null or mismatched z-loc count
+                    if (buf[c] == null || nZlocs != buf[c].Length)
                         return false;
 
-                    for (int z = 0; z < pm.nZlocs; z++)
+                    int nDtime_c = nDtime[c];
+                    for (int z = 0; z < nZlocs; z++)
                     {
-                        if (buf[c][z].GetLength(0) != pm.nLines || buf[c][z].GetLength(1) != pm.nPixels || buf[c][z].GetLength(2) != nDtime[c])
+                        // Optimized: Early return for null buffer
+                        if (buf[c][z] == null)
+                            return false;
+
+                        // Optimized: Check all dimensions in one pass
+                        if (buf[c][z].GetLength(0) != nLines || 
+                            buf[c][z].GetLength(1) != nPixels || 
+                            buf[c][z].GetLength(2) != nDtime_c)
                             return false;
                     }
                 }
@@ -302,15 +400,22 @@ namespace TCSPC_controls
 
         private void _MakeStripe()
         {
-            var data = new ushort[pm.nChannels][][,,];
-            for (int c = 0; c < pm.nChannels; c++)
+            // Optimized: Cache frequently accessed values
+            int nChannels = pm.nChannels;
+            int nZlocs = pm.nZlocs;
+            int nLines = pm.nLines;
+            int nPixels = pm.nPixels;
+
+            var data = new ushort[nChannels][][,,];
+            for (int c = 0; c < nChannels; c++)
             {
-                if (nDtime[c] != 0)
+                int nDtime_c = nDtime[c];
+                if (nDtime_c != 0)
                 {
-                    data[c] = new ushort[pm.nZlocs][,,];
-                    for (int z = 0; z < pm.nZlocs; z++)
+                    data[c] = new ushort[nZlocs][,,];
+                    for (int z = 0; z < nZlocs; z++)
                     {
-                        data[c][z] = new ushort[pm.nLines, pm.nPixels, nDtime[c]]; //Should allocate first.
+                        data[c][z] = new ushort[nLines, nPixels, nDtime_c]; //Should allocate first.
                     }
                 }
             }
@@ -319,13 +424,21 @@ namespace TCSPC_controls
 
         public void _GetDataLinesFromMeasureBank(ushort[][][,,] destination, int startLine, int endLine)
         {
-            for (int c = 0; c < pm.nChannels; c++)
+            // Optimized: Cache frequently accessed values and validate early
+            if (destination == null)
+                return;
+
+            int nChannels = pm.nChannels;
+            int nZlocs = pm.nZlocs;
+
+            for (int c = 0; c < nChannels; c++)
             {
-                if (nDtime[c] != 0)
+                if (nDtime[c] != 0 && destination[c] != null)
                 {
-                    for (int z = 0; z < pm.nZlocs; z++)
+                    for (int z = 0; z < nZlocs; z++)
                     {
-                        DE_GetDataLine(deviceID, destination[c][z], c, z, startLine, endLine);
+                        if (destination[c][z] != null)
+                            DE_GetDataLine(deviceID, destination[c][z], c, z, startLine, endLine);
                     }
                 }
             }
@@ -334,15 +447,23 @@ namespace TCSPC_controls
 
         public void GetData()
         {
-            var data = new ushort[pm.nChannels][][,,];
-            for (int c = 0; c < pm.nChannels; c++)
+            // IMPORTANT: FLIMage retains references to the frame buffers (shallow copy) for saving/analysis.
+            // Therefore, each frame must have its own managed buffers so later frames don't overwrite prior frames.
+            int nChannels = pm.nChannels;
+            int nZlocs = pm.nZlocs;
+            int nLines = pm.nLines;
+            int nPixels = pm.nPixels;
+
+            var data = new ushort[nChannels][][,,];
+            for (int c = 0; c < nChannels; c++)
             {
-                if (nDtime[c] != 0)
+                int nDtime_c = nDtime[c];
+                if (nDtime_c != 0)
                 {
-                    data[c] = new ushort[pm.nZlocs][,,];
-                    for (int z = 0; z < pm.nZlocs; z++)
+                    data[c] = new ushort[nZlocs][,,];
+                    for (int z = 0; z < nZlocs; z++)
                     {
-                        data[c][z] = new ushort[pm.nLines, pm.nPixels, nDtime[c]]; //Should allocate first.
+                        data[c][z] = new ushort[nLines, nPixels, nDtime_c]; // allocate per frame
                         DE_GetData(deviceID, data[c][z], c, z); //copy data in DLL.
                     }
                 }
@@ -380,26 +501,44 @@ namespace TCSPC_controls
             focusing = focus;
             saturated = false;
             completed_acq = false;
+            force_stop_event_received = false;
 
             _setParameters(EraseMemory);
             frameCounter = 0;
             frameAveCounter = 0;
 
-            int retcode = Start_Measurement(deviceID, ref pm);
-            if (retcode == 0)
+            // Optimized: Reduce retry attempts and use const for max retries
+            const int maxRetries = 5;
+            int retcode = -1;
+            for (int i = 0; i < maxRetries; i++)
             {
-                Running = true;
-            }
-            else
+                retcode = Start_Measurement(deviceID, ref pm);
+                if (retcode == 0)
+                {
+                    Running = true;
+                    return retcode; // Early return on success
+                }
                 Running = false;
+#if DEBUG
+                Debug.WriteLine("Debug: Start Measurement Failed. Restarting...");
+#endif
+                // Only sleep if not the last attempt
+                if (i < maxRetries - 1)
+                    System.Threading.Thread.Sleep(10);
+            }
 
             return retcode;
         }
 
+        public int restartEngine()
+        {
+            return RestartEngine(deviceID);
+        }
 
         ////////////////////////////
         public int CloseDevice()
         {
+            ReleaseAllPhotonStreamHandles();
             return CloseDevice(deviceID);
         }
 
@@ -407,9 +546,166 @@ namespace TCSPC_controls
 
         public int TCSPC_StopMeas(bool force)
         {
-            return Stop_Measurement(deviceID, force ? 1 : 0);
+            force_stop_event_received = force;
+            int ret = Stop_Measurement(deviceID, force ? 1 : 0);
+            ReleaseAllPhotonStreamHandles();
+            return ret;
         }
 
+
+        public int SetupPhotonDataFile(string fname)
+        {
+            ReleaseAllPhotonStreamHandles();
+
+            // Optimized: Reuse StringBuilder with capacity to avoid reallocation
+            var filename = new StringBuilder(fname, 260);
+            return Setup_Photon_Data_File(deviceID, filename);
+        }
+
+        public int SetupPhotonDataWriteStream(Stream stream)
+        {
+            ClearPhotonDataWriteStream();
+
+            if (stream == null)
+                return -1;
+
+            photon_write_stream = stream;
+
+            if (!photon_write_callback_handle.IsAllocated)
+                photon_write_callback_handle = GCHandle.Alloc(this);
+
+            return Set_Photon_Write_Callback(deviceID, PhotonWriteCallbackHandler,
+                GCHandle.ToIntPtr(photon_write_callback_handle));
+        }
+
+        public void ClearPhotonDataWriteStream()
+        {
+            photon_write_stream = null;
+
+            if (photon_write_callback_handle.IsAllocated)
+            {
+                Clear_Photon_Write_Callback(deviceID);
+                photon_write_callback_handle.Free();
+            }
+        }
+
+        private void DrainReleasedPhotonStreamHandles()
+        {
+            lock (photon_stream_lock)
+            {
+                while (true)
+                {
+                    int released = Drain_Released_Photon_Stream_Handles(deviceID, photon_stream_release_buffer, photon_stream_release_buffer.Length);
+                    if (released <= 0)
+                        break;
+
+                    for (int i = 0; i < released; i++)
+                    {
+                        IntPtr token = photon_stream_release_buffer[i];
+                        photon_stream_release_buffer[i] = IntPtr.Zero;
+
+                        if (token != IntPtr.Zero && photon_stream_handles.Remove(token))
+                            GCHandle.FromIntPtr(token).Free();
+                    }
+                }
+            }
+        }
+
+        private void ReleaseAllPhotonStreamHandles()
+        {
+            lock (photon_stream_lock)
+            {
+                while (true)
+                {
+                    int released = Drain_Released_Photon_Stream_Handles(deviceID, photon_stream_release_buffer, photon_stream_release_buffer.Length);
+                    if (released <= 0)
+                        break;
+
+                    for (int i = 0; i < released; i++)
+                    {
+                        IntPtr token = photon_stream_release_buffer[i];
+                        photon_stream_release_buffer[i] = IntPtr.Zero;
+
+                        if (token != IntPtr.Zero && photon_stream_handles.Remove(token))
+                            GCHandle.FromIntPtr(token).Free();
+                    }
+                }
+
+                if (photon_stream_handles.Count == 0)
+                    return;
+
+                foreach (IntPtr token in photon_stream_handles.ToArray())
+                {
+                    if (token != IntPtr.Zero)
+                        GCHandle.FromIntPtr(token).Free();
+                }
+
+                photon_stream_handles.Clear();
+            }
+        }
+
+        public int SetupPhotonDataBinary(uint[] data)
+        {
+            ReleaseAllPhotonStreamHandles();
+
+            // Avoid leaking pinned handles if this is called repeatedly.
+            if (photon_binary_handle.IsAllocated)
+                photon_binary_handle.Free();
+
+            photon_binary_handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+            IntPtr ptr = photon_binary_handle.AddrOfPinnedObject();
+            var success = Setup_Photon_Data_Binary(deviceID, ptr, data.Length);
+            return success;
+        }
+
+        public int SetupPhotonDataStream()
+        {
+            ReleaseAllPhotonStreamHandles();
+            return Setup_Photon_Data_Stream(deviceID);
+        }
+
+        public int AppendPhotonDataStream(uint[] data, int length, bool isLast)
+        {
+            if (data == null)
+                data = Array.Empty<uint>();
+
+            GCHandle handle = default;
+            IntPtr token = IntPtr.Zero;
+            try
+            {
+                IntPtr ptr = IntPtr.Zero;
+                if (length > 0)
+                {
+                    handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+                    ptr = handle.AddrOfPinnedObject();
+                    token = GCHandle.ToIntPtr(handle);
+                }
+
+                int ret = Append_Photon_Data_Stream(deviceID, ptr, length, isLast ? 1 : 0, token);
+                if (ret == 0 && token != IntPtr.Zero)
+                {
+                    lock (photon_stream_lock)
+                    {
+                        photon_stream_handles.Add(token);
+                    }
+                }
+                else if (handle.IsAllocated)
+                {
+                    handle.Free();
+                    token = IntPtr.Zero;
+                }
+
+                DrainReleasedPhotonStreamHandles();
+                return ret;
+            }
+            catch
+            {
+                if (handle.IsAllocated)
+                    handle.Free();
+
+                throw;
+            }
+        }
 
         /// <summary>
         /// Set and get all parameters
@@ -544,8 +840,21 @@ namespace TCSPC_controls
                 pq_param.resolution = parameters.spcData.resolution[channels[0]];
                 pq_param.binning = parameters.spcData.binning;
 
+                pq_param.trigger_mode = parameters.spcData.CFD_on;
+                pq_param.sync_trigger_edge = parameters.spcData.sync_trigger_edge;
+                pq_param.input_trigger_edge = parameters.spcData.input_trigger_edge;
+
                 pq_param.hardware = 0;
 
+                pq_param.input_deadtime = parameters.spcData.input_deadtime;
+
+                retcode = PQ_ChannelOffsets(deviceID, parameters.spcData.ch_offset, parameters.spcData.ch_offset.Length);
+                // Avoid LINQ/ToArray allocations on the acquisition path.
+                var threshSrc = parameters.spcData.ch_threshold;
+                int[] threshAll = new int[threshSrc.Length];
+                for (int i = 0; i < threshSrc.Length; i++)
+                    threshAll[i] = (int)threshSrc[i];
+                retcode = PQ_ChannelThresholds(deviceID, threshAll, threshAll.Length);
                 retcode = PQ_AllParameters(deviceID, ref pq_param);
 
                 if (retcode == 0)
@@ -557,6 +866,8 @@ namespace TCSPC_controls
                         parameters.spcData.HW_Model = "THarp 260 N";
                     else if (pq_param.hardware == (int)PQHardware.TH260P)
                         parameters.spcData.HW_Model = "THarp 260 P";
+                    else if (pq_param.hardware == (int)TCSPCType.PQ_HH500)
+                        parameters.spcData.HW_Model = "HydraHarp 500";
                 }
             }
 
@@ -576,29 +887,74 @@ namespace TCSPC_controls
         ///////////
         public int GetRate()
         {
-            rate_info = new RateInfo
+            if (parameters.spcData.BoardType.ToLower() == "simpq")
             {
-                sync_rate = 0,
-                ch_rate0 = 0,
-                ch_rate1 = 0
-            };
+                int syncRate = 80000000;
+                int chRate0 = 1000000;
+                int chRate1 = 1000000;
+                if (parameters.rateInfo?.syncRate != null && parameters.rateInfo.syncRate.Length > 0 && parameters.rateInfo.syncRate[0] > 0)
+                    syncRate = parameters.rateInfo.syncRate[0];
+                if (parameters.rateInfo?.countRate != null && parameters.rateInfo.countRate.Length > 0 && parameters.rateInfo.countRate[0] > 0)
+                    chRate0 = parameters.rateInfo.countRate[0];
+                if (parameters.rateInfo?.countRate != null && parameters.rateInfo.countRate.Length > 1 && parameters.rateInfo.countRate[1] > 0)
+                    chRate1 = parameters.rateInfo.countRate[1];
+                rate_info = new RateInfo
+                {
+                    sync_rate = syncRate,
+                    ch_rate0 = chRate0,
+                    ch_rate1 = chRate1
+                };
+            }
+            else
+            {
+                rate_info = new RateInfo
+                {
+                    sync_rate = 0,
+                    ch_rate0 = 0,
+                    ch_rate1 = 0
+                };
+            }
 
             int retcode = GetRate(deviceID, ref rate_info);
-            parameters.rateInfo.syncRate[deviceID * nChannelsPerDevice] = rate_info.sync_rate;
 
-            int[] channels = DeviceChannelID();
-            parameters.rateInfo.countRate[channels[0]] = rate_info.ch_rate0;
+            if (retcode == 0)
+            {
+                parameters.rateInfo.syncRate[deviceID * nChannelsPerDevice] = rate_info.sync_rate;
 
-            if (nChannelsPerDevice > 1)
-                parameters.rateInfo.countRate[channels[1]] = rate_info.ch_rate1;
+                int[] channels = DeviceChannelID();
+                parameters.rateInfo.countRate[channels[0]] = rate_info.ch_rate0;
 
-            if (nChannelsPerDevice > 2)
-                parameters.rateInfo.countRate[channels[2]] = rate_info.ch_rate2;
+                if (nChannelsPerDevice > 1)
+                    parameters.rateInfo.countRate[channels[1]] = rate_info.ch_rate1;
 
-            if (nChannelsPerDevice > 3)
-                parameters.rateInfo.countRate[channels[3]] = rate_info.ch_rate3;
+                if (nChannelsPerDevice > 2)
+                    parameters.rateInfo.countRate[channels[2]] = rate_info.ch_rate2;
 
+                if (nChannelsPerDevice > 3)
+                    parameters.rateInfo.countRate[channels[3]] = rate_info.ch_rate3;
+            }
             return retcode;
+        }
+
+        public bool TryGetFileWriterStats(out FileWriterStats stats)
+        {
+            stats = new FileWriterStats();
+            if (!DLLActive)
+                return false;
+
+            try
+            {
+                int retcode = Get_FileWriter_Stats(deviceID, ref stats);
+                return retcode >= 0;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                return false;
+            }
+            catch (DllNotFoundException)
+            {
+                return false;
+            }
         }
 
         private void _setParameters(bool[] eraseMemory)
@@ -610,12 +966,13 @@ namespace TCSPC_controls
             int[] aveFrameA = new int[maxNChannels];
             nDtime = new int[maxNChannels];
 
+            photon_file_saving_mode = parameters.spcData.savePhotonsInFile && !parameters.read_from_file;
+
             if (use_bh)
-            {
                 nChannelsPerDevice = parameters.spcData.channelPerDeviceBH;
-            }
             else
                 nChannelsPerDevice = parameters.spcData.channelPerDevicePQ;
+
 
             for (int i = 0; i < nChannelsPerDevice; i++)
             {
@@ -630,10 +987,26 @@ namespace TCSPC_controls
 
                 EraseM[i] = eraseMemory[i] ? 1 : 0;
 
-                if (focusing)
-                    aveFrameA[i] = (parameters.focusAverage) > 0 ? 1 : 0;
+                if (photon_file_saving_mode)
+                {
+                    if (focusing)
+                        aveFrameA[i] = parameters.focusAverage > 0 ? 1 : 0;
+                    else
+                    {
+                        aveFrameA[i] = parameters.averageFrame[nChannelsPerDevice * deviceID + i] ? 1 : 0;
+                        if (aveFrameA[i] == 0)
+                        {
+                            aveFrameA[i] = parameters.focusAverage > 0 ? 1 : 0;
+                        }
+                    }
+                }
                 else
-                    aveFrameA[i] = parameters.averageFrame[nChannelsPerDevice * deviceID + i] ? 1 : 0;
+                {
+                    if (focusing)
+                        aveFrameA[i] = (parameters.focusAverage) > 0 ? 1 : 0;
+                    else
+                        aveFrameA[i] = parameters.averageFrame[nChannelsPerDevice * deviceID + i] ? 1 : 0;
+                }
             }
 
             parameters.nFastZSlices = parameters.enableFastZscan ? parameters.fastZScan.nFastZSlices : 1;
@@ -655,6 +1028,14 @@ namespace TCSPC_controls
                 acq_type = TCSPCType.PQ_Th260;
             else if (parameters.spcData.BoardType == "MH")
                 acq_type = TCSPCType.PQ_MultiHarp;
+            else if (parameters.spcData.BoardType == "PH")
+                acq_type = TCSPCType.PQ_PH330;
+            else if (parameters.spcData.BoardType == "HH")
+                acq_type = TCSPCType.PQ_HH500;
+            else if (parameters.spcData.BoardType == "SPAD")
+                acq_type = TCSPCType.SPAD23;
+            else if (parameters.spcData.BoardType.ToUpper() == "SIMPQ")
+                acq_type = TCSPCType.simpq;
 
             pm.acqType = (int)acq_type;
             pm.acquireFLIM0 = acqFLIM[0];
@@ -677,6 +1058,8 @@ namespace TCSPC_controls
 
             pm.AcquisitionDelay = parameters.AcquisitionDelay;
             pm.BiDirectionalDelay = parameters.BiDirectionalDelay;
+
+            pm.lineClockDivision = parameters.spcData.line_clock_division < 1 ? 1 : parameters.spcData.line_clock_division; //Usually 1. 
 
             pm.acq_modePQ = parameters.spcData.acq_modePQ;
             pm.binning = parameters.spcData.binning;
@@ -701,11 +1084,26 @@ namespace TCSPC_controls
             pm.nPixels = parameters.nPixels;
             pm.nZlocs = parameters.nFastZSlices;
 
-            if (focusing)
-                pm.n_average = parameters.focusAverage;
+            if (photon_file_saving_mode)
+            {
+                if (focusing)
+                {
+                    pm.n_average = parameters.focusAverage;
+                }
+                else
+                {
+                    pm.n_average = parameters.n_average;
+                    if (pm.n_average <= 1)
+                        pm.n_average = parameters.focusAverage;
+                }
+            }
             else
-                pm.n_average = parameters.n_average;
-
+            {
+                if (focusing)
+                    pm.n_average = parameters.focusAverage;
+                else
+                    pm.n_average = parameters.n_average;
+            }
 
             pm.pixel_time = parameters.pixel_time;
             pm.resolution = parameters.spcData.resolution[0]; //resolution = (int)parameters.spcData.resolution[0];
@@ -716,6 +1114,7 @@ namespace TCSPC_controls
 
             pm.pixel_binning = parameters.spcData.pixel_binning;
             pm.skipFirstLines = parameters.spcData.SkipFirstLines;
+            pm.skipFirstFrames = parameters.spcData.SkipFirstFrames;
 
             pm.TagID = (use_bh) ? parameters.spcData.TagID : parameters.spcData.TagID - 1;
             pm.LineID = (use_bh) ? parameters.spcData.lineID_BH : parameters.spcData.lineID_PQ - 1;
@@ -725,6 +1124,9 @@ namespace TCSPC_controls
             pm.eraseMemory1 = EraseM[1];
             pm.eraseMemory2 = EraseM[2];
             pm.eraseMemory3 = EraseM[3];
+
+            pm.savePhotonsInFile = parameters.spcData.savePhotonsInFile ? 1 : 0;
+            pm.readFromPhotonFile = parameters.read_from_file ? 1 : 0;
 
             pm.debug = DEBUGMODE; //(); no information, 1, some information, up to 3 most information)
 
@@ -746,8 +1148,16 @@ namespace TCSPC_controls
             pm.fastZ_CountPerFastZSlice = parameters.fastZScan.CountPerFastZSlice;
             pm.fastZ_residual_for_PhaseDetection = parameters.fastZScan.residual_for_PhaseDetection;
 
+            pm.bundle_all_channels = parameters.spcData.bundle_all_channels;
+
             compID.compID = parameters.ComputerID;
             compID.FLIMID = parameters.FLIMserial;
+
+            // Fiber photometry mode (native time-binning into 1x1 frames)
+            pm.fiberPhotometryMode = parameters.fiberPhotometryMode ? 1 : 0;
+            pm.fiberBin_ms = parameters.fiberBin_ms;
+            pm.fiberStartMode = parameters.fiberStartMode;
+            pm.lineScanMode = parameters.lineScanMode ? 1 : 0;
         }
 
 
@@ -756,11 +1166,81 @@ namespace TCSPC_controls
         [DllImport("TCSPC_Decode.dll", EntryPoint = "Get_ComputerID", CallingConvention = CallingConvention.Cdecl)]
         public static extern int Get_ComputerID();
 
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "Get_TCSPC_Decode_ABI_Version", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int Get_TCSPC_Decode_ABI_Version();
+
         [DllImport("TCSPC_Decode.dll", EntryPoint = "Start_TCSPC_Decode", CallingConvention = CallingConvention.Cdecl)]
         private static extern int Start_TCSPC_Decode(int id, GetMessageDelegate callback, ref DE_parameters param1, ref CompID comID, StringBuilder dll_path);
 
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "Setup_Photon_Data_File", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int Setup_Photon_Data_File(int id, StringBuilder photon_data_file);
+
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "Setup_Photon_Data_Binary", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int Setup_Photon_Data_Binary(int id, IntPtr data, int length);
+
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "Setup_Photon_Data_Stream", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int Setup_Photon_Data_Stream(int id);
+
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "Append_Photon_Data_Stream", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int Append_Photon_Data_Stream(int id, IntPtr data, int length, int isLast, IntPtr token);
+
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "Drain_Released_Photon_Stream_Handles", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int Drain_Released_Photon_Stream_Handles(int id, [Out] IntPtr[] tokens, int maxCount);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate int PhotonWriteCallback(IntPtr data, int length, IntPtr user);
+
+        private static readonly PhotonWriteCallback PhotonWriteCallbackHandler = OnPhotonWriteCallback;
+
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "Set_Photon_Write_Callback", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int Set_Photon_Write_Callback(int id, PhotonWriteCallback cb, IntPtr user);
+
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "Clear_Photon_Write_Callback", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int Clear_Photon_Write_Callback(int id);
+
+        private static int OnPhotonWriteCallback(IntPtr data, int length, IntPtr user)
+        {
+            if (user == IntPtr.Zero)
+                return -1;
+
+            var handle = GCHandle.FromIntPtr(user);
+            if (!(handle.Target is TCSPC_Native native))
+                return -1;
+
+            return native.WritePhotonStream(data, length);
+        }
+
+        private int WritePhotonStream(IntPtr data, int length)
+        {
+            if (length <= 0)
+                return 0;
+
+            var stream = photon_write_stream;
+            if (stream == null)
+                return -1;
+
+            int byteCount = length * sizeof(uint);
+            lock (photon_write_lock)
+            {
+                if (photon_write_buffer == null || photon_write_buffer.Length < byteCount)
+                    photon_write_buffer = new byte[byteCount];
+                System.Runtime.InteropServices.Marshal.Copy(data, photon_write_buffer, 0, byteCount);
+                stream.Write(photon_write_buffer, 0, byteCount);
+            }
+
+            return 0;
+        }
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "Get_FileWriter_Stats", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int Get_FileWriter_Stats(int id, ref FileWriterStats stats);
+
         [DllImport("TCSPC_Decode.dll", EntryPoint = "PQ_AllParameters", CallingConvention = CallingConvention.Cdecl)]
         private static extern int PQ_AllParameters(int id, ref PQ_Parameters pap);
+
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "PQ_ChannelOffsets", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int PQ_ChannelOffsets(int id, int[] offsets, int length);
+
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "PQ_ChannelThresholds", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int PQ_ChannelThresholds(int id, int[] offsets, int length);
 
         [DllImport("TCSPC_Decode.dll", EntryPoint = "BH_AllParameters", CallingConvention = CallingConvention.Cdecl)]
         private static extern int BH_AllParameters(int id, ref SPCdata spc_data);
@@ -776,6 +1256,10 @@ namespace TCSPC_controls
 
         [DllImport("TCSPC_Decode.dll", EntryPoint = "Close_Device", CallingConvention = CallingConvention.Cdecl)]
         private static extern int CloseDevice(int id);
+
+        [DllImport("TCSPC_Decode.dll", EntryPoint = "RestartEngine", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int RestartEngine(int id);
+
 
         ////////////////////////////////////////////////
 
@@ -817,7 +1301,13 @@ namespace TCSPC_controls
             public double resolution;
             public int binning;
 
+            public int trigger_mode; //0 for threshold, 1 for CFD. Only for PH330. Others are automatic.
+            public int input_trigger_edge; //0 for falling, 1 for rising
+            public int sync_trigger_edge;
+
             public int hardware;
+
+            public int input_deadtime;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
@@ -828,6 +1318,15 @@ namespace TCSPC_controls
             public int ch_rate1;
             public int ch_rate2;
             public int ch_rate3;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
+        public struct FileWriterStats
+        {
+            public long bytes_written;
+            public int queue_max_depth;
+            public int enqueue_block_count;
+            public int queue_overflow_count;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
@@ -849,6 +1348,7 @@ namespace TCSPC_controls
             public int LineID;
             public int FrameID; //if negative, it will be not used.
             public int skipFirstLines;
+            public int skipFirstFrames;
             public int pixel_binning;
 
             //TCSPC parameters
@@ -894,6 +1394,11 @@ namespace TCSPC_controls
             public int eraseMemory2;
             public int eraseMemory3;
 
+            public int savePhotonsInFile;
+            public int readFromPhotonFile;
+
+            public int lineClockDivision;
+
             public int fastZ_measureTagParameters;
             public double fastZ_FrequencyKHz; //KHerz
             public float fastZ_ZScanPerPixel;
@@ -914,8 +1419,14 @@ namespace TCSPC_controls
             public uint fastZ_CountPerFastZSlice;
             public uint fastZ_residual_for_PhaseDetection;
 
-
+            public int bundle_all_channels;
             public int debug;
+
+            // Fiber photometry (single point) mode
+            public int fiberPhotometryMode; // 0/1
+            public double fiberBin_ms;      // bin width in ms (default 20)
+            public int fiberStartMode;      // 0 = soft (first photon), 1 = external marker (FrameID)
+            public int lineScanMode;        // 0/1
         }//struct
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
@@ -927,256 +1438,5 @@ namespace TCSPC_controls
 
     }//PQNative
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
-    public struct SPCdata
-    {    /* structure for library data  */
-        public ushort base_adr;  /* base I/O address on PCI bus */
-        public short init;      /* set to initialisation result code */
-        public float cfd_limit_low;   /* for SPCx3x(140,150,131) -500 .. 0mV ,for SPCx0x 5 .. 80mV 
-                            for DPC230 = CFD_TH1 threshold of CFD1 -510 ..0 mV */
-        public float cfd_limit_high;  /* 5 ..80 mV, default 80 mV , not for SPC130,140,150,131,930 
-                            for DPC230 = CFD_TH2 threshold of CFD2 -510 ..0 mV */
-        public float cfd_zc_level;    /* SPCx3x(140,150,131) -96 .. 96mV, SPCx0x -10 .. 10mV   
-                            for DPC230 = CFD_TH3 threshold of CFD3 -510 ..0 mV */
-        public float cfd_holdoff;     /* SPCx0x: 5 .. 20 ns, other modules: no influence   
-                            for DPC230 = CFD_TH4 threshold of CFD4 -510 ..0 mV */
-        public float sync_zc_level;   /* SPCx3x(140,150,131): -96 .. 96mV, SPCx0x: -10..10mV   
-                            for DPC230 = CFD_ZC1 Zero Cross level of CFD1 -96 ..96 mV */
-        public float sync_holdoff;    /* 4 .. 16 ns ( SPC130,140,150,131,930: no influence)   
-                            for DPC230 = CFD_ZC2 Zero Cross level of CFD2 -96 ..96 mV */
-        public float sync_threshold;  /* SPCx3x(140,150,131): -500 .. -20mV, SPCx0x: no influence   
-                            for DPC230 = CFD_ZC3 Zero Cross level of CFD3 -96 ..96 mV */
-        public float tac_range;       /* 50 .. 5000 ns,
-                            for DPC230 = DPC range in TCSPC and Multiscaler mode 
-                                    0.16461 .. 1e7 ns */
-        public short sync_freq_div;   /* 1,2,4,8,16 ( SPC130,140,150,131,930, DPC230 : 1,2,4) */
-        public short tac_gain;        /* 1 .. 15    not for DPC230 */
-        public float tac_offset;      /* 0 .. 100%, 
-                     for DPC230 = TDC offset in TCSPC and Multiscaler mode -100 .. 100% */
-        public float tac_limit_low;   /* 0 .. 100%  not for DPC230 */
-                                      // for DPC590 = SYNC_FREQ  1 .. 100 MHz 
-        public float tac_limit_high;  /* 0 .. 100%  
-                            for DPC230 = CFD_ZC4 Zero Cross level of CFD4 -96 ..96 mV */
-        public short adc_resolution;  /* 6,8,10,12 bits, default 10 ,  
-                            (additionally 0,2,4 bits for SPC830,140,150,131,930 )
-                     for DPC230 = no of points of decay curve in TCSPC and Multiscaler mode
-                                          0,2,4,6,8,10,12,14,16  bits */
-        public short ext_latch_delay; /* 0 ..255 ns, (SPC130, DPC230 : no influence) */
-                                      /* SPC140,150,131,930: only values 0,10,20,30,40,50 ns are possible */
-        public float collect_time;    /* 1e-7 .. 100000s , default 0.01s */
-        public float display_time;    /* 0.1 .. 100000s , default 1.0s, obsolete, not used in DLL */
-        public float repeat_time;     /* 1e-7 .. 100000s , default 10.0s, not for DPC230 */
-        public short stop_on_time;    /* 1 (stop) or 0 (no stop) */
-        public short stop_on_ovfl;    /* 1 (stop) or 0 (no stop), not for DPC230  */
-        public short dither_range;    /* possible values - 0, 32,   64,   128,  256 
-                               have meaning:  0, 1/64, 1/32, 1/16, 1/8 
-                               not for DPC230 */
-        public short count_incr;      /* 1 .. 255, not for DPC230  */
-        public short mem_bank;        /* for SPC130,600,630, 150,131 :  0 , 1 , default 0
-                            other SPC modules: always 0
-                            DPC230 : bit 1 - DPC 1 active, bit 2 - DPC 2 active 
-                          */
-        public short dead_time_comp;  /* 0 (off) or 1 (on), default 1, not for DPC230   */
-        public ushort scan_control; /* SPC505(535,506,536) scanning(routing) control word,
-                                  other SPC modules always 0 */
-        public ushort routing_mode;     /* DPC230  bits 0-7 - control bits
-                             SPC150(830,140,131) 
-                                - bits 7 - in FIFO_32M mode,  
-                                           = 0 (default) Frame pulses on Marker 2,
-                                           = 1 Frame pulses on Marker 3,
-                                - bits 8 - 11 - enable(1)/disable(0), default 0 
-                                              of recording Markers 0-3 entries in FIFO mode 
-                                - bits 12 - 15 - active edge 0(falling), 1(rising), default 0 
-                                               of Markers 0-3 in FIFO mode 
-                             other SPC modules - not used  */
-        public float tac_enable_hold;  /* SPC230 10.0 .. 265.0 ns - duration of TAC enable pulse ,
-                             DPC230 - macro time clock in ps, default 82.305 ps,
-                             other SPC modules always 0 */
-        public short pci_card_no;      /* module no on PCI bus (0-7)  */
-        public ushort mode;    /* for SPC7x0      , default 0       
-                                0 - normal operation (routing in), 
-                                1 - block address out, 2 -  Scan In, 3 - Scan Out 
-                             for SPC6x0      , default 0       
-                                0 - normal operation (routing in)   
-                                2 - FIFO mode 48 bits, 3 - FIFO mode 32 bits  
-                             for SPC130      , default 0       
-                                0 - normal operation (routing in)   
-                                2 - FIFO mode 32 bits 
-                             for SPC140 , default 0       
-                                0 - normal operation (routing in)   
-                                1 - FIFO mode 32 bits, 2 -  Scan In, 3 - Scan Out  
-                                5 - FIFO_mode 32 bits with markers ( FIFO_32M ), with FPGA v. > B0
-                             for SPC150 , default 0       
-                                0 - normal operation (routing in)   
-                                1 - FIFO mode 32 bits, 2 -  Scan In, 3 - Scan Out  
-                                5 - FIFO_mode 32 bits with markers ( FIFO_32M )
-                             for SPC830,930 , default 0       
-                                0 - normal operation (routing in)   
-                                1 - FIFO mode 32 bits, 2 -  Scan In, 3 - Scan Out  
-                                4 - Camera mode ( only SPC930 )   
-                                5 - FIFO_mode 32 bits with markers ( FIFO_32M ), 
-                                                SPC830 with FPGA v. > C0
-                             for DPC230 , default 8       
-                                6 - TCSPC FIFO    
-                                7 - TCSPC FIFO Image mode    
-                                8 - Absolute Time FIFO mode   
-                                9 - Absolute Time FIFO Image mode 
-                             for SPC131 , default 0       
-                                0 - normal operation (routing in)   
-                                1 - FIFO mode 32 bits
-                              */
-        public ulong scan_size_x;  /* for SPC7x0,830,140,150,930 modules in scanning modes 1 .. 65536, 
-                                         default 1, not for DPC230  */
-        public ulong scan_size_y;  /* for SPC7x0,830,140,150,930 modules in scanning modes 1 .. 65536,
-                                         default 1, not for DPC230  */
-        public ulong scan_rout_x;  /* number of X routing channels in Scan In & Scan Out modes, not for DPC230
-                                  for SPC7x0,830,140,150,930 modules
-                               1 .. 128, ( SPC7x0,830 ), 1 .. 16 (SPC140,150,930), default 1 */
-        public ulong scan_rout_y;  /* number of Y routing channels in Scan In & Scan Out modes, not for DPC230
-                                  for SPC7x0,830,140,150, 930 modules 
-                               1 .. 128, ( SPC7x0,830 ), 1 .. 16 (SPC140,150,930), default 1 */
-                                   /* INT(log2(scan_size_x)) + INT(log2(scan_size_y)) + 
-                                      INT(log2(scan_rout_x)) + INT(log2(scan_rout_y)) <= max number of scanning bits
-                                                      max number of scanning bits depends on current adc_resolution:
-                                                              12 (10 for SPC7x0,140,150)   -              12
-                                                              14 (12 for SPC7x0,140,150)   -              10
-                                                              16 (14 for SPC7x0,140,150)   -               8
-                                                              18 (16 for SPC7x0,140,150)   -               6
-                                                              20 (18 for SPC140,150)       -               4
-                                                              22 (20 for SPC140,150)       -               2
-                                                              24 (22 for SPC140,150)       -               0
-                                                              */
-        public ulong scan_flyback;   /* for SPC7x0,830,140,150,930 modules in Scan Out or Rout Out mode, 
-                                         default 0, not for DPC230  */
-                                     /* bits 15-0  Flyback X in number of pixels
-                                          bits 31-16 Flyback Y in number of lines */
-        public ulong scan_borders;   /* for SPC7x0,830,140,150,930 modules in Scan In mode, 
-                                         default 0, not for DPC230  */
-                                     /* bits 15-0  Upper boarder, bits 31-16 Left boarder */
-        public ushort scan_polarity;    /* for SPC7x0,830,140,150,930 modules in scanning modes, 
-                                         default 0, not for DPC230  */
-                                        /* bit 0 - polarity of HSYNC (Line), bit 1 - polarity of VSYNC (Frame),
-                                           bit 2 - pixel clock polarity
-                                           bit = 0 - falling edge(active low)
-                                           bit = 1 - rising  edge(active high) 
-                                         for SPC140,150,830 in FIFO_32M mode
-                                           bit = 8 - HSYNC (Line) marker disabled (1) or enabled (0, default )
-                                                       when disabled, line marker will not appear in FIFO photons stream */
-        public ushort pixel_clock;   /* for SPC7x0,830,140,150,930 modules in Scan In mode, or DPC230 in Image modes
-                             pixel clock source, 0 - internal,1 - external, default 0
-                 for SPC140,150,830 in FIFO_32M mode it disables/enables pixel markers 
-                                                 in photons stream */
-        public ushort line_compression;   /* line compression factor for SPC7x0,830,140,150,930 modules 
-                                   in Scan In mode,   1,2,4,8,16,32,64,128, default 1*/
-        public ushort trigger;    /* external trigger condition - 
-           bits 1 & 0 mean :   00 - ( value 0 ) none(default), 
-                               01 - ( value 1 ) active low, 
-                               10 - ( value 2 ) active high 
-        when sequencer is enabled on SPC130,6x0,150,131 modules additionally
-          bits 9 & 8 of the value mean:
-           00 - trigger only at the start of the sequence,
-           01 ( 100 hex, 256 decimal ) - trigger on each bank
-           11 ( 300 hex, 768 decimal ) - trigger on each curve in the bank
-        for SPC150, 131, 140 and SPC130 (FPGA v. > C0) multi-module configuration 
-               bits 13 & 12 of the value mean:
-           x0 - module does not use trigger bus ( trigger defined via bits 0-1),
-           01 ( 1000 hex, 4096 decimal ) - module uses trigger bus as slave 
-                                            ( waits for the trigger on master),
-           11 ( 3000 hex, 12288 decimal ) - module uses trigger bus as master
-                                  ( trigger defined via bits 0-1),
-                                  ( only one module can be the master )
-          */
-        public float pixel_time;    /* pixel time in sec for SPC7x0,830,140,150,930 modules in Scan In mode,
-                              50e-9 .. 1.0 , default 200e-9 */
-        public ulong ext_pixclk_div;  /* divider of external pixel clock for SPC7x0,830,140,150 modules
-                                in Scan In mode, 1 .. 0x3fe, default 1*/
-        public float rate_count_time;    /* rate counting time in sec  default 1.0 sec
-                              for SPC130,830,930,150,131 can be : 1.0, 250ms, 100ms, 50ms 
-                              for SPC140 fixed to 50ms   
-                              for DPC230 - 1.0sec, 
-                                           0.0 - don't count rate outside the measurement, */
-        public short macro_time_clk;     /*  macro time clock definition for SPC130,140,150,131,830,930 in FIFO mode     
-                              for SPC130, SPC140,150,131:
-                                  0 - 50ns (default), 25ns for SPC150,131 & 140 with FPGA v. > B0 , 
-                                  1 - SYNC freq., 2 - 1/2 SYNC freq.,
-                                  3 - 1/4 SYNC freq., 4 - 1/8 SYNC freq.
-                              for SPC830:
-                                  0 - 50ns (default), 1 - SYNC freq., 
-                              for SPC930:
-                                  0 - 50ns (default), 1 - SYNC freq., 2 - 1/2 SYNC freq.*/
-        public short add_select;     /* selects ADD signal source for all modules except SPC930 & DPC230 : 
-                            0 - internal (ADD only), 1 - external */
-        public short test_eep;        /* test EEPROM checksum or not  */
-        public short adc_zoom;     /* selects ADC zoom level for module SPC830,140,150,131,930 default 0 
-                           bit 4 = 0(1) - zoom off(on ), 
-                           bits 0 - 3 zoom level =  
-                               0 - zoom of the 1st 1/16th of ADC range,  
-                              15 - zoom of the 16th 1/16th of ADC range */
-        public ulong img_size_x;  /* image X size ( SPC140,150,830 in FIFO_32M, SPC930 in Camera mode ),
-                                      1 .. 1024, default 1 */
-        public ulong img_size_y;  /* image Y size ( SPC140,150,830 in FIFO_32M, SPC930 in Camera mode ),
-                                actually equal to img_size_x ( quadratic image ) */
-        public ulong img_rout_x;  /* no of X routing channels ( SPC140,150,830 in FIFO_32M, SPC930 in Camera mode ),
-                                      1 .. 16, default 1 */
-        public ulong img_rout_y;  /* no of Y routing channels ( SPC140,150,830 in FIFO_32M, SPC930 in Camera mode ),
-                                      1 .. 16, default 1 */
-        public short xy_gain;      /* selects gain for XY ADCs for module SPC930, 1,2,4, default 1 */
-        public short master_clock;  /*  use Master Clock( 1 ) or not ( 0 ), default 0,
-                               only for SPC140,150,131 multi-module configuration 
-                        - value 2 (when read) means Master Clock state was set by other application
-                                  and cannot be changed */
-        public short adc_sample_delay; /* ADC's sample delay, only for module SPC930   
-                             0,10,20,30,40,50 ns (default 0 ) */
-        public short detector_type;    /*  for module SPC930 :
-                            detector type used in Camera mode, 1 .. 9899, default 1, 
-                      normally recognised automatically from the corresponding .bit file
-                               1 - Hamamatsu Resistive Anode 4 channels detector
-                               2 - Wedge & Strip 3 channels detector   
-                       for module DPC230 :
-                          type of active inputs : bit 1 - TDC1, bit 2 - TDC2, 
-                             bit value 0 , CFD inputs active,
-                             bit value 1 , TTL inputs active */
-
-        public short x_axis_type;      /* X axis representation, only for module SPC930
-                               0 - time (default ), 1 - ADC1 Voltage, 
-                               2 - ADC2 Voltage, 3 - ADC3 Voltage, 4 - ADC4 Voltage 
-                           */
-        public ulong chan_enable;   /* for module DPC230/330 - enable(1)/disable(0) input channels
-                                bits 0-7   - en/disable TTL channel 0-7 in TDC1
-                                bits 8-9   - en/disable CFD channel 0-1 in TDC1
-                                bits 12-19 - en/disable TTL channel 0-7 in TDC2 
-                                bits 20-21 - en/disable CFD channel 0-1 in TDC2 
-                                */
-        public ulong chan_slope;   /* for module DPC230 - active slope of input channels
-                                   1 - rising, 0 - falling edge active
-                                bits 0-7   - slope of TTL channel 0-7 in TDC1
-                                bits 8-9   - slope of CFD channel 0-1 in TDC1
-                                bits 12-19 - slope of TTL channel 0-7 in TDC2
-                                bits 20-21 - slope of CFD channel 0-1 in TDC2
-                                */
-        public ulong chan_spec_no;     /* for module DPC230/330 - channel numbers of special inputs
-                                                   default 0x8813 in imaging modes
-              bits 0-4 - reference chan. no ( TCSPC and Multiscaler modes)
-                        default = 19, value:
-                       0-1 CFD chan. 0-1 of TDC1,   2-9 TTL chan. 0-7 of TDC1
-                     10-11 CFD chan. 0-1 of TDC2, 12-19 TTL chan. 0-7 of TDC2
-              bits  8-10 - frame clock TTL chan. no ( imaging modes ) 0-7, default 0
-              bits 11-13 - line  clock TTL chan. no ( imaging modes ) 0-7, default 1
-              bits 14-16 - pixel clock TTL chan. no ( imaging modes ) 0-7, default 2
-              bit  17    - TDC no for pixel, line, frame clocks ( imaging modes )
-                              0 = TDC1, 1 = TDC2, default 0
-              bits 18-19 - not used 
-              bits 20-23 - active channels of TDC1 for DPC-330 Hardware Histogram modes
-              bits 24-27 - active channels of TDC2 for DPC-330 Hardware Histogram modes
-              bits 28-31 - not used 
-              */
-    } //SPCdata
-
-
-    enum PQHardware
-    {
-        TH260P = 1,
-        TH260N = 2,
-    }
 
 }

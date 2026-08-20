@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TagLensController</RootNamespace>
     <AssemblyName>TagLensController</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
@@ -84,7 +84,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>mkdir "$(ProjectDir)..\App\External\$(PlatformName)\$(Configuration)\"
-copy "$(TargetPath)" "$(ProjectDir)..\App\External\$(PlatformName)\$(Configuration)\"</PostBuildEvent>
+    <PostBuildEvent>if not exist "$(ProjectDir)..\..\FLIMage\App\External\$(PlatformName)\$(Configuration)\" mkdir "$(ProjectDir)..\..\FLIMage\App\External\$(PlatformName)\$(Configuration)\"
+copy "$(TargetPath)" "$(ProjectDir)..\..\FLIMage\App\External\$(PlatformName)\$(Configuration)\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

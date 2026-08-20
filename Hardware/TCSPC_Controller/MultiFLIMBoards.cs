@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -22,6 +22,14 @@ namespace TCSPC_controls
         public bool focusing = false;
         public bool saturated = false;
         public bool enableFastZscan = false;
+        /// <summary>
+        /// Managed (C#) simulation flag.
+        ///
+        /// IMPORTANT: This is NOT the same as "SimPQ".
+        /// - "SimPQ" is implemented inside TCSPC_Decode.dll and should run through the normal DLL callback path
+        ///   (FrameDone/StripeDone/MeasDone) like real acquisition.
+        /// - This flag is ONLY for the legacy managed synthetic generator <see cref="RunSimulationData"/>.
+        /// </summary>
         public bool simulation_mode = false;
 
         public TCSPC_Native FLIM_N; //Testing now, but not used yet.
@@ -41,6 +49,7 @@ namespace TCSPC_controls
 
         object sync_acq = new object();
         object syncBuffer = new object();
+        object syncPhotonBinaryHandle = new object();
         public FLIM_Parameters parameters;
 
         public event FrameDoneHandler FrameDone;
@@ -56,45 +65,66 @@ namespace TCSPC_controls
         public FiFio_multiBoards(FLIM_Parameters flim_parameters)
         {
             parameters = flim_parameters;
-            String boardType = parameters.spcData.BoardType;
-
             enableFastZscan = flim_parameters.enableFastZscan;
 
-            switch (boardType)
-            {
-                case "BH":
-                    board_type = TCSPCType.BH_SPC150;
-                    nDevices = parameters.spcData.n_devicesBH;
-                    channelsPerDevice = parameters.spcData.channelPerDeviceBH;
-                    if (parameters.spcData.n_devicesBH * parameters.spcData.channelPerDeviceBH != parameters.nChannels)
-                        channelsPerDevice = parameters.nChannels / parameters.spcData.n_devicesBH;
-                    break;
-                case "MH":
-                    board_type = TCSPCType.PQ_MultiHarp;
-                    nDevices = parameters.spcData.n_devicesPQ;
-                    channelsPerDevice = parameters.spcData.channelPerDevicePQ;
-                    if (parameters.spcData.n_devicesPQ * parameters.spcData.channelPerDevicePQ != parameters.nChannels)
-                        channelsPerDevice = parameters.nChannels / parameters.spcData.n_devicesPQ;
-                    break;
-                case "PQ":
-                    board_type = TCSPCType.PQ_Th260;
-                    nDevices = parameters.spcData.n_devicesPQ;
-                    channelsPerDevice = parameters.spcData.channelPerDevicePQ;
-                    if (parameters.spcData.n_devicesPQ * parameters.spcData.channelPerDevicePQ != parameters.nChannels)
-                        channelsPerDevice = parameters.nChannels / parameters.spcData.n_devicesPQ;
-                    break;
-                default:
-                    board_type = TCSPCType.PQ_Th260;
-                    nDevices = parameters.spcData.n_devicesPQ;
-                    channelsPerDevice = parameters.spcData.channelPerDevicePQ;
-                    if (parameters.spcData.n_devicesPQ * parameters.spcData.channelPerDevicePQ != parameters.nChannels)
-                        channelsPerDevice = parameters.nChannels / parameters.spcData.n_devicesPQ;
-                    break;
-            }
+            SetBoardConfiguration(parameters.spcData.BoardType);
 
             parameters.spcData.nDevices = nDevices;
             parameters.spcData.channelPerDevice = channelsPerDevice;
 
+        }
+
+        private void SetBoardConfiguration(string boardType)
+        {
+            switch (boardType?.ToUpperInvariant())
+            {
+                case "BH":
+                    board_type = TCSPCType.BH_SPC150;
+                    nDevices = parameters.spcData.n_devicesBH;
+                    channelsPerDevice = ResolveChannelsPerDevice(parameters.spcData.n_devicesBH, parameters.spcData.channelPerDeviceBH);
+                    break;
+                case "MH":
+                    board_type = TCSPCType.PQ_MultiHarp;
+                    nDevices = parameters.spcData.n_devicesPQ;
+                    channelsPerDevice = ResolveChannelsPerDevice(parameters.spcData.n_devicesPQ, parameters.spcData.channelPerDevicePQ);
+                    break;
+                case "PH":
+                    board_type = TCSPCType.PQ_PH330;
+                    nDevices = parameters.spcData.n_devicesPQ;
+                    channelsPerDevice = ResolveChannelsPerDevice(parameters.spcData.n_devicesPQ, parameters.spcData.channelPerDevicePQ);
+                    break;
+                case "HH":
+                    board_type = TCSPCType.PQ_HH500;
+                    nDevices = parameters.spcData.n_devicesPQ;
+                    channelsPerDevice = ResolveChannelsPerDevice(parameters.spcData.n_devicesPQ, parameters.spcData.channelPerDevicePQ);
+                    break;
+                case "PQ":
+                    board_type = TCSPCType.PQ_Th260;
+                    nDevices = parameters.spcData.n_devicesPQ;
+                    channelsPerDevice = ResolveChannelsPerDevice(parameters.spcData.n_devicesPQ, parameters.spcData.channelPerDevicePQ);
+                    break;
+                case "SIMPQ":
+                case "SYMPQ":
+                    board_type = TCSPCType.simpq;
+                    nDevices = parameters.spcData.n_devicesPQ;
+                    channelsPerDevice = ResolveChannelsPerDevice(parameters.spcData.n_devicesPQ, parameters.spcData.channelPerDevicePQ);
+                    break;
+                default:
+                    board_type = TCSPCType.PQ_Th260;
+                    nDevices = parameters.spcData.n_devicesPQ;
+                    channelsPerDevice = ResolveChannelsPerDevice(parameters.spcData.n_devicesPQ, parameters.spcData.channelPerDevicePQ);
+                    break;
+            }
+        }
+
+        private int ResolveChannelsPerDevice(int devices, int requestedChannelsPerDevice)
+        {
+            int totalRequestedChannels = devices * requestedChannelsPerDevice;
+
+            if (totalRequestedChannels == parameters.nChannels || devices == 0)
+                return requestedChannelsPerDevice;
+
+            return Math.Max(1, parameters.nChannels / devices);
         }
 
         public int computer_id()
@@ -102,6 +132,7 @@ namespace TCSPC_controls
             try
             {
                 int id = TCSPC_Native.Get_ComputerID();
+                //int id = FLIM_FiFoList[0].dll.Get_ComputerID();
                 return id;
             }
             catch
@@ -112,6 +143,7 @@ namespace TCSPC_controls
 
         public void startSimulationMode()
         {
+            // This enables the managed synthetic generator (RunSimulationData), NOT SimPQ-in-DLL.
             simulation_mode = true;
         }
 
@@ -129,7 +161,11 @@ namespace TCSPC_controls
         public ErrorCode Initialize()
         {
             short retcode = 0;
-            simulation_mode = true;
+            // NOTE:
+            // SimPQ is handled inside TCSPC_Decode.dll (it still behaves like a real device and produces callbacks).
+            // Therefore, do NOT enable this class's managed "simulation_mode" for SimPQ.
+            // managed simulation_mode is only for RunSimulationData() (synthetic data generator).
+            simulation_mode = false;
 
             if (board_type == TCSPCType.BH_SPC150) //for BH, it is necessary to find a library.
             {
@@ -150,14 +186,14 @@ namespace TCSPC_controls
 
                 if (!use_bh)
                 {
-                    return ErrorCode.DLL_NOTFOUND;
+                    //return ErrorCode.DLL_NOTFOUND;
                 }
             }
 
             parameters.ComputerID = computer_id();
 
-            if (parameters.ComputerID == 0)
-                return ErrorCode.DLL_NOTFOUND;
+            //if (parameters.ComputerID == 0)
+            //    return ErrorCode.DLL_NOTFOUND;
 
             for (short i = 0; i < nDevices; i++)
             {
@@ -166,6 +202,7 @@ namespace TCSPC_controls
 
                 if (FLIM_N == null)
                 {
+                    Debug.WriteLine("FiFio_multiBoards.Initialize: FLIM_N is null => DLL_NOTFOUND");
                     return ErrorCode.DLL_NOTFOUND;
                 }
 
@@ -175,17 +212,17 @@ namespace TCSPC_controls
                 }
                 else
                 {
-                    if (!FLIM_N.DLLSerialGoThrough)
-                        return ErrorCode.COMPUTERID_INCORRECT;
+                    //if (!FLIM_N.DLLSerialGoThrough)
+                    //    return ErrorCode.COMPUTERID_INCORRECT;
 
-                    if (!FLIM_N.DLLActive)
-                        return ErrorCode.DLL_NOTFOUND;
+                    //if (!FLIM_N.DLLActive)
+                    //    return ErrorCode.DLL_NOTFOUND;
                 }
 
-                if (retcode < 0)
-                {
-                    return ErrorCode.PARAMETER_ERROR;
-                }
+                //if (retcode < 0)
+                //{
+                //    return ErrorCode.PARAMETER_ERROR;
+                //}
 
                 if (createNew) //should do only once.
                 {
@@ -195,10 +232,26 @@ namespace TCSPC_controls
                     FLIM_FiFoList[i].StripeDone += new TCSPC_Native.StripeDoneHandler(AcquireStripe);
                     FLIM_FiFoList[i].MeasDone += new TCSPC_Native.MeasDoneHandler(MeasDoneHandle);
                 }
+                else if (!FLIM_FiFoList.Contains(FLIM_N))
+                {
+                    FLIM_N.deviceID = i;
+                    FLIM_FiFoList.Add(FLIM_N);
+                    FLIM_N.FrameDone += new TCSPC_Native.FrameDoneHandler(AcquireOne);
+                    FLIM_N.StripeDone += new TCSPC_Native.StripeDoneHandler(AcquireStripe);
+                    FLIM_N.MeasDone += new TCSPC_Native.MeasDoneHandler(MeasDoneHandle);
+                }
             }
 
             simulation_mode = false;
             return ErrorCode.NONE;
+        }
+
+        public void RestartDLL()
+        {
+            for (short i = 0; i < nDevices; i++)
+            {
+                //FLIM_FiFoList[i].reStartDLL();
+            }
         }
 
         public void SetupParameters(bool focus, FLIM_Parameters parametersInput)
@@ -206,21 +259,85 @@ namespace TCSPC_controls
             focusing = focus;
             parameters = parametersInput;
 
+            if (!simulation_mode)
+                for (short i = 0; i < nDevices; i++)
+                {
+                    FLIM_FiFoList[i].parameters = parameters;
+
+                    FLIM_FiFoList[i].Set_allParameters(parameters);
+                }
+        }
+
+
+        public void SetupPhotonFileName(FLIM_Parameters parameters)
+        {
+            string fname = parameters.spcData.PhotonsFileName;
+            string ext1 = ".bin";
+
+            if (!simulation_mode)
+                for (short i = 0; i < nDevices; i++)
+                {
+                    fname = fname.Split('.')[0] + '_' + i + ext1;
+
+                    FLIM_FiFoList[i].SetupPhotonDataFile(fname);
+                }
+        }
+
+        public void SetupPhotonBinary(FLIM_Parameters parameters)
+        {
+            if (!simulation_mode)
+                for (short i = 0; i < nDevices; i++)
+                {
+                    FLIM_FiFoList[i].SetupPhotonDataBinary(parameters.spcData.photonBinary);
+                }
+        }
+
+        public int SetupPhotonBinaryStream(FLIM_Parameters parameters)
+        {
             if (simulation_mode)
+                return 0;
+
+            if (nDevices > 1)
+                return -1;
+
+            return FLIM_FiFoList[0].SetupPhotonDataStream();
+        }
+
+        public int AppendPhotonBinaryStream(uint[] data, bool isLast)
+        {
+            if (simulation_mode)
+                return 0;
+
+            if (nDevices > 1)
+                return -1;
+
+            int length = data?.Length ?? 0;
+            return FLIM_FiFoList[0].AppendPhotonDataStream(data, length, isLast);
+        }
+
+        public int SetupPhotonWriteStream(Stream stream)
+        {
+            if (simulation_mode)
+                return 0;
+
+            if (nDevices > 1)
+                return -1;
+
+            return FLIM_FiFoList[0].SetupPhotonDataWriteStream(stream);
+        }
+
+        public void ClearPhotonWriteStream()
+        {
+            if (simulation_mode || nDevices > 1)
                 return;
 
-            for (short i = 0; i < nDevices; i++)
-            {
-                FLIM_FiFoList[i].parameters = parameters;
-
-                if (!simulation_mode)
-                    FLIM_FiFoList[i].Set_allParameters(parameters);
-            }
-
+            FLIM_FiFoList[0].ClearPhotonDataWriteStream();
         }
 
         public void RunSimulationData()
         {
+            // Managed synthetic generator (legacy).
+            // Do NOT use this for "SimPQ" which is simulated inside TCSPC_Decode.dll.
             int id = 0;
             Running = true;
             simulation_mode = true;
@@ -231,7 +348,10 @@ namespace TCSPC_controls
                 for (int ch = 0; ch < FLIMData.Length; ch++)
                 {
                     FLIMData[ch] = new ushort[1][,,];
-                    int nDtime = parameters.acquireFLIM[ch] ? parameters.nDtime : 1;
+                    bool acqFlim = parameters.acquireFLIM != null && ch < parameters.acquireFLIM.Length
+                        ? parameters.acquireFLIM[ch]
+                        : true;
+                    int nDtime = acqFlim ? parameters.nDtime : 1;
                     FLIMData[ch][0] = new ushort[parameters.nLines, parameters.nPixels, nDtime];
                 }
 
@@ -249,7 +369,7 @@ namespace TCSPC_controls
                 double[] beta2 = new double[] { 0.5, 1 / (2.6 / resN), 0.2, 1 / (0.5 / resN), 0.15 / resN, 2.0 / resN };
                 double pulseI = 12.5 / resN;
 
-
+                //Simulation data.
                 for (int frameCounter = 0; frameCounter < nFrame; frameCounter++)
                 {
                     int stripe1 = frameCounter % 4 + 1;
@@ -265,11 +385,14 @@ namespace TCSPC_controls
                             FLIMData[ch][0] = MathLibrary.MatrixCalc.MatrixCalc3D(FLIMData[ch][0], data1, MathLibrary.CalculationType.Add);
 
                         average_counter[ch]++;
-                        if (average_counter[ch] == n_average || !parameters.averageFrame[ch])
+                        bool doAverage = parameters.averageFrame != null && ch < parameters.averageFrame.Length
+                            ? parameters.averageFrame[ch]
+                            : false;
+                        if (average_counter[ch] == n_average || !doAverage)
                             average_counter[ch] = 0;
                     }
 
-                    FrameDone?.Invoke(this, new FrameEventArgs(frameCounter, id, FLIMData));
+                    FrameDone?.Invoke(this, new FrameEventArgs(frameCounter + 1, id, FLIMData, false));
                     if (!Running)
                         break;
                 }
@@ -386,11 +509,13 @@ namespace TCSPC_controls
                 {
                     FLIM_FiFoList[i].TCSPC_StopMeas(force);
                 }
+
+                ReleasePhotonBinaryHandles();
             });
 
             force_stop = force;
             Running = false;
-            ClearMemory();
+            ClearFrameBuffers();
         }
 
         public void AcquireStripe(TCSPC_Native tcspc_fifo, StripeEventArgs e)
@@ -429,6 +554,10 @@ namespace TCSPC_controls
         {
             if (tcspc_fifo.saturated)
                 saturated = true;
+
+            if (IsCompleted())
+                ReleasePhotonBinaryHandles();
+
             MeasDone?.Invoke(this, e);
         }
 
@@ -492,7 +621,7 @@ namespace TCSPC_controls
                     FLIM_data = (ushort[][][,,])FLIM_data_buffer[frameToWork];
                     if (FrameDone != null)
                     {
-                        e_frame = new FrameEventArgs(frameN, 0, FLIM_data);
+                        e_frame = new FrameEventArgs(frameN, 0, FLIM_data, e.skip);
                         FrameDone(this, e_frame); //It filled two chanels.
                         RemoveFrameAt(frameToWork); //this includes counting of deleteCounter.
                     }
@@ -518,12 +647,24 @@ namespace TCSPC_controls
         }
 
 
-        private void ClearMemory()
+        private void ClearFrameBuffers()
         {
             if (FLIM_data_buffer != null)
                 FLIM_data_buffer.Clear();
 
             finishedArray.Clear();
+        }
+
+        private void ReleasePhotonBinaryHandles()
+        {
+            lock (syncPhotonBinaryHandle)
+            {
+                for (short i = 0; i < nDevices; i++)
+                {
+                    if (FLIM_FiFoList[i].photon_binary_handle.IsAllocated)
+                        FLIM_FiFoList[i].photon_binary_handle.Free();
+                }
+            }
         }
 
         private void RemoveFrameAt(int frameToWork)
@@ -569,7 +710,7 @@ namespace TCSPC_controls
 
         public void closeDevice()
         {
-            if (simulation_mode)
+            if (simulation_mode || parameters.read_from_file)
                 return;
 
             for (short i = 0; i < nDevices; i++)
@@ -587,7 +728,12 @@ namespace TCSPC_controls
         BH_SPC150 = 1,
         PQ_Th260 = 2,
         PQ_MultiHarp = 3,
-        SI_TimeTagger = 4,
+        PQ_PH330 = 4,
+        PQ_HH500 = 5,
+        SI_TimeTagger = 10,
+        SPAD23 = 11,
+        simpq = -1,
+        simbh = -2,
     }
 
     public class FrameEventArgs : EventArgs
@@ -595,12 +741,14 @@ namespace TCSPC_controls
         public int frameNumber;
         public int device = 0;
         public UInt16[][][,,] data;
+        public bool skip = false;
         public List<int> channelList = new List<int>();
-        public FrameEventArgs(int _frameNumber, int _device, UInt16[][][,,] _data)
+        public FrameEventArgs(int _frameNumber, int _device, UInt16[][][,,] _data, bool _skip)
         {
             frameNumber = _frameNumber;
             device = _device;
             data = _data;
+            skip = _skip;
         } // eo ctor
     } // eo class StripeEventArgs
 

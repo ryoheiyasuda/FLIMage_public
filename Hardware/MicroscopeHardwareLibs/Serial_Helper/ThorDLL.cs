@@ -32,6 +32,7 @@ namespace MicroscopeHardwareLibs
             ThorBScope = 2,
             ThorECU = 3,
             ThorBCM = 4,
+            ThorZStepper = 5,
         }
 
         public static ThorDLL ThorDLL_Load(DLLType dll_type)

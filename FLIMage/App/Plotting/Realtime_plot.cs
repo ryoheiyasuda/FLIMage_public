@@ -1,4 +1,4 @@
-﻿using FLIMage.Analysis;
+using FLIMage.Analysis;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -22,12 +22,14 @@ namespace FLIMage.Plotting
         public int channel;
         public bool calc_Fit = true;
         public bool calc_upon_open = true;
+        public bool mask_on = false;
 
         public bool showCurrentTF = true;
 
         public plotWhat plotType = plotWhat.sumIntensity_bg;
 
         public bool autoScale = true;
+
 
         PlotOnPictureBox plot;
 
@@ -69,6 +71,9 @@ namespace FLIMage.Plotting
                 CalculateSinglePage.Visible = false;
                 CalculateUponOpen.Visible = false;
                 OpenExcel.Visible = false;
+                Mask_CB.Visible = false;
+                SubtractCheck.Visible = false;
+
                 this.Text = "Realtime plot";
             }
             else
@@ -236,8 +241,13 @@ namespace FLIMage.Plotting
                             if (roiID >= 1000)
                             {
                                 int roi1_ID = roiID / 1000;
-                                int roi2_ID = roiID - (1000 * roi1_ID) + 1;
-                                strList.Add("ROI-" + roi1_ID.ToString() + "-" + roi2_ID);
+                                //KENGO BEGIN 2-17-2026
+                                //change the legend for PolyLineROI
+                                //int roi2_ID = roiID - (1000 * roi1_ID) + 1;
+                                //strList.Add("ROI-" + roi1_ID.ToString() + "-" + roi2_ID);
+                                int roi2_ID = roiID - (1000 * roi1_ID);
+                                strList.Add("ROI-" + roi1_ID.ToString() + "_" + roi2_ID.ToString());
+                                //KENGO END
 
                             }
                             else
@@ -290,16 +300,20 @@ namespace FLIMage.Plotting
                     if (image_display.FLIM_ImgData.ZProjection)
                         page = 0;
 
-                    TC.AddFile(iminfo, page);
-                    TC.calculate();
+                    if (page >= 0)
+                    {
+                        TC.AddFile(iminfo, page);
 
-                    TCF = new TimeCourse_Files();
-                    TCF.AddFile(TC);
-                    TCF.calculate();
+                        TC.calculate();
 
-                    image_display.TCF = TCF;
-                    image_display.TC = TC;
-                    image_display.SaveTimeCourse();
+                        TCF = new TimeCourse_Files();
+                        TCF.AddFile(TC);
+                        TCF.calculate();
+
+                        image_display.TCF = TCF;
+                        image_display.TC = TC;
+                        image_display.SaveTimeCourse();
+                    }
                 }
 
                 plotNow_noRealtime(TCF, TC, image_display, image_display.currentChannel);
@@ -338,6 +352,14 @@ namespace FLIMage.Plotting
         {
             //calc_upon_open = ON; Automatic.
             CalculateUponOpen.Checked = ON;
+        }
+
+        private void Mask_CB_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!real_time)
+            {
+                mask_on = Mask_CB.Checked;
+            }
         }
         //////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////
@@ -444,5 +466,6 @@ namespace FLIMage.Plotting
             sumIntensity_bg = 8,
         }
 
+        
     }
 }

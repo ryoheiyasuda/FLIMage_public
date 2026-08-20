@@ -1,4 +1,6 @@
-﻿using FLIMage.Analysis;
+using FLIMage.Analysis;
+using FLIMage.FileFormat;
+using FLIMage.FlowControls;
 using FLIMage.HardwareControls.StageControls;
 using FLIMage.Uncaging;
 using MathLibrary;
@@ -8,6 +10,7 @@ using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -40,6 +43,12 @@ namespace FLIMage
         public Stopwatch SW_PerformanceMonitor = new Stopwatch();
         public Stopwatch SW_PerformanceMonitorFrame = new Stopwatch();
 
+        // Throttle UI counter updates during acquisition to reduce cross-thread overhead.
+        // (UpdateCounters triggers UI work; doing it every frame can become a bottleneck at high frame rates.)
+        private int _lastCountersUpdateTick = Environment.TickCount;
+        private const int CountersUpdateIntervalMs = 100;
+        private const int PhotonStreamChunkBytes = 1024 * 1024;
+
         //For synchronization.
         readonly object syncFLIMacq = new object();
         readonly object saveBufferObj = new object();
@@ -52,16 +61,40 @@ namespace FLIMage
         public ScanParameters SaveState;
 
         public bool imageSequencing = false;
-        public bool snapShot = false;
-        public bool focusing = false;
-        public bool grabbing = false;
+        public bool snapShot { get; private set; }
+        public bool focusing { get; private set; }
+        public bool grabbing { get; private set; }
         public bool refocusing = false;
-        public bool post_grabbing_process = false;
-        public bool looping = false;
-        public bool allowLoop = true;
-        public bool stopGrabActivated = false;
+        public bool post_grabbing_process { get; private set; }
+        public bool looping { get; private set; }
+        public bool allowLoop { get; private set; }
+        public bool stopGrabActivated { get; private set; }
+        public bool acquisition_done_event_activated { get; private set; }
         public bool force_stop = false;
         public bool runningImgAcq = false;
+
+        // ------------------------------------------------------------
+        // Line scan trace mode (trace ROI -> 1-line frame)
+        // ------------------------------------------------------------
+        private bool _lineScanTraceActive = false;
+        private LineScanTraceBackup _lineScanTraceBackup = null;
+
+        private sealed class LineScanTraceBackup
+        {
+            public int nFrames;
+            public int linesPerFrame;
+            public int linesPerStripe;
+            public int nStripes;
+            public int skipFirstLines;
+            public bool biDirectionalScan;
+            public bool biDirectionalScanY;
+            public bool sineWaveScan;
+            public double fillFraction;
+            public double scanFraction;
+            public double scanDelay;
+            public int lineScanTimePoints;
+            public bool isLineScanAcquisition;
+        }
 
         public bool physWaitforTrigger = false;
         public bool uncagingWaitForTrigger = false;
@@ -79,6 +112,8 @@ namespace FLIMage
 
         //// Serve as an acquisiton counter. Event activated by NI mirror card.
         public int AO_FrameCounter;
+        public List<DateTime> real_acquired_datetime = new List<DateTime>();
+        public int saved_realCounter = 0;
         // int internalStripeCounter;
         public int savePageCounterTotal = 0;
         public int savePageCounter = 0;
@@ -86,18 +121,27 @@ namespace FLIMage
         public int displayPageCounterTotal = 0;
         public int displayPageCounter = 0;
         public int deletedPageCounter = 0;
+        private int sleep_counter = 0;
         public double measuredSliceInterval;
         Task waitSlice, waitImage;
         Task saveTask;
+        Task photonStreamTask;
         public bool save_image_busy = false;
+        private volatile bool _saveErrorNotified = false;
+        // When true, suppresses the "Overwrite?" confirmation dialog for this FLIMage instance.
+        // This is controlled via remote commands (e.g., SetOverwriteWarningOff/On).
+        public volatile bool suppressOverwritePrompt = false;
         bool waitingImageTask = false;
         bool waitingSliceTask = false;
+        private bool _pendingFocusStart = false;
+
+        public volatile bool read_photon_file = false;
 
         ////// FLIM data stroage. All temporal. 
         List<UInt16[][][,,]> FLIMSaveBuffer = new List<ushort[][][,,]>(); //Used only when images are not saved in memory.
         List<DateTime> acquiredTimeList = new List<DateTime>(); //Store acquisition time info.
         DateTime acquiredTime;
-        public FLIMData FLIM_ImgData;
+        //public FLIMData FLIM_ImgData;
 
         //National instrument DAQ card 
         public HardwareControls.IOControls.LineClockByCounter lineClock;
@@ -109,7 +153,8 @@ namespace FLIMage
         public HardwareControls.IOControls.AnalogOutput Resonant_EOM;
         public HardwareControls.IOControls.dioTrigger dioTrigger;
         public HardwareControls.IOControls.ShutterCtrl shutterCtrl;
-        public HardwareControls.IOControls.ShutterCtrl resonant_on;
+        public HardwareControls.IOControls.ResonantOn resonant_on;
+        public HardwareControls.IOControls.ResonantScannerSwitch resonant_switch;
         public HardwareControls.IOControls.DigitalOutputControl digitalOutput_WClock; //for time control
         public HardwareControls.IOControls.PiezoControl piezo;
 
@@ -137,6 +182,13 @@ namespace FLIMage
         public FiFio_multiBoards FiFo_acquire;
         public FLIM_Parameters parameters;
         public bool tcspc_on = true;
+        /// <summary>
+        /// App-level simulation flag.
+        ///
+        /// IMPORTANT: This is NOT "SimPQ".
+        /// "SimPQ" is simulated inside TCSPC_Decode.dll and should use the normal DLL acquisition path.
+        /// This flag is only used when explicitly calling <see cref="RunSimulation"/> (managed synthetic generator).
+        /// </summary>
         public bool simulation_mode = false;
 
         //////Rate
@@ -149,16 +201,27 @@ namespace FLIMage
         public delegate void FLIMage_EventHandler(FLIMage_IO flimage_io, ProcessEventArgs evnt);
 
         public FileIO fileIO;
+        string filename_last = "";
+        string filename_timestamp = "";
+
+        public PhotonFileHandle photon_file_handle;
 
         public FLIMage_IO(FLIMageMain FLIMage)
         {
             flimage = FLIMage;
             State = flimage.State;
             fileIO = new FileIO(State); //initialize fileIO
+            fileIO.HoldFastWriterOpen = ShouldHoldFastWriterOpen(State);
 
             use_nidaq = State.Init.NIDAQ_on;
-            use_pq = State.Init.FLIM_on && (String.Equals(State.Init.FLIM_mode, "PQ") || String.Equals(State.Init.FLIM_mode, "MH"));
+            NormalizeFlimMode();
+            use_pq = State.Init.FLIM_on && (String.Equals(State.Init.FLIM_mode, "PQ", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(State.Init.FLIM_mode, "MH", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(State.Init.FLIM_mode, "PH", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(State.Init.FLIM_mode, "HH", StringComparison.OrdinalIgnoreCase));
             use_bh = State.Init.FLIM_on && (String.Equals(State.Init.FLIM_mode, "BH"));
+            use_pq = use_pq || String.Equals(State.Init.FLIM_mode, "SimPQ", StringComparison.OrdinalIgnoreCase);
+
             tcspc_on = use_pq || use_bh;
 
             if (State.Init.MicroscopeSystem.ToLower().Contains("bscope") && State.Init.MicroscopeSystem.ToLower().Contains("gg"))
@@ -172,6 +235,16 @@ namespace FLIMage
 
             if (State.Init.MicroscopeSystem.ToLower().Contains("mini"))
                 microscope_system = MicroscopeSystem.MiniScope;
+
+            if (State.Init.MicroscopeSystem.ToLower().Contains("fiber"))
+                microscope_system = MicroscopeSystem.FiberPhotometry;
+
+            if (microscope_system == MicroscopeSystem.FiberPhotometry)
+            {
+                State.Init.enableResonantScanner = false;
+                State.Acq.resonantScanning = false;
+                State.Acq.fillFraction = 1.0;
+            }
 
             SafetyFeature();
 
@@ -244,15 +317,14 @@ namespace FLIMage
                         if (State.Init.enableResonantScanner)
                         {
                             Setting_Status = "Initializing resonant mirror AO and EOM AO";
-                            lineTriggeredSampleClock = new HardwareControls.IOControls.TriggeredLineClock(State);
+                            //lineTriggeredSampleClock = new HardwareControls.IOControls.TriggeredLineClock(State);
                             Resonant_Mirror = new HardwareControls.IOControls.AnalogOutput(State, shading, true, false, true, false);
                             Resonant_Mirror.FrameDone += new HardwareControls.IOControls.AnalogOutput.FrameDoneHandler(mirrorAOFrameDoneEvent);
                             if (State.Init.EOM_nChannels > 0)
                                 Resonant_EOM = new HardwareControls.IOControls.AnalogOutput(State, shading, false, true, true, false);
 
-                            resonant_on = new HardwareControls.IOControls.ShutterCtrl(State);
-                            
-
+                            resonant_on = new HardwareControls.IOControls.ResonantOn(State);
+                            resonant_switch = new HardwareControls.IOControls.ResonantScannerSwitch(State);
                         }
 
                         if (State.Init.DO_uncagingShutter)
@@ -283,7 +355,7 @@ namespace FLIMage
                 }
                 catch (Exception ex)
                 {
-                    DialogResult dr = MessageBox.Show("Problem in loading NIDAQmx DLL: " + Setting_Status + ": " + ex.Message + "\n\nDo you want to turn off NIDAQ function?",
+                    DialogResult dr = MessageBox.Show(Form.ActiveForm, "Problem in loading NIDAQmx DLL: " + Setting_Status + ": " + ex.Message + "\n\nDo you want to turn off NIDAQ function?",
                   "NIDAQ error", MessageBoxButtons.YesNo);
                     switch (dr)
                     {
@@ -301,14 +373,28 @@ namespace FLIMage
             }
 
             parameters = new FLIM_Parameters();
+            parameters = FLIM_Utilities.ConvertStateToFLIMParameters(State, read_photon_file, parameters);
 
-            tcspc_on = true; // use_bh || use_pq;
+
+            tcspc_on = true;
             TCSPC_Open();
 
             if (!(use_bh || use_pq))
             {
                 State.Init.FLIM_on = false;
             }
+        }
+
+        private static bool ShouldHoldFastWriterOpen(ScanParameters state)
+        {
+            if (state?.Files?.fastSaving ?? false)
+                return true;
+            if (state?.Acq?.fiberPhotometryMode ?? false)
+                return true;
+
+            var system = state?.Init?.MicroscopeSystem;
+            return !string.IsNullOrEmpty(system)
+                && system.IndexOf("fiber", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public void SafetyFeature()
@@ -333,6 +419,18 @@ namespace FLIMage
                 State.Init.AbsoluteMaxVoltageScan = 10;
         }
 
+        private void NormalizeFlimMode()
+        {
+            if (State?.Init == null || string.IsNullOrWhiteSpace(State.Init.FLIM_mode))
+                return;
+
+            var trimmed = State.Init.FLIM_mode.Trim();
+            if (string.Equals(trimmed, "SymPQ", StringComparison.OrdinalIgnoreCase))
+                trimmed = "SimPQ";
+
+            State.Init.FLIM_mode = trimmed;
+        }
+
         public void PostFLIMageShowInitialization(FLIMageMain flim_in)
         {
             flimage = flim_in;
@@ -354,6 +452,60 @@ namespace FLIMage
             InitializeCounter(); //Counter reset.
         }
 
+        public void stopLoopingStatus()
+        {
+            stopGrabActivated = true;
+            looping = false;
+            snapShot = false;
+        }
+
+
+        public void initializeFocusing()
+        {
+            snapShot = false;
+            stopGrabActivated = false;
+            focusing = true;
+            grabbing = false;
+            read_photon_file = false;
+        }
+
+        public void initializeSnapShot()
+        {
+            snapShot = true;
+            stopGrabActivated = false;
+            read_photon_file = false;
+        }
+
+        public void initializePhotonReading()
+        {
+            read_photon_file = true;
+            grabbing = true;
+            focusing = false;
+            snapShot = false;
+        }
+
+        public void initializeGrabbing()
+        {
+            snapShot = false;
+            grabbing = true;
+            looping = false;
+            allowLoop = false;
+            stopGrabActivated = false;
+            read_photon_file = false;
+        }
+
+        public void InitializeLoop()
+        {
+            grabbing = true;
+            looping = true;
+            allowLoop = true; //This is the difference between loop and grab.
+            stopGrabActivated = false;
+            snapShot = false;
+            read_photon_file = false;
+
+            internalImageCounter = 0;
+        }
+
         public void InitializeCounter()
         {
             averageCounter = 0;
@@ -370,7 +522,12 @@ namespace FLIMage
             displayPageCounterTotal = 0;
 
             deletedPageCounter = 0;
+
             AO_FrameCounter = 0;
+            saved_realCounter = 0;
+
+            TCSPC_Native.DLL_Busy = false;
+            acquisition_done_event_activated = false;
 
             newFile = boolAllChannels(true);
 
@@ -378,6 +535,7 @@ namespace FLIMage
             {
                 FLIMSaveBuffer.Clear();
                 acquiredTimeList.Clear();
+                real_acquired_datetime.Clear();
             }
 
             if (flimage != null)
@@ -435,32 +593,85 @@ namespace FLIMage
         /// <param name="e"></param>
         public void mirrorAOFrameDoneEvent(object o, EventArgs e)
         {
+            double msPerLine = State.Acq.fastZScan ? State.Acq.FastZ_msPerLine : State.Acq.msPerLine;
+            if (State.Acq.resonantScanning)
+                msPerLine = 500.0 / State.Init.resonantFreq_Hz;
+
             DateTime at = DateTime.Now;
             if (AO_FrameCounter == 0)
             {
-                double msPerLine = State.Acq.fastZScan ? State.Acq.FastZ_msPerLine : State.Acq.msPerLine;
-                if (State.Acq.resonantScanning)
-                    msPerLine = 500.0 / State.Init.resonantFreq_Hz;
+                if (State.Acq.BiDirectionalScanY)
+                    acquiredTime = at.AddMilliseconds(-msPerLine * State.Acq.linesPerFrame * 2);
+                else
+                    acquiredTime = at.AddMilliseconds(-msPerLine * State.Acq.linesPerFrame);
 
-                acquiredTime = at.AddMilliseconds(-msPerLine * State.Acq.linesPerFrame);
                 State.Acq.triggerTime = acquiredTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
 #if DEBUG
                 Debug.WriteLine("Time now at " + at.ToString("yyyy-MM-ddTHH:mm:ss.fff"));
                 Debug.WriteLine("Triggered triggered at " + State.Acq.triggerTime);
 #endif
-                FLIM_ImgData.State.Acq.triggerTime = State.Acq.triggerTime;
+                flimage.image_display.FLIM_ImgData.State.Acq.triggerTime = State.Acq.triggerTime;
+
+                real_acquired_datetime.Add(acquiredTime);
+                if (State.Acq.BiDirectionalScanY)
+                {
+                    var acquiredTime1 = at.AddMilliseconds(-msPerLine * State.Acq.linesPerFrame);
+                    real_acquired_datetime.Add(acquiredTime);
+                }
             }
 
-            AO_FrameCounter++;
-            //EventNotify?.Invoke(this, new ProcessEventArgs("FrameScanDone", (object)AO_FrameCounter));
 
-            if (AO_FrameCounter <= State.Acq.nFrames || focusing)
+            if (State.Acq.BiDirectionalScanY)
+            {
+                var at2 = at.AddMilliseconds(-msPerLine * State.Acq.linesPerFrame);
+                real_acquired_datetime.Add(at2);
+                real_acquired_datetime.Add(at);
+                AO_FrameCounter += 2;
+            }
+            else
+            {
+                real_acquired_datetime.Add(at);
+                AO_FrameCounter++;
+            }
+
+            TCSPC_Native.DLL_Busy = AO_FrameCounter - internalFrameCounter > 100;
+
+
+            if (AO_FrameCounter <= State.Acq.nFrames + State.Spc.spcData.SkipFirstFrames || focusing)
             {
                 flimage.BeginInvoke((Action)delegate
                 {
                     flimage.AO_FrameUpdate(AO_FrameCounter);
                 });
             }
+
+            var every = State.Init.DigitalMarkEveryFrame;
+            if (AO_FrameCounter % every <= 2 || AO_FrameCounter % every >= every - 2)
+                if (State.Init.DigitalMark_On)
+                {
+                    var task = Task.Factory.StartNew((Action)delegate
+                        {
+                            if (AO_FrameCounter % (int)(every) == 0)
+                                new HardwareControls.IOControls.Digital_Out(State.Init.DigitalMarkOutputPort, true);
+                            else
+                                new HardwareControls.IOControls.Digital_Out(State.Init.DigitalMarkOutputPort, false);
+
+                        });
+                }
+
+            bool save_count = AO_FrameCounter % (int)(every) == 0 || AO_FrameCounter == State.Acq.nFrames + State.Spc.spcData.SkipFirstFrames;
+
+            //if (State.Acq.photon_file_format && save_count && !read_photon_file && !focusing)
+            //{
+            //    string all_text = "";
+            //    for (int i = saved_realCounter; i < real_acquired_datetime.Count; i++)
+            //    {
+            //        var text1 = String.Format("{0}, {1}\n", i, real_acquired_datetime[i].ToString("yyyy-MM-ddTHH:mm:ss.fff"));
+            //        all_text += text1;
+            //    }
+            //    File.AppendAllText(filename_timestamp, all_text);
+            //    saved_realCounter = real_acquired_datetime.Count;
+            //}
         }
 
         /// <summary>
@@ -494,19 +705,26 @@ namespace FLIMage
 
         public void PiezoMoveDuringFocus(double stepSize)
         {
-            if (focusing)
+            Task.Factory.StartNew(() =>
             {
-                refocusing = true;
-                StopFocus();
-            }
+                if (focusing)
+                {
+                    refocusing = true;
+                    StopFocus();
+                }
 
-            piezo.move_Piezo_1step_um(stepSize);
+                System.Threading.Thread.Sleep((int)State.Init.PiezoSettlingTime_ms);
 
-            if (refocusing)
-            {
-                StartGrab(true);
-                refocusing = false;
-            }
+                piezo.move_Piezo_1step_um(stepSize);
+
+                System.Threading.Thread.Sleep((int)State.Init.PiezoSettlingTime_ms);
+
+                if (refocusing)
+                {
+                    StartGrab(true);
+                    refocusing = false;
+                }
+            });
         }
 
         public void ResetFocus()
@@ -517,6 +735,7 @@ namespace FLIMage
                 {
                     refocusing = true;
                     PauseFocus();
+                    DisposeDAQ();
                     ReStartFocus();
                     refocusing = false;
                 });
@@ -535,6 +754,27 @@ namespace FLIMage
             if (flimage.use_piezo)
             {
                 flimage.InvokeIfRequired(o => o.UpdatePiezoPositionGUI());
+            }
+
+            sleep_counter++;
+
+            if ((grabbing && !read_photon_file) || focusing)
+                sleep_counter = 0;
+
+            if (sleep_counter >= State.Acq.ResonantScanTurnOffAfterXSeconds)
+            {
+                if (State.Acq.resonantScanning)
+                {
+                    if (thorECU_on)
+                    {
+                        thorECU.EnableScanner(false);
+                    }
+
+                    if (Resonant_Mirror != null)
+                        Resonant_Mirror.setResonantZoom(1000);
+                }
+
+                sleep_counter = 0;
             }
 
             if (tcspc_on) //!runningImgAcq)
@@ -574,7 +814,9 @@ namespace FLIMage
             }
 
             if (flimage != null)
-                flimage.RateTimerEvent_GUI_Update(badRate);
+            {
+                flimage.InvokeIfRequired(o => o.RateTimerEvent_GUI_Update(badRate));
+            }
         }
 
 
@@ -618,7 +860,7 @@ namespace FLIMage
 
         public void TCSPC_SetupParameters()
         {
-            if (tcspc_on & FiFo_acquire != null)
+            if ((tcspc_on || read_photon_file) & FiFo_acquire != null)
                 FiFo_acquire.SetupParameters(focusing, parameters);
         }
 
@@ -628,9 +870,10 @@ namespace FLIMage
             if (!State.Init.FLIM_on)
             {
                 FiFo_acquire = new FiFio_multiBoards(parameters);
-                FiFo_acquire.startSimulationMode();
-                error = FiFio_multiBoards.ErrorCode.NONE;
-                simulation_mode = true;
+                //FiFo_acquire.startSimulationMode();
+                error = FiFo_acquire.Initialize();
+                //error = FiFio_multiBoards.ErrorCode.NONE;
+                //simulation_mode = true;
             }
             else
             {
@@ -646,7 +889,20 @@ namespace FLIMage
                 error = FiFo_acquire.Initialize();
                 //bool serialError = (error == FiFio_multiBoards.ErrorCode.COMPUTERID_INCORRECT);
 
-                simulation_mode = error == FiFio_multiBoards.ErrorCode.NONE;
+                State.Init.ComputerID = parameters.ComputerID;
+
+                simulation_mode = FiFo_acquire != null && FiFo_acquire.simulation_mode;
+
+#if DEBUG
+                try
+                {
+                    bool dllActive0 = FiFo_acquire?.FLIM_FiFoList != null && FiFo_acquire.FLIM_FiFoList.Count > 0 && FiFo_acquire.FLIM_FiFoList[0] != null
+                        ? FiFo_acquire.FLIM_FiFoList[0].DLLActive
+                        : false;
+                    Debug.WriteLine($"TCSPC_Open: BoardType={parameters?.spcData?.BoardType}, Initialize={error}, MultiBoards.simulation_mode={FiFo_acquire?.simulation_mode}, DLLActive0={dllActive0}");
+                }
+                catch { }
+#endif
             }
 
             if (error == FiFio_multiBoards.ErrorCode.COMPUTERID_INCORRECT)
@@ -666,7 +922,7 @@ namespace FLIMage
                 }
             }
 
-            //SetupFLIMParameters(); included in FiFo_acquire
+            SetupFLIMParameters(State);
 
             if (error == FiFio_multiBoards.ErrorCode.NONE && FiFo_acquire != null)
             {
@@ -692,7 +948,7 @@ namespace FLIMage
                     error_Message = "Wrong FLIM parameters";
 
 
-                DialogResult dr = MessageBox.Show(error_Message + "\n\nDo you want to turn off FLIM function?",
+                DialogResult dr = MessageBox.Show(Form.ActiveForm, error_Message + "\n\nDo you want to turn off FLIM function?",
                  "FLIM error", MessageBoxButtons.YesNo);
                 switch (dr)
                 {
@@ -735,40 +991,65 @@ namespace FLIMage
             }
         }
 
-        //
-        public void StartDAQ(bool[] eraseSPCmemory, bool recordTriggerTime)
+        /// <summary>
+        /// return success
+        /// </summary>
+        /// <param name="eraseSPCmemory"></param>
+        /// <param name="recordTriggerTime"></param>
+        public bool StartDAQ(bool[] eraseSPCmemory, bool recordTriggerTime)
         {
             runningImgAcq = true;
             waitForAcquisitionTaskCompleted();
 
             if (stopGrabActivated)
-                return;
+                return false;
 
-            if (use_nidaq)
+            if (grabbing && State.Acq.photon_file_format)
+            {
+                var setup_success = SetupPhotonFileNameForSlices(internalSliceCounter);
+
+                if (read_photon_file)
+                {
+                    acquiredTime = flimage.image_display.photon_file_handle.binary_trigger_time;
+                }
+
+                if (!setup_success)
+                    return false;
+            }
+
+            if (use_nidaq && !read_photon_file)
             {
                 bool use_clock = State.Init.use_digitalLineClock;
                 bool use_uncaging = State.Uncaging.uncage_whileImage && grabbing && State.Uncaging.sync_withFrame;
                 bool use_digital = State.DO.DO_whileImage && grabbing && State.DO.sync_withFrame;
 
+
                 if (State.Acq.resonantScanning)
                 {
-                    
                     if (thorECU_on)
                     {
                         thorECU.SetZoomOfScanner((int)(maxValue_Resonant / State.Acq.zoom));
                         thorECU.EnableScanner(true);
+                        Resonant_Mirror.setResonantZoom(State.Acq.zoom);
+
+                        shutterCtrl.open(); //It is actually shutter??
                         System.Threading.Thread.Sleep(100);
                     }
                     else
                     {
-                        resonant_on.open();
+                        shutterCtrl.open();
                         Resonant_Mirror.setResonantZoom(State.Acq.zoom);
                     }
 
                     if (Resonant_EOM != null)
                     {
-                        Resonant_EOM.putValue_S_ToStartPos(true, false);
-                        Resonant_EOM.PutValueResonantEOM_LineClockTriggered(shading, State.Acq.resonantEOMDelay_us); //Testing fast EOM control.
+                        Resonant_EOM.putValue_S_ToStartPos(false, false);
+
+                        if (State.Acq.resonantEOM_blank_edge) //Currently not working well...
+                        {
+                            Resonant_EOM.putValue_S_ToStartPos(true, false);
+                            Resonant_EOM.PutValueResonantEOM_LineClockTriggered(shading, State.Acq.resonantEOMDelay_us);
+                        }
                     }
 
                     Resonant_Mirror.RestateScanParameters(State);
@@ -801,49 +1082,52 @@ namespace FLIMage
                             use_digital, grabbing, focusing);
                     }
 
-                    AO_Mirror_EOM.RestateScanParameters(State);
+                    if (microscope_system != MicroscopeSystem.FiberPhotometry)
+                    {
+                        AO_Mirror_EOM.RestateScanParameters(State);
 
-                    if (!focusing && State.Uncaging.sync_withFrame && State.Uncaging.uncage_whileImage && !State.Acq.resonantScanning)
-                    {
-                        var success = AO_Mirror_EOM.putValueScanAndUncaging();
-                    }
-                    else
-                    {
-                        bool uncaging_shutter = false;
-                        if (flimage.uncaging_panel != null)
+                        if (!focusing && State.Uncaging.sync_withFrame && State.Uncaging.uncage_whileImage && !State.Acq.resonantScanning)
                         {
-                            uncaging_shutter = flimage.uncaging_panel.UncagingShutter;
+                            var success = AO_Mirror_EOM.putValueScanAndUncaging();
+                        }
+                        else
+                        {
+                            bool uncaging_shutter = false;
+                            if (flimage.uncaging_panel != null)
+                            {
+                                uncaging_shutter = flimage.uncaging_panel.UncagingShutter;
+                            }
+
+                            var data1 = AO_Mirror_EOM.putValueScan(focusing, uncaging_shutter);
+
+                            if (State.Init.DO_uncagingShutter)
+                            {
+                                uncagingShutterCtrl(uncaging_shutter, false, true);
+                            }
+
                         }
 
-                        var data1 = AO_Mirror_EOM.putValueScan(focusing, uncaging_shutter);
+                        AO_Mirror_EOM.Start();
 
-                        if (State.Init.DO_uncagingShutter)
+                        if (!State.Acq.resonantScanning)
                         {
-                            uncagingShutterCtrl(uncaging_shutter, false, true);
+                            if (use_clock || use_uncaging || use_digital)
+                                digitalOutput_WClock.Start();
+
+                            if (!State.Init.use_digitalLineClock)
+                                lineClock.Start();
+
+                            if (State.Acq.enableMiniScopeClock)
+                                miniScopeClock.Start();
                         }
-
-                    }
-
-                    AO_Mirror_EOM.Start();
-
-                    if (!State.Acq.resonantScanning)
-                    {
-                        if (use_clock || use_uncaging || use_digital)
-                            digitalOutput_WClock.Start();
-
-                        if (!State.Init.use_digitalLineClock)
-                            lineClock.Start();
-
-                        if (State.Acq.enableMiniScopeClock)
-                            miniScopeClock.Start();
-                    }
+                    } //Not fiber
                 }
             }
 
             FiFo_StartNew(eraseSPCmemory, focusing, false);
-            System.Threading.Thread.Sleep(1);
+            //System.Threading.Thread.Sleep(100);
 
-            if (use_nidaq)
+            if (use_nidaq && !read_photon_file)
             {
                 shutterCtrl.open();
                 System.Threading.Thread.Sleep(State.Init.mainShutterDelay); //shutter open.
@@ -854,10 +1138,12 @@ namespace FLIMage
                 {
                     if (State.Acq.resonantScanning)
                     {
-
-                        Resonant_EOM.Start();
+                        if (State.Acq.resonantEOM_blank_edge)
+                            Resonant_EOM.Start();
                         Resonant_Mirror.Start();
-                        lineTriggeredSampleClock.Start(); //Testing triggered clock.
+                        System.Threading.Thread.Sleep(5);
+                        resonant_on.open();
+                        //lineTriggeredSampleClock.Start(); //Testing triggered clock.
                     }
                     else
                         dioTrigger.Evoke();
@@ -879,32 +1165,434 @@ namespace FLIMage
                     if (eraseSPCmemory.Any(x => x == true))
                     {
                         acquiredTime = at;
-                        Debug.WriteLine("Triggered..." + acquiredTime.ToString("yyyy-MM-ddTHH:mm:ss.fff"));
+                        Debug.WriteLine("FLIMage_IO Triggered..." + acquiredTime.ToString(State.Acq.datetime_formatter));
                     }
 
                     if (recordTriggerTime)
                     {
                         acquiredTime = at;
-                        State.Acq.triggerTime = at.ToString("yyyy-MM-ddTHH:mm:ss.fff");
-                        FLIM_ImgData.State.Acq.triggerTime = State.Acq.triggerTime;
+                        State.Acq.triggerTime = at.ToString(State.Acq.datetime_formatter);
+                        flimage.image_display.FLIM_ImgData.State.Acq.triggerTime = State.Acq.triggerTime;
                     }
                 }
                 else
                 {
                     acquiredTime = DateTime.Now;
-                    State.Acq.triggerTime = acquiredTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
-                    FLIM_ImgData.State.Acq.triggerTime = State.Acq.triggerTime;
+                    State.Acq.triggerTime = acquiredTime.ToString(State.Acq.datetime_formatter);
+                    flimage.image_display.FLIM_ImgData.State.Acq.triggerTime = State.Acq.triggerTime;
                 }
 
             } //nidaq
             else
             {
-                //Used for simulation mode
-                acquiredTime = DateTime.Now;
-                State.Acq.triggerTime = acquiredTime.ToString("yyyy-MM-ddTHH:mm:ss.fff");
-                FLIM_ImgData.State.Acq.triggerTime = State.Acq.triggerTime;
+                if (!read_photon_file)
+                {
+                    //Used for simulation mode
+                    acquiredTime = DateTime.Now;
+                    State.Acq.triggerTime = acquiredTime.ToString(State.Acq.datetime_formatter);
+                    flimage.image_display.FLIM_ImgData.State.Acq.triggerTime = State.Acq.triggerTime;
+                }
+                else
+                {
+                    acquiredTime = flimage.image_display.photon_file_handle.binary_trigger_time;
+                }
+            }
+            return true;
+        }
+
+        private void RestoreLineScanTraceStateIfNeeded()
+        {
+            // Always clear any custom mirror waveform unless we explicitly re-enable it for the next grab.
+            if (AO_Mirror_EOM != null)
+            {
+                AO_Mirror_EOM.UseCustomMirrorOutputXY = false;
+                AO_Mirror_EOM.CustomMirrorOutputXY = null;
+            }
+
+            if (_lineScanTraceBackup == null)
+            {
+                State.Acq.isLineScanAcquisition = false;
+                _lineScanTraceActive = false;
+                return;
+            }
+
+            try
+            {
+                State.Acq.nFrames = _lineScanTraceBackup.nFrames;
+                State.Acq.linesPerFrame = _lineScanTraceBackup.linesPerFrame;
+                State.Acq.linesPerStripe = _lineScanTraceBackup.linesPerStripe;
+                State.Acq.nStripes = _lineScanTraceBackup.nStripes;
+                State.Acq.SkipFirstLines = _lineScanTraceBackup.skipFirstLines;
+                State.Acq.BiDirectionalScan = _lineScanTraceBackup.biDirectionalScan;
+                State.Acq.BiDirectionalScanY = _lineScanTraceBackup.biDirectionalScanY;
+                State.Acq.SineWaveScan = _lineScanTraceBackup.sineWaveScan;
+                State.Acq.fillFraction = _lineScanTraceBackup.fillFraction;
+                State.Acq.scanFraction = _lineScanTraceBackup.scanFraction;
+                State.Acq.ScanDelay = _lineScanTraceBackup.scanDelay;
+                State.Acq.LineScanTimePoints = _lineScanTraceBackup.lineScanTimePoints;
+                State.Acq.isLineScanAcquisition = _lineScanTraceBackup.isLineScanAcquisition;
+            }
+            finally
+            {
+                _lineScanTraceBackup = null;
+                _lineScanTraceActive = false;
             }
         }
+
+        private bool TryEnableLineScanTraceFromPolygonROI(out string reason)
+        {
+            reason = "";
+            bool isSimPq = string.Equals(State.Init.FLIM_mode, "SimPQ", StringComparison.OrdinalIgnoreCase);
+
+            if (microscope_system == MicroscopeSystem.FiberPhotometry)
+            {
+                reason = "Line scan trace is not available in fiber photometry mode.";
+                return false;
+            }
+
+            // Regular galvo-galvo only
+            if (State.Acq.resonantScanning || State.Acq.polygonScanning)
+            {
+                reason = "Line scan trace works only with regular galvo-galvo scanning.\nDisable resonant/polygon scanning first.";
+                return false;
+            }
+
+            bool canUseAo = State.Init.NIDAQ_on && State.Init.enableRegularGalvo && AO_Mirror_EOM != null;
+            if (!isSimPq && !canUseAo)
+            {
+                reason = "Regular galvo scanning is not enabled (AO mirror output is not available).";
+                return false;
+            }
+
+            if (!TryGetLineScanTraceVerticesPx(out var verticesPx, out reason))
+                return false;
+
+            // In line-scan mode we treat one trace traversal as one "line" (Y=time).
+            // We keep the normal acquisition structure:
+            // - nFrames = GUI nFrames
+            // - linesPerFrame = GUI linesPerFrame (typically ~128)
+            // Total time points = nFrames * linesPerFrame.
+            int nFrames = Math.Max(1, State.Acq.nFrames);
+            int linesPerFrame = Math.Max(1, State.Acq.linesPerFrame);
+            int totalTimePoints = nFrames * linesPerFrame;
+
+            double[,] traceXY = null;
+            if (canUseAo)
+            {
+                if (!TryBuildPolygonTraceWaveform(verticesPx, State, linesPerFrame, out traceXY, out reason))
+                    return false;
+            }
+
+            // Backup scan parameters we override for the grab.
+            _lineScanTraceBackup = new LineScanTraceBackup
+            {
+                nFrames = State.Acq.nFrames,
+                linesPerFrame = State.Acq.linesPerFrame,
+                linesPerStripe = State.Acq.linesPerStripe,
+                nStripes = State.Acq.nStripes,
+                skipFirstLines = State.Acq.SkipFirstLines,
+                biDirectionalScan = State.Acq.BiDirectionalScan,
+                biDirectionalScanY = State.Acq.BiDirectionalScanY,
+                sineWaveScan = State.Acq.SineWaveScan,
+                fillFraction = State.Acq.fillFraction,
+                scanFraction = State.Acq.scanFraction,
+                scanDelay = State.Acq.ScanDelay,
+                lineScanTimePoints = State.Acq.LineScanTimePoints,
+                isLineScanAcquisition = State.Acq.isLineScanAcquisition,
+            };
+
+            // Record total timepoints for analysis/display logic.
+            State.Acq.LineScanTimePoints = totalTimePoints;
+            State.Acq.isLineScanAcquisition = true;
+
+            // Keep standard saving/display behavior (no special chunking):
+            // reduce stripe events by using one stripe per frame.
+            State.Acq.linesPerStripe = linesPerFrame;
+            State.Acq.nStripes = 1;
+            State.Acq.SkipFirstLines = 0;
+
+            // Disable raster-only options for this mode.
+            State.Acq.BiDirectionalScan = false;
+            State.Acq.BiDirectionalScanY = false;
+            State.Acq.SineWaveScan = false;
+
+            // Make TCSPC timing consistent with "full-line acquisition".
+            State.Acq.fillFraction = 1.0;
+            State.Acq.scanFraction = 1.0;
+            State.Acq.ScanDelay = 0.0;
+
+            // Supply the mirror waveform (already in volt domain).
+            if (canUseAo)
+            {
+                AO_Mirror_EOM.CustomMirrorOutputXY = traceXY;
+                AO_Mirror_EOM.UseCustomMirrorOutputXY = true;
+            }
+
+            _lineScanTraceActive = true;
+            return true;
+        }
+
+        public bool TryGetLineScanTraceWaveform(int nLines, out double[,] traceXY, out string reason)
+        {
+            traceXY = null;
+            reason = "";
+
+            if (!TryGetLineScanTraceVerticesPx(out var verticesPx, out reason))
+                return false;
+
+            int lineCount = nLines > 0 ? nLines : 1;
+            return TryBuildPolygonTraceWaveform(verticesPx, State, lineCount, out traceXY, out reason);
+        }
+
+        private bool TryGetLineScanTraceVerticesPx(out List<System.Drawing.PointF> verticesPx, out string reason)
+        {
+            verticesPx = null;
+            reason = "No line scan trace is selected.\nRight-click a polygon/rectangular/ellipsoid ROI and choose \"Use this trace for line scanning\".";
+
+            var xs = State?.Acq?.LineScanArrayX;
+            var ys = State?.Acq?.LineScanArrayY;
+            if (xs == null || ys == null)
+                return false;
+
+            if (xs.Length != ys.Length || xs.Length < 3)
+            {
+                reason = "Line scan trace vertices are invalid.\nRight-click a polygon/rectangular/ellipsoid ROI and choose \"Use this trace for line scanning\" again.";
+                return false;
+            }
+
+            var list = new List<System.Drawing.PointF>(xs.Length);
+            for (int i = 0; i < xs.Length; i++)
+                list.Add(new System.Drawing.PointF((float)xs[i], (float)ys[i]));
+
+            verticesPx = list;
+            reason = "";
+            return true;
+        }
+
+        private static bool TryBuildPolygonTraceWaveform(IReadOnlyList<System.Drawing.PointF> polygonVerticesPx, ScanParameters stateForMapping, int nLines, out double[,] traceXY, out string reason)
+        {
+            traceXY = null;
+            reason = "";
+
+            if (polygonVerticesPx == null || polygonVerticesPx.Count < 3)
+            {
+                reason = "Invalid line scan trace (need 3+ vertices).";
+                return false;
+            }
+
+            // Convert ROI vertices (image pixels) -> mirror voltages.
+            var verticesPx = new List<System.Drawing.PointF>(polygonVerticesPx.Count);
+            verticesPx.AddRange(polygonVerticesPx);
+
+            // Remove redundant closing point if present.
+            if (verticesPx.Count > 1)
+            {
+                var p0 = verticesPx[0];
+                var pLast = verticesPx[verticesPx.Count - 1];
+                double dx0 = p0.X - pLast.X;
+                double dy0 = p0.Y - pLast.Y;
+                if (Math.Sqrt(dx0 * dx0 + dy0 * dy0) < 1e-3)
+                    verticesPx.RemoveAt(verticesPx.Count - 1);
+            }
+
+            // Remove consecutive duplicates.
+            for (int i = verticesPx.Count - 1; i >= 1; i--)
+            {
+                var a = verticesPx[i - 1];
+                var b = verticesPx[i];
+                double dx = a.X - b.X;
+                double dy = a.Y - b.Y;
+                if (Math.Sqrt(dx * dx + dy * dy) < 1e-3)
+                    verticesPx.RemoveAt(i);
+            }
+
+            if (verticesPx.Count < 3)
+            {
+                reason = "Line scan trace has too few unique vertices.";
+                return false;
+            }
+
+            int nSeg = verticesPx.Count; // closed polygon: segments = vertices
+
+            double msPerLine = stateForMapping.Acq.fastZScan ? stateForMapping.Acq.FastZ_msPerLine : stateForMapping.Acq.msPerLine;
+            int nSamplesLine = (int)(msPerLine * stateForMapping.Acq.outputRate / 1000.0);
+            if (nSamplesLine < 2)
+            {
+                reason = "Line scan trace: msPerLine/outputRate results in too few samples.";
+                return false;
+            }
+
+            if (nLines < 1)
+                nLines = 1;
+
+            // We generate nSamplesLine points, which correspond to (nSamplesLine - 1) steps.
+            int totalSteps = nSamplesLine - 1;
+            if (totalSteps < 3)
+            {
+                reason = "Line scan trace needs more samples per line.\nIncrease msPerLine or outputRate (need at least 4 samples).";
+                return false;
+            }
+
+            if (totalSteps < nSeg)
+            {
+                int targetSeg = Math.Max(3, totalSteps);
+                var reduced = new List<System.Drawing.PointF>(targetSeg);
+                double step = (double)nSeg / targetSeg;
+                for (int i = 0; i < targetSeg; i++)
+                {
+                    int segIndex = (int)Math.Floor(i * step);
+                    if (segIndex < 0) segIndex = 0;
+                    if (segIndex >= nSeg) segIndex = nSeg - 1;
+                    reduced.Add(verticesPx[segIndex]);
+                }
+                verticesPx = reduced;
+                nSeg = verticesPx.Count;
+            }
+
+            var vx = new double[nSeg];
+            var vy = new double[nSeg];
+
+            for (int i = 0; i < nSeg; i++)
+            {
+                var p = verticesPx[i];
+                double[] frac = HardwareControls.IOControls.PixelsToFracOnScreen(new double[] { p.X, p.Y }, stateForMapping);
+
+                double baseX = (frac[0] - 0.5) * stateForMapping.Acq.XMaxVoltage * stateForMapping.Acq.scanVoltageMultiplier[0] / stateForMapping.Acq.zoom;
+                double baseY = (frac[1] - 0.5) * stateForMapping.Acq.YMaxVoltage * stateForMapping.Acq.scanVoltageMultiplier[1] / stateForMapping.Acq.zoom;
+
+                double[,] vpos = new double[2, 1];
+                vpos[0, 0] = baseX;
+                vpos[1, 0] = baseY;
+
+                int splitPos = 0;
+                if (stateForMapping.Acq.nSplitScanning > 1)
+                {
+                    double splitHeight = 1.0 / stateForMapping.Acq.nSplitScanning;
+                    splitPos = (int)Math.Floor(frac[1] * stateForMapping.Acq.scanVoltageMultiplier[1] / splitHeight);
+                    if (splitPos < 0) splitPos = 0;
+                    if (splitPos >= stateForMapping.Acq.nSplitScanning) splitPos = stateForMapping.Acq.nSplitScanning - 1;
+                }
+
+                HardwareControls.IOControls.RotateAndOffset(vpos, stateForMapping, splitPos);
+
+                vx[i] = vpos[0, 0];
+                vy[i] = vpos[1, 0];
+            }
+
+            // Segment lengths (in voltage space) to allocate time evenly by distance.
+            var lenSeg = new double[nSeg];
+            double totalLen = 0.0;
+            for (int i = 0; i < nSeg; i++)
+            {
+                int j = (i + 1) % nSeg;
+                double dx = vx[j] - vx[i];
+                double dy = vy[j] - vy[i];
+                double len = Math.Sqrt(dx * dx + dy * dy);
+                lenSeg[i] = len;
+                totalLen += len;
+            }
+
+            if (!(totalLen > 0))
+            {
+                reason = "Polygon ROI perimeter length is zero (all vertices are identical).";
+                return false;
+            }
+
+            // Allocate steps per segment: at least 1 step per segment, remaining by length.
+            var steps = Enumerable.Repeat(1, nSeg).ToArray();
+            int remaining = totalSteps - nSeg;
+            if (remaining > 0)
+            {
+                var add = new int[nSeg];
+                var fracPart = new double[nSeg];
+                int allocated = 0;
+                for (int i = 0; i < nSeg; i++)
+                {
+                    double raw = (lenSeg[i] / totalLen) * remaining;
+                    int a = (int)Math.Floor(raw);
+                    add[i] = a;
+                    fracPart[i] = raw - a;
+                    allocated += a;
+                }
+
+                int left = remaining - allocated;
+                while (left > 0)
+                {
+                    int best = 0;
+                    double bestFrac = fracPart[0];
+                    for (int i = 1; i < nSeg; i++)
+                    {
+                        if (fracPart[i] > bestFrac)
+                        {
+                            best = i;
+                            bestFrac = fracPart[i];
+                        }
+                    }
+                    add[best] += 1;
+                    fracPart[best] = 0.0;
+                    left--;
+                }
+
+                for (int i = 0; i < nSeg; i++)
+                    steps[i] += add[i];
+            }
+
+            // Build one closed-trace line (periodic: ends at the starting vertex).
+            var oneLineXY = new double[2, nSamplesLine];
+            oneLineXY[0, 0] = vx[0];
+            oneLineXY[1, 0] = vy[0];
+
+            int idx = 1;
+            for (int seg = 0; seg < nSeg; seg++)
+            {
+                int next = (seg + 1) % nSeg;
+                int nStep = steps[seg];
+                double x0 = vx[seg];
+                double y0 = vy[seg];
+                double x1 = vx[next];
+                double y1 = vy[next];
+
+                for (int s = 1; s <= nStep; s++)
+                {
+                    double t = (double)s / nStep;
+                    oneLineXY[0, idx] = x0 + (x1 - x0) * t;
+                    oneLineXY[1, idx] = y0 + (y1 - y0) * t;
+                    idx++;
+                }
+            }
+
+            if (idx != nSamplesLine)
+            {
+                // Should never happen; keep it safe.
+                reason = "Internal error while building line scan trace waveform (sample count mismatch).";
+                traceXY = null;
+                return false;
+            }
+
+            // Stack lines into one frame (Y=time): repeat the same closed trace back-to-back.
+            if (nLines == 1)
+            {
+                traceXY = oneLineXY;
+                return true;
+            }
+
+            traceXY = new double[2, nSamplesLine * nLines];
+            int totalSamples = nSamplesLine * nLines;
+            int lineBytes = nSamplesLine * sizeof(double);
+            int rowBytes = totalSamples * sizeof(double);
+            int srcRow1Offset = nSamplesLine * sizeof(double);
+
+            // Copy X and Y rows separately (rectangular arrays are row-major).
+            for (int line = 0; line < nLines; line++)
+            {
+                int dstLineOffset = line * lineBytes;
+                Buffer.BlockCopy(oneLineXY, 0, traceXY, dstLineOffset, lineBytes);
+                Buffer.BlockCopy(oneLineXY, srcRow1Offset, traceXY, rowBytes + dstLineOffset, lineBytes);
+            }
+
+            return true;
+        }
+
 
         /// <summary>
         /// Actual program for start grab.
@@ -913,47 +1601,127 @@ namespace FLIMage
         public void StartGrab(bool focus)
         {
             flimage.ImageDisplayOpen();
-            flimage.GetParametersFromGUI(this); //Setup all parameters.
 
-            if (State.Uncaging.uncage_whileImage && flimage.uncaging_panel != null && !focus)
-                flimage.uncaging_panel.SetupUncage(this); //Invoke not necessary
-
-            if (State.Acq.XOffset > State.Acq.XMaxVoltage || State.Acq.YOffset > State.Acq.YMaxVoltage)
+            if (focus && !read_photon_file && flimage?.State != null)
             {
-                MessageBox.Show("Offset exceeds maximum voltage!!");
-                return;
+                // Live focus should use the current UI state, not a previously loaded photon-file state.
+                State = flimage.State;
             }
 
-            flimage.SetupFLIMParameters(); //this will setup parameters for FLIM card..
-
-            if (flimage.fastZcontrol != null)
+            if (!read_photon_file)
             {
-                flimage.fastZcontrol.InvokeIfRequired(o =>
+                // Ensure any previous line-scan-trace override is cleared/restored before reading GUI values.
+                RestoreLineScanTraceStateIfNeeded();
+
+                flimage.GetParametersFromGUI(this); //Setup all parameters.
+
+                if (!use_nidaq && State.Acq.externalTrigger)
+                {
+                    State.Acq.externalTrigger = false;
+                    flimage?.BeginInvokeIfRequired(o =>
                     {
-                        o.ControlsDuringScanning(true); //Just enable the control.... Should be blocking.
+                        o.ExtTriggerCB.Checked = false;
+                        o.WriteStatusText("External trigger disabled (no NI-DAQ available).");
                     });
+                }
+
+                // Line scan trace mode (grab only): trace ROI -> mirror voltage trace -> 1-line frame.
+                // Focus always stays as normal 2D imaging so the user can see/edit the ROI.
+                if (!focus && flimage?.LineScan_CB != null && flimage.LineScan_CB.Checked)
+                {
+                    if (!TryEnableLineScanTraceFromPolygonROI(out string reason))
+                    {
+                        // Per spec: auto-disable and warn if not selectable/compatible.
+                        flimage.BeginInvokeIfRequired(o => o.LineScan_CB.Checked = false);
+                        if (!string.IsNullOrWhiteSpace(reason))
+                            flimage.BeginInvokeIfRequired(o => MessageBox.Show(o, reason));
+                    }
+                }
+
+                if (State.Uncaging.uncage_whileImage && flimage.uncaging_panel != null && !focus)
+                    flimage.uncaging_panel.SetupUncage(this); //Invoke not necessary
+
+                if (State.Acq.XOffset > State.Acq.XMaxVoltage || State.Acq.YOffset > State.Acq.YMaxVoltage)
+                {
+                    if (microscope_system != MicroscopeSystem.FiberPhotometry)
+                    {
+                        flimage.BeginInvokeIfRequired(o => MessageBox.Show(o, "Offset exceeds maximum voltage!!"));
+                        return;
+                    }
+                }
+
+                FiFo_acquire.GetRate();
+
+                flimage.flimage_io.SetupFLIMParameters(State);
+
+                if (microscope_system != MicroscopeSystem.FiberPhotometry)
+                {
+                    if (flimage.fastZcontrol != null)
+                    {
+                        flimage.fastZcontrol.InvokeIfRequired(o =>
+                            {
+                                o.ControlsDuringScanning(true); //Just enable the control.... Should be blocking.
+                            });
+                    }
+                }
+
+
+                if (!focus)
+                {
+                    // Fiber photometry also saves using the normal .flim structure (1x1 pixels),
+                    // so keep the standard saving parameter checks/prompt.
+                    if (CheckSavingParameters() < 0)
+                    {
+                        runningImgAcq = false;
+                        grabbing = false;
+                        focusing = false;
+                        looping = false;
+                        post_grabbing_process = false;
+                        if (flimage != null)
+                        {
+                            flimage.InvokeIfRequired(o => o.StopGrab_GUI_Update());
+                            flimage.InvokeIfRequired(o => o.LoopButton.Enabled = true);
+                        }
+                        return;
+                    }
+                }
             }
 
-            FLIM_ImgData.InitializeData(State, true);
-            fileIO = new FileIO(State);
 
-            //Apply physiology data.
-            if (flimage.physiology == null || flimage.physiology.IsDisposed)
-                State.Ephys.Ephys_on = false;
-            else
-                State = fileIO.CopyPhysiologyParamToState(flimage.physiology.phys_parameters);
+
+            if (!read_photon_file)
+            {
+                flimage.image_display.FLIM_ImgData.InitializeData(State, true);
+                fileIO = new FileIO(State);
+                fileIO.HoldFastWriterOpen = ShouldHoldFastWriterOpen(State);
+
+                //Apply physiology data.
+                if (flimage.physiology == null || flimage.physiology.IsDisposed)
+                    State.Ephys.Ephys_on = false;
+                else
+                    State = fileIO.CopyPhysiologyParamToState(flimage.physiology.phys_parameters);
+
+                ParkMirrors(true);
+            }
 
             flimage.image_display.InvokeIfRequired(o =>
             {
-                o.SetupRealtimeImaging(o.flimage.flimage_io.State, o.flimage.flimage_io.FLIM_ImgData);
-                o.SetFastZModeDisplay(o.flimage.flimage_io.State.Acq.fastZScan);
+                if (!read_photon_file)
+                {
+                    o.SetupRealtimeImaging(o.flimage.flimage_io.State);
+                    o.SetFastZModeDisplay(o.flimage.flimage_io.State.Acq.fastZScan);
+                }
+                else
+                {
+                    o.SetupRealtimeImaging(o.FLIM_ImgData.State);
+                    o.SetFastZModeDisplay(o.FLIM_ImgData.State.Acq.fastZScan);
+                }
             });
-
-            ParkMirrors(true);
 
             if (flimage.image_display.plot_realtime.Visible)
                 flimage.image_display.plot_realtime.InvokeIfRequired(o => o.WarningTextDisplay("")); //will be invoked if necessary.
 
+            stopGrabActivated = false;
             if (focus)
             {
                 focusing = true;
@@ -962,24 +1730,15 @@ namespace FLIMage
 
                 EventNotify?.Invoke(this, new ProcessEventArgs("FocusStart", null));
             }
+            else if (read_photon_file)
+            {
+                grabbing = true;
+                post_grabbing_process = false;
+                focusing = false;
+
+            }
             else
             {
-                if (!looping)
-                {
-                    if (CheckSavingParameters() < 0)
-                    {
-                        runningImgAcq = false;
-                        grabbing = false;
-                        focusing = false;
-                        post_grabbing_process = false;
-                        if (flimage != null)
-                        {
-                            flimage.InvokeIfRequired(o => o.StopGrab_GUI_Update());
-                        }
-                        return;
-                    }
-                }
-
                 grabbing = true;
                 post_grabbing_process = false;
                 focusing = false;
@@ -987,18 +1746,23 @@ namespace FLIMage
             }
 
             runningImgAcq = true;
-            flimage.InvokeIfRequired(o => o.StarGrab_GUI_Update(focus)); //need blocking.
+
+            if (!read_photon_file)
+                flimage.InvokeIfRequired(o => o.StarGrab_GUI_Update(focus)); //need blocking.
+
             force_stop = false;
 
             InitializeCounter(); //Counters Reset. SaveBuffer Clear. Acquired time buffer clear.
 
-            flimage.image_display.InitializeStripeBuffer(State.Acq.nChannels, State.Acq.linesPerFrame, State.Acq.pixelsPerLine);
+            // Fiber photometry does not render images (single-point only)
+            if (microscope_system != MicroscopeSystem.FiberPhotometry)
+                flimage.image_display.InitializeStripeBuffer(State.Acq.nChannels, State.Acq.linesPerFrame, State.Acq.pixelsPerLine);
 
             if (!focusing) //Setup FLIM_ImgData mode. ZStack? FastZ?
             {
-                FLIM_ImgData.clearMemory();
-                FLIM_ImgData.ZStack = (State.Acq.ZStack && State.Acq.nSlices > 1 && State.Acq.sliceStep > 0.0);
-                FLIM_ImgData.nFastZ = State.Acq.fastZScan ? State.Acq.FastZ_nSlices : 1;
+                flimage.image_display.FLIM_ImgData.clearMemory();
+                flimage.image_display.FLIM_ImgData.ZStack = (State.Acq.ZStack && State.Acq.nSlices > 1 && State.Acq.sliceStep > 0.0);
+                flimage.image_display.FLIM_ImgData.nFastZ = State.Acq.fastZScan ? State.Acq.FastZ_nSlices : 1;
             }
 
             System.Threading.Thread.Sleep(10);
@@ -1008,35 +1772,42 @@ namespace FLIMage
             if (!focus)
             {
                 //UIstopWatch.Reset();
-                if (internalImageCounter == 0)
-                    UIstopWatch_Loop.Reset();
-
-                UIstopWatch_Image.Reset();
-
-                if (flimage.physiology != null && flimage.physiology.image_trigger_waiting)
+                if (!read_photon_file)
                 {
-                    flimage.physiology.StartAcq();
-                    physWaitforTrigger = true;
+                    if (internalImageCounter == 0)
+                        UIstopWatch_Loop.Reset();
+
+                    UIstopWatch_Image.Reset();
+
+                    if (flimage.physiology != null && flimage.physiology.image_trigger_waiting)
+                    {
+                        flimage.physiology.StartAcq();
+                        physWaitforTrigger = true;
+                    }
+
+                    if (flimage.uncaging_panel != null && flimage.uncaging_panel.waitTriggerUncagig)
+                    {
+                        flimage.uncaging_panel.StartUncagingDAQ();
+                        flimage.uncaging_panel.waitTriggerUncagig = true;
+                    }
                 }
 
-                if (flimage.uncaging_panel != null && flimage.uncaging_panel.waitTriggerUncagig)
+                var success = StartDAQ(eraseMemoryA, true); //Including trigger.
+                if (!success && read_photon_file && State.Acq.photon_file_format)
                 {
-                    flimage.uncaging_panel.StartUncagingDAQ();
-                    flimage.uncaging_panel.waitTriggerUncagig = true;
+                    read_file_done_signal();
+                    return;
                 }
-
-                StartDAQ(eraseMemoryA, true); //Including trigger.
 
                 if (internalImageCounter == 0)
                 {
                     UIstopWatch_Loop.Start();
                 }
                 UIstopWatch_Image.Start();
-
             }
             else
             {
-                StartDAQ(eraseMemoryA, false); //Including trigger.
+                var success = StartDAQ(eraseMemoryA, false); //Including trigger.
             }
 
             SW_PerformanceMonitor.Start();
@@ -1050,11 +1821,20 @@ namespace FLIMage
 
             InitializeCounter(); //Counters Reset.
             bool[] eraseMemoryA = boolAllChannels(true);
-            StartDAQ(eraseMemoryA, false); //Including trigger.
+            var success = StartDAQ(eraseMemoryA, false); //Including trigger.
         }
 
         public void StopNIDAQIOControls()
         {
+            if (State.Acq.resonantScanning)
+            {
+                if (resonant_switch != null)
+                    resonant_switch.On();
+
+                if (Resonant_Mirror != null)
+                    Resonant_Mirror.setResonantZoom(1000);
+            }
+
             if (tcspc_on && runningImgAcq)
             {
                 runningImgAcq = false;
@@ -1074,81 +1854,28 @@ namespace FLIMage
 
             if (AO_Mirror_EOM != null)
                 AO_Mirror_EOM.Dispose(); //parking mirror
+
+            if (piezo != null)
+            {
+                piezo.move_to_zero();
+            }
         }
-
-        /// <summary>
-        /// Temporarily pausing DAQ.
-        /// </summary>
-        //public void PauseDAQ()
-        //{
-        //    if (use_nidaq)
-        //    {
-        //        //shutterCtrl.Close();
-
-        //        if (State.Acq.resonantScanning)
-        //        {
-        //            if (thorECU != null)
-        //                thorECU.EnableScanner(false);
-
-        //            if (lineTriggeredSampleClock != null)
-        //                lineTriggeredSampleClock.Stop();
-
-        //            if (Resonant_EOM != null)
-        //                Resonant_EOM.Stop();
-
-        //            if (resonant_on != null)
-        //                resonant_on.Close();
-
-        //            if (Resonant_Mirror != null)
-        //            {                        
-        //                Resonant_Mirror.Stop();
-        //                Resonant_Mirror.putValue_Single(new double[] { 0, 0 }, false, false);
-        //            }
-
-        //            if (Resonant_EOM != null)
-        //            {
-        //                Resonant_EOM.Stop();
-        //                Resonant_EOM.putValue_S_ToStartPos(true, false);
-        //            }
-
-        //            if (AO_Mirror_EOM != null)
-        //            {
-        //                AO_Mirror_EOM.Stop(); //Resonant EOM.
-        //                AO_Mirror_EOM.putValue_S_ToStartPos(true, false);
-        //            }
-        //        }
-        //        else
-        //        {
-        //            if (!State.Init.use_digitalLineClock && lineClock != null)
-        //                lineClock.Stop();
-
-        //            if (miniScopeClock != null)
-        //                miniScopeClock.Stop();
-
-        //            if (digitalOutput_WClock != null)
-        //                digitalOutput_WClock.Stop();
-
-        //            if (AO_Mirror_EOM != null)
-        //                AO_Mirror_EOM.Stop();
-        //        }
-        //    }
-        //    runningImgAcq = false;
-        //}
 
         /// <summary>
         /// Stop NIDAQ boards used for grabbing.
         /// Dupe with Pause????
         /// </summary>
-        public void StopDAQ(bool temporal)
+        public void StopDAQ(bool temporal, bool shutter_close)
         {
             if (use_nidaq)
             {
-                shutterCtrl.Close();
+                if (shutter_close)
+                    shutterCtrl.Close();
 
                 if (State.Acq.resonantScanning)
                 {
-                    if (thorECU != null)
-                        thorECU.EnableScanner(false);
+                    //if (thorECU != null)
+                    //    thorECU.EnableScanner(false);
 
                     if (lineTriggeredSampleClock != null)
                         lineTriggeredSampleClock.Stop();
@@ -1176,6 +1903,7 @@ namespace FLIMage
                         AO_Mirror_EOM.Stop(); //Resonant EOM.
                         AO_Mirror_EOM.putValue_S_ToStartPos(true, false);
                     }
+
                 }
                 else
                 {
@@ -1198,12 +1926,12 @@ namespace FLIMage
         public void PauseFocus()
         {
             FiFo_StopMeas(true);
-            StopDAQ(true);
+            StopDAQ(true, false);
         }
 
         public void StopFocus()
         {
-            StopGrab(true, true);
+            StopGrab(false, true);
         }
 
         public void StopGrab(bool force)
@@ -1215,15 +1943,20 @@ namespace FLIMage
         {
             force_stop = force;
 
-            if (focusStop)
-                stopGrabActivated = false;
+            stopGrabActivated = force;
 
             FiFo_StopMeas(force);
 
-            StopDAQ(false);
+            StopDAQ(false, true);
             DisposeDAQ();
 
-            ParkMirrors(true);
+            // Restore line-scan-trace overrides (if any) before parking mirrors,
+            // so the park position matches the user's normal 2D scan settings.
+            RestoreLineScanTraceStateIfNeeded();
+
+            if (!read_photon_file)
+                ParkMirrors(true);
+
             runningImgAcq = false;
 
             if (!looping || stopGrabActivated)
@@ -1233,6 +1966,31 @@ namespace FLIMage
             }
 
             SW_PerformanceMonitor.Stop();
+            fileIO?.CloseAllFlimWriters();
+            if (!read_photon_file && (State?.Acq?.photon_file_format ?? false))
+            {
+                try
+                {
+                    bool canClosePhotonStream = FiFo_acquire == null || FiFo_acquire.IsCompleted();
+                    if (photon_file_handle != null && canClosePhotonStream)
+                    {
+                        if (photon_file_handle.IsStreamingZipWrite)
+                        {
+                            photon_file_handle.EndPhotonBinaryStreamWrite();
+                            FiFo_acquire?.ClearPhotonWriteStream();
+                        }
+                        photon_file_handle.FinishWriting();
+                    }
+                    else if (photon_file_handle != null)
+                    {
+                        Debug.WriteLine("Photon file close deferred: acquisition still running.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Photon file close failed: " + ex.Message);
+                }
+            }
 
             if (focusStop)
             {
@@ -1241,7 +1999,6 @@ namespace FLIMage
             }
             else
             {
-                flimage.InvokeIfRequired(o => o.StopGrab_GUI_Update()); //Should be done before (focusing = false).
                 grabbing = false;
 
                 if (looping)
@@ -1249,7 +2006,41 @@ namespace FLIMage
                     flimage.GrabButton.InvokeIfRequired(o => o.Text = "STOP");
                     flimage.GrabButton.InvokeIfRequired(o => o.Enabled = false);
                 }
+
+                // If acquisition is aborted while a save task is still running, do NOT re-enable Grab immediately.
+                // Otherwise the user can start a new grab with the same filename while the previous save still
+                // holds the file, making "overwrite" fail.
+                var pendingSaveTask = (saveTask != null && !saveTask.IsCompleted);
+                if (pendingSaveTask)
+                {
+                    // Keep UI responsive and avoid deadlock: SaveTask uses InvokeAnyway (blocking Invoke),
+                    // so we must not Wait() on the UI thread.
+                    flimage.InvokeIfRequired(o =>
+                    {
+                        // Re-enable other controls, but keep Grab disabled until saving finishes.
+                        o.ChangeItemsStatus(true, false);
+                        o.GrabButton.Text = "SAVING";
+                        o.GrabButton.Enabled = false;
+                    });
+
+                    Task.Factory.StartNew(() =>
+                    {
+                        try { saveTask.Wait(); } catch { /* ignore */ }
+
+                        // Now the file handle should be released; restore normal UI state.
+                        flimage.BeginInvokeIfRequired(o =>
+                        {
+                            o.StopGrab_GUI_Update();
+                            o.SetEnableStatesOfControls();
+                        });
+                    });
+
+                    return;
+                }
+
+                flimage.InvokeIfRequired(o => o.StopGrab_GUI_Update()); //Should be done before (focusing = false).
             }
+            flimage.InvokeIfRequired(o => o.SetEnableStatesOfControls());
         }
 
         /// <summary>
@@ -1258,7 +2049,8 @@ namespace FLIMage
         public void ParkMirrors(bool zeroEOM)
         {
             bool zeroEOM1 = State.Acq.flyBackBlancking && zeroEOM;
-            if (use_nidaq)
+
+            if (use_nidaq && !read_photon_file)
             {
                 bool shutterAO = flimage.uncaging_panel != null && State.Init.AO_uncagingShutter && flimage.uncaging_panel.UncagingShutter;
                 if (State.Init.enableRegularGalvo)
@@ -1266,6 +2058,7 @@ namespace FLIMage
 
                 if (State.Init.enableResonantScanner)
                 {
+                    zeroEOM1 = State.Acq.resonantEOM_blank_edge && zeroEOM;
                     if (Resonant_EOM != null)
                         Resonant_EOM.putValue_S_ToStartPos(zeroEOM1, false);
 
@@ -1317,22 +2110,8 @@ namespace FLIMage
             }
         }
 
-        /// <summary>
-        /// Wait for next slice and then execute next slice. This occurs in different thread, so that this window is released.
-        /// </summary>
-        void WaitForNextSlice()
+        void Uncaging_DIO_Wait_Function()
         {
-            double eTime = UIstopWatch_Image.ElapsedMilliseconds; //Start measuring the time
-            waitingSliceTask = true; //you can turn off this to stop this task. Not called by any function for now.
-
-#if DEBUG
-            if (DEBUGMODE != 0)
-                Debug.WriteLine("Now WaitForNextSlice task started");
-#endif
-
-            DisposeDAQ(); //Just to make sure in this thread...
-            waitForAcquisitionTaskCompleted();
-            uncaging_DO_SliceCounter++;
 
             int standard_waitTime = 40;  //With this cycle, we can see if stopGrab is activated. 
 
@@ -1343,17 +2122,20 @@ namespace FLIMage
 
             if (uncaging_slice || DO_slice) //Uncaging protocol!!
             {
+                bool fire_uncaging_cond = uncaging_DO_SliceCounter >= State.Uncaging.SlicesBeforeUncage && uncaging_slice;
+                bool fire_DO_cond = uncaging_DO_SliceCounter >= State.DO.SlicesBeforeDO && DO_slice;
+
                 while (waitingSliceTask && !State.Acq.ZStack) //Cycle roughly every standard_waitTime.
                 {
                     double eTime2 = UIstopWatch_Image.ElapsedMilliseconds;
 
-                    double sampleLength_ms = State.Uncaging.sampleLength + overHead_ms;
+                    double sampleLength_ms = 0.0;
 
-                    if (DO_slice)
-                        sampleLength_ms = State.DO.sampleLength + overHead_ms;
+                    if (fire_DO_cond)
+                        sampleLength_ms += State.DO.sampleLength + overHead_ms;
 
-                    if (uncaging_slice && DO_slice)
-                        sampleLength_ms = State.DO.sampleLength + State.Uncaging.sampleLength + 2 * overHead_ms;
+                    if (fire_uncaging_cond)
+                        sampleLength_ms += State.Uncaging.sampleLength + overHead_ms;
 
 
                     double waitTime = State.Acq.sliceInterval * internalSliceCounter * 1000.0 - sampleLength_ms - eTime2;
@@ -1378,8 +2160,6 @@ namespace FLIMage
                     return;
                 }
 
-                bool fire_uncaging_cond = uncaging_DO_SliceCounter >= State.Uncaging.SlicesBeforeUncage && uncaging_slice;
-                bool fire_DO_cond = uncaging_DO_SliceCounter >= State.DO.SlicesBeforeDO && DO_slice;
                 if (fire_uncaging_cond)
                 {
                     bool fire = (uncaging_DO_SliceCounter - State.Uncaging.SlicesBeforeUncage) % State.Uncaging.Uncage_SliceInterval == 0;
@@ -1415,7 +2195,7 @@ namespace FLIMage
                     double eTime2 = UIstopWatch_Image.ElapsedMilliseconds;
                     double waitTime = State.Acq.sliceInterval * internalSliceCounter * 1000.0 - eTime2;
 
-                    if (FLIM_ImgData.ZStack) //for ZStack, we willl 
+                    if (flimage.image_display.FLIM_ImgData.ZStack) //for ZStack, we willl 
                         waitTime = 0;
 
                     if (waitTime > standard_waitTime)
@@ -1440,6 +2220,29 @@ namespace FLIMage
                 flimage.MoveBackToHome();
                 return;
             }
+        }
+
+
+        /// <summary>
+        /// Wait for next slice and then execute next slice. This occurs in different thread, so that this window is released.
+        /// </summary>
+        void WaitForNextSlice()
+        {
+            double eTime = UIstopWatch_Image.ElapsedMilliseconds; //Start measuring the time
+            waitingSliceTask = true; //you can turn off this to stop this task. Not called by any function for now.
+
+#if DEBUG
+            if (DEBUGMODE != 0)
+                Debug.WriteLine("Now WaitForNextSlice task started");
+#endif
+
+            DisposeDAQ(); //Just to make sure in this thread...
+            waitForAcquisitionTaskCompleted();
+
+            uncaging_DO_SliceCounter++;
+
+            if (!read_photon_file)
+                Uncaging_DIO_Wait_Function();
 
             eTime = UIstopWatch_Image.ElapsedMilliseconds;
             measuredSliceInterval = eTime / 1000.0 / internalSliceCounter;
@@ -1447,8 +2250,9 @@ namespace FLIMage
             bool[] eraseMemoryA = boolAllChannels(!State.Acq.aveSlice || averageSliceCounter == 0);
 
             AO_FrameCounter = 0;
-            waitingSliceTask = false; //Now it finished its work.
+            TCSPC_Native.DLL_Busy = false;
 
+            waitingSliceTask = false; //Now it finished its work.
 #if DEBUG
             if (DEBUGMODE != 0)
                 Debug.WriteLine("Before Start DAQ in wait slice task"); //Too let us know where we are.
@@ -1456,9 +2260,15 @@ namespace FLIMage
 
             if (!stopGrabActivated)
             {
-                ParkMirrors(true);
-                StartDAQ(eraseMemoryA, false);
-                EventNotify?.Invoke(this, new ProcessEventArgs("SliceAcquisitionStart", null));
+                if (!read_photon_file)
+                    ParkMirrors(true);
+                var success = StartDAQ(eraseMemoryA, false);
+                if (success)
+                    EventNotify?.Invoke(this, new ProcessEventArgs("SliceAcquisitionStart", null));
+                else
+                {
+                    read_file_done_signal();
+                }
             }
 
 #if DEBUG
@@ -1466,6 +2276,200 @@ namespace FLIMage
                 Debug.WriteLine("Finished wait slice task");
 #endif
 
+        }
+
+        public void SetupFLIMParameters(ScanParameters state1)
+        {
+            parameters = FLIM_Utilities.ConvertStateToFLIMParameters(state1, read_photon_file, parameters);
+            TCSPC_SetupParameters();
+        }
+
+        /// <summary>
+        /// Return success.
+        /// </summary>
+        /// <param name="slice"></param>
+        /// <returns></returns>
+        bool SetupPhotonFileNameForSlices(int slice)
+        {
+            string filename;
+            var success = false;
+
+            // Use direct-memory read by default for photon files.
+            // Falls back to streaming or file extraction when buffers are too large.
+            bool direct_memory = read_photon_file
+                && State.Spc.spcData.nDevices <= 1;
+            bool stream_memory = false;
+            string stream_entry_name = null;
+
+            if (read_photon_file)
+            {
+                filename = flimage.image_display.photon_filename;
+                //flimage.image_display.FLIM_ImgData.State.Acq.maxNFramePerFile = 320000;
+
+                if (flimage.image_display.photon_file_handle != null)
+                {
+                    flimage.image_display.photon_file_handle.MakePhotonBinaryNameForDLL(slice);
+                    var photonBinaryName = flimage.image_display.photon_file_handle.slice_name_for_DLL;
+                    parameters.spcData.PhotonsFileName = photonBinaryName;
+
+                    //This is for Binary direct read --- may not work for big file.
+                    if (direct_memory)
+                    {
+                        var entryName = flimage.image_display.photon_file_handle.slice_name_without_dir + "_0.bin";
+                        long dataLength = -1;
+                        if (flimage.image_display.photon_file_handle.extension == State.Files.extension_photon)
+                        {
+                            var binPath = Path.Combine(flimage.image_display.photon_file_handle.dirname, entryName);
+                            var info = new FileInfo(binPath);
+                            dataLength = info.Exists ? info.Length : -1;
+                            if (dataLength > 0 && dataLength <= int.MaxValue && dataLength % sizeof(uint) == 0)
+                                parameters.spcData.photonBinary = flimage.image_display.photon_file_handle.ReadUInt32ArrayFromFile(binPath);
+                        }
+                        else
+                        {
+                            dataLength = flimage.image_display.photon_file_handle.GetPhotonBinaryLength(entryName);
+                            if (dataLength > int.MaxValue)
+                            {
+                                stream_memory = true;
+                                stream_entry_name = entryName;
+                            }
+                            else if (dataLength > 0 && dataLength <= int.MaxValue && dataLength % sizeof(uint) == 0)
+                            {
+                                parameters.spcData.photonBinary = flimage.image_display.photon_file_handle.ReadUInt32ArrayFromArchive(entryName);
+                            }
+                        }
+
+                        success = parameters.spcData.photonBinary != null && parameters.spcData.photonBinary.Length > 0;
+                        if (!success)
+                        {
+                            parameters.spcData.photonBinary = null;
+                            direct_memory = false;
+                        }
+                    }
+                    if (!direct_memory && !stream_memory)
+                        success = flimage.image_display.photon_file_handle.ExtractFile(slice, out string ext);
+
+                    if (stream_memory)
+                        success = true;
+
+                    if (!success)
+                        return false;
+                }
+                else
+                    return false;
+            }
+            else //write mode.
+            {
+                if (slice == 0 || photon_file_handle == null)
+                    photon_file_handle = new PhotonFileHandle(State);
+
+                photon_file_handle.MakePhotonBinaryNameForDLL(slice);
+
+                var photonBinaryName = photon_file_handle.slice_name_for_DLL;
+                parameters.spcData.PhotonsFileName = photonBinaryName;
+                filename_timestamp = parameters.spcData.PhotonsFileName + ".txt";
+
+                if (photon_file_handle.IsStreamingZipWrite)
+                {
+                    string entryName = photon_file_handle.slice_name_without_dir + "_0.bin";
+                    var stream = photon_file_handle.BeginPhotonBinaryStreamWrite(entryName);
+                    if (stream != null && FiFo_acquire.SetupPhotonWriteStream(stream) == 0)
+                    {
+                        return true;
+                    }
+                    photon_file_handle.EndPhotonBinaryStreamWrite();
+                }
+            }
+
+            if (stream_memory)
+            {
+                FiFo_acquire.SetupPhotonBinaryStream(parameters);
+                StartPhotonBinaryStream(flimage.image_display.photon_file_handle, stream_entry_name);
+            }
+            else if (direct_memory)
+            {
+                FiFo_acquire.SetupPhotonBinary(parameters);
+            }
+            else
+            {
+                FiFo_acquire.SetupPhotonFileName(parameters);
+            }
+
+
+            if (read_photon_file)
+            {
+                if (slice == 0)
+                    real_acquired_datetime.Clear();
+
+                DateTime? baseTime = null;
+                if (File.Exists(filename_timestamp))
+                {
+                    var lines = File.ReadAllLines(filename_timestamp);
+                    foreach (var line in lines)
+                    {
+                        var datetime = "";
+                        if (line.Contains(","))
+                            datetime = line.Split(',')[1];
+                        else if (line.Contains("="))
+                            datetime = line.Split('=')[1].Replace(" ", "");
+                        var time1 = DateTime.ParseExact(datetime, "yyyy-MM-ddTHH:mm:ss.fff", CultureInfo.InvariantCulture);
+                        if (!baseTime.HasValue)
+                            baseTime = time1;
+                        real_acquired_datetime.Add(time1);
+                    }
+                }
+                else
+                {
+                    flimage.image_display.photon_file_handle.GetAcquisitionTime(flimage.image_display.photon_file_handle.slice_name_without_dir + ".txt", out DateTime time1);
+                    baseTime = time1;
+                    real_acquired_datetime.Add(time1);
+                }
+
+                if (baseTime.HasValue && flimage.image_display.photon_file_handle != null)
+                    flimage.image_display.photon_file_handle.binary_trigger_time = baseTime.Value;
+            }
+
+            return true;
+        }
+
+        void StartPhotonBinaryStream(PhotonFileHandle photonHandle, string entryName)
+        {
+            if (photonHandle == null || string.IsNullOrEmpty(entryName) || FiFo_acquire == null)
+                return;
+
+            photonStreamTask = Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    photonHandle.StreamUInt32ChunksFromArchive(entryName, PhotonStreamChunkBytes, AppendPhotonStreamChunk);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Photon stream error: " + ex.Message);
+                    AppendPhotonStreamChunk(Array.Empty<uint>(), true);
+                }
+            }, TaskCreationOptions.LongRunning);
+        }
+
+        void AppendPhotonStreamChunk(uint[] chunk, bool isLast)
+        {
+            if (FiFo_acquire == null)
+                return;
+
+            while (true)
+            {
+                int ret = FiFo_acquire.AppendPhotonBinaryStream(chunk, isLast);
+                if (ret == 0)
+                    break;
+
+                if (ret == 1)
+                {
+                    System.Threading.Thread.Sleep(1);
+                    continue;
+                }
+
+                break;
+            }
         }
 
         bool[] boolAllChannels(bool bool1)
@@ -1528,10 +2532,98 @@ namespace FLIMage
                 StopGrab(true);
         }
 
+        private void read_file_done_signal()
+        {
+            flimage.image_display.finish_reading_photon_file();
+            read_photon_file = false;
+            post_grabbing_process = false;
+            runningImgAcq = false;
+            grabbing = false;
+            focusing = false;
+            UIstopWatch_Loop.Stop();
+            UIstopWatch_Image.Stop();
+            SW_PerformanceMonitor.Stop();
+            EventNotify?.Invoke(this, new ProcessEventArgs("ReadFileDone", null));
+            acquisition_done_event_activated = true;
+
+            var pendingSaveTask = (saveTask != null && !saveTask.IsCompleted);
+            if (pendingSaveTask)
+            {
+                flimage.InvokeIfRequired(o =>
+                {
+                    o.ChangeItemsStatus(false, false);
+                    o.GrabButton.Text = "SAVING";
+                    o.GrabButton.Enabled = false;
+                    o.FocusButton.Enabled = false;
+                });
+
+                Task.Factory.StartNew(() =>
+                {
+                    try { saveTask.Wait(); } catch { /* ignore */ }
+
+                    flimage.BeginInvokeIfRequired(o =>
+                    {
+                        o.StopGrab_GUI_Update();
+                        o.SetEnableStatesOfControls();
+                    });
+
+                    TryStartPendingFocus();
+                });
+
+                return;
+            }
+
+            flimage.InvokeIfRequired(o => o.StopGrab_GUI_Update());
+            flimage.InvokeIfRequired(o => o.SetEnableStatesOfControls());
+            TryStartPendingFocus();
+        }
+
+        public bool TryStartFocus()
+        {
+            if (read_photon_file && !runningImgAcq && (saveTask == null || saveTask.IsCompleted))
+            {
+                if (FiFo_acquire == null || !FiFo_acquire.Running)
+                    read_file_done_signal();
+            }
+
+            if (focusing)
+                return true;
+
+            if (IsReadOrSaveBusy())
+            {
+                _pendingFocusStart = true;
+                flimage.BeginInvokeIfRequired(o => o.WriteStatusText("Finishing photon read..."));
+                return false;
+            }
+
+            initializeFocusing();
+            StartGrab(true);
+            return true;
+        }
+
+        private void TryStartPendingFocus()
+        {
+            if (!_pendingFocusStart)
+                return;
+
+            if (IsReadOrSaveBusy())
+                return;
+
+            _pendingFocusStart = false;
+            initializeFocusing();
+            StartGrab(true);
+        }
+
+        private bool IsReadOrSaveBusy()
+        {
+            if (read_photon_file || post_grabbing_process)
+                return true;
+            return saveTask != null && !saveTask.IsCompleted;
+        }
+
         ///////////////////////////////////Measurement Done Handle//////////////////////////////////////
         public void MeasDoneEvent(FiFio_multiBoards fifo, EventArgs e)
         {
-            //Debug.WriteLine("Measurement Done!");
             if (fifo.saturated)
             {
                 if (focusing)
@@ -1539,32 +2631,96 @@ namespace FLIMage
                 if (grabbing)
                     StopGrab(true);
 
-                MessageBox.Show("FiFo saturated!!");
-            }
-
-#if !DEBUG
-            try
-            {
-#endif
-            if (flimage.fastZcontrol != null)
-            {
-                //BeginInvoke is correct.
-                flimage.fastZcontrol.Invoke((Action)delegate
-                {
-                    flimage.fastZcontrol.Enabled = true;
-                    if (parameters.fastZScan.measureTagParameters)
-                        flimage.fastZcontrol.CalculateFastZParameters();
-                });
+                MessageBox.Show(Form.ActiveForm, "FiFo saturated!!");
             }
             else
-                State.Acq.fastZScan = false;
-#if !DEBUG
-            }
-            catch (Exception EX)
             {
-                Debug.WriteLine("***Main window is closed!!*****" + EX.ToString());
+                if (State.Acq.photon_file_format) // && grabbing)
+                {
+                    if (!read_photon_file)
+                    {
+                        if (photon_file_handle != null)
+                        {
+                            if (photon_file_handle.IsStreamingZipWrite)
+                            {
+                                photon_file_handle.EndPhotonBinaryStreamWrite();
+                                photon_file_handle.AddPhotonTimeEntry(photon_file_handle.slice_name_without_dir + ".txt", acquiredTime);
+                                FiFo_acquire.ClearPhotonWriteStream();
+                            }
+                            else
+                            {
+                                photon_file_handle.AddPhotonFileEntry(parameters.spcData.PhotonsFileName, acquiredTime);
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        if (flimage.image_display.photon_file_handle != null)
+                            flimage.image_display.photon_file_handle.FinishReading();
+                    }
+
+                    if (acquisition_done_event_activated || read_photon_file)
+                    {
+                        grabbing = false; //grab is finished. (not necessary but just in case).
+
+                        if (!read_photon_file)
+                        {
+                            photon_file_handle?.FinishWriting();
+                            post_grabbing_process = true;
+                            EventNotify?.Invoke(this, new ProcessEventArgs("AcquisitionDone", null));
+                            post_acquisition_analysis();
+                            post_grabbing_process = false; //analysis is also finished.
+                        }
+                        else
+                        {
+                            read_file_done_signal();
+                        }
+
+                    }
+                else
+                {
+                    if ((grabbing || read_photon_file) && !focusing)
+                        waitSlice = Task.Factory.StartNew(() =>
+                        {
+                            lock (waitSliceTaskobj) //This task will never overlap. Don't use in any other lock.
+                                    WaitForNextSlice();
+                        });
+                }
             }
+
+            fileIO?.CloseAllFlimWriters();
+        }
+
+
+            if (!read_photon_file)
+            {
+
+#if !DEBUG
+                try
+                {
 #endif
+
+                if (flimage.fastZcontrol != null)
+                {
+                    //BeginInvoke is correct.
+                    flimage.fastZcontrol.Invoke((Action)delegate
+                    {
+                        flimage.fastZcontrol.Enabled = true;
+                        if (parameters.fastZScan.measureTagParameters)
+                            flimage.fastZcontrol.CalculateFastZParameters();
+                    });
+                }
+                else
+                    State.Acq.fastZScan = false;
+#if !DEBUG
+                }
+                catch (Exception EX)
+                {
+                    Debug.WriteLine("***Main window is closed!!*****" + EX.ToString());
+                }
+#endif
+            }
         }
 
 
@@ -1617,110 +2773,131 @@ namespace FLIMage
             }
 #endif
 
-            if (fifo.Running)
+            var state1 = State;
+
+            if (read_photon_file)
+                state1 = flimage.image_display.FLIM_ImgData.State;
+
+            bool acceptFrame = fifo.Running || (parameters != null && parameters.fiberPhotometryMode && grabbing);
+
+            if (acceptFrame)
             {
                 UInt16[][][,,] FLIMTemp = e.data; //order = c, z, [y,x,t]
 
-                FLIM_ImgData.LoadFLIMdata5D_Realtime(FLIMTemp, acquiredTime, false); //Save in FLIM_ImgData class. ShallowCopy       
-                FLIM_ImgData.MakeFLIM_Pages4DFromFLIMRaw5D(false);
+                flimage.image_display.FLIM_ImgData.LoadFLIMdata5D_Realtime(FLIMTemp, acquiredTime, false); //Save in FLIM_ImgData class. ShallowCopy       
+                flimage.image_display.FLIM_ImgData.MakeFLIM_Pages4DFromFLIMRaw5D(false);
 
-                if (State.Acq.fastZScan)
+                if (state1.Acq.fastZScan)
                 {
                     flimage.image_display.calcZProjection(); //For realtime, it just displays one image.
                 }
                 else
                 {
-                    FLIM_ImgData.LoadFLIMRawFromData4D(FLIM_ImgData.FLIM_Pages[0], acquiredTime, false); //ShallowCopy
+                    flimage.image_display.FLIM_ImgData.LoadFLIMRawFromData4D(flimage.image_display.FLIM_ImgData.FLIM_Pages[0], acquiredTime, false); //ShallowCopy
                 }
             }
 
-            //if (tcspc_on)
-            //{
-            if (runningImgAcq && fifo.Running)
+            // Line-scan trace mode: update realtime plot once per frame, but append one point per line.
+            if (runningImgAcq && acceptFrame && grabbing && _lineScanTraceActive && !focusing)
             {
-                bool[] savebool = new bool[State.Acq.nChannels];  //boolAllChannels(false);
+                try
+                {
+                    flimage.image_display.UpdateRealtimePlotFromFrame(e.data);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("UpdateRealtimePlotFromFrame failed: " + ex.Message);
+                }
+            }
+
+            if (runningImgAcq && acceptFrame)
+            {
+                bool[] savebool = new bool[parameters.nChannels];  //boolAllChannels(false);
                 bool protecting_save_task = false;
 
                 bool updateImage = true;
 
-                if (focusing)
+
+                if (focusing || (grabbing && parameters.spcData.savePhotonsInFile && !read_photon_file))
                 {
-                    updateImage = false;
-                    FLIM_ImgData.nAveragedFrame = Enumerable.Repeat(1, State.Acq.nChannels).ToArray();
-
-                    if (State.Acq.nAveFrame_focus > 1)
-                    {
-                        averageCounter++;
-                        FLIM_ImgData.nAveragedFrame = GetAverageFrame(averageCounter);
-
-                        if (State.Acq.nAveFrame_focus == averageCounter) //Finished averaging 1 slice
-                        {
-                            averageCounter = 0;
-                            updateImage = true;
-                        }
-                    }
-                    else
-                        updateImage = true;
+                    updateImage = true;
                 }
-                else if (grabbing)
+                else if (grabbing) //include photon file.
                 {
-                    for (int i = 0; i < State.Acq.nChannels; i++)
-                        savebool[i] = (!(State.Acq.aveFrameA[i] && State.Acq.nAveFrame > 1)) && (State.Acq.acquisition[i]);
+                    for (int i = 0; i < parameters.nChannels; i++)
+                    {
+                        bool avg = parameters.averageFrame != null && i < parameters.averageFrame.Length && parameters.averageFrame[i];
+                        bool acq = parameters.acquisition != null && i < parameters.acquisition.Length && parameters.acquisition[i];
+                        savebool[i] = (!(avg && parameters.n_average > 1)) && acq;
+                    }
 
                     updateImage = false;
-                    if (State.Acq.aveFrameA.Any(x => x == true) && State.Acq.nAveFrame > 1)
+                    bool average_done = true;
+
+                    if (parameters.averageFrame.Any(x => x == true) && parameters.n_average > 1)
                     {
-                        averageCounter++;
-
-                        if (averageCounter % State.Acq.nAveFrame_focus == 0)
-                            updateImage = true;
-
-                        if (!State.Acq.aveSlice)
+                        if (!read_photon_file)
                         {
-                            FLIM_ImgData.nAveragedFrame = GetAverageFrame(averageCounter);
-                        }
-                        else
-                            FLIM_ImgData.nAveragedFrame = Enumerable.Repeat(averageCounter + State.Acq.nAveFrame * averageSliceCounter, State.Acq.nChannels).ToArray();
+                            averageCounter++;
 
-                        if (State.Acq.nAveFrame == averageCounter) //Finished averaging 1 slice
+                            if (averageCounter % parameters.focusAverage == 0 || averageCounter % parameters.n_average == 0)
+                                updateImage = true;
+
+                            if (!state1.Acq.aveSlice)
+                            {
+                                flimage.image_display.FLIM_ImgData.nAveragedFrame = GetAverageFrame(averageCounter, parameters);
+                            }
+                            else
+                                flimage.image_display.FLIM_ImgData.nAveragedFrame = Enumerable.Repeat(averageCounter + parameters.n_average * averageSliceCounter, parameters.nChannels).ToArray();
+
+                            average_done = parameters.n_average == averageCounter;
+                        }
+                        else //read photon file.
+                        {
+                            if (!state1.Acq.aveSlice)
+                            {
+                                flimage.image_display.FLIM_ImgData.nAveragedFrame = GetAverageFrame(parameters.n_average, parameters);
+                            }
+                            else
+                                flimage.image_display.FLIM_ImgData.nAveragedFrame = Enumerable.Repeat(parameters.n_average * averageSliceCounter, parameters.nChannels).ToArray();
+
+                            average_done = e.frameNumber % parameters.n_average == 0;
+                        } //
+
+                        if (average_done) //Finished averaging 1 slice
                         {
                             averageCounter = 0;
                             averageSliceCounter++;
 
                             protecting_save_task = true;
                             updateImage = true;
-                            //When you finish 1 slice, you should wait for saving task.
 
-                            //Debug.WriteLine("AverageSliceCounter :" + averageSliceCounter + "   n_Slice: " + State.Acq.nSlices);
-
-                            if (!State.Acq.aveSlice)
+                            if (!state1.Acq.aveSlice)
                             {
-                                for (int i = 0; i < State.Acq.nChannels; i++)
-                                {
-                                    if (State.Acq.aveFrameA[i] && State.Acq.acquisition[i])
-                                        savebool[i] = true;
-                                }
-
+                                savebool = (bool[])parameters.acquisition.Clone();
                             }
                             else // aveSlice
                             {
-                                if (averageSliceCounter == State.Acq.nAveSlice)
+                                if (averageSliceCounter == state1.Acq.nAveSlice)
                                 {
                                     averageSliceCounter = 0;
-                                    for (int i = 0; i < State.Acq.nChannels; i++)
-                                    {
-                                        if (State.Acq.aveFrameA[i] && State.Acq.acquisition[i])
-                                            savebool[i] = true;
-                                    }
+                                    savebool = (bool[])parameters.acquisition.Clone();
                                 }
                             } // aveSlice
                         } //Frame
                     } //Average
-                    else
+                    else //not average
                     {
+                        protecting_save_task = false;
                         updateImage = true;
                     }
-                } //if focus.
+                }
+
+                if (read_photon_file)
+                {
+                    protecting_save_task = true;
+                    updateImage = true;
+                }
 
 #if DEBUG
                 if (force_stop || stopGrabActivated)
@@ -1729,17 +2906,17 @@ namespace FLIMage
 #endif
                 if (grabbing || focusing)
                 {
-                    FLIM_ImgData.saveChannels = (bool[])savebool.Clone();
-                    SaveUpdateAcquiredImage(savebool, protecting_save_task, updateImage);
+                    //protecting_save_task = true; 
+                    flimage.image_display.FLIM_ImgData.saveChannels = (bool[])savebool.Clone();
+                    SaveUpdateAcquiredImage(savebool, protecting_save_task, updateImage, state1);
                 }
 
                 if (grabbing || focusing)
-                    FLIMProgressChanged();
+                    FLIMProgressChanged(e.frameNumber, state1);
                 else
                     Debug.WriteLine("No progress");
 
             } //Running
-            //} //if (tcspc_on)
 
 #if DEBUG
             if (DEBUGMODE != 0)
@@ -1751,28 +2928,19 @@ namespace FLIMage
 
         } //FrameDoneEvent_Core.
 
-        public int[] GetAverageFrame(int nAverage)
+        public int[] GetAverageFrame(int nAverage, FLIM_Parameters parameters)
         {
-            int[] aveN = new int[State.Acq.nChannels];
-            for (int c = 0; c < State.Acq.nChannels; c++)
-                if (State.Acq.aveFrameA[c])
+            int[] aveN = new int[parameters.nChannels];
+            for (int c = 0; c < parameters.nChannels; c++)
+            {
+                bool avg = parameters.averageFrame != null && c < parameters.averageFrame.Length && parameters.averageFrame[c];
+                if (avg)
                     aveN[c] = nAverage;
                 else
                     aveN[c] = 1;
-
-            return aveN;
-        }
-
-        public int[] Get_n_time()
-        {
-            int[] n_time = Enumerable.Repeat<int>(State.Spc.spcData.n_dataPoint, State.Acq.nChannels).ToArray();
-            for (int i = 0; i < State.Acq.nChannels; i++)
-            {
-                if (!State.Acq.acqFLIMA[i])
-                    n_time[i] = 1;
             }
 
-            return n_time;
+            return aveN;
         }
 
 
@@ -1781,26 +2949,41 @@ namespace FLIMage
         /// </summary>
         /// <param name="saveFileBools"></param>
         /// <param name="protecting_save_task"></param>
-        public void SaveUpdateAcquiredImage(bool[] saveFileBools, bool protecting_save_task, bool updateImage)
+        public void SaveUpdateAcquiredImage(bool[] saveFileBools, bool protecting_save_task, bool updateImage, ScanParameters state1)
         {
             DateTime acTime;
-            double msPerLine = State.Acq.fastZScan ? State.Acq.FastZ_msPerLine : State.Acq.msPerLine;
-            if (State.Acq.resonantScanning)
-                msPerLine = 500.0 / State.Init.resonantFreq_Hz;
+            double msPerLine = state1.Acq.fastZScan ? state1.Acq.FastZ_msPerLine : state1.Acq.msPerLine;
+            if (state1.Acq.resonantScanning)
+                msPerLine = 500.0 / state1.Init.resonantFreq_Hz;
+
+#if DEBUG
+            Debug.WriteLine("Debug: C# SaveUpdateAcquiredImage process 1");
+#endif
+            // Fiber photometry: sampling time is stored in msPerLine (bin size).
+            if (microscope_system == MicroscopeSystem.FiberPhotometry && parameters != null && parameters.fiberPhotometryMode)
+                msPerLine = (state1?.Acq != null && state1.Acq.fiberBin_ms > 0) ? state1.Acq.fiberBin_ms : parameters.fiberBin_ms;
 
 #if DEBUG
             Debug.WriteLine("Debug: C# SaveUpdateAcquiredImage process 1");
 #endif
 
             //Deepcopy of FLIMRaw5D.
-            if (saveFileBools.Any(x => x == true)) //If any savefile exists.
+            if (saveFileBools.Any(x => x == true) || read_photon_file) //If any savefile exists.
             {
-                acTime = acquiredTime.AddMilliseconds(internalFrameCounter * msPerLine * State.Acq.linesPerFrame);
+                // Timestamp for each saved page.
+                // Normal imaging: msPerLine * linesPerFrame.
+                // Fiber photometry: msPerLine is the bin size, so page interval is msPerLine * linesPerFrame.
+                double msPerPage = msPerLine * state1.Acq.linesPerFrame;
 
-                var FLIMForSave = (ushort[][][,,])FLIM_ImgData.FLIMRaw5D.Clone();  //Shallow copy.
-                //Copier.DeepCopyArray(FLIM_ImgData.FLIMRaw5D);
+                acTime = acquiredTime.AddMilliseconds(internalFrameCounter * msPerPage);
 
-                FLIM_ImgData.saveChannels = saveFileBools;
+                //if (real_acquired_datetime.Count > internalFrameCounter)
+                //    acTime = real_acquired_datetime[internalFrameCounter];
+
+                var FLIMForSave = (ushort[][][,,])flimage.image_display.FLIM_ImgData.FLIMRaw5D.Clone();  //Shallow copy.
+                                                                                                         //Copier.DeepCopyArray(flimage.image_display.FLIM_ImgData.FLIMRaw5D);
+
+                flimage.image_display.FLIM_ImgData.saveChannels = saveFileBools;
 
                 for (int i = 0; i < saveFileBools.Length; i++)
                 {
@@ -1810,36 +2993,34 @@ namespace FLIMage
                     }
                 }
 
-                lock (saveBufferObj)
-                    if (FLIM_ImgData.KeepPagesInMemory || FLIM_ImgData.ZStack)
-                    {
-                        FLIM_ImgData.Add5DFLIM(FLIMForSave, acTime, savePageBufferCounter, false);
-                        savePageBufferCounter++;
-                    }
-                    else
-                    {
-                        FLIMSaveBuffer.Add(FLIMForSave);
-                        acquiredTimeList.Add(acTime);
-                    }
+                if (flimage.image_display.FLIM_ImgData.KeepPagesInMemory || flimage.image_display.FLIM_ImgData.ZStack)
+                {
+                    flimage.image_display.FLIM_ImgData.Add5DFLIM(FLIMForSave, acTime, savePageBufferCounter, false);
+                    savePageBufferCounter++;
+                }
+                else
+                {
+                    FLIMSaveBuffer.Add(FLIMForSave);
+                    acquiredTimeList.Add(acTime);
+                }
             }
 
-            bool busy = AO_FrameCounter - internalFrameCounter > 3;
 
 #if DEBUG
             Debug.WriteLine("Debug: C# SaveUpdateAcquiredImage process 2");
 #endif
 
             if ((focusing || grabbing) && updateImage)
-                UpdateImages();
+                UpdateImages(state1);
 
 #if DEBUG
             Debug.WriteLine("Debug: C# SaveUpdateAcquiredImage process 3");
 #endif
 
 
-            if (grabbing && saveFileBools.Any(x => x == true))
+            if (grabbing && saveFileBools.Any(x => x == true) && (!state1.Acq.photon_file_format || read_photon_file))
             {
-                SaveFile(protecting_save_task);
+                SaveFile(protecting_save_task, state1);
             }
         }
 
@@ -1848,19 +3029,16 @@ namespace FLIMage
         /// </summary>
         public void CheckDeletePageBuffer()
         {
-            lock (saveBufferObj)
+            if (!(flimage.image_display.FLIM_ImgData.KeepPagesInMemory || flimage.image_display.FLIM_ImgData.ZStack))
             {
-                if (!(FLIM_ImgData.KeepPagesInMemory || FLIM_ImgData.ZStack))
+                if (displayPageCounter > deletedPageCounter && savePageCounter > deletedPageCounter)
                 {
-                    if (displayPageCounter > deletedPageCounter && savePageCounter > deletedPageCounter)
+                    if (FLIMSaveBuffer != null && FLIMSaveBuffer.Count > 0)
                     {
-                        if (FLIMSaveBuffer != null && FLIMSaveBuffer.Count > 0)
-                        {
-                            RemoveFrameAt(0);
-                            if (acquiredTimeList != null && acquiredTimeList.Count > 0)
-                                acquiredTimeList.RemoveAt(0);
-                            deletedPageCounter++;
-                        }
+                        RemoveFrameAt(0);
+                        if (acquiredTimeList != null && acquiredTimeList.Count > 0)
+                            acquiredTimeList.RemoveAt(0);
+                        deletedPageCounter++;
                     }
                 }
             }
@@ -1872,45 +3050,52 @@ namespace FLIMage
                 FLIMSaveBuffer.RemoveAt(frameToWork);
         }
 
-        public int totalPagesSaved()
+        public int totalPagesSaved(ScanParameters state1)
         {
             int aveNFrame = 1;
-            if (State.Acq.aveFrameA.Any(x => x == true))
-                aveNFrame = State.Acq.nAveFrame;
+            if (state1.Acq.aveFrameA.Any(x => x == true))
+                aveNFrame = state1.Acq.nAveFrame;
 
-            int TotalNPages = State.Acq.nFrames / aveNFrame;
+            int TotalNPages = state1.Acq.nFrames / aveNFrame;
             int aveNslices = 1;
-            if (State.Acq.aveSlice)
-                aveNslices = State.Acq.nAveSlice;
+            if (state1.Acq.aveSlice)
+                aveNslices = state1.Acq.nAveSlice;
 
-            TotalNPages = TotalNPages * State.Acq.nSlices / aveNslices;
-
-            //Debug.WriteLine("Total pages saved = " + TotalNPages);
+            TotalNPages = TotalNPages * state1.Acq.nSlices / aveNslices;
 
             return TotalNPages;
         }
 
-        public void SaveFile(bool protecting_save_task)
+        public void SaveFile(bool protecting_save_task, ScanParameters state1)
         {
+
 #if DEBUG
             if (DEBUGMODE != 0)
                 Debug.WriteLine("Start Save File");
 #endif
+
             bool updated = false;
+
             int savePage = savePageCounter - deletedPageCounter;
-            //int safeMergin = 0;
 
-            //If previous saveTask is still running, it will wait until it is done.
+            // IMPORTANT: this can be called on the TCSPC callback thread (FrameDoneEvent path).
+            // Avoid blocking per-frame on file I/O; instead, only wait when the caller explicitly requests
+            // protection (e.g., end-of-average/end-of-slice where ordering matters).
             if (saveTask != null && !saveTask.IsCompleted)
-                saveTask.Wait();
+            {
+                if (protecting_save_task)
+                    saveTask.Wait();
+                else
+                    return; // try again on the next frame; savePageCounter hasn't advanced yet.
+            }
 
-            if (FLIM_ImgData.KeepPagesInMemory || FLIM_ImgData.ZStack)
+            if (flimage.image_display.FLIM_ImgData.KeepPagesInMemory || flimage.image_display.FLIM_ImgData.ZStack)
             {
                 //Save task occurs only when savePage Counter is less than 5D page.
-                updated = (FLIM_ImgData.FLIM_Pages5D.Length > savePageCounter);
+                updated = (flimage.image_display.FLIM_ImgData.FLIM_Pages5D.Length > savePageCounter);
                 if (!updated)
                 {
-                    Debug.WriteLine("**** FLIM_Page5D = {0}, savePageCounter = {1} ****", FLIM_ImgData.FLIM_Pages5D.Length, savePageCounter);
+                    Debug.WriteLine("**** FLIM_Page5D = {0}, savePageCounter = {1} ****", flimage.image_display.FLIM_ImgData.FLIM_Pages5D.Length, savePageCounter);
                 }
             }
             else
@@ -1922,28 +3107,34 @@ namespace FLIMage
             if (updated && (saveTask == null || saveTask.IsCompleted))
             {
                 if (protecting_save_task)
-                    SaveTask(savePage);
+                {
+                    SaveTask(savePage, state1);
+                }
                 else
+                {
                     saveTask = Task.Factory.StartNew((object obj) =>
                     {
                         var data = (dynamic)obj;
-                        SaveTask(data.page);
+                        SaveTask(data.page, state1);
                     }, new { page = savePage });
+                }
 
             }
             else
             {
-                Debug.WriteLine("Saving BUSY***************************Could not save:" + (savePageCounterTotal + 1) + " (" + (savePageCounter + 1) + "/" + FLIM_ImgData.FLIM_Pages5D.Count() + ")");
+                Debug.WriteLine("Saving BUSY***************************Could not save:" + (savePageCounterTotal + 1) + " (" + (savePageCounter + 1) + "/" + flimage.image_display.FLIM_ImgData.FLIM_Pages5D.Count() + ")");
             }
 
             flimage.InvokeAnyway(o => o.UpdateSavedNumberOfFile());
+
         }
+
 
         /// <summary>
         /// Save acquired image. Called in different thread (Task.Factory.StartNew). 
         /// </summary>
         /// <param name="savePage"></param>
-        public void SaveTask(int savePage)
+        public void SaveTask(int savePage, ScanParameters state1)
         {
 #if DEBUG
             if (DEBUGMODE != 0)
@@ -1954,7 +3145,7 @@ namespace FLIMage
             {
 #if DEBUG
                 if (DEBUGMODE != 0)
-                    Debug.WriteLine("Start FLIMsave sync");
+                    Debug.WriteLine("Debug: C# Start FLIMsave sync");
 #endif
 
                 UInt16[][][,,] FLIMImage; //Before permutation.
@@ -1966,20 +3157,20 @@ namespace FLIMage
                 bool[] overwrite = (bool[])newFile.Clone();
 
                 int error = 0;
-                String fullFileName = State.Files.fullName();
+                String fullFileName = state1.Files.fullName();
+
+                if (read_photon_file)
+                    fullFileName = flimage.image_display.FLIM_ImgData.fullFileName;
 
                 bool[] saveCh = boolAllChannels(true);
 
-                //Everything about FLIM_Page5D or FLIMSaveBufer. 
-#if DEBUG
-                if (DEBUGMODE != 0)
-                    Debug.WriteLine("Start FLIMmovie sync");
-#endif
+                state1.Acq.version = flimage.version; //Just to make sure the version.
 
-                if (FLIM_ImgData.KeepPagesInMemory || FLIM_ImgData.ZStack)
+
+                if (flimage.image_display.FLIM_ImgData.KeepPagesInMemory || flimage.image_display.FLIM_ImgData.ZStack)
                 {
-                    FLIMImage = FLIM_ImgData.FLIM_Pages5D[savePageCounter];
-                    acqTimeTemp = FLIM_ImgData.acquiredTime_Pages5D[savePageCounter];
+                    FLIMImage = flimage.image_display.FLIM_ImgData.FLIM_Pages5D[savePageCounter];
+                    acqTimeTemp = flimage.image_display.FLIM_ImgData.acquiredTime_Pages5D[savePageCounter];
                     FLIM_5D = ImageProcessing.PermuteFLIM5D(FLIMImage, false); //ShallowCopy
                 }
                 else
@@ -1991,168 +3182,288 @@ namespace FLIMage
 
 #if DEBUG
                 if (DEBUGMODE != 0)
-                    Debug.WriteLine("Start Saving File.");
+                    Debug.WriteLine("Debug: C# Start Saving File.");
 #endif
 
-                for (int ch = 0; ch < State.Acq.nChannels; ch++)
+                for (int ch = 0; ch < state1.Acq.nChannels; ch++)
                 {
-                    if (FLIMImage[ch] == null)
+                    if (FLIMImage == null || FLIMImage[ch] == null)
                         saveCh[ch] = false;
                 }
 
-                State.Acq.acqFLIM = false;
-                for (int ch = 0; ch < State.Acq.nChannels; ch++)
-                    State.Acq.acqFLIM = (State.Acq.acqFLIM || (State.Acq.acqFLIMA[ch] && saveCh[ch]));
 
-                if (!State.Acq.acqFLIM)
+
+                //if (read_photon_file && State.Acq.nFrames > 100000)
+                //{
+                //    if (flimage.image_display.photon_file_handle != null)
+                //    {
+                //        flimage.image_display.photon_file_handle.SaveFLIMinArchive(savePageCounter, FLIM_5D, acqTimeTemp);
+                //    }
+                //}
+                //else
                 {
-                    flimage.saveIntensityImage = true;
-                }
-                else
-                {
-                    if (!State.Files.channelsInSeparatedFile)
-                    {
-                        bool overwrite1 = overwrite[0];
-                        newFile = boolAllChannels(false);
-
-                        if (FLIM_5D.Length == 1)
-                            error = fileIO.SaveFLIMInTiff(fullFileName, FLIM_5D[0], acqTimeTemp, overwrite1, saveCh);
-                        else
-                            error = fileIO.SaveFLIMInTiffZStack(fullFileName, FLIM_5D, acqTimeTemp, overwrite1, saveCh);
-                    }
-                    else //Separate channel.
-                    {
-                        for (int ch = 0; ch < State.Acq.nChannels; ch++)
-                        {
-                            if (FLIMImage[ch] != null)
-                            {
-                                saveCh = new bool[State.Acq.nChannels];
-                                saveCh[ch] = true;
-                                newFile[ch] = false;
-
-                                bool overwrite1 = overwrite[ch];
-                                String fileName = State.Files.fullName(ch);
-                                if (FLIM_5D.Length == 1)
-                                {
-                                    ushort[][,,] FLIM_separated = new ushort[State.Acq.nChannels][,,];
-                                    FLIM_separated[ch] = FLIM_5D[0][ch];
-                                    error = fileIO.SaveFLIMInTiff(fileName, FLIM_separated, acqTimeTemp, overwrite1, saveCh);
+                    state1.Acq.acqFLIM = false;
+                    for (int ch = 0; ch < state1.Acq.nChannels; ch++)
+                        state1.Acq.acqFLIM = (state1.Acq.acqFLIM || (state1.Acq.acqFLIMA[ch] && saveCh[ch]));
 
 #if DEBUG
-                                    if (DEBUGMODE != 0)
+                    if (DEBUGMODE != 0)
+                        Debug.WriteLine("Debug: State.Acq.acqFLIM {0}, nChannels = {1}", state1.Acq.acqFLIM, state1.Acq.nChannels);
+#endif
+
+                    if (!state1.Acq.acqFLIM)
+                    {
+                        flimage.saveIntensityImage = true;
+                    }
+                    else
+                    {
+                        if (!state1.Files.channelsInSeparatedFile)
+                        {
+                            bool overwrite1 = overwrite[0]; //|| savePageCounter == 0;
+
+                            if (FLIM_5D.Length == 1)
+                            {
+                                try
+                                {
+                                    if (fileIO == null || !ReferenceEquals(fileIO.State, state1))
+                                    {
+                                        fileIO = new FileIO(state1);
+                                    }
+                                    fileIO.HoldFastWriterOpen = !read_photon_file && ShouldHoldFastWriterOpen(state1);
+                                    error = fileIO.SaveFLIMInTiff(fullFileName, FLIM_5D[0], acqTimeTemp, overwrite1, saveCh);
+                                }
+                            catch (Exception ex)
+                            {
+                                NotifySaveFailureAndStop(fullFileName, overwrite1, ex);
+                                return;
+                            }
+
+#if DEBUG
+                                Debug.WriteLine("Saving file.. {0}, overwrite = {1}, FileCounter = {2}/{3}", fullFileName, overwrite1, state1.Files.fileCounter, savePageCounter);
+#endif
+                            }
+                            else
+                        {
+                            try
+                            {
+                                if (fileIO == null || !ReferenceEquals(fileIO.State, state1))
+                                {
+                                    fileIO = new FileIO(state1);
+                                }
+                                fileIO.HoldFastWriterOpen = !read_photon_file && ShouldHoldFastWriterOpen(state1);
+                                error = fileIO.SaveFLIMInTiffZStack(fullFileName, FLIM_5D, acqTimeTemp, overwrite1, saveCh);
+                            }
+                            catch (Exception ex)
+                            {
+                                NotifySaveFailureAndStop(fullFileName, overwrite1, ex);
+                                return;
+                            }
+                        }
+
+                            filename_last = fullFileName;
+                        }
+                        else //Separate channel.
+                        {
+                            for (int ch = 0; ch < state1.Acq.nChannels; ch++)
+                            {
+                                if (FLIMImage[ch] != null)
+                                {
+                                    saveCh = new bool[state1.Acq.nChannels];
+                                    saveCh[ch] = true;
+
+                                    bool overwrite1 = overwrite[ch];
+                                    String fileName = state1.Files.fullName(ch);
+                                    if (FLIM_5D.Length == 1)
+                                    {
+                                        ushort[][,,] FLIM_separated = new ushort[state1.Acq.nChannels][,,];
+                                        FLIM_separated[ch] = FLIM_5D[0][ch];
+                                    try
+                                    {
+                                        if (fileIO == null || !ReferenceEquals(fileIO.State, state1))
+                                        {
+                                            fileIO = new FileIO(state1);
+                                        }
+                                        fileIO.HoldFastWriterOpen = !read_photon_file && ShouldHoldFastWriterOpen(state1);
+                                        error = fileIO.SaveFLIMInTiff(fileName, FLIM_separated, acqTimeTemp, overwrite1, saveCh);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        NotifySaveFailureAndStop(fileName, overwrite1, ex);
+                                        return;
+                                    }
+
+#if DEBUG
                                         Debug.WriteLine("Saving file.. {0}, channel = {1}, overwrite = {2}", fileName, ch, overwrite1);
 #endif
-                                }
-                                else
-                                {
-                                    ushort[][][,,] FLIM_separated = new ushort[FLIM_5D.Length][][,,];
-                                    for (int z = 0; z < FLIM_5D.Length; z++)
-                                    {
-                                        FLIM_separated[z][ch] = FLIM_5D[z][ch];
                                     }
-                                    error = fileIO.SaveFLIMInTiffZStack(fileName, FLIM_separated, acqTimeTemp, overwrite1, saveCh);
+                                    else
+                                    {
+                                        ushort[][][,,] FLIM_separated = new ushort[FLIM_5D.Length][][,,];
+                                        for (int z = 0; z < FLIM_5D.Length; z++)
+                                        {
+                                            FLIM_separated[z][ch] = FLIM_5D[z][ch];
+                                        }
+
+                                    try
+                                    {
+                                        if (fileIO == null || !ReferenceEquals(fileIO.State, state1))
+                                        {
+                                            fileIO = new FileIO(state1);
+                                        }
+                                        fileIO.HoldFastWriterOpen = !read_photon_file && ShouldHoldFastWriterOpen(state1);
+                                        error = fileIO.SaveFLIMInTiffZStack(fileName, FLIM_separated, acqTimeTemp, overwrite1, saveCh);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        NotifySaveFailureAndStop(fileName, overwrite1, ex);
+                                        return;
+                                    }
 
 #if DEBUG
-                                    if (DEBUGMODE != 0)
                                         Debug.WriteLine("Saving file.. {0}, channel = {1}, overwrite = {2}, n_zslice = ", fileName, ch, overwrite1, FLIM_5D.Length);
 #endif
+                                    }
+
+                                    filename_last = fileName;
                                 }
                             }
                         }
                     }
+
+                if (error < 0)
+                {
+                    NotifySaveFailureAndStop(filename_last ?? fullFileName, overwrite.Any(x => x), null, error);
+                    return;
                 }
 
-                if (flimage.saveIntensityImage)
-                {
-                    for (int c = 0; c < State.Acq.nChannels; c++)
+                    if (flimage.saveIntensityImage && !state1.Acq.photon_file_format)
                     {
-                        if (FLIMImage[c] != null)
+                        for (int c = 0; c < state1.Acq.nChannels; c++)
                         {
-                            if (State.Files.channelsInSeparatedFile)
+                            if (FLIMImage != null && FLIMImage[c] != null)
                             {
-                                saveCh = new bool[State.Acq.nChannels];
-                                saveCh[c] = true;
-                            }
+                                if (state1.Files.channelsInSeparatedFile)
+                                {
+                                    saveCh = new bool[state1.Acq.nChannels];
+                                    saveCh[c] = true;
+                                }
 
-                            var file_type = FileIO.ImageType.FLIMRaw;
-                            if (State.Acq.acqFLIM)
-                                file_type = FileIO.ImageType.Intensity;
+                                var file_type = FileIO.ImageType.FLIMRaw;
+                                if (state1.Acq.acqFLIM)
+                                    file_type = FileIO.ImageType.Intensity;
 
-                            String fileName = fileIO.FLIM_FilePath(c, State.Files.channelsInSeparatedFile, State.Files.fileCounter, file_type, "", State.Files.pathName);
+                                string baseName = state1.Files.baseName;
+                                string dirName = state1.Files.pathName;
 
-                            for (int z = 0; z < FLIM_5D.Length; z++)
-                            {
-                                bool overwrite1 = (overwrite[c] && (z == 0)) && (State.Files.channelsInSeparatedFile || c == 0);
-                                fileIO.Save2DImageInTiff(fileName, ImageProcessing.GetProjectFromFLIM(FLIM_5D[z][c], FLIM_ImgData.fit_range[c]), acqTimeTemp, overwrite1, saveCh);
+                                if (read_photon_file)
+                                {
+                                    baseName = flimage.image_display.FLIM_ImgData.baseName;
+                                    dirName = flimage.image_display.FLIM_ImgData.pathName;
+                                }
+
+                                String fileName = fileIO.FLIM_FilePath(c, state1.Files.channelsInSeparatedFile, state1.Files.fileCounter, file_type, "", dirName, baseName, ".tif");
+
+                                for (int z = 0; z < FLIM_5D.Length; z++)
+                                {
+                                    bool overwrite1 = (overwrite[c] && (z == 0)) && (state1.Files.channelsInSeparatedFile || c == 0);
+                                try
+                                {
+                                    var err2 = fileIO.Save2DImageInTiff(fileName, ImageProcessing.GetProjectFromFLIM(FLIM_5D[z][c], flimage.image_display.FLIM_ImgData.fit_range[c]), acqTimeTemp, overwrite1, saveCh);
+                                    if (err2 < 0)
+                                    {
+                                        NotifySaveFailureAndStop(fileName, overwrite1, null, err2);
+                                        return;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    NotifySaveFailureAndStop(fileName, overwrite1, ex);
+                                    return;
+                                }
+                                }
+
+                                filename_last = fileName;
                             }
                         }
                     }
                 }
 
                 if (overwrite.Any(x => x == true))
-                    FLIM_ImgData.image_description = fileIO.image_description;
+                    flimage.image_display.FLIM_ImgData.image_description = fileIO.image_description;
 
 
                 savePageCounter++;
                 savePageCounterTotal++;
 
-                int TotalNPages = totalPagesSaved();
+                int TotalNPages = totalPagesSaved(state1);
 
                 if (TotalNPages == savePageCounter)
                 {
+                    if (read_photon_file)
+                        fileIO?.CloseAllFlimWriters();
                     EventNotify?.Invoke(this, new ProcessEventArgs("SaveImageDone", FLIMImage));
                 }
 
-                //if (parameters.enableFastZscan)  //always in different files. to avoid confusion.
-                //{
-                //    newFile = true;
-                //    State.Files.fileCounter++;
-                //    UpdateFileName();
-                //}
+                //Save file in exiting file from Frame = 2.
+                newFile = boolAllChannels(false);
 
-                if (savePageCounter == State.Acq.maxNFramePerFile && savePageCounterTotal < TotalNPages)
+                if (parameters.enableFastZscan && !(state1?.Acq?.fiberPhotometryMode ?? false))  //always in different files. to avoid confusion.
+                {
+                    newFile = boolAllChannels(true);
+                    fileIO.CloseAllFlimWriters();
+                    state1.Files.fileCounter++;
+                    flimage.UpdateFileName();
+                }
+
+                if (!read_photon_file &&
+                    savePageCounter == state1.Acq.maxNFramePerFile &&
+                    savePageCounterTotal < TotalNPages &&
+                    !(state1?.Acq?.fiberPhotometryMode ?? false))
                 {
                     //Finished saving. Reaching maximum page number. 
 
-                    newFile = boolAllChannels(true);
-                    State.Files.fileCounter++;
-                    flimage.UpdateFileName();
-
-                    if (FLIM_ImgData.KeepPagesInMemory || FLIM_ImgData.ZStack)
+                    if (flimage.image_display.FLIM_ImgData.KeepPagesInMemory || flimage.image_display.FLIM_ImgData.ZStack)
                     {
-                        lock (saveBufferObj)
+                        newFile = boolAllChannels(true);
+                        fileIO.CloseAllFlimWriters();
+                        state1.Files.fileCounter++;
+                        flimage.UpdateFileName();
+
+                        //lock (saveBufferObj)
                         {
-                            FLIM_ImgData.RemovePageRange5D(0, State.Acq.maxNFramePerFile);
-                            displayPageCounter = displayPageCounter - State.Acq.maxNFramePerFile;
+                            flimage.image_display.FLIM_ImgData.RemovePageRange5D(0, state1.Acq.maxNFramePerFile);
+                            displayPageCounter = displayPageCounter - state1.Acq.maxNFramePerFile;
 
                             savePageCounter = 0;
+
+                            savePageBufferCounter -= state1.Acq.maxNFramePerFile;
 
                             if (displayPageCounter < 0)
                                 displayPageCounter = 0;
                         }
 
                     }
-                    else
-                    {
-                        savePageCounter = 0;
-                        deletedPageCounter = deletedPageCounter - State.Acq.maxNFramePerFile;
-                        displayPageCounter = displayPageCounter - State.Acq.maxNFramePerFile;
+                    //else
+                    //{
+                    //    savePageCounter = 0;
+                    //    deletedPageCounter = deletedPageCounter - state1.Acq.maxNFramePerFile;
+                    //    displayPageCounter = displayPageCounter - state1.Acq.maxNFramePerFile;
 
-                        if (displayPageCounter < 0)
-                            displayPageCounter = 0;
+                    //    if (displayPageCounter < 0)
+                    //        displayPageCounter = 0;
 
-                        if (deletedPageCounter < -1)
-                        {
-                            // Should be -1. It will be added at CheckDeletePageBuffer();
-                            Debug.WriteLine("Deleted Counter < 0 problem!!" + deletedPageCounter + ", Disp = " + displayPageCounter);
-                        }
+                    //    if (deletedPageCounter < -1)
+                    //    {
+                    //        // Should be -1. It will be added at CheckDeletePageBuffer();
+                    //        Debug.WriteLine("Deleted Counter < 0 problem!!" + deletedPageCounter + ", Disp = " + displayPageCounter);
+                    //    }
 
-                    }
+                    //}
                 }
                 // }
 
 
-                //Debug.WriteLine("PageCount = " + FLIM_ImgData.FLIM_Pages5D.Count + ", save Count" + savePageCounter);
+                //Debug.WriteLine("PageCount = " + flimage.image_display.FLIM_ImgData.FLIM_Pages5D.Count + ", save Count" + savePageCounter);
 
                 CheckDeletePageBuffer();
 
@@ -2166,24 +3477,161 @@ namespace FLIMage
 #endif
         }
 
+        private void NotifySaveFailureAndStop(string fileName, bool overwrite, Exception ex = null, int errorCode = int.MinValue)
+        {
+            // Avoid spamming multiple dialogs for the same root cause.
+            if (_saveErrorNotified)
+                return;
+            _saveErrorNotified = true;
+
+            var mode = overwrite ? "overwrite" : "append";
+            var details = "";
+            if (errorCode != int.MinValue)
+                details += "ErrorCode = " + errorCode + "\r\n";
+            if (ex != null)
+                details += ex.GetType().Name + ": " + ex.Message + "\r\n";
+
+            var msg =
+                "Saving failed (" + mode + ").\r\n\r\n" +
+                "File:\r\n" + fileName + "\r\n\r\n" +
+                (string.IsNullOrEmpty(details) ? "" : ("Details:\r\n" + details + "\r\n")) +
+                "Common causes:\r\n" +
+                "- The file is open in another program (including Windows Explorer preview pane)\r\n" +
+                "- Cloud sync / antivirus is temporarily locking the file\r\n" +
+                "- The file/folder is read-only or you lack permission\r\n\r\n" +
+                "Close anything that might be using the file and try again.";
+
+            try
+            {
+                flimage.BeginInvokeIfRequired(o =>
+                {
+                    o.WriteStatusText("Save failed: " + Path.GetFileName(fileName));
+                    MessageBox.Show(Form.ActiveForm, msg, "Save failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                });
+            }
+            catch
+            {
+                // ignore UI errors (e.g., closing)
+            }
+
+            // Stop acquisition ASAP to avoid further unsaved data.
+            stopGrabActivated = true;
+            force_stop = true;
+            fileIO?.CloseAllFlimWriters();
+            try { StopGrab(true); } catch { }
+        }
+
         /// <summary>
         /// CheckSavingParameters: creating directory for saving etc before starting grab.
         /// </summary>
         /// <returns></returns>
         public int CheckSavingParameters()
         {
-            bool[] saveChannels = Enumerable.Repeat<bool>(true, FLIM_ImgData.nChannels).ToArray();
+            bool[] saveChannels = Enumerable.Repeat<bool>(true, flimage.image_display.FLIM_ImgData.nChannels).ToArray();
             fileIO.CreateHeader(saveChannels);
             System.IO.Directory.CreateDirectory(State.Files.pathName);
             System.IO.Directory.CreateDirectory(State.Files.pathNameIntensity);
             System.IO.Directory.CreateDirectory(State.Files.pathNameFLIM);
-            if (System.IO.File.Exists(State.Files.fullName()))
+            string fname = State.Files.fullName();
+            if (State.Acq.photon_file_format)
+                fname = State.Files.GetPhotonFilePath(true);
+            //fname = fname.Split('.')[0] + State.Files.extension_photon;
+
+            if (System.IO.File.Exists(fname))
             {
-                DialogResult dr = MessageBox.Show("File already exist! Do you want to overwrite?", "", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                if (dr == DialogResult.Yes)
-                    return (0);
+                // Show overwrite prompt on the UI thread (worker-thread MessageBox can appear hidden and look like a stall).
+                DialogResult dr = DialogResult.No;
+                if (suppressOverwritePrompt)
+                {
+                    dr = DialogResult.Yes; // Skip the confirmation dialog.
+                }
                 else
-                    return (-1);
+                {
+                    try
+                    {
+                        if (flimage != null)
+                        {
+                            dr = flimage.InvokeIfRequired_withReturn(o =>
+                                MessageBox.Show(
+                                    o,
+                                    "File already exists! Do you want to overwrite?\r\n\r\n" + fname,
+                                    "Overwrite?",
+                                    MessageBoxButtons.YesNo,
+                                    MessageBoxIcon.Warning));
+                        }
+                        else
+                        {
+                            dr = MessageBox.Show(
+                                "File already exists! Do you want to overwrite?\r\n\r\n" + fname,
+                                "Overwrite?",
+                                MessageBoxButtons.YesNo,
+                                MessageBoxIcon.Warning);
+                        }
+                    }
+                    catch
+                    {
+                        // If invoke fails for any reason, fall back.
+                        dr = MessageBox.Show(
+                            "File already exists! Do you want to overwrite?\r\n\r\n" + fname,
+                            "Overwrite?",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning);
+                    }
+                }
+
+                if (dr != DialogResult.Yes)
+                    return -1;
+
+                // Delete upfront so overwrite failure is immediate and visible (not a silent stall later).
+                try
+                {
+                    try { File.SetAttributes(fname, FileAttributes.Normal); } catch { }
+
+                    const int retries = 40; // ~2 seconds total
+                    for (int i = 0; i < retries; i++)
+                    {
+                        try
+                        {
+                            File.Delete(fname);
+                            break;
+                        }
+                        catch
+                        {
+                            System.Threading.Thread.Sleep(50);
+                        }
+                    }
+
+                    if (File.Exists(fname))
+                        throw new IOException("File still exists after delete attempts.");
+
+                    flimage?.BeginInvokeIfRequired(o => o.WriteStatusText("Overwriting: deleted existing file"));
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        flimage?.BeginInvokeIfRequired(o => o.WriteStatusText("Overwrite failed (delete): " + Path.GetFileName(fname)));
+                    }
+                    catch { }
+
+                    MessageBox.Show(
+                        flimage as IWin32Window,
+                        "Could not delete the existing file for overwrite:\r\n\r\n" +
+                        fname + "\r\n\r\n" +
+                        ex.Message + "\r\n\r\n" +
+                        "Common causes:\r\n" +
+                        "- Windows Explorer preview pane / thumbnail generation\r\n" +
+                        "- Another program has the file open\r\n" +
+                        "- Cloud sync / antivirus is locking it\r\n" +
+                        "- Read-only / permissions\r\n",
+                        "Overwrite failed",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+
+                    return -1;
+                }
+
+                return 0;
 
             }
             else
@@ -2225,52 +3673,84 @@ namespace FLIMage
         /// <summary>
         /// Called when Background acquisition is done. However, it should be noted that save task and display Task are in spearated threads.
         /// </summary>
-        public void FLIMProgressChanged()
+        public void FLIMProgressChanged(int frame_counter, ScanParameters state1)
         {
-            int[] nAve = GetAverageFrame(State.Acq.nAveFrame);
-            for (int ch = 0; ch < State.Acq.nChannels; ch++)
+
+            int[] nAve = GetAverageFrame(parameters.n_average, parameters);
+
+            for (int ch = 0; ch < parameters.nChannels; ch++)
             {
-                if (State.Acq.aveSlice)
-                    nAve[ch] = nAve[ch] * State.Acq.nAveSlice;
+                if (state1.Acq.aveSlice)
+                    nAve[ch] = nAve[ch] * state1.Acq.nAveSlice;
             }
 
-            internalFrameCounter++;
+            //internalFrameCounter++;
+
+            //if (state1.Acq.photon_file_format && !read_photon_file)
+            internalFrameCounter = frame_counter;
 
 #if DEBUG
             if (DEBUGMODE >= 2)
                 Debug.WriteLine("Debug: C# Frame Done Event FLIMProgressChanged 1. grabbing = " + grabbing + ", focusing = " + focusing + ", stopGrabActivated = " + stopGrabActivated);
 #endif
 
-            //Update GUI. We are in different thread from main window. So, we will evoke it.
-            flimage.InvokeIfRequired(o => o.UpdateCounters());
+            // Update GUI (throttled). We are in different thread from main window.
+            // Always update at slice end to keep UI consistent.
+            int nowTick = Environment.TickCount;
+            bool shouldUpdate =
+                unchecked(nowTick - _lastCountersUpdateTick) >= CountersUpdateIntervalMs ||
+                internalFrameCounter == state1.Acq.nFrames;
 
-            if (internalFrameCounter == State.Acq.nFrames && !focusing && grabbing)
+            if (shouldUpdate)
+            {
+                _lastCountersUpdateTick = nowTick;
+                flimage.InvokeIfRequired(o => o.UpdateCounters());
+            }
+
+            if (internalFrameCounter == state1.Acq.nFrames && !focusing && grabbing)
             {
                 //Debug.WriteLine("Slice done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 internalSliceCounter++;
                 internalFrameCounter = 0;
 
+                // Acquisition is finished for this frame set. If this is the final image (loop ends),
+                // we will spend some time saving/flushing remaining pages before StopGrab() can run.
+                // Indicate that we are busy saving (ABORT is misleading here).
+                bool finishingAllImages =
+                    internalSliceCounter == state1.Acq.nSlices &&
+                    ((internalImageCounter + 1) >= state1.Acq.nImages || !allowLoop);
+                if (finishingAllImages)
+                {
+                    flimage.GrabButton.InvokeIfRequired(o =>
+                    {
+                        o.Text = "SAVING";
+                        o.Enabled = false;
+                    });
+                }
 
-                StopDAQ(false); //close shutter included.
-                DisposeDAQ();
-                ParkMirrors(true);
-                if (microscope_system == MicroscopeSystem.ThorLabBScopeGG && State.Acq.zoom < 3) //This is required for Thorlab mirrors to settle....
-                    System.Threading.Thread.Sleep(2500);
+                if (!read_photon_file)
+                {
+                    StopDAQ(false, internalSliceCounter >= state1.Acq.nSlices); //close shutter only when slices are done.
+                    DisposeDAQ();
+                    ParkMirrors(true);
+                    if (microscope_system == MicroscopeSystem.ThorLabBScopeGG && state1.Acq.zoom < 3) //This is required for Thorlab mirrors to settle....
+                        System.Threading.Thread.Sleep(2500);
+                }
 
                 FiFo_StopMeas(true);
                 //Save current status in FLIM_ImgData.
                 if (internalSliceCounter == 1)
-                    FLIM_ImgData.copyState(State);
+                    flimage.image_display.FLIM_ImgData.copyState(state1);
 
                 if (saveTask != null && !saveTask.IsCompleted)
                     saveTask.Wait();
 
                 int NPages = 0;
 
-                if (FLIM_ImgData.KeepPagesInMemory || FLIM_ImgData.ZStack)
+                if (flimage.image_display.FLIM_ImgData.KeepPagesInMemory || flimage.image_display.FLIM_ImgData.ZStack)
                 {
-                    if (FLIM_ImgData.FLIM_Pages5D[0] != null)
-                        NPages = FLIM_ImgData.FLIM_Pages5D.Length;
+                    if (flimage.image_display.FLIM_ImgData.FLIM_Pages5D[0] != null)
+                        NPages = flimage.image_display.FLIM_ImgData.FLIM_Pages5D.Length;
                     deletedPageCounter = 0;
                 }
                 else
@@ -2278,18 +3758,17 @@ namespace FLIMage
                     NPages = FLIMSaveBuffer.Count;
                 }
 
-
                 while (NPages > savePageCounter - deletedPageCounter)
                 {
-                    if (FLIM_ImgData.KeepPagesInMemory || FLIM_ImgData.ZStack)
+                    if (flimage.image_display.FLIM_ImgData.KeepPagesInMemory || flimage.image_display.FLIM_ImgData.ZStack)
                     {
-                        NPages = FLIM_ImgData.FLIM_Pages5D.Length;
+                        NPages = flimage.image_display.FLIM_ImgData.FLIM_Pages5D.Length;
                         deletedPageCounter = 0;
                     }
                     else
                         NPages = FLIMSaveBuffer.Count;
 
-                    SaveFile(true);
+                    SaveFile(true, state1);
 
 #if DEBUG
                     if (DEBUGMODE != 0)
@@ -2299,80 +3778,86 @@ namespace FLIMage
 
                 FLIMSaveBuffer.Clear();
 
-                flimage.InvokeIfRequired(o => o.UpdateMeasuredSliceInterval());
-
-                if (internalSliceCounter == State.Acq.nSlices) //All slices done.
+                if (!read_photon_file)
                 {
-                    if (State.Acq.ZStack && State.Acq.nSlices > 1)
+                    flimage.InvokeIfRequired(o => o.UpdateMeasuredSliceInterval());
+                }
+
+
+                if (internalSliceCounter == state1.Acq.nSlices) //All slices done.
+                {
+                    if (state1.Acq.ZStack && state1.Acq.nSlices > 1 && !read_photon_file)
                         flimage.MoveBackToHome();
 
-                    State.Files.fileCounter++; //This needs to be after MoveMotorBack, since movemotorbacktohome sends notification with the current fileCounter.
+                    var current_filename = state1.Files.fullName();
+                    state1.Files.fileCounter++; //This needs to be after MoveMotorBack, since movemotorbacktohome sends notification with the current fileCounter.
                     internalImageCounter++;
 
                     post_grabbing_process = true;
 
-                    if (internalImageCounter >= State.Acq.nImages || !allowLoop)
+                    if (internalImageCounter >= state1.Acq.nImages || !allowLoop)
                     {
-                        StopGrab(true); //This will stop grabbing. We can actually activate this in looping....
+                        if (!read_photon_file)
+                            StopGrab(true); //This will stop grabbing. We can actually activate this in looping....
                     }
 
-                    if (State.Acq.fastZScan && !State.Acq.ZStack)
+                    if (!state1.Acq.photon_file_format || read_photon_file)
                     {
-                        //Setup display.
-                        var FLIM5D = FLIM_ImgData.FLIMRaw5D;
-                        FLIM_ImgData.clearPages4D(); //Clean the the 4D stack. it is separated from acquisition.
-                        FLIM_ImgData.addToPageAndCalculate5D(FLIM5D, acquiredTime, true, true, 0, true);
-                    }
-                    else
-                    {
-                        for (int i = 0; i < FLIM_ImgData.FLIM_Pages5D.Length; i++)
+                        if (state1.Acq.fastZScan && !state1.Acq.ZStack)
                         {
-                            var FLIMImage = FLIM_ImgData.FLIM_Pages5D[i];
-                            var acqTimeTemp = FLIM_ImgData.acquiredTime_Pages5D[i];
-                            FLIM_ImgData.LoadFLIMData4D_Page_fromFLIMData5D(FLIMImage, i, acqTimeTemp, false);
-                            FLIM_ImgData.gotoPage(0);
+                            //Setup display.
+                            var FLIM5D = flimage.image_display.FLIM_ImgData.FLIMRaw5D;
+                            flimage.image_display.FLIM_ImgData.clearPages4D(); //Clean the the 4D stack. it is separated from acquisition.
+                            flimage.image_display.FLIM_ImgData.addToPageAndCalculate5D(FLIM5D, acquiredTime, true, true, 0, true);
+                        }
+                        else
+                        {
+                            if (flimage.image_display.FLIM_ImgData.KeepPagesInMemory)
+                            {
+                                for (int i = 0; i < flimage.image_display.FLIM_ImgData.FLIM_Pages5D.Length; i++)
+                                {
+                                    var FLIMImage = flimage.image_display.FLIM_ImgData.FLIM_Pages5D[i];
+                                    var acqTimeTemp = flimage.image_display.FLIM_ImgData.acquiredTime_Pages5D[i];
+                                    flimage.image_display.FLIM_ImgData.LoadFLIMData4D_Page_fromFLIMData5D(FLIMImage, i, acqTimeTemp, false);
+                                    flimage.image_display.FLIM_ImgData.gotoPage(0);
+                                }
+                            }
+                            else
+                            {
+                                flimage.image_display.OpenFLIM(current_filename, false, false, false);
+                            }
                         }
                     }
 
+                    if (!read_photon_file)
+                    {
+                        flimage.UpdateFileName();
+                        flimage.image_display.FLIM_ImgData.fileUpdateRealtime(state1, false); //FileName update.
+                        flimage.image_display.InvokeIfRequired(o => o.UpdateFileName());
+                    }
 
                     try
                     {
-                        var image_display = flimage.image_display;
-                        flimage.UpdateFileName();
-                        image_display.ZStack = FLIM_ImgData.ZStack || State.Acq.fastZScan;
-                        image_display.displayZProjection = FLIM_ImgData.ZStack || State.Acq.fastZScan;
-                        if (FLIM_ImgData.ZStack)
-                            flimage.image_display.calcZProjection();
-
-                        //FLIM_ImgData.n_pages = savePageCounter;
-                        image_display.UpdateImages(true, false, false, true);
-
-                        if (snapShot)
-                            SnapShotProcess();
-
-                        //if (!State.Acq.acqFLIMA)
-                        //    image_display.calculateTimecourse();
-
-                        FLIM_ImgData.fileUpdateRealtime(State, false); //FileName update.
-                        image_display.InvokeIfRequired(o => o.UpdateFileName());
-
-                        if (flimage.analyzeAfterEachAcquisition && image_display != null)
+                        //if (!state1.Acq.photon_file_format || read_photon_file)
                         {
-                            image_display.InvokeIfRequired(o =>
+                            flimage.image_display.ZStack = flimage.image_display.FLIM_ImgData.ZStack || state1.Acq.fastZScan;
+                            flimage.image_display.displayZProjection = flimage.image_display.FLIM_ImgData.ZStack || state1.Acq.fastZScan;
+                            if (flimage.image_display.FLIM_ImgData.ZStack)
+                                flimage.image_display.calcZProjection();
+
+                            flimage.image_display.UpdateImages(true, false, false, true);
+
+                            if (snapShot)
+                                SnapShotProcess();
+
+                            try
                             {
-                                o.plot_regular.Show();
-                                o.plot_regular.Activate();
-                                o.OpenFLIM(FLIM_ImgData.State.Files.fullName(), true, o.plot_regular.calc_upon_open, false);
-                            });
-                        }
-
-                        try
-                        {
-                            PostImageUserFunction();
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine("Problem in Post Open User Function:" + e.Message);
+                                PostImageUserFunction();
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.WriteLine("Problem in Post Open User Function:" + e.Message);
+                            }
                         }
                     }
                     catch (Exception E)
@@ -2381,14 +3866,26 @@ namespace FLIMage
                         //WriteStatusText("Problem in displaying and /or analyzing saved image");
                     }
 
-                    EventNotify?.Invoke(this, new ProcessEventArgs("AcquisitionDone", null));
-
                     grabbing = false; //grab is finished. (not necessary but just in case).
-                    post_grabbing_process = false; //analysis is also finished.
+
+                    if (!State.Acq.photon_file_format)
+                    {
+                        post_grabbing_process = true;
+                        EventNotify?.Invoke(this, new ProcessEventArgs("AcquisitionDone", null));
+                        post_acquisition_analysis();
+                        post_grabbing_process = false; //analysis is also finished.
+
+                    }
+                    else
+                    {
+                        EventNotify?.Invoke(this, new ProcessEventArgs("AcquisitionDone", null));
+                        acquisition_done_event_activated = true;
+                    }
+
 
                     //////////////
                     //We will wait for next imaging process, but from a different thread.
-                    if (internalImageCounter < State.Acq.nImages && allowLoop)
+                    if (internalImageCounter < state1.Acq.nImages && allowLoop)
                     {
                         waitImage = Task.Factory.StartNew(() =>
                         {
@@ -2402,12 +3899,12 @@ namespace FLIMage
                     }
 
                 }
-                else if (internalSliceCounter < State.Acq.nSlices) // Slices still not done.
+                else if (internalSliceCounter < state1.Acq.nSlices) // Slices still not done.
                 {
-                    if (State.Acq.ZStack)
+                    if (state1.Acq.ZStack)
                     {
                         flimage.MoveMotorStep(true);
-                        if (internalSliceCounter == State.Acq.nSlices - 1)
+                        if (internalSliceCounter == state1.Acq.nSlices - 1)
                         {
                             if (flimage.motorCtrl != null)
                                 flimage.motorCtrl.stack_Position = MotorCtrl.StackPosition.End;
@@ -2416,17 +3913,20 @@ namespace FLIMage
 
                     EventNotify?.Invoke(this, new ProcessEventArgs("SliceAcquisitionDone", null));
 
-                    waitSlice = Task.Factory.StartNew(() =>
+                    if (!State.Acq.photon_file_format)
                     {
-                        lock (waitSliceTaskobj) //This task will never overlap. Don't use in any other lock.
-                            WaitForNextSlice();
-                    });
+                        waitSlice = Task.Factory.StartNew(() =>
+                        {
+                            lock (waitSliceTaskobj) //This task will never overlap. Don't use in any other lock.
+                                WaitForNextSlice();
+                        });
+                    }
                 }
                 else
                 {
 #if DEBUG
                     if (DEBUGMODE != 0)
-                        Debug.WriteLine("Warning.... Slice counter: {0} > n Slices: {1}", internalSliceCounter, State.Acq.nSlices);
+                        Debug.WriteLine("Warning.... Slice counter: {0} > n Slices: {1}", internalSliceCounter, state1.Acq.nSlices);
 #endif
                 }
 
@@ -2448,6 +3948,24 @@ namespace FLIMage
 #endif
         }
 
+        public void post_acquisition_analysis()
+        {
+            if (post_grabbing_process && flimage.analyzeAfterEachAcquisition && !read_photon_file)
+                Task.Factory.StartNew(() =>
+                {
+                    flimage.image_display.InvokeIfRequired(o =>
+                    {
+                        o.plot_regular.Show();
+                        o.plot_regular.Activate();
+
+                        var filename1 = filename_last;
+
+                        var error = o.OpenFLIM(filename1, true, o.plot_regular.calc_upon_open, false);
+                    });
+                });
+        }
+
+
         public void PostImageUserFunction()
         {
             //if (flimage.drift_correction != null && flimage.drift_correction.Visible)
@@ -2457,29 +3975,43 @@ namespace FLIMage
         }
 
 
-        public void UpdateImages() //Can be slow. //Done with timer. //Thread safe.
+        public void UpdateImages(ScanParameters state1) //Can be slow. //Done with timer. //Thread safe.
         {
             bool updated = false;
 
-            FLIM_ImgData.State.Uncaging.Position = (double[])State.Uncaging.Position.Clone();
+            flimage.image_display.FLIM_ImgData.State.Uncaging.Position = (double[])state1.Uncaging.Position.Clone();
             displayPageCounter++;
             updated = !flimage.image_display.update_image_busy;
             if (updated)
             {
+                flimage.image_display.update_image_busy = true;
+
                 //It is always from different thread, since it comes from fifo.
-                if (State.Acq.fastZScan)
+                if (state1.Acq.fastZScan)
                 {
                     flimage.image_display.BeginInvoke((Action)delegate
                     {
                         if (displayPageCounter == 1) //First page = 1. After ++.
-                            flimage.image_display.SetFastZModeDisplay(State.Acq.fastZScan); //To set the page at the center.
+                            flimage.image_display.SetFastZModeDisplay(state1.Acq.fastZScan); //To set the page at the center.
                         flimage.image_display.setupImageUpdateForZStack();
                     });
                 }
 
                 flimage.image_display.displayZProjection = false;
-                FLIM_ImgData.currentPage = displayPageCounter - 1;
-                flimage.image_display.UpdateImages(true, true, focusing, true);
+                flimage.image_display.FLIM_ImgData.currentPage = displayPageCounter - 1;
+
+                try
+                {
+                    flimage.image_display.BeginInvoke((Action)delegate
+                    {
+                        flimage.image_display.UpdateImages(true, true, focusing, true);
+                    });
+                }
+                catch
+                {
+                    flimage.image_display.update_image_busy = false;
+                    throw;
+                }
 
             }
             else
@@ -2492,15 +4024,22 @@ namespace FLIMage
                 displayPageCounterTotal++;
             }
 
-            if (displayPageCounter == State.Acq.maxNFramePerFile && displayPageCounterTotal < totalPagesSaved())
+            // On file rollover, the imaging realtime plot historically resets.
+            // For FiberPhotometry we want a continuous trace across the entire acquisition.
+            if (displayPageCounter == state1.Acq.maxNFramePerFile &&
+                displayPageCounterTotal < totalPagesSaved(state1) &&
+                microscope_system != MicroscopeSystem.FiberPhotometry &&
+                !(state1?.Acq?.fiberPhotometryMode ?? false))
             {
 #if DEBUG
-                Debug.WriteLine("Total page saved:" + totalPagesSaved() + ", displayCounter = " + displayPageCounterTotal);
+                Debug.WriteLine("Total page saved:" + totalPagesSaved(state1) + ", displayCounter = " + displayPageCounterTotal);
 #endif
                 flimage.image_display.realtimeData.Clear();
             }
 
+#if DEBUG
             SW_PerformanceMonitor.Restart();
+#endif
         }
 
         public void movePiezoToCenter()
@@ -2554,6 +4093,7 @@ namespace FLIMage
         SutterGG = 3,
         ScanImageGG = 4,
         MiniScope = 5,
+        FiberPhotometry = 10,
     }
 
     public class ProcessEventArgs : EventArgs
@@ -2568,4 +4108,3 @@ namespace FLIMage
     }
 
 }
-

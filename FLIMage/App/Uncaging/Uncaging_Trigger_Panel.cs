@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utilities;
+using static System.Windows.Forms.AxHost;
 
 namespace FLIMage.Uncaging
 {
@@ -124,7 +125,7 @@ namespace FLIMage.Uncaging
 
             if (Double.TryParse(uncage_interval.Text, out valD)) State.Uncaging.trainInterval = valD;
             if (Int32.TryParse(uncage_pulseN.Text, out valI)) State.Uncaging.nPulses = valI;
-            if (Double.TryParse(undage_dwell.Text, out valD)) State.Uncaging.pulseWidth = valD;
+            if (Double.TryParse(uncage_dwell.Text, out valD)) State.Uncaging.pulseWidth = valD;
             if (Double.TryParse(uncage_power.Text, out valD)) State.Uncaging.Power = valD;
             if (Double.TryParse(Uncage_Length.Text, out valD)) State.Uncaging.sampleLength = valD;
             if (Double.TryParse(Uncage_Delay.Text, out valD)) State.Uncaging.pulseDelay = valD;
@@ -226,16 +227,17 @@ namespace FLIMage.Uncaging
 
             }
             else
-            {
+            {                
+                str1 = "Uncaging:";
                 for (int i = 0; i < 4; i++)
                 {
                     if (State.Init.uncagingLasers[i])
                     {
-                        str1 = "Uncaging: Laser-" + (i + 1);
-                        break;
+                        str1 = str1 + " Laser-" + (i + 1) + ",";
                     }
                 }
-
+                str1 = str1.Remove(str1.Length - 1);
+             
                 if (State.Init.AO_uncagingShutter)
                 {
                     str1 = str1 + "\r\nUncaging AO shutter: " + State.Init.UncagingShutterAnalogPort;
@@ -397,7 +399,7 @@ namespace FLIMage.Uncaging
 
             uncage_interval.Text = String.Format("{0}", State.Uncaging.trainInterval);
             uncage_pulseN.Text = String.Format("{0}", State.Uncaging.nPulses);
-            undage_dwell.Text = String.Format("{0}", State.Uncaging.pulseWidth);
+            uncage_dwell.Text = String.Format("{0}", State.Uncaging.pulseWidth);
             uncage_power.Text = String.Format("{0}", State.Uncaging.Power);
             Uncage_ISI.Text = String.Format("{0}", State.Uncaging.pulseISI);
             Uncage_Delay.Text = String.Format("{0}", State.Uncaging.pulseDelay);
@@ -646,7 +648,9 @@ namespace FLIMage.Uncaging
                 digitalOutput.Start();
             }
 
-            if (mainShutterCtrl)
+            var shutter_control = State.Uncaging.MainShutterOpenDuringUncaging;
+
+            if (mainShutterCtrl & shutter_control)
             {
                 flimage.flimage_io.shutterCtrl.open();
                 System.Threading.Thread.Sleep(4); //Wait for shutter open.
@@ -756,11 +760,15 @@ namespace FLIMage.Uncaging
                     ScanParameters StateOld = flimage.fileIO.CopyState();
                     ScanParameters StateNew = flimage.fileIO.CopyState(); //Detach from current State file.
                     FileIO fileIONew = new FileIO(StateNew); //new fileIO synthesized.
+                    StateNew.Uncaging.UncagingPositionsX = null;
+                    StateNew.Uncaging.UncagingPositionsY = null;
+
                     fileIONew.LoadSetupFile(newFileName); //put new State on the fileIO.
                     State.Uncaging = fileIONew.State.Uncaging;
                     State.Uncaging.CalibV = StateOld.Uncaging.CalibV;
                     State.Uncaging.Position = StateOld.Uncaging.Position;
                     State.Uncaging.PositionV = StateOld.Uncaging.PositionV;
+                    State.Uncaging.Calib_beta = StateOld.Uncaging.Calib_beta;
                 }
                 else
                 {
@@ -812,6 +820,12 @@ namespace FLIMage.Uncaging
         private void ShowShutter_CheckedChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void resetCalibrationToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            State.Uncaging.CalibV = new double[] { 0, 0 };
+            State.Uncaging.Calib_beta = new double[] { 1, 1 };
         }
 
         public void miscSettingToolStripMenuItem_Click(object sender, EventArgs e)

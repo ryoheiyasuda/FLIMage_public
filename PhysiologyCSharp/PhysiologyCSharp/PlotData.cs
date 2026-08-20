@@ -155,7 +155,7 @@ namespace PhysiologyCSharp
                 EpochControlBox.Location = new Point(ScopePanel.Location.X, ScopePanel.Location.Y);
                 windowName = windowName_data;
             }
-            else
+            else //This is for scope.
             {
                 FilePanel.Visible = false;
                 EpochControlBox.Visible = false;
@@ -167,7 +167,8 @@ namespace PhysiologyCSharp
                 try
                 {
                     scope_io_controls = new IOControls(ps.initFolderPath, false);
-                    scope_io_controls.AcqDone += new IOControls.AcqDoneHandler(AcquiredDoneHandlerFcn);
+                    scope_io_controls.AcqDone -= AcquiredDoneHandlerFcn;
+                    scope_io_controls.AcqDone += AcquiredDoneHandlerFcn;
                     scope_ok = true;
                 }
                 catch
@@ -280,8 +281,16 @@ namespace PhysiologyCSharp
             }
             ChRadio1.Checked = dispCh == 0;
             ChRadio2.Checked = dispCh == 1;
-            UpdatePlot();
-            PhysDataPlot.Invalidate();
+
+            bool shouldUpdate = scope && scope_ok;
+            if (!shouldUpdate && stim_panel != null && stim_panel.phys_parameters != null)
+                shouldUpdate = stim_panel.phys_parameters.acquire_data;
+
+            if (shouldUpdate)
+            {
+                UpdatePlot();
+                PhysDataPlot.Invalidate();
+            }
         }
 
         public string SetSaveFolderAndBaseName()
@@ -300,19 +309,21 @@ namespace PhysiologyCSharp
             return filename;
         }
 
-        public void AcquiredDataPlotAndSave(double[] x, double[][] y, IOControls.MC700_Parameters mc700_param)
+        public void AcquiredDataPlotAndSave(double[] x, double[][] y, IOControls.MC700_Parameters mc700_param, bool save_file)
         {
-            FileCounter++;
-            FileCounterBox.Text = FileCounter.ToString();
-
-            string filename = String.Format("{0}{1:000}{2}", BaseName, FileCounter, FileExtension);
-            string temp_path = Path.Combine(FolderPathName, filename);
-
             AddDataToDict(y);
             LoadDataAndPlot(x, y, mc700_param.PrimaryGain, mc700_param.Mode);
+            this.Refresh();
+            if (save_file)
+            {
+                FileCounter++;
+                FileCounterBox.Text = FileCounter.ToString();
 
-            SaveFile(temp_path);
-            SaveEpochFile();
+                string filename = String.Format("{0}{1:000}{2}", BaseName, FileCounter, FileExtension);
+                string temp_path = Path.Combine(FolderPathName, filename);
+                SaveFile(temp_path);
+                SaveEpochFile();
+            }
         }
 
         public string GetCurrentKey()
@@ -578,6 +589,10 @@ namespace PhysiologyCSharp
             if (dispCh < data.Length)
                 _dispCh = dispCh;
 
+
+            if (data.Length < 1 || data[_dispCh] == null)
+                return;
+
             plot.ClearData();
 
             if (data_setDict.TryGetValue(GetCurrentKey(), out DataSetEpoch data_set))
@@ -613,14 +628,25 @@ namespace PhysiologyCSharp
 
         public void AcquiredDoneHandlerFcn(object sender, EventArgs e)
         {
-            if (scope && scope_ok)
+            if (!scope || !scope_ok)
+                return;
+
+            if (IsDisposed || !IsHandleCreated)
+                return;
+
+            this.BeginInvokeIfRequired(o =>
             {
+                if (o.IsDisposed)
+                    return;
+
                 scope_io_controls.GetGain();
                 var nSamples = scope_io_controls.dataOutput[0].Length;
-                Double[] t = Enumerable.Range(0, nSamples).Select(x => (double)x * 1000.0 / scope_param.outputRate).ToArray();
-                LoadDataAndPlot(t, scope_io_controls.dataOutput, scope_io_controls.mc700_params.PrimaryGain, scope_io_controls.mc700_params.Mode);
+                double[] t1 = Enumerable.Range(0, nSamples)
+                    .Select(x => (double)x * 1000.0 / scope_param.outputRate)
+                    .ToArray();
+                LoadDataAndPlot(t1, scope_io_controls.dataOutput, scope_io_controls.mc700_params.PrimaryGain, scope_io_controls.mc700_params.Mode);
                 CalculateResistance();
-            }
+            });
         }
 
         public void StartAcq()
@@ -677,7 +703,8 @@ namespace PhysiologyCSharp
                     StartButton.InvokeIfRequired(o => o.Text = "Stop");
 
                     ScopeTimer = new Timer();
-                    ScopeTimer.Tick += new EventHandler(ScopeTimerEvent);
+                    ScopeTimer.Tick -= ScopeTimerEvent;
+                    ScopeTimer.Tick += ScopeTimerEvent;
                     ScopeTimer.Interval = (int)(interval * 1000);
                     ScopeTimer.Start();
                     StartAcq();
@@ -793,7 +820,7 @@ namespace PhysiologyCSharp
             }
             catch (Exception EX)
             {
-                MessageBox.Show("Problem in saving: " + EX.Message);   
+                MessageBox.Show("Problem in saving: " + EX.Message);
             }
 
         }

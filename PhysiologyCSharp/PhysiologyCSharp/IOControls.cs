@@ -40,6 +40,7 @@ namespace PhysiologyCSharp
         public double[][] dataOutput;
 
         public bool scope;
+        public bool measurement_done = false;
         public event AcqDoneHandler AcqDone;
         public EventArgs e = null;
         public delegate void AcqDoneHandler(IOControls io_control, EventArgs e);
@@ -309,7 +310,10 @@ namespace PhysiologyCSharp
         {
             returnData = phys_AI.result;
             dataOutput = ScaleDataOutput(returnData);
+            measurement_done = phys_AI.data_out;
+
             AcqDone?.Invoke(this, e);
+            measurement_done = false;
         }
 
         public void DataOut_DoneHandlerFcn(object sender, EventArgs e)
@@ -354,12 +358,14 @@ namespace PhysiologyCSharp
 
             phys_AO = new PhysAO();
             phys_AO.putValue(data, outputRate_in);
-            phys_AO.DataOutDone += new IOControls.PhysAO.DataOutDoneHandler(DataOut_DoneHandlerFcn);
+            phys_AO.DataOutDone -= DataOut_DoneHandlerFcn;
+            phys_AO.DataOutDone += DataOut_DoneHandlerFcn;
 
             if (AI_on)
             {
                 phys_AI = new PhysAI();
-                phys_AI.AcqDone += new IOControls.PhysAI.AcqDoneHandler(AcquiredDoneHandlerFcn);
+                phys_AI.AcqDone -= AcquiredDoneHandlerFcn;
+                phys_AI.AcqDone += AcquiredDoneHandlerFcn;
                 int data_length = data.GetLength(1);
                 phys_AI.setupAI(data_length, outputRate_in);
             }
@@ -389,6 +395,7 @@ namespace PhysiologyCSharp
 
         public void Start(bool ext_trigger, bool AI_on)
         {
+            measurement_done = false;
             phys_AO.start(ext_trigger);
 
             if (AI_on)
@@ -489,17 +496,22 @@ namespace PhysiologyCSharp
             public String port0;
             public String port1;
 
+            private int read_length = 0;
             public int samplesPerTrigger;
+            public int every_n_sample = 4000;
             public String triggerPort;
             public string ExternalTriggerPort;
             public DigitalEdgeStartTriggerEdge triggerEdge;
 
-            public bool measurement_done = false;
+            bool measurement_done = false;
+            public bool data_out = false;
 
             public double[,] result;
             public event AcqDoneHandler AcqDone;
             public EventArgs e = null;
             public delegate void AcqDoneHandler(PhysAI phys_AI, EventArgs e);
+
+            int sample_complete_counter = 0;
 
             public PhysAI()
             {
@@ -522,26 +534,38 @@ namespace PhysiologyCSharp
                     hPhys_AI.AIChannels.CreateVoltageChannel(port1, "PhysAI_Ch1", (AITerminalConfiguration)(-1), minV, maxV, AIVoltageUnits.Volts);
 
                 hPhys_AI.Control(TaskAction.Verify);
-
-                //hEOM_AI.EveryNSamplesReadEventInterval = 1;
-                //hEOM_AI.EveryNSamplesRead += new EveryNSamplesReadEventHandler(SampleCompleted);
             }
 
             public void setupAI(int samplesPerChannel, double inputRate)
             {
+                every_n_sample = Math.Min((int)inputRate, samplesPerChannel);
                 samplesPerTrigger = samplesPerChannel;
                 hPhys_AI.Timing.ConfigureSampleClock("", inputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.FiniteSamples, samplesPerTrigger);
                 hPhys_AI.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, triggerEdge);
                 hPhys_AI.Control(TaskAction.Verify);
-                hPhys_AI.EveryNSamplesReadEventInterval = samplesPerChannel;
-                hPhys_AI.EveryNSamplesRead += new EveryNSamplesReadEventHandler(EveryNSampleEvent);
+                hPhys_AI.EveryNSamplesReadEventInterval = every_n_sample;
+                hPhys_AI.EveryNSamplesRead -= EveryNSampleEvent;
+                hPhys_AI.EveryNSamplesRead += EveryNSampleEvent;
                 result = new double[nPatchChannels, samplesPerChannel];
+                read_length = 0;
+                sample_complete_counter = 0;
+                data_out = false;
+                measurement_done = false;
             }
 
             public void EveryNSampleEvent(object sender, EveryNSamplesReadEventArgs e)
             {
                 readSample();
-                AcqDone?.Invoke(this, null);
+                if (samplesPerTrigger - read_length < every_n_sample)
+                {
+                    for (int i = 0; i < 100; i++)
+                    {
+                        System.Threading.Thread.Sleep(100);
+                        readSample();
+                        if (samplesPerTrigger <= read_length)
+                            break;
+                    }
+                }
             }
 
             public void start(bool externalTrigger)
@@ -552,7 +576,6 @@ namespace PhysiologyCSharp
                 hPhys_AI.Control(TaskAction.Verify);
 
                 readerPhys = new AnalogMultiChannelReader(hPhys_AI.Stream);
-                measurement_done = false;
                 hPhys_AI.Start();
             }
 
@@ -592,15 +615,46 @@ namespace PhysiologyCSharp
 
             public void readSample()
             {
-                if (hPhys_AI.Stream.AvailableSamplesPerChannel == samplesPerTrigger)
+                double[,] result1 = new double[1, 1];
+                int nSample_to_read = (int)hPhys_AI.Stream.AvailableSamplesPerChannel;
+
+                if (nSample_to_read == samplesPerTrigger)
                 {
-                    result = readerPhys.ReadMultiSample(samplesPerTrigger);
+                    result1 = readerPhys.ReadMultiSample(samplesPerTrigger);
                 }
                 else
                 {
-                    result = readerPhys.ReadMultiSample((int)hPhys_AI.Stream.AvailableSamplesPerChannel);
+                    if (nSample_to_read != 0)
+                        result1 = readerPhys.ReadMultiSample(nSample_to_read);
                 }
-                measurement_done = true;
+
+                if (nSample_to_read != 0)
+                {
+                    int result_length_byte = result1.GetLength(1) * sizeof(double);
+                    int result_length = result1.GetLength(1);
+
+                    for (int i = 0; i < result.GetLength(0); i++)
+                    {
+                        int offset = i * result.GetLength(1) * sizeof(double) + read_length * sizeof(double);
+                        int offset_source = i * result_length_byte;
+                        Buffer.BlockCopy(result1, offset_source, result, offset, result_length_byte);
+                    }
+
+                    read_length += result_length;
+                }
+
+                if (read_length >= samplesPerTrigger)
+                {
+                    measurement_done = true;
+                    hPhys_AI.Stop();
+                }
+
+                if (measurement_done)
+                {
+                    data_out = true;
+                }
+
+                AcqDone?.Invoke(this, null);
             }
 
             //public void AnalogInCallback(IAsyncResult ar)
@@ -654,11 +708,15 @@ namespace PhysiologyCSharp
 
                 nTotalChannels = nPatchChannels + nStimChannels;
 
-                hPhys.AOChannels.CreateVoltageChannel(portPatch1, "portPatch1", minV, maxV, AOVoltageUnits.Volts);
+                if (nPatchChannels > 0)
+                    hPhys.AOChannels.CreateVoltageChannel(portPatch1, "portPatch1", minV, maxV, AOVoltageUnits.Volts);
+
                 if (nPatchChannels > 1)
                     hPhys.AOChannels.CreateVoltageChannel(portPatch2, "portPatch2", minV, maxV, AOVoltageUnits.Volts);
 
-                hPhys.AOChannels.CreateVoltageChannel(portStim1, "portStim1", minV, maxV, AOVoltageUnits.Volts);
+                if (nStimChannels > 0)
+                    hPhys.AOChannels.CreateVoltageChannel(portStim1, "portStim1", minV, maxV, AOVoltageUnits.Volts);
+
                 if (nStimChannels > 1)
                     hPhys.AOChannels.CreateVoltageChannel(portStim2, "portStim2", minV, maxV, AOVoltageUnits.Volts);
 
@@ -690,7 +748,8 @@ namespace PhysiologyCSharp
                 hPhys.Triggers.StartTrigger.ConfigureDigitalEdgeTrigger(triggerPort, DigitalEdgeStartTriggerEdge.Rising);
 
                 hPhys.EveryNSamplesWrittenEventInterval = samplesPerChannel;
-                hPhys.EveryNSamplesWritten += new EveryNSamplesWrittenEventHandler(EveryNSampleEvent);
+                hPhys.EveryNSamplesWritten -= EveryNSampleEvent;
+                hPhys.EveryNSamplesWritten += EveryNSampleEvent;
 
                 writerPhys = new AnalogMultiChannelWriter(hPhys.Stream);
                 writerPhys.WriteMultiSample(false, data);

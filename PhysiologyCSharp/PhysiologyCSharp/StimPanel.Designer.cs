@@ -35,6 +35,8 @@
             this.Patch1Radio = new System.Windows.Forms.RadioButton();
             this.PatchPlot = new System.Windows.Forms.PictureBox();
             this.PulseSetGroupBox = new System.Windows.Forms.GroupBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.addPulse_textBox1 = new System.Windows.Forms.TextBox();
             this.TotalLength = new System.Windows.Forms.TextBox();
             this.SaveButton = new System.Windows.Forms.Button();
             this.label7 = new System.Windows.Forms.Label();
@@ -84,6 +86,7 @@
             this.dataWindowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.analysisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.SyncWithUncageCheck = new System.Windows.Forms.CheckBox();
+            this.Bipolar_CB = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.StimPlot)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.PatchPlot)).BeginInit();
             this.PulseSetGroupBox.SuspendLayout();
@@ -94,8 +97,8 @@
             // Stim1Radio
             // 
             this.Stim1Radio.AutoSize = true;
-            this.Stim1Radio.Location = new System.Drawing.Point(16, 371);
-            this.Stim1Radio.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Stim1Radio.Location = new System.Drawing.Point(16, 438);
+            this.Stim1Radio.Margin = new System.Windows.Forms.Padding(2);
             this.Stim1Radio.Name = "Stim1Radio";
             this.Stim1Radio.Size = new System.Drawing.Size(51, 17);
             this.Stim1Radio.TabIndex = 7;
@@ -107,8 +110,8 @@
             // 
             this.StimPlot.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.StimPlot.BackColor = System.Drawing.Color.White;
-            this.StimPlot.Location = new System.Drawing.Point(0, 390);
-            this.StimPlot.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.StimPlot.Location = new System.Drawing.Point(0, 460);
+            this.StimPlot.Margin = new System.Windows.Forms.Padding(2);
             this.StimPlot.Name = "StimPlot";
             this.StimPlot.Size = new System.Drawing.Size(492, 156);
             this.StimPlot.TabIndex = 6;
@@ -118,8 +121,8 @@
             // Stim2Radio
             // 
             this.Stim2Radio.AutoSize = true;
-            this.Stim2Radio.Location = new System.Drawing.Point(112, 371);
-            this.Stim2Radio.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Stim2Radio.Location = new System.Drawing.Point(112, 438);
+            this.Stim2Radio.Margin = new System.Windows.Forms.Padding(2);
             this.Stim2Radio.Name = "Stim2Radio";
             this.Stim2Radio.Size = new System.Drawing.Size(51, 17);
             this.Stim2Radio.TabIndex = 8;
@@ -130,8 +133,8 @@
             // Patch2Radio
             // 
             this.Patch2Radio.AutoSize = true;
-            this.Patch2Radio.Location = new System.Drawing.Point(111, 195);
-            this.Patch2Radio.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Patch2Radio.Location = new System.Drawing.Point(111, 262);
+            this.Patch2Radio.Margin = new System.Windows.Forms.Padding(2);
             this.Patch2Radio.Name = "Patch2Radio";
             this.Patch2Radio.Size = new System.Drawing.Size(59, 17);
             this.Patch2Radio.TabIndex = 11;
@@ -143,8 +146,8 @@
             // 
             this.Patch1Radio.AutoSize = true;
             this.Patch1Radio.Checked = true;
-            this.Patch1Radio.Location = new System.Drawing.Point(14, 195);
-            this.Patch1Radio.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Patch1Radio.Location = new System.Drawing.Point(14, 262);
+            this.Patch1Radio.Margin = new System.Windows.Forms.Padding(2);
             this.Patch1Radio.Name = "Patch1Radio";
             this.Patch1Radio.Size = new System.Drawing.Size(59, 17);
             this.Patch1Radio.TabIndex = 10;
@@ -158,8 +161,8 @@
             this.PatchPlot.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.PatchPlot.BackColor = System.Drawing.Color.White;
-            this.PatchPlot.Location = new System.Drawing.Point(0, 213);
-            this.PatchPlot.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.PatchPlot.Location = new System.Drawing.Point(0, 280);
+            this.PatchPlot.Margin = new System.Windows.Forms.Padding(2);
             this.PatchPlot.Name = "PatchPlot";
             this.PatchPlot.Size = new System.Drawing.Size(492, 156);
             this.PatchPlot.TabIndex = 9;
@@ -168,6 +171,9 @@
             // 
             // PulseSetGroupBox
             // 
+            this.PulseSetGroupBox.Controls.Add(this.Bipolar_CB);
+            this.PulseSetGroupBox.Controls.Add(this.label1);
+            this.PulseSetGroupBox.Controls.Add(this.addPulse_textBox1);
             this.PulseSetGroupBox.Controls.Add(this.TotalLength);
             this.PulseSetGroupBox.Controls.Add(this.SaveButton);
             this.PulseSetGroupBox.Controls.Add(this.label7);
@@ -187,16 +193,38 @@
             this.PulseSetGroupBox.Controls.Add(this.PulseNumber);
             this.PulseSetGroupBox.Location = new System.Drawing.Point(6, 27);
             this.PulseSetGroupBox.Name = "PulseSetGroupBox";
-            this.PulseSetGroupBox.Size = new System.Drawing.Size(316, 108);
+            this.PulseSetGroupBox.Size = new System.Drawing.Size(316, 134);
             this.PulseSetGroupBox.TabIndex = 401;
             this.PulseSetGroupBox.TabStop = false;
             this.PulseSetGroupBox.Text = "Pulse Set";
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Location = new System.Drawing.Point(229, 109);
+            this.label1.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(27, 14);
+            this.label1.TabIndex = 408;
+            this.label1.Text = "Add";
+            // 
+            // addPulse_textBox1
+            // 
+            this.addPulse_textBox1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.addPulse_textBox1.Location = new System.Drawing.Point(261, 107);
+            this.addPulse_textBox1.Margin = new System.Windows.Forms.Padding(1);
+            this.addPulse_textBox1.Name = "addPulse_textBox1";
+            this.addPulse_textBox1.Size = new System.Drawing.Size(50, 20);
+            this.addPulse_textBox1.TabIndex = 407;
+            this.addPulse_textBox1.Text = "-1";
+            this.addPulse_textBox1.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
             // TotalLength
             // 
             this.TotalLength.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.TotalLength.Location = new System.Drawing.Point(127, 80);
-            this.TotalLength.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.TotalLength.Margin = new System.Windows.Forms.Padding(1);
             this.TotalLength.Name = "TotalLength";
             this.TotalLength.Size = new System.Drawing.Size(50, 20);
             this.TotalLength.TabIndex = 378;
@@ -207,7 +235,7 @@
             // SaveButton
             // 
             this.SaveButton.Location = new System.Drawing.Point(267, 60);
-            this.SaveButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.SaveButton.Margin = new System.Windows.Forms.Padding(2);
             this.SaveButton.Name = "SaveButton";
             this.SaveButton.Size = new System.Drawing.Size(44, 21);
             this.SaveButton.TabIndex = 406;
@@ -241,7 +269,7 @@
             // 
             this.PulseN.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PulseN.Location = new System.Drawing.Point(8, 36);
-            this.PulseN.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.PulseN.Margin = new System.Windows.Forms.Padding(1);
             this.PulseN.Name = "PulseN";
             this.PulseN.Size = new System.Drawing.Size(50, 20);
             this.PulseN.TabIndex = 363;
@@ -253,7 +281,7 @@
             // 
             this.PulseWidth.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PulseWidth.Location = new System.Drawing.Point(68, 36);
-            this.PulseWidth.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.PulseWidth.Margin = new System.Windows.Forms.Padding(1);
             this.PulseWidth.Name = "PulseWidth";
             this.PulseWidth.Size = new System.Drawing.Size(50, 20);
             this.PulseWidth.TabIndex = 365;
@@ -276,7 +304,7 @@
             // 
             this.PulseAmp.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PulseAmp.Location = new System.Drawing.Point(127, 36);
-            this.PulseAmp.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.PulseAmp.Margin = new System.Windows.Forms.Padding(1);
             this.PulseAmp.Name = "PulseAmp";
             this.PulseAmp.Size = new System.Drawing.Size(50, 20);
             this.PulseAmp.TabIndex = 367;
@@ -310,7 +338,7 @@
             // 
             this.PulseInterval.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PulseInterval.Location = new System.Drawing.Point(8, 81);
-            this.PulseInterval.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.PulseInterval.Margin = new System.Windows.Forms.Padding(1);
             this.PulseInterval.Name = "PulseInterval";
             this.PulseInterval.Size = new System.Drawing.Size(50, 20);
             this.PulseInterval.TabIndex = 374;
@@ -333,7 +361,7 @@
             // 
             this.PulseDelay.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PulseDelay.Location = new System.Drawing.Point(68, 81);
-            this.PulseDelay.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.PulseDelay.Margin = new System.Windows.Forms.Padding(1);
             this.PulseDelay.Name = "PulseDelay";
             this.PulseDelay.Size = new System.Drawing.Size(50, 20);
             this.PulseDelay.TabIndex = 376;
@@ -367,7 +395,7 @@
             // 
             this.PulseName.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PulseName.Location = new System.Drawing.Point(209, 36);
-            this.PulseName.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.PulseName.Margin = new System.Windows.Forms.Padding(1);
             this.PulseName.Name = "PulseName";
             this.PulseName.Size = new System.Drawing.Size(92, 20);
             this.PulseName.TabIndex = 388;
@@ -378,7 +406,7 @@
             // 
             this.PulseNumber.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PulseNumber.Location = new System.Drawing.Point(209, 60);
-            this.PulseNumber.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.PulseNumber.Margin = new System.Windows.Forms.Padding(1);
             this.PulseNumber.Name = "PulseNumber";
             this.PulseNumber.Size = new System.Drawing.Size(52, 20);
             this.PulseNumber.TabIndex = 390;
@@ -388,13 +416,13 @@
             0,
             0,
             0});
-            this.PulseNumber.ValueChanged += new System.EventHandler(this.PulseNumber_ValueChanged);
+            this.PulseNumber.Click += new System.EventHandler(this.PulseNumber_Click);
             // 
             // Cycle
             // 
             this.Cycle.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Cycle.Location = new System.Drawing.Point(332, 58);
-            this.Cycle.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.Cycle.Margin = new System.Windows.Forms.Padding(1);
             this.Cycle.Name = "Cycle";
             this.Cycle.Size = new System.Drawing.Size(146, 20);
             this.Cycle.TabIndex = 401;
@@ -404,33 +432,33 @@
             // 
             this.elaspedTimeLabel.AutoSize = true;
             this.elaspedTimeLabel.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.elaspedTimeLabel.Location = new System.Drawing.Point(403, 135);
+            this.elaspedTimeLabel.Location = new System.Drawing.Point(403, 191);
             this.elaspedTimeLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.elaspedTimeLabel.Name = "elaspedTimeLabel";
-            this.elaspedTimeLabel.Size = new System.Drawing.Size(33, 16);
+            this.elaspedTimeLabel.Size = new System.Drawing.Size(32, 16);
             this.elaspedTimeLabel.TabIndex = 405;
             this.elaspedTimeLabel.Text = "0.00";
             // 
             // AcqDataCheck
             // 
             this.AcqDataCheck.AutoSize = true;
-            this.AcqDataCheck.Location = new System.Drawing.Point(14, 172);
-            this.AcqDataCheck.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.AcqDataCheck.Location = new System.Drawing.Point(14, 215);
+            this.AcqDataCheck.Margin = new System.Windows.Forms.Padding(2);
             this.AcqDataCheck.Name = "AcqDataCheck";
             this.AcqDataCheck.Size = new System.Drawing.Size(86, 17);
             this.AcqDataCheck.TabIndex = 404;
             this.AcqDataCheck.Text = "Acquire data";
             this.AcqDataCheck.UseVisualStyleBackColor = true;
-            this.AcqDataCheck.CheckedChanged += new System.EventHandler(this.AcqDataCheck_CheckedChanged);
+            this.AcqDataCheck.Click += new System.EventHandler(this.AcqDataCheck_CheckedChanged);
             // 
             // RepeatProgress
             // 
             this.RepeatProgress.AutoSize = true;
             this.RepeatProgress.Font = new System.Drawing.Font("Arial", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.RepeatProgress.Location = new System.Drawing.Point(312, 181);
+            this.RepeatProgress.Location = new System.Drawing.Point(312, 224);
             this.RepeatProgress.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.RepeatProgress.Name = "RepeatProgress";
-            this.RepeatProgress.Size = new System.Drawing.Size(26, 16);
+            this.RepeatProgress.Size = new System.Drawing.Size(25, 16);
             this.RepeatProgress.TabIndex = 403;
             this.RepeatProgress.Text = "0/0";
             // 
@@ -447,8 +475,8 @@
             // 
             // StartButton
             // 
-            this.StartButton.Location = new System.Drawing.Point(396, 154);
-            this.StartButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.StartButton.Location = new System.Drawing.Point(396, 210);
+            this.StartButton.Margin = new System.Windows.Forms.Padding(2);
             this.StartButton.Name = "StartButton";
             this.StartButton.Size = new System.Drawing.Size(76, 34);
             this.StartButton.TabIndex = 400;
@@ -460,7 +488,7 @@
             // 
             this.label9.AutoSize = true;
             this.label9.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label9.Location = new System.Drawing.Point(239, 164);
+            this.label9.Location = new System.Drawing.Point(239, 207);
             this.label9.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(13, 14);
@@ -471,7 +499,7 @@
             // 
             this.OutputRate.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.OutputRate.Location = new System.Drawing.Point(332, 98);
-            this.OutputRate.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.OutputRate.Margin = new System.Windows.Forms.Padding(1);
             this.OutputRate.Name = "OutputRate";
             this.OutputRate.Size = new System.Drawing.Size(50, 20);
             this.OutputRate.TabIndex = 387;
@@ -493,7 +521,7 @@
             // 
             this.label6.AutoSize = true;
             this.label6.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label6.Location = new System.Drawing.Point(185, 147);
+            this.label6.Location = new System.Drawing.Point(185, 190);
             this.label6.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(87, 14);
@@ -504,8 +532,8 @@
             // PulseSet_Interval
             // 
             this.PulseSet_Interval.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.PulseSet_Interval.Location = new System.Drawing.Point(187, 161);
-            this.PulseSet_Interval.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.PulseSet_Interval.Location = new System.Drawing.Point(187, 204);
+            this.PulseSet_Interval.Margin = new System.Windows.Forms.Padding(1);
             this.PulseSet_Interval.Name = "PulseSet_Interval";
             this.PulseSet_Interval.Size = new System.Drawing.Size(50, 20);
             this.PulseSet_Interval.TabIndex = 395;
@@ -516,8 +544,8 @@
             // SyncWithImage
             // 
             this.SyncWithImage.AutoSize = true;
-            this.SyncWithImage.Location = new System.Drawing.Point(14, 137);
-            this.SyncWithImage.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.SyncWithImage.Location = new System.Drawing.Point(14, 180);
+            this.SyncWithImage.Margin = new System.Windows.Forms.Padding(2);
             this.SyncWithImage.Name = "SyncWithImage";
             this.SyncWithImage.Size = new System.Drawing.Size(117, 17);
             this.SyncWithImage.TabIndex = 394;
@@ -530,7 +558,7 @@
             // 
             this.label5.AutoSize = true;
             this.label5.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label5.Location = new System.Drawing.Point(286, 147);
+            this.label5.Location = new System.Drawing.Point(286, 190);
             this.label5.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(71, 14);
@@ -541,8 +569,8 @@
             // PulseSet_Repeat
             // 
             this.PulseSet_Repeat.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.PulseSet_Repeat.Location = new System.Drawing.Point(288, 161);
-            this.PulseSet_Repeat.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.PulseSet_Repeat.Location = new System.Drawing.Point(288, 204);
+            this.PulseSet_Repeat.Margin = new System.Windows.Forms.Padding(1);
             this.PulseSet_Repeat.Name = "PulseSet_Repeat";
             this.PulseSet_Repeat.Size = new System.Drawing.Size(50, 20);
             this.PulseSet_Repeat.TabIndex = 392;
@@ -566,7 +594,7 @@
             this.Patch1Label.AutoSize = true;
             this.Patch1Label.Font = new System.Drawing.Font("Arial", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Patch1Label.ForeColor = System.Drawing.Color.Red;
-            this.Patch1Label.Location = new System.Drawing.Point(69, 190);
+            this.Patch1Label.Location = new System.Drawing.Point(69, 257);
             this.Patch1Label.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Patch1Label.Name = "Patch1Label";
             this.Patch1Label.Size = new System.Drawing.Size(30, 25);
@@ -578,7 +606,7 @@
             this.Stim1Label.AutoSize = true;
             this.Stim1Label.Font = new System.Drawing.Font("Arial", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Stim1Label.ForeColor = System.Drawing.Color.Red;
-            this.Stim1Label.Location = new System.Drawing.Point(69, 365);
+            this.Stim1Label.Location = new System.Drawing.Point(69, 432);
             this.Stim1Label.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Stim1Label.Name = "Stim1Label";
             this.Stim1Label.Size = new System.Drawing.Size(30, 25);
@@ -590,7 +618,7 @@
             this.Patch2Label.AutoSize = true;
             this.Patch2Label.Font = new System.Drawing.Font("Arial", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Patch2Label.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(192)))));
-            this.Patch2Label.Location = new System.Drawing.Point(165, 190);
+            this.Patch2Label.Location = new System.Drawing.Point(165, 257);
             this.Patch2Label.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Patch2Label.Name = "Patch2Label";
             this.Patch2Label.Size = new System.Drawing.Size(30, 25);
@@ -602,7 +630,7 @@
             this.Stim2Label.AutoSize = true;
             this.Stim2Label.Font = new System.Drawing.Font("Arial", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Stim2Label.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(192)))));
-            this.Stim2Label.Location = new System.Drawing.Point(165, 365);
+            this.Stim2Label.Location = new System.Drawing.Point(165, 432);
             this.Stim2Label.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Stim2Label.Name = "Stim2Label";
             this.Stim2Label.Size = new System.Drawing.Size(30, 25);
@@ -711,7 +739,7 @@
             // SyncWithUncageCheck
             // 
             this.SyncWithUncageCheck.AutoSize = true;
-            this.SyncWithUncageCheck.Location = new System.Drawing.Point(14, 155);
+            this.SyncWithUncageCheck.Location = new System.Drawing.Point(14, 198);
             this.SyncWithUncageCheck.Margin = new System.Windows.Forms.Padding(2);
             this.SyncWithUncageCheck.Name = "SyncWithUncageCheck";
             this.SyncWithUncageCheck.Size = new System.Drawing.Size(119, 17);
@@ -720,11 +748,23 @@
             this.SyncWithUncageCheck.UseVisualStyleBackColor = true;
             this.SyncWithUncageCheck.Click += new System.EventHandler(this.SyncWithUncageCheck_Click);
             // 
+            // Bipolar_CB
+            // 
+            this.Bipolar_CB.AutoSize = true;
+            this.Bipolar_CB.Location = new System.Drawing.Point(13, 110);
+            this.Bipolar_CB.Margin = new System.Windows.Forms.Padding(2);
+            this.Bipolar_CB.Name = "Bipolar_CB";
+            this.Bipolar_CB.Size = new System.Drawing.Size(58, 17);
+            this.Bipolar_CB.TabIndex = 409;
+            this.Bipolar_CB.Text = "Bipolar";
+            this.Bipolar_CB.UseVisualStyleBackColor = true;
+            this.Bipolar_CB.Click += new System.EventHandler(this.Parameter_Clicked);
+            // 
             // StimPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(492, 552);
+            this.ClientSize = new System.Drawing.Size(492, 619);
             this.Controls.Add(this.SyncWithUncageCheck);
             this.Controls.Add(this.AcqDataCheck);
             this.Controls.Add(this.OutputRate);
@@ -754,7 +794,7 @@
             this.Controls.Add(this.PulseSet_Repeat);
             this.Controls.Add(this.label5);
             this.MainMenuStrip = this.menuStrip1;
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "StimPanel";
             this.Text = "StimPanel";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.StimPanel_FormClosing);
@@ -830,5 +870,8 @@
         private System.Windows.Forms.ToolStripMenuItem analysisToolStripMenuItem;
         private System.Windows.Forms.Button SaveButton;
         private System.Windows.Forms.CheckBox SyncWithUncageCheck;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.TextBox addPulse_textBox1;
+        private System.Windows.Forms.CheckBox Bipolar_CB;
     }
 }

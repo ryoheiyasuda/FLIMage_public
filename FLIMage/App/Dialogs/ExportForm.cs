@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utilities;
 using FLIMage.Analysis;
+using System.Drawing.Imaging;
+using FLIMage;
 
 namespace FLIMage.Dialogs
 {
@@ -25,12 +27,14 @@ namespace FLIMage.Dialogs
 
         SettingManager settingManager;
         String settingName = "ExportForm";
+        FileFormat.ImageFormat image_format = FileFormat.ImageFormat.TIFF;
 
-        public ExportForm(Image_Display ImageDisp)
+        public ExportForm(Image_Display ImageDisp, FileFormat.ImageFormat image_format1)
         {
             image_display = ImageDisp;
             State = image_display.FLIM_ImgData.State;
             FLIM_ImgData = image_display.FLIM_ImgData;
+            image_format = image_format1;
             InitializeComponent();
         }
 
@@ -65,6 +69,14 @@ namespace FLIMage.Dialogs
             InitializeSetting();
 
             ProjectionTypePanel.Enabled = ZProjectionCheckBox.Checked;
+
+            if (image_format == FileFormat.ImageFormat.AVI)
+            {
+                ZProjectionCheckBox.Checked = false;
+                ProjectionTypePanel.Enabled = false;
+                ProjectionBox.Enabled = false;
+                AllFiles.Enabled = false;
+            }
         }
 
         void InitializeSetting()
@@ -139,13 +151,13 @@ namespace FLIMage.Dialogs
             {
                 Task.Factory.StartNew(() =>
                 {
-                    image_display.SaveCurrentIntensityImage(saveFormat, SaveChannels, ZStackFormat, correctT0EachPage, true);
+                    image_display.SaveCurrentIntensityImage(saveFormat, SaveChannels, ZStackFormat, correctT0EachPage, true, image_format);
                 });
             }
             else
                 Task.Factory.StartNew(() =>
                 {
-                    image_display.BatchExporting(saveFormat, SaveChannels, ZStackFormat, correctT0EachPage);
+                    image_display.BatchExporting(saveFormat, SaveChannels, ZStackFormat, correctT0EachPage, image_format);
                 });
 
             this.Close();
@@ -161,4 +173,6 @@ namespace FLIMage.Dialogs
             ProjectionTypePanel.Enabled = ZProjectionCheckBox.Checked;
         }
     }
+
+
 }

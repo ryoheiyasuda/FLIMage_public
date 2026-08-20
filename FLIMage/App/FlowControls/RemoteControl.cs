@@ -52,34 +52,35 @@ namespace FLIMage.FlowControls
             String code = ClientMessageWindow.Text;
 
             String[] lines = code.Split('\n');
-            //String[] ReceivedLines = new String[lines.Length];
-            String str = "";
-            String writeStr = "";
 
+            // Route window commands through the same serializing worker as the
+            // pipe, so the window's Execute and a connected client can never run
+            // ExecuteReceivedCommand concurrently. Do NOT block the UI thread on
+            // the worker (that would deadlock with commands that this.Invoke back
+            // to the UI): enqueue all lines, then display the concatenated reply
+            // from a completion continuation marshaled back to the UI thread.
+            // by Kengo(Claude) 06-10-2026
+            Task<FLIMage_Event.CommandResult>[] tasks = new Task<FLIMage_Event.CommandResult>[lines.Length];
             for (int i = 0; i < lines.Length; i++)
-            {
-                String str1 = flimage.flim_event.ExecuteReceivedCommand(lines[i], true, out FLIMage_Event.CommandMode cm);
-                str = str + str1;
-                if (i < lines.Length - 1)
-                    str = str + "\r\n";
+                tasks[i] = flimage.flim_event.EnqueueCommand(lines[i]);
 
-                if (cm == FLIMage_Event.CommandMode.Get_Parameter || cm == FLIMage_Event.CommandMode.Set_Parameter)
-                {
-                    writeStr = writeStr + str1;
-                    if (i < lines.Length - 1)
-                        writeStr = writeStr + "\r\n";
-                }
-            }
-
-            if (writeStr != "")
+            Task.WhenAll(tasks).ContinueWith(t =>
             {
-                flimage.text_server.WriteEventsInCommandFile(writeStr);
-            }
+                String str = String.Join("\r\n", tasks.Select(x => x.Result.Reply));
 
-            if (str != "")
-            {
-                displaySendText(str, FLIMage_Event.CommandReceivedFrom.FLIMage);
-            }
+                // Only parameter get/set replies are written back to the command
+                // file, matching the original behavior.
+                String writeStr = String.Join("\r\n", tasks
+                    .Where(x => x.Result.Mode == FLIMage_Event.CommandMode.Get_Parameter
+                             || x.Result.Mode == FLIMage_Event.CommandMode.Set_Parameter)
+                    .Select(x => x.Result.Reply));
+
+                if (writeStr != "")
+                    flimage.text_server.WriteEventsInCommandFile(writeStr);
+
+                if (str != "")
+                    displaySendText(str, FLIMage_Event.CommandReceivedFrom.FLIMage);
+            });
         }
 
         public void EventHandling(String EventReceived)
@@ -101,7 +102,7 @@ namespace FLIMage.FlowControls
         {
             SaveWindowLocation();
 
-            if (ServerOn.Checked && COM_server.connected)
+            if (ServerOn.Checked && COM_server.Listening)
             {
                 COM_server.Close();
                 //FLIM_event.unSubscribe();
@@ -134,10 +135,10 @@ namespace FLIMage.FlowControls
             this.BeginInvokeIfRequired(o => o.displaySendTextCore(str, wr));
         }
 
-        public void messageReceived(COMserver c, EventArgs e)
+        public void messageReceived(String receivedMessage)
         {
-            Debug.WriteLine("Message received: " + c.ReceivedR);
-            displaySendText(c.ReceivedR, FLIMage_Event.CommandReceivedFrom.FLIMage);
+            Debug.WriteLine("Message received: " + receivedMessage);
+            displaySendText(receivedMessage, FLIMage_Event.CommandReceivedFrom.FLIMage);
             SetCommandFilePath();
         }
 
@@ -146,11 +147,13 @@ namespace FLIMage.FlowControls
             this.BeginInvokeIfRequired(o => o.displayStatusTextCore(str, wr));
         }
 
-        public void status_ComServer(bool active, FLIMage_Event.CommandReceivedFrom wr)
+        public void status_ComServer(bool active, FLIMage_Event.CommandReceivedFrom wr, int nClients = 1)
         {
             String str;
             if (!active)
                 str = "Searching client...";
+            else if (nClients > 1)
+                str = "Connected (" + nClients + " clients)";
             else
                 str = "Connected";
             if (wr == FLIMage_Event.CommandReceivedFrom.Client)
@@ -162,11 +165,14 @@ namespace FLIMage.FlowControls
 
         public void TurnOnServer(bool ON)
         {
-            if (ON && !COM_server.connected)
+            // Listening (not connected): the multi-client server keeps
+            // accepting after the first client, so "already has a client" no
+            // longer means "already started".
+            if (ON && !COM_server.Listening)
             {
                 COM_server.start();
-                status_ComServer(COM_server.connected, FLIMage_Event.CommandReceivedFrom.Client);
-                status_ComServer(COM_server.connectedR, FLIMage_Event.CommandReceivedFrom.FLIMage);
+                status_ComServer(COM_server.connected, FLIMage_Event.CommandReceivedFrom.Client, COM_server.NConnectedClients);
+                status_ComServer(COM_server.connectedR, FLIMage_Event.CommandReceivedFrom.FLIMage, COM_server.NConnectedClients);
             }
             else if (!ON)
             {
@@ -187,8 +193,8 @@ namespace FLIMage.FlowControls
         {
             if (ServerOn.Checked)
             {
-                status_ComServer(COM_server.connected, FLIMage_Event.CommandReceivedFrom.Client);
-                status_ComServer(COM_server.connectedR, FLIMage_Event.CommandReceivedFrom.FLIMage);
+                status_ComServer(COM_server.connected, FLIMage_Event.CommandReceivedFrom.Client, COM_server.NConnectedClients);
+                status_ComServer(COM_server.connectedR, FLIMage_Event.CommandReceivedFrom.FLIMage, COM_server.NConnectedClients);
             }
             else
             {

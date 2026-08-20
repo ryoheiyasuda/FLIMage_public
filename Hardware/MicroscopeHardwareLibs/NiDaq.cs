@@ -1,17 +1,32 @@
 ﻿using NationalInstruments;
 using NationalInstruments.DAQmx;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Management;
+
 
 namespace MicroscopeHardwareLibs
 {
     public class NiDaq
     {
-        static public bool DLLactive = false;
+        static public bool DLLactive = true;
+
+        // Example method using National Instruments DAQmx API
+        public static void ConnectTerminals(string Port1, string Port2)
+        {
+            DaqSystem.Local.ConnectTerminals(Port1, Port2);
+        }
+
+        /// <summary>
+        /// Access Key in NiDaq.cs
+        /// </summary>
 
         public class AccessKey
         {
@@ -33,13 +48,6 @@ namespace MicroscopeHardwareLibs
             [DllImport("TCSPC_Decode.dll", EntryPoint = "Check_SerialKey", CallingConvention = CallingConvention.Cdecl)]
             public static extern int Check_SerialKey(int serialKey);
         }
-
-
-        public static void ConnectTerminals(String Port1, String Port2)
-        {
-            DaqSystem.Local.ConnectTerminals(Port1, Port2);
-        }
-
 
         public class AO_Write
         {
@@ -223,25 +231,32 @@ namespace MicroscopeHardwareLibs
             private DigitalMultiChannelWriter writer;
             private bool portActive = false;
 
-            public DigitalOutputPort(String DigitalPort, byte[] data_out)
+            public DigitalOutputPort(String DigitalPort, byte[] data_out, int nPorts)
             {
                 if (DLLactive)
                 {
                     DO_Port = DigitalPort;
                     board = DO_Port.Split('/')[0];
-                    PutSingleValue(data_out);
+                    PutSingleValue(data_out, nPorts);
                 }
             }
 
-            private int PutSingleValue(byte[] data_out)
+            private int PutSingleValue(byte[] data_out, int n_channels)
             {
                 Dispose();
                 myTask = new Task();
-                myTask.DOChannels.CreateChannel(DO_Port, "", ChannelLineGrouping.OneChannelForAllLines);
+                myTask.DOChannels.CreateChannel(DO_Port, "", ChannelLineGrouping.OneChannelForEachLine);
 
                 writer = new DigitalMultiChannelWriter(myTask.Stream);
 
-                writer.WriteSingleSamplePort(true, data_out);
+                BitArray bits = new BitArray(data_out);
+
+                bool[,] data1 = new bool[n_channels, 1];
+
+                for (int i = 0; i < data1.GetLength(0); i++)
+                    data1[i, 0] = bits[i];
+
+                writer.WriteSingleSampleMultiLine(true, data1);
 
                 Dispose();
                 return 0;
@@ -311,7 +326,18 @@ namespace MicroscopeHardwareLibs
                 for (int i = 0; i < data_out.GetLength(0); i++)
                     data1[i, 0] = data_out[i];
 
-                writer.WriteSingleSampleMultiLine(true, data1);
+                try
+                {
+                    writer.WriteSingleSampleMultiLine(true, data1);
+                }
+                catch (DaqException ex)
+                {
+                    Debug.WriteLine("DO error in NI-DAQmx: " + ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("DO error (PutSingleValue): " + ex.Message);
+                }
 
                 myTask.WaitUntilDone();
                 myTask.Dispose();
@@ -319,17 +345,38 @@ namespace MicroscopeHardwareLibs
                 return 0;
             }
 
+            public void MakePulseEveryNPulses(int nCycle, double inputRate, String pulseInput)
+            {
+                myTask = new Task();
+                String triggerP = "/" + board + "/" + pulseInput;
+                for (int i = 0; i < DO_Port.Length; i++)
+                {
+                    myTask.DOChannels.CreateChannel(DO_Port[i], "", ChannelLineGrouping.OneChannelForEachLine);
+                }
+                myTask.Timing.ConfigureSampleClock("", inputRate, SampleClockActiveEdge.Rising, SampleQuantityMode.ContinuousSamples, nCycle);
+
+                myTask.Control(TaskAction.Verify);
+
+                var waveform_output = new DigitalWaveform[DO_Port.Length];
+
+                for (int i = 0; i < waveform_output.Length; i++)
+                    waveform_output[i] = new DigitalWaveform(nCycle, 1);
+
+                waveform_output[0].Signals[0].States[0] = DigitalState.ForceUp;
+
+                writer = new DigitalMultiChannelWriter(myTask.Stream);
+                writer.WriteWaveform(false, waveform_output);
+            }
+
             public void MakeLineTriggeredClock(int nSamples_perCycle, double inputRate, int nCycles, String lineClockInput)
             {
                 myTask = new Task();
-                if (nSamples_perCycle < 8)
-                    nSamples_perCycle = 8;
+                if (nSamples_perCycle < 4)
+                    nSamples_perCycle = 4;
 
-                //nSample1 : nSample * nCycle.
-                //nSample = nSample per cycle.
                 int nSamples1 = nSamples_perCycle * nCycles;
                 double outputRate = inputRate * nSamples1;
-                int nSamples2 = nSamples1 - 2;
+                int nSamples2 = nSamples1 - 1;
 
                 String triggerP = "/" + board + "/" + lineClockInput;
                 for (int i = 0; i < DO_Port.Length; i++)
@@ -342,23 +389,31 @@ namespace MicroscopeHardwareLibs
                 myTask.Triggers.StartTrigger.Retriggerable = true;
 
                 myTask.Control(TaskAction.Verify);
-                var waveform_output = new DigitalWaveform[2];
-                for (int i = 0; i < DO_Port.Length; i++)
+                var waveform_output = new DigitalWaveform[DO_Port.Length];
+
+                for (int i = 0; i < waveform_output.Length; i++)
                     waveform_output[i] = new DigitalWaveform(nSamples2, 1);
 
-                //output usual clock 
-                for (int i = 0; i < nSamples1 / 2; i++)
+                //output usual clock
+                var c_output_channel = 0;
+                if (DO_Port.Length > 1)
                 {
-                    waveform_output[0].Signals[0].States[i] = DigitalState.ForceUp;
+                    for (int i = 0; i < nSamples1 / 2; i++)
+                    {
+                        waveform_output[0].Signals[0].States[i] = DigitalState.ForceUp;
+                    }
+                    c_output_channel = 1;
                 }
 
                 //output divided clock
+
+
                 for (int j = 0; j < nCycles; j++)
                     for (int i = 0; i < nSamples_perCycle / 2; i++)
                     {
                         int c = j * nSamples_perCycle + i;
                         if (c < nSamples2)
-                            waveform_output[1].Signals[0].States[c] = DigitalState.ForceUp;
+                            waveform_output[c_output_channel].Signals[0].States[c] = DigitalState.ForceUp;
                     }
 
                 var writer1 = new DigitalMultiChannelWriter(myTask.Stream);
@@ -1052,6 +1107,27 @@ namespace MicroscopeHardwareLibs
                         {
                             while (true)
                             {
+                                if (sw.ElapsedMilliseconds > timeout)
+                                {
+                                    success[i] = false;
+                                    break;
+                                }
+
+                                try
+                                {
+                                    totalSamplesGenerated = aoTask.Stream.TotalSamplesGeneratedPerChannel;
+                                }
+                                catch (DaqException ex)
+                                {
+                                    Debug.WriteLine("Problem in Stream.TotalSamplesGeneratedPerChannel" + ex.Message);
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine("Problem in Stream.TotalSamplesGeneratedPerChannel" + ex.Message);
+                                    break;
+                                }
+
                                 if (totalSamplesGenerated < 0)
                                     break;
 
@@ -1071,11 +1147,6 @@ namespace MicroscopeHardwareLibs
                                 }
 
                                 System.Threading.Thread.Sleep(5);
-                                if (sw.ElapsedMilliseconds > timeout)
-                                {
-                                    success[i] = false;
-                                    break;
-                                }
                             } //Loop forever.
                         }
 
@@ -1153,6 +1224,7 @@ namespace MicroscopeHardwareLibs
             public void Dispose()
             {
                 if (aoTasks != null)
+                {
                     foreach (var aoTask in aoTasks)
                     {
                         if (aoTask != null)
@@ -1160,6 +1232,7 @@ namespace MicroscopeHardwareLibs
                             aoTask.Dispose();
                         }
                     }
+                }
                 running = false;
             }
 
@@ -1432,7 +1505,8 @@ namespace MicroscopeHardwareLibs
                     for (int i = 0; i < n_board; i++)
                     {
                         var n_samp = (int)aiTasks[i].Stream.AvailableSamplesPerChannel;
-                        if (min_samples < n_samp)
+                        // Clamp to the minimum available across boards.
+                        if (n_samp < min_samples)
                             min_samples = n_samp;
                     }
 

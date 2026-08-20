@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Utilities;
 
 namespace FLIMage.HardwareControls
 {
@@ -15,29 +16,43 @@ namespace FLIMage.HardwareControls
     {
         const int nChannels = 8;
 
+        FLIMageMain flimage;
         ScanParameters State;
         String[] portNames = new string[nChannels];
 
-        public DigitalSignalPanel(ScanParameters Scan)
+        WindowLocManager winManager;
+        String WindowName = "DIOPanel.loc";
+
+        public DigitalSignalPanel(FLIMageMain fc)
         {
-            State = Scan;
+            flimage = fc;
+            State = flimage.State;
             InitializeComponent();
         }
 
         public void checkBox1_Click(object sender, EventArgs e)
         {
-            for (int i = 0; i < nChannels; i++)
+            CheckBox cb = (CheckBox)sender;
+            new IOControls.Digital_Out(portNames[Convert.ToInt32(cb.Text.Split(':')[0])], cb.Checked);
+        }
+
+        //Kengo BEGIN 12-12-2023
+        //This is for a remote command to control DIO_panel
+        public void SetDIOPanel(int channel, bool ON)
+        {
+            Control[] found = Controls.Find("checkBox" + channel, true);
+
+            if (found.Length > 0)
             {
-                Control[] found = Controls.Find("checkBox" + i, true);
                 CheckBox cb = (CheckBox)found[0];
-                new IOControls.Digital_Out(portNames[i], cb.Checked);
+                cb.Checked = ON;
+                new IOControls.Digital_Out(portNames[Convert.ToInt32(cb.Text.Split(':')[0])], ON);
             }
         }
+        //Kengo END
 
         public void DigitalSignalPanel_Load(object sender, EventArgs e)
         {
-
-
             for (int i = 0; i < nChannels; i++)
             {
                 Control[] found = Controls.Find("checkBox" + i, true);
@@ -84,9 +99,26 @@ namespace FLIMage.HardwareControls
                     cb.Text = i + ": " + cb.Text;
 
                     portNames[i] = State.Init.triggerPort.Substring(0, State.Init.triggerPort.Length - 1) + i;
-                    new IOControls.Digital_Out(portNames[i], cb.Checked);
+                    //new IOControls.Digital_Out(portNames[i], cb.Checked);
                 }
             }
+
+            winManager = new WindowLocManager(this, WindowName, State.Files.windowsInfoPath);
+            winManager.LoadWindowLocation(false);
+        }
+
+        public void SaveWindowLocation()
+        {
+            winManager.SaveWindowLocation();
+        }
+
+        public void DigitalSignalPanel_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            winManager.SaveWindowLocation();
+            e.Cancel = true;
+            this.Hide();
+
+            flimage.ToolWindowClosed();
         }
     }
 }

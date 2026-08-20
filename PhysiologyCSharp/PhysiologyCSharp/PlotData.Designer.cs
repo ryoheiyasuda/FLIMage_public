@@ -151,7 +151,7 @@
             // VClampLabel2
             // 
             this.VClampLabel2.AutoSize = true;
-            this.VClampLabel2.Location = new System.Drawing.Point(18, 35);
+            this.VClampLabel2.Location = new System.Drawing.Point(18, 33);
             this.VClampLabel2.Name = "VClampLabel2";
             this.VClampLabel2.Size = new System.Drawing.Size(46, 13);
             this.VClampLabel2.TabIndex = 37;
@@ -170,7 +170,7 @@
             // VClampLabel1
             // 
             this.VClampLabel1.AutoSize = true;
-            this.VClampLabel1.Location = new System.Drawing.Point(17, 35);
+            this.VClampLabel1.Location = new System.Drawing.Point(17, 33);
             this.VClampLabel1.Name = "VClampLabel1";
             this.VClampLabel1.Size = new System.Drawing.Size(46, 13);
             this.VClampLabel1.TabIndex = 36;

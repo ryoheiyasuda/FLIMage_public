@@ -1,9 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Windows.Forms.AxHost;
+using System.Xml.Linq;
 
 namespace FLIMage
 {
@@ -23,7 +25,7 @@ namespace FLIMage
         {
             public Boolean motor_on = true;
             public Boolean FLIM_on = true;
-            public String FLIM_mode = "PQ"; //or "BH"
+            public String FLIM_mode = "PQ"; //"BH" for becker&Hickle, "PH" for PicoHarp, "MH" for MultiHarp, "SimPQ" for simulation mode.
             public Boolean NIDAQ_on = true;
 
             public String lineClockPort = "Dev4/ctr0";
@@ -45,10 +47,11 @@ namespace FLIMage
             public String ResonantZoom = "Dev5/AO2";
             public String ResonantOn = "Dev5/Port0/line2";
 
-            public String ResonantClockInput_fromScanner = "PFI7";
-            public String ResonantClockOutput_divClock = "Port0/line6";
-            public String ResonantClockOutput_regulated = "Port0/line7";
-            public String ResonantClockInput_from_divClock = "PFI5";
+            public String ResonantClockInput_fromScanner = "PFI4";
+            public String ResonantClockOutput_divClock = "Port0/line7";
+            public String ResonantClockOutput_regulated = "Port0/line6";
+            public String ResonantClockInput_from_divClock = "PFI4";
+            public String ResonantSwitchPort = "Dev5/Port0/line7";
 
             public String masterClock = ""; //"/Dev4/20MHzTimebase";
             public String masterClockPort = "/Dev4/RTSI7";
@@ -79,6 +82,9 @@ namespace FLIMage
             public String Piezo_Z_Signal = "Dev2/AO3";
             public String Piezo_Z_Monitor = "Dev2/AI3";
 
+            public double EOM_MinVoltage = -0.1;
+            public double EOM_MaxVoltage = 1.9;
+
             //public String EOM_AI_Trigger = "/Dev4/PFI6";
 
             public String MarkerInput = "";
@@ -95,7 +101,7 @@ namespace FLIMage
             public double[] mirrorParkPosition = { -1, -1 };
 
             public String MotorComPort = "COM1";
-            public String MotorHWName = "MP-285A"; //or "MP-285" or "ThorlabMCM3000" or "ThorBScope"
+            public String MotorHWName = "ThorlabMCM301"; //or "MP-285" or "ThorlabMCM3000" or "ThorBScope"
             public String TagLensPort = "COM6";
             public int MotorDisplayUpdateTime_ms = 1000;
             public double[] MotorConversionFactor = { 0, 0, 0 };
@@ -104,16 +110,17 @@ namespace FLIMage
             public String PMTModule = "ThorECU"; //or ThorPMT21000
             public String MicroscopeFlipper = "ThorBCM"; // or ThorBScope ThorBCA?
             public String PMTModule_COMPort = "COM29";
+
             public String resonantScannerSystem = "ThorECU";
             public String resonantScanner_COMPort = "COM29";
-            
+
             public bool enableResonantScanner = false;
             public bool enableRegularGalvo = true;
 
             public double resonantFreq_Hz = 8000; //KHz.
             public bool Use_EPhys = true;
 
-            public double msPerLine_min = 0.25;
+            public double msPerLine_min = 0.1;
 
             public bool usePiezo = false;
             public double Piezo_um_per_V = 100; // Total 10 V. If 1000 um, it is 100.
@@ -133,16 +140,24 @@ namespace FLIMage
             public bool openShutterDuringCalibration = false;
             public bool singleSampleCalib = true;
             public int mainShutterDelay = 2;
+
+            public bool DigitalMark_On = false;
+            public int DigitalMarkEveryFrame = 100;
+            public String DigitalMarkOutputPort = "Dev2/Port0/line0";
+
         }
 
         public class Acquisition
         {
+            public string version = "4.0.23";
             public int pixelsPerLine = 128;
             public int linesPerFrame = 128;
-            public int maxNFramePerFile = 4000;
+            public int maxNFramePerFile = 100000;
             public bool aveFrame = false; //obsolete for backward compatibility.
             public bool aveFrameSeparately = false;
             public bool resonantScanning = false;
+            public bool polygonScanning = false;
+            public bool resonantEOM_blank_edge = false;
             public bool[] aveFrameA = new bool[] { false, false };
             public bool aveSlice = false;
             public bool ZStack = true;
@@ -150,7 +165,8 @@ namespace FLIMage
             public bool[] acqFLIMA = new bool[] { true, true };
             public bool[] acquisition = new bool[] { true, true };
             public int nAveFrame = 4;
-            public int nAveFrame_focus = 4;
+            public int nAveFrame_focus = 1;
+            public int nAveFrame_focus_resonant = 20;
             public int nAveragedFrames = 16;
             public int nFrames = 64;
             public int nSlices = 24;
@@ -158,8 +174,12 @@ namespace FLIMage
             public int nAveragedSlices = 6; //number of "aveSlice"
             public int nImages = 1;
             public int linesPerStripe = 32;
+            public int SkipFirstLines = 0;
+            public int AddLinesForSlaveMode = 0;
             public bool StripeDuringFocus = false;
             public bool BiDirectionalScan = false;
+            public bool BiDirectionalScanY = false;
+            public int BidirectionalTriggerPerLine = 1;
             public bool SineWaveScan = false;
             public bool[] flipXYScan = { false, false };
             public bool switchXYScanToMotor = false;
@@ -172,12 +192,14 @@ namespace FLIMage
             public double[] scanZWithPiezoRange_um = { 0, 100 }; // in um
             public double currentPositionPiezo_V = 0;
             public double fillFraction = 0.75; //Minimum is 0.7.
+            public double fillFraction_resonant = 0.445; //For resonant.
             public double scanFraction = 0.85;
             public bool flyBackBlancking = true;
             public double ScanDelay = 0.074;
             public double EOMDelay = 0.00;
             public double resonantScanDelay_us = 2;
             public double resonantEOMDelay_us = 2;
+            public double resonant_msPerLine = 0.065;
             public double msPerLine = 2.0;
             public double SliceMergin = 200;
             public double[] FOV_default = { 260.0, 260.0 };
@@ -210,6 +232,30 @@ namespace FLIMage
             public bool externalTrigger = false;
             public double ExpectedLaserPulseRate_MHz = 80.0;
 
+            // ------------------------------------------------------------
+            // Fiber photometry (single-point) acquisition
+            // ------------------------------------------------------------
+            // Stored in .flim header (public fields are serialized).
+            // fiberStartMode: 0 = soft trigger (start on first photon)
+            //                1 = external trigger (start on marker)
+            public bool fiberPhotometryMode = false;
+            public double fiberBin_ms = 20.0; // sampling interval (ms)
+            public int fiberStartMode = 0;
+
+            // ------------------------------------------------------------
+            // Line-scan trace (closed polygon vertices)
+            // ------------------------------------------------------------
+            // Stored in .flim header (public fields are serialized).
+            // These arrays store polygon vertices in image pixel coordinates (NOT the full voltage waveform).
+            // The trace is assumed closed (last point connects back to the first).
+            public double[] LineScanArrayX = null;
+            public double[] LineScanArrayY = null;
+            // Original requested number of time points (lines) for line-scan trace acquisitions.
+            // When saving progressively in chunks/frames, actual stored height may be padded to a multiple of linesPerFrame.
+            public int LineScanTimePoints = 0;
+            // True when the acquisition itself was performed in line-scan (time-axis) mode.
+            public bool isLineScanAcquisition = false;
+
             public bool enableMiniScopeClock = false;
             public double FClkFreq = 240000;
             public double SClkFreq = 60000;
@@ -223,6 +269,12 @@ namespace FLIMage
             public double[] FastZ_PhaseRange = new double[] { 35, 145 };
             public double FastZ_umPerSlice = 1.0;
             public double FastZ_degreePerSlice = 4.0;
+
+            public bool photon_file_format = false; //photon file = version 3.
+
+            public int ResonantScanTurnOffAfterXSeconds = 60;
+
+            public string datetime_formatter = "yyyy-MM-ddTHH:mm:ss.fff";
 
             public double[] FOV_calculation(double objMag)
             {
@@ -245,22 +297,68 @@ namespace FLIMage
 
             public double PixelTime()
             {
-                return ((msPerLine * fillFraction) / (double)pixelsPerLine / 1000.0);
+                double msPerLine1 = msPerLineActual();
+                double fillFraction1 = (resonantScanning || polygonScanning) ? fillFraction_resonant : fillFraction;
+
+                return ((msPerLine1 * fillFraction1) / (double)pixelsPerLine / 1000.0);
             }
+
+            public DateTime estimatedAcquiredTime(int frame, int slice)
+            {
+                var trigger1 = DateTime.ParseExact(triggerTime, datetime_formatter, null);
+                return trigger1.AddSeconds(frameInterval() * frame + AcqTimePerPage() * slice);
+            }
+
+            public DateTime acquiredTime()
+            {
+                return DateTime.ParseExact(triggerTime, datetime_formatter, null);
+            }
+
+            public string timeToString(DateTime time1)
+            {
+                return time1.ToString(datetime_formatter);
+            }
+
+            public double msPerLineActual()
+            {
+                double msPerLine1 = msPerLine;
+
+                if (resonantScanning || polygonScanning)
+                    msPerLine1 = resonant_msPerLine;
+                else if (fastZScan)
+                    msPerLine1 = FastZ_msPerLine;
+
+
+                return msPerLine1;
+            }
+
+            public double AcqTimePerPage()
+            {
+                return frameInterval() * nFrames;
+            }
+
+            /// <summary>
+            /// Time to take a frame in seconds.
+            /// </summary>
+            /// <returns></returns>
             public double frameInterval()
             {
-                return ((double)linesPerFrame * msPerLine / 1000.0);
+                double msPerLine1 = msPerLineActual();
+                return ((double)linesPerFrame * msPerLine1 / 1000.0);
             }
 
             public double[] frameAveInterval()
             {
+                double frame_interval = frameInterval();
+
                 double[] frameAveInterval = new double[aveFrameA.Length];
+
                 for (int i = 0; i < aveFrameA.Length; i++)
                 {
                     if (aveFrameA[i])
-                        frameAveInterval[i] = ((double)linesPerFrame * msPerLine * (double)nAveFrame / 1000.0);
+                        frameAveInterval[i] = frame_interval * (double)nAveFrame;
                     else
-                        frameAveInterval[i] = ((double)linesPerFrame * msPerLine / 1000.0);
+                        frameAveInterval[i] = frame_interval;
                 }
 
                 return frameAveInterval;
@@ -313,6 +411,8 @@ namespace FLIMage
             public string name = "pulse set";
             public int pulse_number = 1;
 
+            public bool MainShutterOpenDuringUncaging = true;
+
             public bool uncage_whileImage = false;
             public bool sync_withFrame = false;
             public bool sync_withSlice = true;
@@ -345,6 +445,8 @@ namespace FLIMage
             public double[] Position = { -1, -1 }; //Frac in image.
             public double[] PositionV = { 0, 0 }; //Voltage
             public double[] CalibV = { 0, 0 }; //Voltage
+            public double[] Calib_beta = { 1, 1 }; //Shrink / enlarge uncaging.
+
             //Multipositions::
             public bool multiUncagingPosition = false;
             public bool rotatePosition = false;
@@ -371,6 +473,8 @@ namespace FLIMage
                 public int[] fit_range2 = { 3, 120 };
                 public double[] fit_param1 = { 1000, 2.6, 100, 1.1, 0.1, 1.8 };
                 public double[] fit_param2 = { 1000, 2.6, 100, 1.1, 0.1, 1.8 };
+                public double[] upper_threshold = { -1, -1 };
+                public double[] lower_threshold = { 5, 5 };
             }
         }
 
@@ -443,14 +547,21 @@ namespace FLIMage
             public String fileName = "test001";
             public bool numberedFile = true;
             public bool channelsInSeparatedFile = false;
+            public bool fastSaving = false;
+            public bool useOmeTiff = false;
             public int fileChannel = 0;
             public int fileCounter = 1;
             public String extension = ".flim";
+            public String extension_ome = ".btf";
+            public String extension_photon = ".phtn";
+            public String extension_photon_archive = ".photon";
             public String BH_initFile = "spcm.ini";
             public bool useCommandFile = false;
 
             public Files_Setting()
             {
+                var versionText = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3).Replace(".", "_");
+
                 pathName = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + FLIMfolderPath + Path.DirectorySeparatorChar + "test";
                 pathNameIntensity = pathName + Path.DirectorySeparatorChar + "Intensity";
                 pathNameFLIM = pathName + Path.DirectorySeparatorChar + "FLIM";
@@ -458,10 +569,34 @@ namespace FLIMage
                 initFileName = initFolderPath + Path.DirectorySeparatorChar + "FLIM_init.txt";
                 deviceFileName = initFolderPath + Path.DirectorySeparatorChar + "FLIM_deviceFile_V2.txt";
                 BH_initFile = initFolderPath + Path.DirectorySeparatorChar + "spcm.ini";
-                defaultInitFile = initFolderPath + Path.DirectorySeparatorChar + "Default.txt";
+                defaultInitFile = initFolderPath + Path.DirectorySeparatorChar + "Default-" + versionText + ".txt";
                 commandPathName = initFolderPath + Path.DirectorySeparatorChar + "Command";
                 uncagePathName = initFolderPath + Path.DirectorySeparatorChar + "Uncaging";
                 windowsInfoPath = initFolderPath + Path.DirectorySeparatorChar + "WindowsInfo";
+            }
+
+            public String GetPhotonFilePath(bool archive)
+            {
+                var filepath = fullName();
+                return fromFullNameToPhotonFilePath(filepath, archive);
+            }
+
+            public String fromPhotonFileToFullPath(string photonFile)
+            {
+                var path1 = Path.GetDirectoryName(photonFile);
+                var filename = Path.GetFileNameWithoutExtension(photonFile);
+                return String.Format("{0}{1}{2}{3}", path1, Path.DirectorySeparatorChar, filename, extension);
+            }
+
+            public String fromFullNameToPhotonFilePath(string fullFileName, bool archive)
+            {
+                var ext = extension_photon;
+                if (archive)
+                    ext = extension_photon_archive;
+
+                var path1 = Path.GetDirectoryName(fullFileName);
+                var filename = Path.GetFileNameWithoutExtension(fullFileName);
+                return String.Format("{0}{1}{2}{3}", path1, Path.DirectorySeparatorChar, filename, ext);
             }
 
             public void fromFullNameToFolderPathAndFileName(String fullFileName)
@@ -536,6 +671,9 @@ namespace FLIMage
             public String fullName(int channel)
             {
                 fileChannel = channel;
+                if (useOmeTiff && !string.IsNullOrWhiteSpace(extension_ome)
+                    && !string.Equals(extension, extension_ome, StringComparison.OrdinalIgnoreCase))
+                    extension = extension_ome;
                 if (numberedFile)
                 {
                     if (!channelsInSeparatedFile)
@@ -551,7 +689,7 @@ namespace FLIMage
                     else
                         fileName = String.Format("{0}_Ch{1}", baseName, channel + 1);
 
-                    return (String.Format("{0}{2}fileName{1}", fileName, extension, Path.DirectorySeparatorChar));
+                    return Path.Combine(pathName, fileName + extension);
                 }
             }
 

@@ -9,9 +9,11 @@ flim = FLIM_Com()
 flim.start()
 
 if flim.Connected:
-    flim.messageReceived += FLIM_message_received #Add your function to  handle.
+    flim.messageReceived += FLIM_message_received #Add your function to handle.
 
 flim.sendCommand('Command') #You can send command to FLIMage
+
+flim.disconnect() #should be called to close the pipe server at the end.
     
 @author: Ryohei Yasuda
 
@@ -55,8 +57,11 @@ class Event:
     __len__  = getHandlerCount
     
 class FLIM_Com:        
-    def __init__(self):
+    def __init__(self, notify: bool = True):
         self.debug = False #More message printed for Debug mode.
+        self.notify = notify
+        self.clientR = None
+        self.clientW = None
         self.__handShakeCode = 'FLIMage'
         self.writeServerName = 'FLIMageW'
         self.readServerName = 'FLIMageR'
@@ -68,14 +73,25 @@ class FLIM_Com:
         self.Initializing = False
         self.initFilePath = os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_PERSONAL, None, 0), initFilePath)
         if not os.path.isdir(self.initFilePath):
-            os.mkdier(self.initFilePath)
-        
+            os.makedirs(self.initFilePath)
+        self.Received = ''
+           
+    def __enter__(self):
+        self.start()
+        if self.Connected:
+            if self.notify:
+                self.messageReceived.handle(FLIM_message_received) 
+            return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.disconnect()
+
     def start(self):
         self.Initializing = True
         for i in range(10): #Try 10 times.
             self.Connected = False
             self.startServer() #It does not do anything if server is already activated.
-            time.sleep(0.3)
+            time.sleep(0.1)
             self.startConnection()
             if self.Connected:
                 break
@@ -131,7 +147,12 @@ class FLIM_Com:
             self.__readMessage(self.clientR)
             self.messageReceived(self.Received, 'R')
         except:
-            if not self.Initializing: #During initialization, it may happen.
+            # If still Connected, this is an unexpected drop (e.g. FLIMage exited):
+            # notify/reconnect via failureHandle. If Connected is already False, an
+            # intentional disconnect closed the handle, so just let the loop exit quietly
+            # (avoids a busy-loop that kept re-raising on every read).
+            # by Kengo(Claude) 06-09-2026
+            if self.Connected:
                 self.failureHandle()
             
     def failureHandle(self):
@@ -146,10 +167,8 @@ class FLIM_Com:
 
     def __repeatReceiving(self):
         while self.Connected:
-            if not self.Connected:
-                break
-            else:
-                self.receiveOne()
+            self.receiveOne()
+        # print('Thread end\n', end="")
             
     def startReceiving(self):
         self.thread = threading.Thread(target=self.__repeatReceiving)
@@ -158,14 +177,26 @@ class FLIM_Com:
         
     def disconnect(self):
         if self.Connected:
-            self.Connected = False
-            self.__sendMessage(self.clientW, 'Disconnect')
-            self.messageReceived('PIPE disconnected', 'PIPE')
+            self.Connected = False  # set first so the receive thread exits quietly
+            try:
+                self.__sendMessage(self.clientW, 'Disconnect')
+                self.messageReceived('PIPE disconnected', 'PIPE')
+            except Exception:
+                # FLIMage may have already closed the pipe (e.g. error 232,
+                # 'The pipe is being closed.'). Skip the notify and just clean up.
+                # by Kengo(Claude) 06-09-2026
+                print('Disconnect: pipe already closing\n', end="")
+            self.close()
 
     def close(self):
         self.Connected = False
-        self.clientR.Close()
-        self.clientW.Close()     
+        # Do NOT CloseHandle here. The receive thread may be blocked in a synchronous
+        # ReadFile on clientR; closing that handle from this (UI) thread blocks until the
+        # read completes -> 'Not Responding'. Just drop the references and let the handles
+        # be released by GC once the receive thread unblocks (FLIMage closes its end on
+        # 'Disconnect', which makes the pending ReadFile return). by Kengo(Claude) 06-10-2026
+        self.clientR = None
+        self.clientW = None
 
     def __handShake(self, client):
         self.__readMessage(client)
@@ -178,9 +209,9 @@ class FLIM_Com:
             
     def __sendMessage(self, client, str1):
         s_code = bytes(str1, 'utf-8')
-        len1 = len(s_code);
+        len1 = len(s_code)
         if len1 > 65535:
-            s_code = s_code[0:65534]
+            s_code = s_code[0:65535]
             len1 = 65535
 
         win32file.WriteFile(client, bytes([int(len1/256)]))
@@ -196,6 +227,7 @@ class FLIM_Com:
         l_data = data1* 256 + data2
         self.Received = win32file.ReadFile(client, l_data)[1].decode("utf-8")
 
+
 """
 Example event triggered message. FLIMage sometimes send message like
 AcquisitionDone, or MotorMoveDone etc. 
@@ -205,7 +237,7 @@ def FLIM_message_received(data, source):
         print (f'    Message Received: {data}\n', end="") 
         #For PIPE, end="" and include "\n" is more stable.
     else:
-        print (f'    Reply: {data}\n', end="");
+        print (f'    Reply: {data}\n', end="")
 
 
 if __name__ == "__main__":
@@ -213,5 +245,15 @@ if __name__ == "__main__":
     flim.start()
     
     if flim.Connected:
-        flim.messageReceived += FLIM_message_received #Add your function to  handle.
-        
+        flim.messageReceived += FLIM_message_received #Add your function to handle.
+
+    flim.sendCommand('GetVersion') #You can send command to FLIMage 
+    flim.sendCommand('State.Acq.zoom')
+
+    flim.disconnect() #disconnect from Pipe server
+
+    # #Example of using with statement
+    # #This will automatically call start() and disconnect() methods.
+    # with FLIM_Com() as flim:
+    #     flim.sendCommand('GetVersion')
+    #     flim.sendCommand('State.Acq.zoom') 

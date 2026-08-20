@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,10 +11,14 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
 {
     public class MotorCtrl
     {
+        MotorCtrl_MPC200 mpc200;
         MotorCtrl_MP285A mp285a;
         ThorMCMX000 thorMCMX000;
         MotorCtrl_ThorMCM3001 thorMCM3001;
         MotorCtrl_ZoZoLab zozolab;
+        ASI_MS2000 asi_ms2000;
+        MotorCtrl_ThorMCM301 thorMCM301;
+        ZaberMotor zaber_motor;
 
         public event MotorHandler MotH;
         public MotrEventArgs e = new MotrEventArgs("");
@@ -23,7 +27,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
         object controller_object;
 
         public double maxDistanceXY = 500; //micrometers
-        public double maxDistanceZ = 100;
+        public double maxDistanceZ = 250;
 
         public int N_Coordinate = 3;
 
@@ -44,7 +48,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
         public double resolutionY; //=0.04
         public double resolutionZ; //=0.005
 
-        public double[] tolerance_um = { 0.2, 0.2, 0.05 };
+        public double[] tolerance_um = { 0.1, 0.1, 0.02 }; //{ 0.2, 0.2, 0.05 } // KENGO reduced the tolerance for more precise positioning
 
         public double[] velocity = new double[3];
         public double[] maxVelocity = new double[3];
@@ -80,7 +84,21 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
         public MotorCtrl(String MotorType_in, String Comport, double[] resolution, double[] velocity, double[] steps, int motorDisplayUpdateTime)
         {
             MotorDisplayUpdateTime_ms = motorDisplayUpdateTime;
-            if (MotorType_in == "MP-285" || MotorType_in == "MP285")
+            if (MotorType_in.ToLower() == "mpc200")
+            {
+                MotorType = MotorTypeEnum.mpc200;
+                mpc200 = new MotorCtrl_MPC200(Comport, resolution, (int)velocity[0], false, motorDisplayUpdateTime);
+
+                connected = mpc200.connected;
+
+                if (mpc200.connected)
+                {
+                    mpc200.MotH += new MotorCtrl_MPC200.MotorHandler(MotorListenerA);
+                    resolution = mpc200.GetResolution();
+                    controller_object = mpc200;
+                }
+            }
+            else if (MotorType_in == "MP-285" || MotorType_in == "MP285")
             {
                 MotorType = MotorTypeEnum.mp285a;
                 mp285a = new MotorCtrl_MP285A(Comport, resolution, (int)velocity[0], false, MotorDisplayUpdateTime_ms);
@@ -105,7 +123,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                     controller_object = mp285a;
                 }
             }
-            else if (MotorType_in.ToLower().Contains("mcm300") || MotorType_in.ToLower().Contains("mcm500") || MotorType_in.ToLower().Contains("bscope"))
+            else if (MotorType_in.ToLower().Contains("mcm300") || MotorType_in.ToLower().Contains("mcm500") || MotorType_in.ToLower().Contains("bscope") || MotorType_in.ToLower().Contains("zstepper"))
             {
                 //This is based on Thorlab DLL.
                 MotorType = MotorTypeEnum.thorMCM3000;
@@ -113,6 +131,8 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                     MotorType = MotorTypeEnum.thorMCM5000;
                 else if (MotorType_in.ToLower().Contains("bscope"))
                     MotorType = MotorTypeEnum.thorBScope;
+                else if (MotorType_in.ToLower().Contains("zstepper"))
+                    MotorType = MotorTypeEnum.thorZStepper;
 
                 tolerance_um = new double[] { 0.2, 0.2, 0.2 };
 
@@ -151,6 +171,52 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                     resolution = thorMCM3001.GetResolution();
                     controller_object = thorMCM3001;
                 }
+            }
+            else if (MotorType_in.Contains("ASI") && MotorType_in.Contains("MS2000"))
+            {
+                asi_ms2000 = new ASI_MS2000(Comport, MotorDisplayUpdateTime_ms);
+                //20250630 Tetsuya,  Z tolerance_um cannot be smaller than 0.1, even if you change the preciseness in MS2000 (PC Z = 0.000001). 
+                // otherwise, position wobbles because of MoveMotor_Certified()
+                // 20260417 XY tolerance set to 0.15 um.
+                // The MS2000 W command has 0.1 um resolution, so the measured position can
+                // legitimately report 0.1 um off from the commanded target (W rounding).
+                // 0.15 um > 0.1 um avoids spurious retries caused by that W-rounding error
+                // while still being tighter than PCROS-level hardware precision.
+                tolerance_um = new double[] { 0.15, 0.15, 0.2 };
+                //20250630 Tetsuya, till here
+                connected = asi_ms2000.connected;
+                if (connected)
+                {
+                    asi_ms2000.MotH += new ASI_MS2000.MotorHandler(MotorListenerASI2000);
+                    resolution = asi_ms2000.GetResolution();
+                    controller_object = asi_ms2000;
+                }
+            }
+            else if (MotorType_in.Contains("MCM301"))
+            {
+                MotorType = MotorTypeEnum.thorMCM301;
+                Comport = "COM5";
+                thorMCM301 = new MotorCtrl_ThorMCM301(Comport, MotorType_in, MotorDisplayUpdateTime_ms);
+                tolerance_um = new double[] { 0.2, 0.2, 0.2 };
+                connected = thorMCM301.connected;
+                if (connected)
+                {
+                    thorMCM301.MotH += new MotorCtrl_ThorMCM301.MotorHandler(MotorListenerThor301);
+                    resolution = thorMCM301.GetResolution(); // get correct resolution
+                    controller_object = thorMCM301;
+                }
+            }
+            else if (MotorType_in.Contains("Zaber"))
+            {
+                MotorType = MotorTypeEnum.zaber;
+                zaber_motor = new ZaberMotor(Comport, MotorDisplayUpdateTime_ms);
+                connected = zaber_motor.connected;
+                if (connected)
+                {
+                    zaber_motor.MotH += new ZaberMotor.MotorHandler(MotorListnerZaber);
+                    controller_object = zaber_motor;
+                }
+
             }
 
             if (controller_object == null)
@@ -327,6 +393,24 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             MotH?.Invoke(this, e);
         }
 
+        public void MotorListenerASI2000(ASI_MS2000 th, MotrEventArgs e)
+        {
+            getParameters();
+            MotH?.Invoke(this, e);
+        }
+
+        public void MotorListnerZaber(ZaberMotor th, MotrEventArgs e)
+        {
+            getParameters();
+            MotH?.Invoke(this, e);
+        }
+
+        public void MotorListenerThor301(MotorCtrl_ThorMCM301 th, MotrEventArgs e)
+        {
+            getParameters();
+            MotH?.Invoke(this, e);
+        }
+
         public void Stop()
         {
             if (controller_object == null)
@@ -352,55 +436,66 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             if (controller_object == null)
                 return;
 
-                var XYZ = (double[])controller_object.GetType().GetMethod("GetNewPosition").Invoke(controller_object, null);
-                XNewPos = XYZ[0];
-                YNewPos = XYZ[1];
-                ZNewPos = XYZ[2];
+            var XYZ = (double[])controller_object.GetType().GetMethod("GetNewPosition").Invoke(controller_object, null);
+            XNewPos = XYZ[0];
+            YNewPos = XYZ[1];
+            ZNewPos = XYZ[2];
         }
 
         public void getVelocity()
         {
+            //This function simply get veolcity already obtained from getStatus()
+
             if (controller_object == null)
                 return;
 
             if (MotorType == MotorTypeEnum.mp285a)
             {
-                //mp285a.GetStatus();
                 velocity[0] = mp285a.velocity;
                 maxVelocity[0] = mp285a.maxVelocity;
                 minVelocity[0] = mp285a.minVelocity;
-                tString = mp285a.tString;
+            }
+            else if (MotorType == MotorTypeEnum.mpc200)
+            {
+                velocity[0] = mpc200.velocity;
+                maxVelocity[0] = mpc200.maxVelocity;
+                minVelocity[0] = mpc200.minVelocity;
             }
             else if (MotorType == MotorTypeEnum.zozolab)
             {
-                //zozolab.GetStatus();
                 velocity[0] = zozolab.velocity;
                 maxVelocity[0] = zozolab.maxVelocity;
                 minVelocity[0] = zozolab.minVelocity;
-                tString = zozolab.tString;
+            }
+            else if (MotorType == MotorTypeEnum.thorMCM301)
+            {
+                velocity[0] = thorMCM301.velocity_fine;
+                maxVelocity[0] = thorMCM301.maxVelocity;
+                minVelocity[0] = thorMCM301.minVelocity;
             }
             else
             {
-                tString = (String)controller_object.GetType().GetField("tString").GetValue(controller_object);
+                //controller_object.GetType().GetMethod("GetStatus").Invoke(controller_object, null);
+                maxVelocity[0] = 100000;
+                minVelocity[0] = 0;
+                velocity = (double[])controller_object.GetType().GetField("velocity").GetValue(controller_object);
+
             }
-            //else
-            //{
-            //    velocity = (double[])controller_object.GetType().GetField("velocity").GetValue(controller_object);
-            //    maxVelocity = (double[])controller_object.GetType().GetField("maxVelocity").GetValue(controller_object);
-            //    minVelocity = (double[])controller_object.GetType().GetField("minVelocity").GetValue(controller_object);
-            //    tString = (String)controller_object.GetType().GetField("tString").GetValue(controller_object);
-            //}
+
         }
 
 
         public void getParameters()
         {
+            //tString is a string directly from the motor. Not processed.
             if (controller_object == null)
                 return;
 
             getPos();
             getNewPos();
             getVelocity();
+
+            tString = (String)controller_object.GetType().GetField("tString").GetValue(controller_object);
         }
 
 
@@ -438,28 +533,54 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             XRelPos = XPos - XRefPos;
             YRelPos = YPos - YRefPos;
             ZRelPos = ZPos - ZRefPos;
-
-            XRelPos_um = XRelPos * resolutionX;
-            YRelPos_um = YRelPos * resolutionY;
-            ZRelPos_um = ZRelPos * resolutionZ;
+            if (MotorType == MotorTypeEnum.thorMCM301)
+            {
+                XRelPos_um = XRelPos / 1000; // nm to um
+                YRelPos_um = YRelPos / 1000;
+                ZRelPos_um = ZRelPos / 1000;
+            }
+            else
+            {
+                XRelPos_um = XRelPos * resolutionX;
+                YRelPos_um = YRelPos * resolutionY;
+                ZRelPos_um = ZRelPos * resolutionZ;
+            }
             return new double[] { XRelPos_um, YRelPos_um, ZRelPos_um };
         }
 
         public double[] getCalibratedAbsolutePosition()
         {
             getParameters();
-            XPos_um = XPos * resolutionX;
-            YPos_um = YPos * resolutionY;
-            ZPos_um = ZPos * resolutionZ;
+            if (MotorType == MotorTypeEnum.thorMCM301)
+            {
+                XPos_um = XPos / 1000; // nm to um
+                YPos_um = YPos / 1000;
+                ZPos_um = ZPos / 1000;
+            }
+            else
+            {
+                XPos_um = XPos * resolutionX;
+                YPos_um = YPos * resolutionY;
+                ZPos_um = ZPos * resolutionZ;
+            }
             return new double[] { XPos_um, YPos_um, ZPos_um };
         }
 
         public double[] getCalibratedAbsoluteNewPosition()
         {
             getParameters();
-            XNewPos_um = XNewPos * resolutionX;
-            YNewPos_um = YNewPos * resolutionY;
-            ZNewPos_um = ZNewPos * resolutionZ;
+            if (MotorType == MotorTypeEnum.thorMCM301)
+            {
+                XNewPos_um = XNewPos / 1000; // nm to um
+                YNewPos_um = YNewPos / 1000;
+                ZNewPos_um = ZNewPos / 1000;
+            }
+            else
+            {
+                XNewPos_um = XNewPos * resolutionX;
+                YNewPos_um = YNewPos * resolutionY;
+                ZNewPos_um = ZNewPos * resolutionZ;
+            }
             return new double[] { XNewPos_um, YNewPos_um, ZNewPos_um };
         }
 
@@ -502,7 +623,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                 WaitUntilMovementDone();
             }
 
-            stack_Position = MotorCtrl.StackPosition.Start;
+            stack_Position = MotorCtrl.StackPosition.End;
             GetPosition();
         }
 
@@ -554,6 +675,10 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                 mp285a.GetStatus();
                 velocity[0] = mp285a.velocity;
             }
+            else if (MotorType == MotorTypeEnum.mpc200)
+            {
+                velocity[0] = mpc200.velocity;
+            }
             else if (MotorType == MotorTypeEnum.zozolab)
             {
                 velocity[0] = zozolab.velocity;
@@ -563,6 +688,9 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
 
         public void GetPosition()
         {
+            if (controller_object == null)
+                return;
+
             try
             {
                 controller_object.GetType().GetMethod("GetPosition").Invoke(controller_object, null);
@@ -581,9 +709,19 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             double maxStepXY = maxDistanceXY;
             double maxStepZ = maxDistanceZ;
 
-            double StepSizeX = Math.Abs(XNewPos - XPos) * resolutionX;
-            double StepSizeY = Math.Abs(YNewPos - YPos) * resolutionY;
-            double StepSizeZ = Math.Abs(ZNewPos - ZPos) * resolutionZ;
+            double StepSizeX, StepSizeY, StepSizeZ;
+            if (MotorType == MotorTypeEnum.thorMCM301)
+            {
+                StepSizeX = Math.Abs(XNewPos - XPos) / 1000; // nm to um
+                StepSizeY = Math.Abs(YNewPos - YPos) / 1000;
+                StepSizeZ = Math.Abs(ZNewPos - ZPos) / 1000;
+            }
+            else
+            {
+                StepSizeX = Math.Abs(XNewPos - XPos) * resolutionX;
+                StepSizeY = Math.Abs(YNewPos - YPos) * resolutionY;
+                StepSizeZ = Math.Abs(ZNewPos - ZPos) * resolutionZ;
+            }
 
             if ((StepSizeZ > maxStepZ || StepSizeX > maxStepXY || StepSizeY > maxStepXY) && warningOn)
             {
@@ -622,10 +760,13 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             bool smallerThanTol = true;
             for (int i = 0; i < 3; i++)
             {
-                if (Math.Abs(cur_xyz_um[i] - new_xyz_um[i]) >= tolerance_um[i])
+                if (cur_xyz_um[i] != double.NaN)
                 {
-                    smallerThanTol = false;
-                    break;
+                    if (Math.Abs(cur_xyz_um[i] - new_xyz_um[i]) > tolerance_um[i])
+                    {
+                        smallerThanTol = false;
+                        break;
+                    }
                 }
             }
 
@@ -657,7 +798,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             //this.Enabled = false;
             if (!IfStepTooBig(warningOn))
                 SetPosition(); //Actual movement.
-
+                
             if (waitUntilFinish) //For external command it will be always true.
             {
                 WaitUntilMovementDone();
@@ -677,16 +818,19 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             ZStack_nSlices = nSlices;
         }
 
-        public void SetTopPosition()
+        public void SetTopPosition(MouseButtons b)
         {
             GetPosition();
             double[] position = CurrentUncalibratedPosition();
             ZStackStart = position[2];
+            stack_Position = MotorCtrl.StackPosition.Start;
+            // KENGO BEGIN 2025-11-06
+            // If clicked by right button, recalculate ZStack_Stepsize using ZStackStart and ZStackEnd
+            if (b == MouseButtons.Right)
+                CalcNSlices(ZStack_Stepsize);
             ZStackCenter = ZStackStart + ZStackHalfStroke();
             ZStackEnd = ZStackStart + 2 * ZStackHalfStroke();
-            stack_Position = MotorCtrl.StackPosition.Start;
-            CalcNSlices(ZStack_Stepsize);
-            ZStackCenter = ZStackStart + ZStackHalfStroke();
+            // KENGO END
         }
 
         public void SetCenterPosition()
@@ -695,7 +839,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             stack_Position = MotorCtrl.StackPosition.Center;
         }
 
-        public void SetBottomPosition()
+        public void SetBottomPosition(MouseButtons b)
         {
             if (ZStackStart == minMotorVal)
                 MessageBox.Show("Please choose Start position first");
@@ -705,8 +849,13 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                 double[] position = CurrentUncalibratedPosition();
                 ZStackEnd = position[2];
                 stack_Position = MotorCtrl.StackPosition.End;
-                CalcNSlices(ZStack_Stepsize);
-                ZStackCenter = ZStackStart + ZStackHalfStroke();
+                // KENGO BEGIN 2025-11-06
+                // If clicked by right button, recalculate ZStack_Stepsize using ZStackStart and ZStackEnd
+                if (b == MouseButtons.Right)
+                    CalcNSlices(ZStack_Stepsize);
+                ZStackCenter = ZStackEnd - ZStackHalfStroke();
+                ZStackStart = ZStackEnd - 2 * ZStackHalfStroke();
+                // KENGO END
             }
         }
 
@@ -780,10 +929,22 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             {
                 zozolab.SetVelocity((int)value[0]);
             }
-            //else if (MotorType == MotorTypeEnum.thorMCM3000 || MotorType == MotorTypeEnum.thorMCM5000) //NOT implemented yet.
-            //{
-            //    thorMCMX000.SetVelocity(value);
-            //}
+            else if (MotorType == MotorTypeEnum.mpc200)
+            {
+                mpc200.SetVelocity((int)value[0]);
+            }
+            else if (MotorType == MotorTypeEnum.thorMCM3000 || MotorType == MotorTypeEnum.thorMCM5000) //NOT implemented yet.
+            {
+                //    thorMCMX000.SetVelocity(value);
+            }
+            else if (MotorType == MotorTypeEnum.thorMCM301)
+            {
+                thorMCM301.SetVelocity((int)value[0]);
+            }
+            else
+            {
+                controller_object.GetType().GetMethod("SetVelocity").Invoke(controller_object, new object[] { (int)value[0] });
+            }
         }
 
 
@@ -818,9 +979,43 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
         {
             double[] currentXYZ = CurrentUncalibratedPosition();
             double[] movementXYZ = new double[3];
-            movementXYZ[0] = currentXYZ[0] + Stepsize_um[0] / resolutionX;
-            movementXYZ[1] = currentXYZ[1] + Stepsize_um[1] / resolutionY;
-            movementXYZ[2] = currentXYZ[2] + Stepsize_um[2] / resolutionZ;
+
+            // Always step from the previously commanded target (prevNewXYZ), not from the
+            // current measured position (currentXYZ).  The MS2000 W command has 0.1 um
+            // resolution, so the measured position can be ~0.1 um off from the commanded
+            // target after each move.  If we use currentXYZ as the base for every step,
+            // that ~0.1 um residual error gets encoded into the next target and accumulates
+            // with every step (drift).  Using prevNewXYZ as the base means each step is
+            // always relative to the intended position, so a +1/-1 um cycle always returns
+            // the commanded target to exactly where it started.
+            //
+            // Safety: if prevNewXYZ differs from currentXYZ by more than 100 controller
+            // units (~10 um), treat it as uninitialized and fall back to currentXYZ.
+            // This guards against the very first step after startup before XNewPos has been
+            // synced (constructor now syncs, but the safety check is kept as a belt-and-braces).
+            getNewPos(); // refresh XNewPos/YNewPos/ZNewPos from controller
+            double[] prevNewXYZ = new double[] { XNewPos, YNewPos, ZNewPos };
+            const double uninitThreshold = 100.0; // controller units (~10 um)
+
+            if (MotorType == MotorTypeEnum.thorMCM301) // for MCM301, XYZ is in nm unit
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    bool prevValid = Math.Abs(prevNewXYZ[i] - currentXYZ[i]) <= uninitThreshold * 1000;
+                    double basePos = prevValid ? prevNewXYZ[i] : currentXYZ[i];
+                    movementXYZ[i] = basePos + Stepsize_um[i] * 1000;
+                }
+            }
+            else
+            {
+                double[] res = new double[] { resolutionX, resolutionY, resolutionZ };
+                for (int i = 0; i < 3; i++)
+                {
+                    bool prevValid = Math.Abs(prevNewXYZ[i] - currentXYZ[i]) <= uninitThreshold;
+                    double basePos = prevValid ? prevNewXYZ[i] : currentXYZ[i];
+                    movementXYZ[i] = basePos + Stepsize_um[i] / res[i];
+                }
+            }
             SetNewPosition(movementXYZ);
         }
 
@@ -845,17 +1040,24 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
 
         public void HardZero()
         {
-            controller_object.GetType().GetMethod("HardZero").Invoke(controller_object, null); 
+            controller_object.GetType().GetMethod("HardZero").Invoke(controller_object, null);
         }
 
         public enum MotorTypeEnum
         {
             mp285a = 1,
-            thorMCM3000 = 2,
-            thorMCM3001 = 3,
-            thorMCM5000 = 4,
-            thorBScope = 5,
-            zozolab = 6,
+            zozolab = 2,
+            asi_ms2000 = 3,
+            mpc200 = 4,
+
+            thorMCM3000 = 11,
+            thorMCM3001 = 12,
+            thorMCM5000 = 13,
+            thorBScope = 14,
+            thorZStepper = 15,
+
+            thorMCM301 = 16,
+            zaber = 20,
         }
 
         public enum DeviceMode

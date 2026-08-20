@@ -188,11 +188,11 @@ namespace FLIMage.Plugins
         /// Save State in setting file.
         /// </summary>
         /// <param name="ID"></param>
-        /// <param name="state"></param>
-        void SaveSettingFile(int ID, ScanParameters state)
+        /// <param name="state1"></param>
+        void SaveSettingFile(int ID, ScanParameters state1)
         {
             String fn = Path.GetFileNameWithoutExtension(flimage.State.Files.initFileName);
-            FileIO fo = new FileIO(state);
+            FileIO fo = new FileIO(state1);
             String str1 = fo.AllSetupValues_nonDevice();
             str1 = fn + ";" + "\r\n" + str1;
             string fileName = StateFileName(ID);
@@ -902,7 +902,7 @@ namespace FLIMage.Plugins
             flimage.ReSetupValues(true);
         }
 
-        public void EditProc(ScanParameters state, int selected)
+        public void EditProc(ScanParameters state1, int selected)
         {
             int repetition = Convert.ToInt32(ImageSequenceGridView.Rows[selected].Cells["Repetition"].Value);
             int ID = Convert.ToInt32(ImageSequenceGridView.Rows[selected].Cells["SettingID"].Value);
@@ -911,11 +911,11 @@ namespace FLIMage.Plugins
             var proc_string = (String)(ImageSequenceGridView.Rows[selected].Cells["Procedure"].Value);
 
             ImageSeqProcedure im_seq_proc;
-            var fileIO = new FileIO(state);
+            var fileIO = new FileIO(state1);
 
             if (selected >= procedureList.Count)
             {
-                im_seq_proc = new ImageSeqProcedure(proc_string, repetition, interval_ms, exclusive, ID, state);
+                im_seq_proc = new ImageSeqProcedure(proc_string, repetition, interval_ms, exclusive, ID, state1);
                 for (int i = 0; i < selected + 1; i++)
                 {
                     procedureList.Add(im_seq_proc);
@@ -926,7 +926,7 @@ namespace FLIMage.Plugins
             else
             {
                 im_seq_proc = procedureList[selected];
-                im_seq_proc = new ImageSeqProcedure(proc_string, repetition, interval_ms, exclusive, ID, state);
+                im_seq_proc = new ImageSeqProcedure(proc_string, repetition, interval_ms, exclusive, ID, state1);
             }
 
             procedureList[selected] = im_seq_proc;
@@ -1039,23 +1039,23 @@ namespace FLIMage.Plugins
             ApplyBMP();
         }
 
-        public double[][] GetPosition_Mirror_Motor_Combined(ScanParameters state)
+        public double[][] GetPosition_Mirror_Motor_Combined(ScanParameters state1)
         {
             double[][] position2;
-            var position1 = (double[])state.Motor.motorPosition.Clone();
+            var position1 = (double[])state1.Motor.motorPosition.Clone();
 
-            double[] voltage_xy_shift = new double[] { state.Acq.XOffset, state.Acq.YOffset };
-            double[] xy_shift_um = ImageParameterCalculation.voltage2micrometers_XY(voltage_xy_shift, state);
+            double[] voltage_xy_shift = new double[] { state1.Acq.XOffset, state1.Acq.YOffset };
+            double[] xy_shift_um = ImageParameterCalculation.voltage2micrometers_XY(voltage_xy_shift, state1);
 
-            if (state.Acq.nSplitScanning > 1)
+            if (state1.Acq.nSplitScanning > 1)
             {
-                int nSplit = state.Acq.nSplitScanning;
+                int nSplit = state1.Acq.nSplitScanning;
                 position2 = new double[nSplit][];
                 for (int j = 0; j < nSplit; j++)
                 {
                     position2[j] = (double[])position1.Clone();
-                    voltage_xy_shift = new double[] { state.Acq.XOffset_Split[j], state.Acq.YOffset_Split[j] };
-                    xy_shift_um = ImageParameterCalculation.voltage2micrometers_XY(voltage_xy_shift, state);
+                    voltage_xy_shift = new double[] { state1.Acq.XOffset_Split[j], state1.Acq.YOffset_Split[j] };
+                    xy_shift_um = ImageParameterCalculation.voltage2micrometers_XY(voltage_xy_shift, state1);
                     for (int i = 0; i < 2; i++)
                         position2[j][i] += xy_shift_um[i];
                 }
@@ -1155,9 +1155,10 @@ namespace FLIMage.Plugins
                 {
                     var flim = new FLIMData(flimage.State);
                     var nPages = FileIO.SetupFLIMOpening(file, out string header);
-                    for (short page = 0; page < nPages; page++)
+                    for (long page = 0; page < nPages; page++)
                     {
-                        FileIO.OpenFLIMTiffFilePage(file, page, page, flim, page == 0, true);
+                        int pageIndex = page > int.MaxValue ? int.MaxValue : (int)page;
+                        FileIO.OpenFLIMTiffFilePage(file, page, pageIndex, flim, page == 0, true);
                     }
 
                     Channel_Pulldown.SelectedIndex = channel_to_analyze;
@@ -1921,10 +1922,10 @@ namespace FLIMage.Plugins
             public int ID;
 
             public ImageSeqProcedure(string proc_string, int repetition, double interval_milliseconds, bool exclusive,
-                int id, ScanParameters state)
+                int id, ScanParameters state1)
             {
                 Interval_ms = interval_milliseconds;
-                var fileIO = new FileIO(state);
+                var fileIO = new FileIO(state1);
                 State = fileIO.CopyState();
                 Exclusive = exclusive;
                 Repetition = repetition;
@@ -2056,16 +2057,20 @@ namespace FLIMage.Plugins
 
         }
 
+        /// <summary>
+        /// Filling the GUI window for Image Sequence file.
+        /// </summary>
+        /// <param name="selectedIndex"></param>
         private void FillGUI_State(int selectedIndex)
         {
             if (procedureList.Count > selectedIndex && selectedIndex >= 0)
             {
-                var state = procedureList[selectedIndex].State;
-                nFrames_textBox.Text = state.Acq.nFrames.ToString();
-                nSlices_textBox.Text = state.Acq.nSlices.ToString();
-                nAveFrame_textBox.Text = state.Acq.nAveFrame.ToString();
-                ZStack_checkBox.Checked = state.Acq.ZStack;
-                aveFrame_checkBox.Checked = state.Acq.aveFrame;
+                var state1 = procedureList[selectedIndex].State;
+                nFrames_textBox.Text = state1.Acq.nFrames.ToString();
+                nSlices_textBox.Text = state1.Acq.nSlices.ToString();
+                nAveFrame_textBox.Text = state1.Acq.nAveFrame.ToString();
+                ZStack_checkBox.Checked = state1.Acq.ZStack;
+                aveFrame_checkBox.Checked = state1.Acq.aveFrame;
                 setting_groupBox.Text = "Setting parameters ID " + procedureList[selectedIndex].ID;
             }
         }
@@ -2074,14 +2079,14 @@ namespace FLIMage.Plugins
         {
             if (procedureList.Count > procedure_selectedRawIndex && procedure_selectedRawIndex >= 0)
             {
-                var state = procedureList[procedure_selectedRawIndex].State;
-                Int32.TryParse(nFrames_textBox.Text, out state.Acq.nFrames);
-                Int32.TryParse(nSlices_textBox.Text, out state.Acq.nSlices);
-                Double.TryParse(sliceStep_textBox.Text, out state.Acq.sliceStep);
-                Int32.TryParse(nAveFrame_textBox.Text, out state.Acq.nAveFrame);
-                state.Acq.ZStack = ZStack_checkBox.Checked;
-                state.Acq.aveFrame = aveFrame_checkBox.Checked;
-                EditProc(state, procedure_selectedRawIndex);
+                var state1 = procedureList[procedure_selectedRawIndex].State;
+                Int32.TryParse(nFrames_textBox.Text, out state1.Acq.nFrames);
+                Int32.TryParse(nSlices_textBox.Text, out state1.Acq.nSlices);
+                Double.TryParse(sliceStep_textBox.Text, out state1.Acq.sliceStep);
+                Int32.TryParse(nAveFrame_textBox.Text, out state1.Acq.nAveFrame);
+                state1.Acq.ZStack = ZStack_checkBox.Checked;
+                state1.Acq.aveFrame = aveFrame_checkBox.Checked;
+                EditProc(state1, procedure_selectedRawIndex);
             }
 
         }

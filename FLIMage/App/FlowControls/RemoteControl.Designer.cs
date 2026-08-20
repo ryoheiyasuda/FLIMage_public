@@ -117,9 +117,9 @@
             this.ServerOn.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ServerOn.Location = new System.Drawing.Point(359, 14);
             this.ServerOn.Name = "ServerOn";
-            this.ServerOn.Size = new System.Drawing.Size(182, 17);
+            this.ServerOn.Size = new System.Drawing.Size(180, 17);
             this.ServerOn.TabIndex = 275;
-            this.ServerOn.Text = "Connect with client through PIPE";
+            this.ServerOn.Text = "Enable PIPE server (listening)";
             this.ServerOn.UseVisualStyleBackColor = true;
             this.ServerOn.Click += new System.EventHandler(this.ServerOn_Click);
             // 
@@ -296,7 +296,7 @@
             this.LoadNotifyLIstButton.UseVisualStyleBackColor = true;
             this.LoadNotifyLIstButton.Click += new System.EventHandler(this.LoadNotifyLIstButton_Click);
             // 
-            // Script
+            // RemoteControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -312,7 +312,9 @@
             this.Controls.Add(this.ClientMessageWindow);
             this.Controls.Add(this.FLIMageMessageWindow);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "Script";
+            this.MaximumSize = new System.Drawing.Size(612, 473);
+            this.MinimumSize = new System.Drawing.Size(612, 473);
+            this.Name = "RemoteControl";
             this.Text = "Remote control & script";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Script_FormClosing);
             this.Load += new System.EventHandler(this.Script_Load);

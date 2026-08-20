@@ -45,6 +45,13 @@ namespace FLIMage
             this.Text = "FLIMage! Version " + versionText;
         }
 
+        public void SetComputerID(int id)
+        {
+            computerID = id;
+            MacID.Text = "Computer id: " + computerID;
+            MacID.Visible = true;
+        }
+
         private void splashScreen_Load(object sender, EventArgs e)
         {
 

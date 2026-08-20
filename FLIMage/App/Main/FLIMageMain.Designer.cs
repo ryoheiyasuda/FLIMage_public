@@ -1,4 +1,4 @@
-﻿namespace FLIMage
+namespace FLIMage
 {
     partial class FLIMageMain
     {
@@ -134,7 +134,7 @@
             this.Vel_Down = new System.Windows.Forms.Button();
             this.Vel_Up = new System.Windows.Forms.Button();
             this.ContRead = new System.Windows.Forms.CheckBox();
-            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.MotorGroupPanel = new System.Windows.Forms.GroupBox();
             this.StayMotorRadio = new System.Windows.Forms.RadioButton();
             this.BackToCenterRadio = new System.Windows.Forms.RadioButton();
             this.BackToStartRadio = new System.Windows.Forms.RadioButton();
@@ -144,8 +144,8 @@
             this.Set_Center = new System.Windows.Forms.Button();
             this.GoEnd = new System.Windows.Forms.Button();
             this.GoStart = new System.Windows.Forms.Button();
-            this.label77 = new System.Windows.Forms.Label();
-            this.label72 = new System.Windows.Forms.Label();
+            this.StopLabel = new System.Windows.Forms.Label();
+            this.StartLabel = new System.Windows.Forms.Label();
             this.NSlices2 = new System.Windows.Forms.TextBox();
             this.label42 = new System.Windows.Forms.Label();
             this.ZEnd = new System.Windows.Forms.TextBox();
@@ -183,6 +183,7 @@
             this.plotPockelsGrabToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.plotScanXYToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.plotScanXYZToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.plotLineScanTraceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.windowsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.imageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.realtimePlotToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -262,6 +263,9 @@
             this.LoopButton = new System.Windows.Forms.Button();
             this.label88 = new System.Windows.Forms.Label();
             this.tb_Pparameters = new System.Windows.Forms.TabPage();
+            this.Rising_Input_CB = new System.Windows.Forms.CheckBox();
+            this.rising_sync_CB = new System.Windows.Forms.CheckBox();
+            this.CFD_on_CB = new System.Windows.Forms.CheckBox();
             this.SPC_Off = new System.Windows.Forms.Button();
             this.Binning_setting = new System.Windows.Forms.ComboBox();
             this.st_binning = new System.Windows.Forms.Label();
@@ -322,7 +326,12 @@
             this.label41 = new System.Windows.Forms.Label();
             this.ch_zc_level2 = new System.Windows.Forms.TextBox();
             this.tbScanParam = new System.Windows.Forms.TabPage();
-            this.ZScanWithPiezo = new System.Windows.Forms.CheckBox();
+            this.Trig_Every2 = new System.Windows.Forms.CheckBox();
+            this.SaveDelayResonant = new System.Windows.Forms.Button();
+            this.BiDrecYCheck = new System.Windows.Forms.CheckBox();
+            this.label58 = new System.Windows.Forms.Label();
+            this.label57 = new System.Windows.Forms.Label();
+            this.resonantMaxVoltage = new System.Windows.Forms.TextBox();
             this.ScanDelayUpDown_nano = new System.Windows.Forms.NumericUpDown();
             this.EOMDelayUpDown_us = new System.Windows.Forms.NumericUpDown();
             this.LineClockDelay_us = new System.Windows.Forms.NumericUpDown();
@@ -339,14 +348,12 @@
             this.FocusAverage = new System.Windows.Forms.TextBox();
             this.label98 = new System.Windows.Forms.Label();
             this.SineWaveScanning_CB = new System.Windows.Forms.CheckBox();
+            this.LineScan_CB = new System.Windows.Forms.CheckBox();
             this.SwitchXY_CB = new System.Windows.Forms.CheckBox();
             this.FlipY_CB = new System.Windows.Forms.CheckBox();
             this.FlipX_CB = new System.Windows.Forms.CheckBox();
             this.label105 = new System.Windows.Forms.Label();
-            this.MeasuredLineCorrection = new System.Windows.Forms.Label();
             this.ResonantCheckBox = new System.Windows.Forms.CheckBox();
-            this.label95 = new System.Windows.Forms.Label();
-            this.LineTimeCorrection = new System.Windows.Forms.TextBox();
             this.ScanFraction = new System.Windows.Forms.TextBox();
             this.FillFraction = new System.Windows.Forms.TextBox();
             this.MaxRangeY = new System.Windows.Forms.TextBox();
@@ -355,7 +362,6 @@
             this.MsPerLine = new System.Windows.Forms.TextBox();
             this.pixelsPerLine = new System.Windows.Forms.TextBox();
             this.linesPerFrame = new System.Windows.Forms.TextBox();
-            this.label94 = new System.Windows.Forms.Label();
             this.BiDirecCB = new System.Windows.Forms.CheckBox();
             this.label89 = new System.Windows.Forms.Label();
             this.pb32 = new System.Windows.Forms.Button();
@@ -378,6 +384,7 @@
             this.st_ScanDelay = new System.Windows.Forms.Label();
             this.st_FillFraction = new System.Windows.Forms.Label();
             this.AdvancedCheck = new System.Windows.Forms.CheckBox();
+            this.ZScanWithPiezo = new System.Windows.Forms.CheckBox();
             this.FlipMotorMirrorY = new System.Windows.Forms.CheckBox();
             this.FlipMotorMirrorX = new System.Windows.Forms.CheckBox();
             this.tb_ScanParameters = new System.Windows.Forms.TabPage();
@@ -431,6 +438,10 @@
             this.label6 = new System.Windows.Forms.Label();
             this.FLIMSetting_tab = new System.Windows.Forms.TabControl();
             this.ChannelSettingTab = new System.Windows.Forms.TabPage();
+            this.photon_safe_mode_CB = new System.Windows.Forms.CheckBox();
+            this.photon_file_CB = new System.Windows.Forms.CheckBox();
+            this.UseOmeTiff_CB = new System.Windows.Forms.CheckBox();
+            this.FastSaving_CB = new System.Windows.Forms.CheckBox();
             this.KeepPagesInMemoryCheck = new System.Windows.Forms.CheckBox();
             this.AveFrameSeparately = new System.Windows.Forms.CheckBox();
             this.SaveInSeparatedFileCheck = new System.Windows.Forms.CheckBox();
@@ -446,9 +457,6 @@
             this.SwitchXY_MotorMirror = new System.Windows.Forms.CheckBox();
             this.StatusText = new System.Windows.Forms.Label();
             this.MotorStatus = new System.Windows.Forms.Label();
-            this.resonantMaxVoltage = new System.Windows.Forms.TextBox();
-            this.label57 = new System.Windows.Forms.Label();
-            this.label58 = new System.Windows.Forms.Label();
             tabPage2 = new System.Windows.Forms.TabPage();
             tabPage2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.PowerSlider2)).BeginInit();
@@ -457,7 +465,7 @@
             this.groupBox1.SuspendLayout();
             this.stagePanel.SuspendLayout();
             this.groupBox11.SuspendLayout();
-            this.groupBox3.SuspendLayout();
+            this.MotorGroupPanel.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.LaserPanel.SuspendLayout();
             this.laserPowerPanel.SuspendLayout();
@@ -599,7 +607,7 @@
             this.CurrentSlice.Name = "CurrentSlice";
             this.CurrentSlice.ReadOnly = true;
             this.CurrentSlice.Size = new System.Drawing.Size(40, 20);
-            this.CurrentSlice.TabIndex = 4;
+            this.CurrentSlice.TabIndex = 25;
             this.CurrentSlice.Text = "0";
             this.CurrentSlice.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -610,7 +618,8 @@
             this.NSlices.Margin = new System.Windows.Forms.Padding(1);
             this.NSlices.Name = "NSlices";
             this.NSlices.Size = new System.Drawing.Size(40, 20);
-            this.NSlices.TabIndex = 7;
+            this.NSlices.TabIndex = 27;
+            this.NSlices.Tag = "";
             this.NSlices.Text = "1";
             this.NSlices.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.NSlices.KeyDown += new System.Windows.Forms.KeyEventHandler(this.NSlices_KeyDown);
@@ -622,7 +631,8 @@
             this.NImages.Margin = new System.Windows.Forms.Padding(1);
             this.NImages.Name = "NImages";
             this.NImages.Size = new System.Drawing.Size(40, 20);
-            this.NImages.TabIndex = 9;
+            this.NImages.TabIndex = 4;
+            this.NImages.Tag = "NGRAB";
             this.NImages.Text = "1";
             this.NImages.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.NImages.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -635,7 +645,8 @@
             this.CurrentImage.Margin = new System.Windows.Forms.Padding(1);
             this.CurrentImage.Name = "CurrentImage";
             this.CurrentImage.Size = new System.Drawing.Size(40, 20);
-            this.CurrentImage.TabIndex = 8;
+            this.CurrentImage.TabIndex = 2;
+            this.CurrentImage.Tag = "NGRAB";
             this.CurrentImage.Text = "0";
             this.CurrentImage.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -647,7 +658,7 @@
             this.st_slices.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_slices.Name = "st_slices";
             this.st_slices.Size = new System.Drawing.Size(42, 15);
-            this.st_slices.TabIndex = 12;
+            this.st_slices.TabIndex = 23;
             this.st_slices.Text = "Slices";
             // 
             // st_NAcq
@@ -658,7 +669,7 @@
             this.st_NAcq.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_NAcq.Name = "st_NAcq";
             this.st_NAcq.Size = new System.Drawing.Size(49, 14);
-            this.st_NAcq.TabIndex = 18;
+            this.st_NAcq.TabIndex = 3;
             this.st_NAcq.Text = "#Frames";
             // 
             // st_NDone
@@ -669,7 +680,7 @@
             this.st_NDone.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_NDone.Name = "st_NDone";
             this.st_NDone.Size = new System.Drawing.Size(43, 14);
-            this.st_NDone.TabIndex = 19;
+            this.st_NDone.TabIndex = 1;
             this.st_NDone.Text = "Current";
             // 
             // ImageInterval
@@ -679,7 +690,8 @@
             this.ImageInterval.Margin = new System.Windows.Forms.Padding(1);
             this.ImageInterval.Name = "ImageInterval";
             this.ImageInterval.Size = new System.Drawing.Size(53, 20);
-            this.ImageInterval.TabIndex = 20;
+            this.ImageInterval.TabIndex = 6;
+            this.ImageInterval.Tag = "NGRAB";
             this.ImageInterval.Text = "120.00";
             this.ImageInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.ImageInterval.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -692,7 +704,7 @@
             this.st_interval.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_interval.Name = "st_interval";
             this.st_interval.Size = new System.Drawing.Size(59, 14);
-            this.st_interval.TabIndex = 21;
+            this.st_interval.TabIndex = 5;
             this.st_interval.Text = "Interval (s)";
             // 
             // SliceInterval
@@ -702,7 +714,8 @@
             this.SliceInterval.Margin = new System.Windows.Forms.Padding(1);
             this.SliceInterval.Name = "SliceInterval";
             this.SliceInterval.Size = new System.Drawing.Size(53, 20);
-            this.SliceInterval.TabIndex = 22;
+            this.SliceInterval.TabIndex = 29;
+            this.SliceInterval.Tag = "";
             this.SliceInterval.Text = "0";
             this.SliceInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.SliceInterval.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -715,9 +728,10 @@
             this.FrameInterval.Name = "FrameInterval";
             this.FrameInterval.ReadOnly = true;
             this.FrameInterval.Size = new System.Drawing.Size(53, 20);
-            this.FrameInterval.TabIndex = 23;
+            this.FrameInterval.TabIndex = 6;
             this.FrameInterval.Text = "0.256";
             this.FrameInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.FrameInterval.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
             // 
             // ETime
             // 
@@ -727,7 +741,7 @@
             this.ETime.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.ETime.Name = "ETime";
             this.ETime.Size = new System.Drawing.Size(48, 18);
-            this.ETime.TabIndex = 54;
+            this.ETime.TabIndex = 4;
             this.ETime.Text = "00.00";
             this.ETime.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -738,7 +752,7 @@
             this.AveFrame_Check.Location = new System.Drawing.Point(251, 54);
             this.AveFrame_Check.Name = "AveFrame_Check";
             this.AveFrame_Check.Size = new System.Drawing.Size(46, 18);
-            this.AveFrame_Check.TabIndex = 101;
+            this.AveFrame_Check.TabIndex = 17;
             this.AveFrame_Check.Text = "Ave";
             this.AveFrame_Check.UseVisualStyleBackColor = true;
             this.AveFrame_Check.Click += new System.EventHandler(this.AverageFrame_ValueChanged);
@@ -750,7 +764,8 @@
             this.NumAve.Margin = new System.Windows.Forms.Padding(1);
             this.NumAve.Name = "NumAve";
             this.NumAve.Size = new System.Drawing.Size(40, 20);
-            this.NumAve.TabIndex = 104;
+            this.NumAve.TabIndex = 8;
+            this.NumAve.Tag = "";
             this.NumAve.Text = "4";
             this.NumAve.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.NumAve.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -763,7 +778,7 @@
             this.CurrentFrame.Name = "CurrentFrame";
             this.CurrentFrame.ReadOnly = true;
             this.CurrentFrame.Size = new System.Drawing.Size(40, 20);
-            this.CurrentFrame.TabIndex = 105;
+            this.CurrentFrame.TabIndex = 2;
             this.CurrentFrame.Text = "0";
             this.CurrentFrame.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -815,8 +830,9 @@
             this.PowerBoxImageParameters.Location = new System.Drawing.Point(10, 27);
             this.PowerBoxImageParameters.Name = "PowerBoxImageParameters";
             this.PowerBoxImageParameters.Size = new System.Drawing.Size(300, 205);
-            this.PowerBoxImageParameters.TabIndex = 116;
+            this.PowerBoxImageParameters.TabIndex = 2;
             this.PowerBoxImageParameters.TabStop = false;
+            this.PowerBoxImageParameters.Tag = "NAGrab";
             this.PowerBoxImageParameters.Text = "Image Sequence";
             // 
             // N_AveragedFrames2
@@ -827,7 +843,7 @@
             this.N_AveragedFrames2.Name = "N_AveragedFrames2";
             this.N_AveragedFrames2.ReadOnly = true;
             this.N_AveragedFrames2.Size = new System.Drawing.Size(40, 20);
-            this.N_AveragedFrames2.TabIndex = 348;
+            this.N_AveragedFrames2.TabIndex = 19;
             this.N_AveragedFrames2.Text = "0";
             this.N_AveragedFrames2.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -839,7 +855,7 @@
             this.N_AveragedFrames1.Name = "N_AveragedFrames1";
             this.N_AveragedFrames1.ReadOnly = true;
             this.N_AveragedFrames1.Size = new System.Drawing.Size(40, 20);
-            this.N_AveragedFrames1.TabIndex = 340;
+            this.N_AveragedFrames1.TabIndex = 16;
             this.N_AveragedFrames1.Text = "0";
             this.N_AveragedFrames1.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.N_AveragedFrames1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -852,7 +868,7 @@
             this.N_AveragedSlices.Name = "N_AveragedSlices";
             this.N_AveragedSlices.ReadOnly = true;
             this.N_AveragedSlices.Size = new System.Drawing.Size(40, 20);
-            this.N_AveragedSlices.TabIndex = 342;
+            this.N_AveragedSlices.TabIndex = 37;
             this.N_AveragedSlices.Text = "1";
             this.N_AveragedSlices.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.N_AveragedSlices.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -865,7 +881,7 @@
             this.NAveragedSliceLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.NAveragedSliceLabel.Name = "NAveragedSliceLabel";
             this.NAveragedSliceLabel.Size = new System.Drawing.Size(70, 14);
-            this.NAveragedSliceLabel.TabIndex = 357;
+            this.NAveragedSliceLabel.TabIndex = 36;
             this.NAveragedSliceLabel.Text = "Total N slices";
             // 
             // TotalNFrames2Label
@@ -876,7 +892,7 @@
             this.TotalNFrames2Label.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.TotalNFrames2Label.Name = "TotalNFrames2Label";
             this.TotalNFrames2Label.Size = new System.Drawing.Size(106, 14);
-            this.TotalNFrames2Label.TabIndex = 356;
+            this.TotalNFrames2Label.TabIndex = 18;
             this.TotalNFrames2Label.Text = "Total N frames (Ch2)";
             // 
             // N_AveSlices
@@ -886,7 +902,8 @@
             this.N_AveSlices.Margin = new System.Windows.Forms.Padding(1);
             this.N_AveSlices.Name = "N_AveSlices";
             this.N_AveSlices.Size = new System.Drawing.Size(40, 20);
-            this.N_AveSlices.TabIndex = 324;
+            this.N_AveSlices.TabIndex = 31;
+            this.N_AveSlices.Tag = "";
             this.N_AveSlices.Text = "4";
             this.N_AveSlices.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.N_AveSlices.Visible = false;
@@ -899,7 +916,7 @@
             this.NAveSliceLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.NAveSliceLabel.Name = "NAveSliceLabel";
             this.NAveSliceLabel.Size = new System.Drawing.Size(55, 14);
-            this.NAveSliceLabel.TabIndex = 355;
+            this.NAveSliceLabel.TabIndex = 30;
             this.NAveSliceLabel.Text = "#Average";
             // 
             // SliceIntervalLabel
@@ -910,7 +927,7 @@
             this.SliceIntervalLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.SliceIntervalLabel.Name = "SliceIntervalLabel";
             this.SliceIntervalLabel.Size = new System.Drawing.Size(59, 14);
-            this.SliceIntervalLabel.TabIndex = 354;
+            this.SliceIntervalLabel.TabIndex = 28;
             this.SliceIntervalLabel.Text = "Interval (s)";
             // 
             // label101
@@ -921,7 +938,7 @@
             this.label101.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label101.Name = "label101";
             this.label101.Size = new System.Drawing.Size(43, 14);
-            this.label101.TabIndex = 353;
+            this.label101.TabIndex = 24;
             this.label101.Text = "Current";
             // 
             // label102
@@ -932,7 +949,7 @@
             this.label102.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label102.Name = "label102";
             this.label102.Size = new System.Drawing.Size(42, 14);
-            this.label102.TabIndex = 352;
+            this.label102.TabIndex = 26;
             this.label102.Text = "#Slices";
             // 
             // AveFrame2_Check
@@ -942,7 +959,7 @@
             this.AveFrame2_Check.Location = new System.Drawing.Point(251, 75);
             this.AveFrame2_Check.Name = "AveFrame2_Check";
             this.AveFrame2_Check.Size = new System.Drawing.Size(46, 18);
-            this.AveFrame2_Check.TabIndex = 351;
+            this.AveFrame2_Check.TabIndex = 20;
             this.AveFrame2_Check.Text = "Ave";
             this.AveFrame2_Check.UseVisualStyleBackColor = true;
             this.AveFrame2_Check.Click += new System.EventHandler(this.AverageFrame_ValueChanged);
@@ -955,7 +972,7 @@
             this.TotalNFramesLabel1.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.TotalNFramesLabel1.Name = "TotalNFramesLabel1";
             this.TotalNFramesLabel1.Size = new System.Drawing.Size(106, 14);
-            this.TotalNFramesLabel1.TabIndex = 349;
+            this.TotalNFramesLabel1.TabIndex = 15;
             this.TotalNFramesLabel1.Text = "Total N frames (Ch1)";
             this.TotalNFramesLabel1.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
@@ -966,7 +983,7 @@
             this.aveSlice_Interval.Location = new System.Drawing.Point(72, 147);
             this.aveSlice_Interval.Name = "aveSlice_Interval";
             this.aveSlice_Interval.Size = new System.Drawing.Size(13, 14);
-            this.aveSlice_Interval.TabIndex = 346;
+            this.aveSlice_Interval.TabIndex = 33;
             this.aveSlice_Interval.Text = "0";
             // 
             // aveFrame_Interval
@@ -976,7 +993,7 @@
             this.aveFrame_Interval.Location = new System.Drawing.Point(77, 94);
             this.aveFrame_Interval.Name = "aveFrame_Interval";
             this.aveFrame_Interval.Size = new System.Drawing.Size(13, 14);
-            this.aveFrame_Interval.TabIndex = 344;
+            this.aveFrame_Interval.TabIndex = 22;
             this.aveFrame_Interval.Text = "0";
             // 
             // label5
@@ -987,7 +1004,7 @@
             this.label5.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(72, 14);
-            this.label5.TabIndex = 347;
+            this.label5.TabIndex = 32;
             this.label5.Text = "Time per ave:";
             // 
             // label4
@@ -998,7 +1015,7 @@
             this.label4.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(72, 14);
-            this.label4.TabIndex = 345;
+            this.label4.TabIndex = 21;
             this.label4.Text = "Time per ave:";
             // 
             // NFrames
@@ -1008,7 +1025,8 @@
             this.NFrames.Margin = new System.Windows.Forms.Padding(1);
             this.NFrames.Name = "NFrames";
             this.NFrames.Size = new System.Drawing.Size(40, 20);
-            this.NFrames.TabIndex = 343;
+            this.NFrames.TabIndex = 4;
+            this.NFrames.Tag = "";
             this.NFrames.Text = "1";
             this.NFrames.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.NFrames.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -1021,7 +1039,7 @@
             this.AOCounter.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.AOCounter.Name = "AOCounter";
             this.AOCounter.Size = new System.Drawing.Size(13, 14);
-            this.AOCounter.TabIndex = 338;
+            this.AOCounter.TabIndex = 10;
             this.AOCounter.Text = "0";
             // 
             // label91
@@ -1032,7 +1050,7 @@
             this.label91.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label91.Name = "label91";
             this.label91.Size = new System.Drawing.Size(55, 14);
-            this.label91.TabIndex = 337;
+            this.label91.TabIndex = 9;
             this.label91.Text = "Scanning:";
             // 
             // SavedFileN
@@ -1043,7 +1061,7 @@
             this.SavedFileN.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.SavedFileN.Name = "SavedFileN";
             this.SavedFileN.Size = new System.Drawing.Size(13, 14);
-            this.SavedFileN.TabIndex = 335;
+            this.SavedFileN.TabIndex = 12;
             this.SavedFileN.Text = "0";
             // 
             // label16
@@ -1054,7 +1072,7 @@
             this.label16.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label16.Name = "label16";
             this.label16.Size = new System.Drawing.Size(41, 14);
-            this.label16.TabIndex = 334;
+            this.label16.TabIndex = 11;
             this.label16.Text = "Saved:";
             // 
             // label78
@@ -1065,7 +1083,7 @@
             this.label78.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label78.Name = "label78";
             this.label78.Size = new System.Drawing.Size(50, 15);
-            this.label78.TabIndex = 333;
+            this.label78.TabIndex = 0;
             this.label78.Text = "Frames";
             // 
             // label66
@@ -1076,7 +1094,7 @@
             this.label66.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label66.Name = "label66";
             this.label66.Size = new System.Drawing.Size(30, 14);
-            this.label66.TabIndex = 331;
+            this.label66.TabIndex = 13;
             this.label66.Text = "Ave:";
             // 
             // nAverageFrame
@@ -1087,7 +1105,7 @@
             this.nAverageFrame.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.nAverageFrame.Name = "nAverageFrame";
             this.nAverageFrame.Size = new System.Drawing.Size(13, 14);
-            this.nAverageFrame.TabIndex = 330;
+            this.nAverageFrame.TabIndex = 14;
             this.nAverageFrame.Text = "0";
             // 
             // AveSlices_check
@@ -1097,7 +1115,7 @@
             this.AveSlices_check.Location = new System.Drawing.Point(251, 147);
             this.AveSlices_check.Name = "AveSlices_check";
             this.AveSlices_check.Size = new System.Drawing.Size(46, 18);
-            this.AveSlices_check.TabIndex = 115;
+            this.AveSlices_check.TabIndex = 38;
             this.AveSlices_check.Text = "Ave";
             this.AveSlices_check.UseVisualStyleBackColor = true;
             this.AveSlices_check.Visible = false;
@@ -1111,7 +1129,7 @@
             this.Measured_slice_interval.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Measured_slice_interval.Name = "Measured_slice_interval";
             this.Measured_slice_interval.Size = new System.Drawing.Size(37, 14);
-            this.Measured_slice_interval.TabIndex = 117;
+            this.Measured_slice_interval.TabIndex = 40;
             this.Measured_slice_interval.Text = "0.00 s";
             // 
             // label3
@@ -1122,7 +1140,7 @@
             this.label3.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(79, 14);
-            this.label3.TabIndex = 116;
+            this.label3.TabIndex = 39;
             this.label3.Text = "Actual interval:";
             // 
             // label60
@@ -1133,7 +1151,7 @@
             this.label60.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label60.Name = "label60";
             this.label60.Size = new System.Drawing.Size(55, 14);
-            this.label60.TabIndex = 111;
+            this.label60.TabIndex = 7;
             this.label60.Text = "#Average";
             // 
             // Misc_about_Slice
@@ -1144,7 +1162,7 @@
             this.Misc_about_Slice.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Misc_about_Slice.Name = "Misc_about_Slice";
             this.Misc_about_Slice.Size = new System.Drawing.Size(29, 14);
-            this.Misc_about_Slice.TabIndex = 325;
+            this.Misc_about_Slice.TabIndex = 41;
             this.Misc_about_Slice.Text = "Misc";
             // 
             // ZStack_radio
@@ -1154,7 +1172,7 @@
             this.ZStack_radio.Location = new System.Drawing.Point(25, 176);
             this.ZStack_radio.Name = "ZStack_radio";
             this.ZStack_radio.Size = new System.Drawing.Size(63, 18);
-            this.ZStack_radio.TabIndex = 329;
+            this.ZStack_radio.TabIndex = 35;
             this.ZStack_radio.TabStop = true;
             this.ZStack_radio.Text = "Z-Stack";
             this.ZStack_radio.UseVisualStyleBackColor = true;
@@ -1167,7 +1185,7 @@
             this.Timelapse_radio.Location = new System.Drawing.Point(25, 160);
             this.Timelapse_radio.Name = "Timelapse_radio";
             this.Timelapse_radio.Size = new System.Drawing.Size(76, 18);
-            this.Timelapse_radio.TabIndex = 328;
+            this.Timelapse_radio.TabIndex = 34;
             this.Timelapse_radio.TabStop = true;
             this.Timelapse_radio.Text = "Time lapse";
             this.Timelapse_radio.UseVisualStyleBackColor = true;
@@ -1181,7 +1199,7 @@
             this.label2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(59, 14);
-            this.label2.TabIndex = 332;
+            this.label2.TabIndex = 5;
             this.label2.Text = "Interval (s)";
             // 
             // label7
@@ -1192,7 +1210,7 @@
             this.label7.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(43, 14);
-            this.label7.TabIndex = 331;
+            this.label7.TabIndex = 1;
             this.label7.Text = "Current";
             // 
             // label9
@@ -1203,7 +1221,7 @@
             this.label9.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(44, 14);
-            this.label9.TabIndex = 330;
+            this.label9.TabIndex = 3;
             this.label9.Text = "Number";
             // 
             // ETime2
@@ -1214,7 +1232,7 @@
             this.ETime2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.ETime2.Name = "ETime2";
             this.ETime2.Size = new System.Drawing.Size(39, 16);
-            this.ETime2.TabIndex = 323;
+            this.ETime2.TabIndex = 7;
             this.ETime2.Text = "00.00";
             this.ETime2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
@@ -1225,7 +1243,7 @@
             this.FocusButton.Margin = new System.Windows.Forms.Padding(1);
             this.FocusButton.Name = "FocusButton";
             this.FocusButton.Size = new System.Drawing.Size(79, 26);
-            this.FocusButton.TabIndex = 110;
+            this.FocusButton.TabIndex = 5;
             this.FocusButton.Text = "FOCUS";
             this.FocusButton.UseVisualStyleBackColor = true;
             this.FocusButton.Click += new System.EventHandler(this.FocusButton_Click);
@@ -1237,7 +1255,7 @@
             this.GrabButton.Margin = new System.Windows.Forms.Padding(1);
             this.GrabButton.Name = "GrabButton";
             this.GrabButton.Size = new System.Drawing.Size(80, 26);
-            this.GrabButton.TabIndex = 109;
+            this.GrabButton.TabIndex = 6;
             this.GrabButton.Tag = "GrabButton";
             this.GrabButton.Text = "GRAB";
             this.GrabButton.UseVisualStyleBackColor = true;
@@ -1256,8 +1274,9 @@
             this.XY_panel.Location = new System.Drawing.Point(146, 9);
             this.XY_panel.Name = "XY_panel";
             this.XY_panel.Size = new System.Drawing.Size(82, 119);
-            this.XY_panel.TabIndex = 266;
+            this.XY_panel.TabIndex = 19;
             this.XY_panel.TabStop = false;
+            this.XY_panel.Tag = "NAGrab";
             this.XY_panel.Text = "Step XY";
             // 
             // XYMotorStep
@@ -1267,7 +1286,7 @@
             this.XYMotorStep.Margin = new System.Windows.Forms.Padding(1);
             this.XYMotorStep.Name = "XYMotorStep";
             this.XYMotorStep.Size = new System.Drawing.Size(30, 20);
-            this.XYMotorStep.TabIndex = 135;
+            this.XYMotorStep.TabIndex = 1;
             this.XYMotorStep.Text = "1";
             this.XYMotorStep.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.XYMotorStep.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MotorTextChanged);
@@ -1280,7 +1299,7 @@
             this.label43.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label43.Name = "label43";
             this.label43.Size = new System.Drawing.Size(29, 13);
-            this.label43.TabIndex = 141;
+            this.label43.TabIndex = 0;
             this.label43.Text = "Step";
             // 
             // XUp
@@ -1289,7 +1308,7 @@
             this.XUp.Location = new System.Drawing.Point(54, 71);
             this.XUp.Name = "XUp";
             this.XUp.Size = new System.Drawing.Size(25, 23);
-            this.XUp.TabIndex = 140;
+            this.XUp.TabIndex = 4;
             this.XUp.Text = "→";
             this.XUp.UseVisualStyleBackColor = true;
             this.XUp.Click += new System.EventHandler(this.MotroStepMovementXYZ);
@@ -1300,7 +1319,7 @@
             this.XDown.Location = new System.Drawing.Point(4, 71);
             this.XDown.Name = "XDown";
             this.XDown.Size = new System.Drawing.Size(25, 23);
-            this.XDown.TabIndex = 139;
+            this.XDown.TabIndex = 3;
             this.XDown.Text = "←";
             this.XDown.UseVisualStyleBackColor = true;
             this.XDown.Click += new System.EventHandler(this.MotroStepMovementXYZ);
@@ -1311,7 +1330,7 @@
             this.YDown.Location = new System.Drawing.Point(29, 89);
             this.YDown.Name = "YDown";
             this.YDown.Size = new System.Drawing.Size(25, 23);
-            this.YDown.TabIndex = 138;
+            this.YDown.TabIndex = 6;
             this.YDown.Text = "↓";
             this.YDown.UseVisualStyleBackColor = true;
             this.YDown.Click += new System.EventHandler(this.MotroStepMovementXYZ);
@@ -1322,7 +1341,7 @@
             this.YUp.Location = new System.Drawing.Point(29, 56);
             this.YUp.Name = "YUp";
             this.YUp.Size = new System.Drawing.Size(25, 23);
-            this.YUp.TabIndex = 137;
+            this.YUp.TabIndex = 5;
             this.YUp.Text = "↑";
             this.YUp.UseVisualStyleBackColor = true;
             this.YUp.Click += new System.EventHandler(this.MotroStepMovementXYZ);
@@ -1335,7 +1354,7 @@
             this.label44.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label44.Name = "label44";
             this.label44.Size = new System.Drawing.Size(21, 13);
-            this.label44.TabIndex = 136;
+            this.label44.TabIndex = 2;
             this.label44.Text = "μm";
             // 
             // label45
@@ -1346,7 +1365,7 @@
             this.label45.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label45.Name = "label45";
             this.label45.Size = new System.Drawing.Size(0, 13);
-            this.label45.TabIndex = 265;
+            this.label45.TabIndex = 20;
             // 
             // label46
             // 
@@ -1357,7 +1376,7 @@
             this.label46.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label46.Name = "label46";
             this.label46.Size = new System.Drawing.Size(14, 14);
-            this.label46.TabIndex = 264;
+            this.label46.TabIndex = 3;
             this.label46.Text = "X";
             // 
             // label47
@@ -1369,7 +1388,7 @@
             this.label47.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label47.Name = "label47";
             this.label47.Size = new System.Drawing.Size(15, 14);
-            this.label47.TabIndex = 263;
+            this.label47.TabIndex = 7;
             this.label47.Text = "Y";
             // 
             // label48
@@ -1381,7 +1400,7 @@
             this.label48.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label48.Name = "label48";
             this.label48.Size = new System.Drawing.Size(14, 14);
-            this.label48.TabIndex = 262;
+            this.label48.TabIndex = 10;
             this.label48.Text = "Z";
             // 
             // label49
@@ -1392,7 +1411,7 @@
             this.label49.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label49.Name = "label49";
             this.label49.Size = new System.Drawing.Size(21, 14);
-            this.label49.TabIndex = 261;
+            this.label49.TabIndex = 5;
             this.label49.Text = "μm";
             // 
             // label50
@@ -1403,7 +1422,7 @@
             this.label50.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label50.Name = "label50";
             this.label50.Size = new System.Drawing.Size(21, 14);
-            this.label50.TabIndex = 260;
+            this.label50.TabIndex = 14;
             this.label50.Text = "μm";
             // 
             // label51
@@ -1414,7 +1433,7 @@
             this.label51.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label51.Name = "label51";
             this.label51.Size = new System.Drawing.Size(21, 14);
-            this.label51.TabIndex = 254;
+            this.label51.TabIndex = 15;
             this.label51.Text = "μm";
             // 
             // Zero_all
@@ -1424,7 +1443,7 @@
             this.Zero_all.Margin = new System.Windows.Forms.Padding(1);
             this.Zero_all.Name = "Zero_all";
             this.Zero_all.Size = new System.Drawing.Size(51, 20);
-            this.Zero_all.TabIndex = 258;
+            this.Zero_all.TabIndex = 17;
             this.Zero_all.Text = "Zero all";
             this.Zero_all.UseVisualStyleBackColor = true;
             this.Zero_all.Click += new System.EventHandler(this.Zero_all_Click);
@@ -1436,7 +1455,7 @@
             this.ZRead.Margin = new System.Windows.Forms.Padding(1);
             this.ZRead.Name = "ZRead";
             this.ZRead.Size = new System.Drawing.Size(50, 20);
-            this.ZRead.TabIndex = 255;
+            this.ZRead.TabIndex = 11;
             this.ZRead.Text = "0";
             this.ZRead.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -1447,7 +1466,7 @@
             this.YRead.Margin = new System.Windows.Forms.Padding(1);
             this.YRead.Name = "YRead";
             this.YRead.Size = new System.Drawing.Size(50, 20);
-            this.YRead.TabIndex = 257;
+            this.YRead.TabIndex = 8;
             this.YRead.Text = "0";
             this.YRead.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -1458,10 +1477,10 @@
             this.Set_bottom.Margin = new System.Windows.Forms.Padding(1);
             this.Set_bottom.Name = "Set_bottom";
             this.Set_bottom.Size = new System.Drawing.Size(38, 20);
-            this.Set_bottom.TabIndex = 253;
+            this.Set_bottom.TabIndex = 13;
             this.Set_bottom.Text = "Set";
             this.Set_bottom.UseVisualStyleBackColor = true;
-            this.Set_bottom.Click += new System.EventHandler(this.Set_bottom_Click);
+            this.Set_bottom.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Set_bottom_Click);
             // 
             // XRead
             // 
@@ -1470,7 +1489,7 @@
             this.XRead.Margin = new System.Windows.Forms.Padding(1);
             this.XRead.Name = "XRead";
             this.XRead.Size = new System.Drawing.Size(50, 20);
-            this.XRead.TabIndex = 256;
+            this.XRead.TabIndex = 4;
             this.XRead.Text = "0";
             this.XRead.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -1481,10 +1500,10 @@
             this.Set_Top.Margin = new System.Windows.Forms.Padding(1);
             this.Set_Top.Name = "Set_Top";
             this.Set_Top.Size = new System.Drawing.Size(38, 20);
-            this.Set_Top.TabIndex = 252;
+            this.Set_Top.TabIndex = 11;
             this.Set_Top.Text = "Set";
             this.Set_Top.UseVisualStyleBackColor = true;
-            this.Set_Top.Click += new System.EventHandler(this.Set_Top_Click);
+            this.Set_Top.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Set_Top_Click);
             // 
             // groupBox1
             // 
@@ -1497,8 +1516,9 @@
             this.groupBox1.Location = new System.Drawing.Point(231, 9);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(63, 119);
-            this.groupBox1.TabIndex = 271;
+            this.groupBox1.TabIndex = 21;
             this.groupBox1.TabStop = false;
+            this.groupBox1.Tag = "NAGrab";
             this.groupBox1.Text = "Step Z";
             // 
             // ZMotorStep
@@ -1508,7 +1528,7 @@
             this.ZMotorStep.Margin = new System.Windows.Forms.Padding(1);
             this.ZMotorStep.Name = "ZMotorStep";
             this.ZMotorStep.Size = new System.Drawing.Size(31, 20);
-            this.ZMotorStep.TabIndex = 142;
+            this.ZMotorStep.TabIndex = 1;
             this.ZMotorStep.Text = "1";
             this.ZMotorStep.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.ZMotorStep.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MotorTextChanged);
@@ -1521,7 +1541,7 @@
             this.label18.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label18.Name = "label18";
             this.label18.Size = new System.Drawing.Size(29, 13);
-            this.label18.TabIndex = 148;
+            this.label18.TabIndex = 0;
             this.label18.Text = "Step";
             // 
             // Zdown
@@ -1530,7 +1550,7 @@
             this.Zdown.Location = new System.Drawing.Point(15, 85);
             this.Zdown.Name = "Zdown";
             this.Zdown.Size = new System.Drawing.Size(31, 23);
-            this.Zdown.TabIndex = 147;
+            this.Zdown.TabIndex = 4;
             this.Zdown.Text = "↓";
             this.Zdown.UseVisualStyleBackColor = true;
             this.Zdown.Click += new System.EventHandler(this.MotroStepMovementXYZ);
@@ -1543,7 +1563,7 @@
             this.label53.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label53.Name = "label53";
             this.label53.Size = new System.Drawing.Size(21, 13);
-            this.label53.TabIndex = 143;
+            this.label53.TabIndex = 2;
             this.label53.Text = "μm";
             // 
             // Zup
@@ -1552,7 +1572,7 @@
             this.Zup.Location = new System.Drawing.Point(15, 62);
             this.Zup.Name = "Zup";
             this.Zup.Size = new System.Drawing.Size(31, 23);
-            this.Zup.TabIndex = 146;
+            this.Zup.TabIndex = 3;
             this.Zup.Text = "↑";
             this.Zup.UseVisualStyleBackColor = true;
             this.Zup.Click += new System.EventHandler(this.MotroStepMovementXYZ);
@@ -1564,7 +1584,7 @@
             this.zero_Z.Margin = new System.Windows.Forms.Padding(1);
             this.zero_Z.Name = "zero_Z";
             this.zero_Z.Size = new System.Drawing.Size(51, 20);
-            this.zero_Z.TabIndex = 260;
+            this.zero_Z.TabIndex = 18;
             this.zero_Z.Text = "Zero Z";
             this.zero_Z.UseVisualStyleBackColor = true;
             this.zero_Z.Click += new System.EventHandler(this.Zero_Z_Click);
@@ -1602,8 +1622,9 @@
             this.stagePanel.Location = new System.Drawing.Point(10, 403);
             this.stagePanel.Name = "stagePanel";
             this.stagePanel.Size = new System.Drawing.Size(300, 180);
-            this.stagePanel.TabIndex = 272;
+            this.stagePanel.TabIndex = 5;
             this.stagePanel.TabStop = false;
+            this.stagePanel.Tag = "";
             this.stagePanel.Text = "Stage";
             // 
             // usePiezoCheckBox
@@ -1613,7 +1634,7 @@
             this.usePiezoCheckBox.Location = new System.Drawing.Point(86, 106);
             this.usePiezoCheckBox.Name = "usePiezoCheckBox";
             this.usePiezoCheckBox.Size = new System.Drawing.Size(52, 18);
-            this.usePiezoCheckBox.TabIndex = 342;
+            this.usePiezoCheckBox.TabIndex = 22;
             this.usePiezoCheckBox.Text = "Piezo";
             this.usePiezoCheckBox.UseVisualStyleBackColor = true;
             // 
@@ -1624,7 +1645,8 @@
             this.StopMotorButton.Margin = new System.Windows.Forms.Padding(1);
             this.StopMotorButton.Name = "StopMotorButton";
             this.StopMotorButton.Size = new System.Drawing.Size(51, 40);
-            this.StopMotorButton.TabIndex = 290;
+            this.StopMotorButton.TabIndex = 25;
+            this.StopMotorButton.Tag = "NAGrab";
             this.StopMotorButton.Text = "Stop";
             this.StopMotorButton.UseVisualStyleBackColor = true;
             this.StopMotorButton.Click += new System.EventHandler(this.StopMotorButton_Click);
@@ -1635,7 +1657,7 @@
             this.ResetMotor.Location = new System.Drawing.Point(19, 56);
             this.ResetMotor.Name = "ResetMotor";
             this.ResetMotor.Size = new System.Drawing.Size(275, 42);
-            this.ResetMotor.TabIndex = 126;
+            this.ResetMotor.TabIndex = 9;
             this.ResetMotor.Text = "Reset motor and press this!";
             this.ResetMotor.UseVisualStyleBackColor = true;
             this.ResetMotor.Visible = false;
@@ -1648,7 +1670,7 @@
             this.CenterPiezoButton.Margin = new System.Windows.Forms.Padding(1);
             this.CenterPiezoButton.Name = "CenterPiezoButton";
             this.CenterPiezoButton.Size = new System.Drawing.Size(51, 40);
-            this.CenterPiezoButton.TabIndex = 289;
+            this.CenterPiezoButton.TabIndex = 25;
             this.CenterPiezoButton.Text = "Reset piezo";
             this.CenterPiezoButton.UseVisualStyleBackColor = true;
             this.CenterPiezoButton.Click += new System.EventHandler(this.CenterPiezoButton_Click);
@@ -1662,7 +1684,7 @@
             this.PiezoZLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.PiezoZLabel.Name = "PiezoZLabel";
             this.PiezoZLabel.Size = new System.Drawing.Size(14, 14);
-            this.PiezoZLabel.TabIndex = 288;
+            this.PiezoZLabel.TabIndex = 12;
             this.PiezoZLabel.Text = "Z";
             // 
             // PiezoZUnitLabel
@@ -1673,7 +1695,7 @@
             this.PiezoZUnitLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.PiezoZUnitLabel.Name = "PiezoZUnitLabel";
             this.PiezoZUnitLabel.Size = new System.Drawing.Size(21, 14);
-            this.PiezoZUnitLabel.TabIndex = 287;
+            this.PiezoZUnitLabel.TabIndex = 16;
             this.PiezoZUnitLabel.Text = "μm";
             // 
             // PiezoZ
@@ -1683,7 +1705,7 @@
             this.PiezoZ.Margin = new System.Windows.Forms.Padding(1);
             this.PiezoZ.Name = "PiezoZ";
             this.PiezoZ.Size = new System.Drawing.Size(50, 20);
-            this.PiezoZ.TabIndex = 286;
+            this.PiezoZ.TabIndex = 13;
             this.PiezoZ.Text = "0";
             this.PiezoZ.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -1693,7 +1715,7 @@
             this.MotorReadButton.Location = new System.Drawing.Point(15, 16);
             this.MotorReadButton.Name = "MotorReadButton";
             this.MotorReadButton.Size = new System.Drawing.Size(50, 20);
-            this.MotorReadButton.TabIndex = 284;
+            this.MotorReadButton.TabIndex = 0;
             this.MotorReadButton.Text = "Read";
             this.MotorReadButton.UseVisualStyleBackColor = true;
             this.MotorReadButton.Click += new System.EventHandler(this.MotorReadButton_Click);
@@ -1706,7 +1728,7 @@
             this.Motor_Status.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Motor_Status.Name = "Motor_Status";
             this.Motor_Status.Size = new System.Drawing.Size(16, 13);
-            this.Motor_Status.TabIndex = 279;
+            this.Motor_Status.TabIndex = 24;
             this.Motor_Status.Text = "...";
             // 
             // Relative
@@ -1718,7 +1740,7 @@
             this.Relative.Location = new System.Drawing.Point(74, 9);
             this.Relative.Name = "Relative";
             this.Relative.Size = new System.Drawing.Size(64, 18);
-            this.Relative.TabIndex = 285;
+            this.Relative.TabIndex = 1;
             this.Relative.Text = "Relative";
             this.Relative.UseVisualStyleBackColor = true;
             this.Relative.Click += new System.EventHandler(this.Relative_Click);
@@ -1732,8 +1754,9 @@
             this.groupBox11.Location = new System.Drawing.Point(71, 124);
             this.groupBox11.Name = "groupBox11";
             this.groupBox11.Size = new System.Drawing.Size(120, 51);
-            this.groupBox11.TabIndex = 281;
+            this.groupBox11.TabIndex = 23;
             this.groupBox11.TabStop = false;
+            this.groupBox11.Tag = "NAGrab";
             this.groupBox11.Text = "Velocity (Motor)";
             // 
             // Velocity
@@ -1742,8 +1765,9 @@
             this.Velocity.Location = new System.Drawing.Point(8, 20);
             this.Velocity.Margin = new System.Windows.Forms.Padding(1);
             this.Velocity.Name = "Velocity";
+            this.Velocity.ReadOnly = true;
             this.Velocity.Size = new System.Drawing.Size(50, 20);
-            this.Velocity.TabIndex = 283;
+            this.Velocity.TabIndex = 0;
             this.Velocity.Text = "0";
             this.Velocity.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Velocity.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Velocity_KeyDown);
@@ -1754,7 +1778,7 @@
             this.Vel_Down.Location = new System.Drawing.Point(89, 18);
             this.Vel_Down.Name = "Vel_Down";
             this.Vel_Down.Size = new System.Drawing.Size(25, 23);
-            this.Vel_Down.TabIndex = 278;
+            this.Vel_Down.TabIndex = 2;
             this.Vel_Down.Text = "↓";
             this.Vel_Down.UseVisualStyleBackColor = true;
             this.Vel_Down.Click += new System.EventHandler(this.Vel_Up_Click);
@@ -1765,7 +1789,7 @@
             this.Vel_Up.Location = new System.Drawing.Point(62, 18);
             this.Vel_Up.Name = "Vel_Up";
             this.Vel_Up.Size = new System.Drawing.Size(25, 23);
-            this.Vel_Up.TabIndex = 277;
+            this.Vel_Up.TabIndex = 1;
             this.Vel_Up.Text = "↑";
             this.Vel_Up.UseVisualStyleBackColor = true;
             this.Vel_Up.Click += new System.EventHandler(this.Vel_Up_Click);
@@ -1779,40 +1803,41 @@
             this.ContRead.Location = new System.Drawing.Point(74, 27);
             this.ContRead.Name = "ContRead";
             this.ContRead.Size = new System.Drawing.Size(51, 18);
-            this.ContRead.TabIndex = 284;
+            this.ContRead.TabIndex = 2;
             this.ContRead.Text = "Cont.";
             this.ContRead.UseVisualStyleBackColor = true;
             this.ContRead.CheckedChanged += new System.EventHandler(this.ContRead_CheckedChanged);
             // 
-            // groupBox3
+            // MotorGroupPanel
             // 
-            this.groupBox3.Controls.Add(this.StayMotorRadio);
-            this.groupBox3.Controls.Add(this.BackToCenterRadio);
-            this.groupBox3.Controls.Add(this.BackToStartRadio);
-            this.groupBox3.Controls.Add(this.ZCenter);
-            this.groupBox3.Controls.Add(this.GoCenter);
-            this.groupBox3.Controls.Add(this.CenterLabel);
-            this.groupBox3.Controls.Add(this.Set_Center);
-            this.groupBox3.Controls.Add(this.GoEnd);
-            this.groupBox3.Controls.Add(this.GoStart);
-            this.groupBox3.Controls.Add(this.label77);
-            this.groupBox3.Controls.Add(this.label72);
-            this.groupBox3.Controls.Add(this.NSlices2);
-            this.groupBox3.Controls.Add(this.label42);
-            this.groupBox3.Controls.Add(this.ZEnd);
-            this.groupBox3.Controls.Add(this.SliceStep);
-            this.groupBox3.Controls.Add(this.ZStart);
-            this.groupBox3.Controls.Add(this.st_step);
-            this.groupBox3.Controls.Add(this.st_um);
-            this.groupBox3.Controls.Add(this.Set_bottom);
-            this.groupBox3.Controls.Add(this.Set_Top);
-            this.groupBox3.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox3.Location = new System.Drawing.Point(10, 300);
-            this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(300, 103);
-            this.groupBox3.TabIndex = 274;
-            this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "Z stack";
+            this.MotorGroupPanel.Controls.Add(this.StayMotorRadio);
+            this.MotorGroupPanel.Controls.Add(this.BackToCenterRadio);
+            this.MotorGroupPanel.Controls.Add(this.BackToStartRadio);
+            this.MotorGroupPanel.Controls.Add(this.ZCenter);
+            this.MotorGroupPanel.Controls.Add(this.GoCenter);
+            this.MotorGroupPanel.Controls.Add(this.CenterLabel);
+            this.MotorGroupPanel.Controls.Add(this.Set_Center);
+            this.MotorGroupPanel.Controls.Add(this.GoEnd);
+            this.MotorGroupPanel.Controls.Add(this.GoStart);
+            this.MotorGroupPanel.Controls.Add(this.StopLabel);
+            this.MotorGroupPanel.Controls.Add(this.StartLabel);
+            this.MotorGroupPanel.Controls.Add(this.NSlices2);
+            this.MotorGroupPanel.Controls.Add(this.label42);
+            this.MotorGroupPanel.Controls.Add(this.ZEnd);
+            this.MotorGroupPanel.Controls.Add(this.SliceStep);
+            this.MotorGroupPanel.Controls.Add(this.ZStart);
+            this.MotorGroupPanel.Controls.Add(this.st_step);
+            this.MotorGroupPanel.Controls.Add(this.st_um);
+            this.MotorGroupPanel.Controls.Add(this.Set_bottom);
+            this.MotorGroupPanel.Controls.Add(this.Set_Top);
+            this.MotorGroupPanel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.MotorGroupPanel.Location = new System.Drawing.Point(10, 300);
+            this.MotorGroupPanel.Name = "MotorGroupPanel";
+            this.MotorGroupPanel.Size = new System.Drawing.Size(300, 103);
+            this.MotorGroupPanel.TabIndex = 4;
+            this.MotorGroupPanel.TabStop = false;
+            this.MotorGroupPanel.Tag = "NAGrab";
+            this.MotorGroupPanel.Text = "Z stack";
             // 
             // StayMotorRadio
             // 
@@ -1821,7 +1846,7 @@
             this.StayMotorRadio.Location = new System.Drawing.Point(201, 80);
             this.StayMotorRadio.Name = "StayMotorRadio";
             this.StayMotorRadio.Size = new System.Drawing.Size(47, 18);
-            this.StayMotorRadio.TabIndex = 341;
+            this.StayMotorRadio.TabIndex = 19;
             this.StayMotorRadio.Text = "Stay";
             this.StayMotorRadio.UseVisualStyleBackColor = true;
             this.StayMotorRadio.Click += new System.EventHandler(this.BackToCenterRadio_Click);
@@ -1834,7 +1859,7 @@
             this.BackToCenterRadio.Location = new System.Drawing.Point(8, 80);
             this.BackToCenterRadio.Name = "BackToCenterRadio";
             this.BackToCenterRadio.Size = new System.Drawing.Size(96, 18);
-            this.BackToCenterRadio.TabIndex = 340;
+            this.BackToCenterRadio.TabIndex = 17;
             this.BackToCenterRadio.TabStop = true;
             this.BackToCenterRadio.Text = "Back to Center";
             this.BackToCenterRadio.UseVisualStyleBackColor = true;
@@ -1847,7 +1872,7 @@
             this.BackToStartRadio.Location = new System.Drawing.Point(106, 80);
             this.BackToStartRadio.Name = "BackToStartRadio";
             this.BackToStartRadio.Size = new System.Drawing.Size(89, 18);
-            this.BackToStartRadio.TabIndex = 339;
+            this.BackToStartRadio.TabIndex = 18;
             this.BackToStartRadio.Text = "Back To Start";
             this.BackToStartRadio.UseVisualStyleBackColor = true;
             this.BackToStartRadio.Click += new System.EventHandler(this.BackToCenterRadio_Click);
@@ -1859,7 +1884,7 @@
             this.ZCenter.Margin = new System.Windows.Forms.Padding(1);
             this.ZCenter.Name = "ZCenter";
             this.ZCenter.Size = new System.Drawing.Size(50, 20);
-            this.ZCenter.TabIndex = 336;
+            this.ZCenter.TabIndex = 9;
             this.ZCenter.Text = "0";
             this.ZCenter.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -1870,7 +1895,7 @@
             this.GoCenter.Margin = new System.Windows.Forms.Padding(1);
             this.GoCenter.Name = "GoCenter";
             this.GoCenter.Size = new System.Drawing.Size(38, 20);
-            this.GoCenter.TabIndex = 338;
+            this.GoCenter.TabIndex = 15;
             this.GoCenter.Text = "Go";
             this.GoCenter.UseVisualStyleBackColor = true;
             this.GoCenter.Click += new System.EventHandler(this.GoCenterButton_Click);
@@ -1883,7 +1908,7 @@
             this.CenterLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.CenterLabel.Name = "CenterLabel";
             this.CenterLabel.Size = new System.Drawing.Size(39, 14);
-            this.CenterLabel.TabIndex = 337;
+            this.CenterLabel.TabIndex = 6;
             this.CenterLabel.Text = "Center";
             // 
             // Set_Center
@@ -1893,7 +1918,7 @@
             this.Set_Center.Margin = new System.Windows.Forms.Padding(1);
             this.Set_Center.Name = "Set_Center";
             this.Set_Center.Size = new System.Drawing.Size(38, 20);
-            this.Set_Center.TabIndex = 335;
+            this.Set_Center.TabIndex = 12;
             this.Set_Center.Text = "Set";
             this.Set_Center.UseVisualStyleBackColor = true;
             this.Set_Center.Click += new System.EventHandler(this.Set_Center_Click);
@@ -1905,7 +1930,7 @@
             this.GoEnd.Margin = new System.Windows.Forms.Padding(1);
             this.GoEnd.Name = "GoEnd";
             this.GoEnd.Size = new System.Drawing.Size(38, 20);
-            this.GoEnd.TabIndex = 282;
+            this.GoEnd.TabIndex = 16;
             this.GoEnd.Text = "Go";
             this.GoEnd.UseVisualStyleBackColor = true;
             this.GoEnd.Click += new System.EventHandler(this.GoEnd_Click);
@@ -1917,32 +1942,32 @@
             this.GoStart.Margin = new System.Windows.Forms.Padding(1);
             this.GoStart.Name = "GoStart";
             this.GoStart.Size = new System.Drawing.Size(38, 20);
-            this.GoStart.TabIndex = 281;
+            this.GoStart.TabIndex = 14;
             this.GoStart.Text = "Go";
             this.GoStart.UseVisualStyleBackColor = true;
             this.GoStart.Click += new System.EventHandler(this.GoStart_Click);
             // 
-            // label77
+            // StopLabel
             // 
-            this.label77.AutoSize = true;
-            this.label77.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label77.Location = new System.Drawing.Point(8, 59);
-            this.label77.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.label77.Name = "label77";
-            this.label77.Size = new System.Drawing.Size(29, 14);
-            this.label77.TabIndex = 280;
-            this.label77.Text = "Stop";
+            this.StopLabel.AutoSize = true;
+            this.StopLabel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.StopLabel.Location = new System.Drawing.Point(8, 59);
+            this.StopLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.StopLabel.Name = "StopLabel";
+            this.StopLabel.Size = new System.Drawing.Size(29, 14);
+            this.StopLabel.TabIndex = 7;
+            this.StopLabel.Text = "Stop";
             // 
-            // label72
+            // StartLabel
             // 
-            this.label72.AutoSize = true;
-            this.label72.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label72.Location = new System.Drawing.Point(8, 20);
-            this.label72.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.label72.Name = "label72";
-            this.label72.Size = new System.Drawing.Size(30, 14);
-            this.label72.TabIndex = 279;
-            this.label72.Text = "Start";
+            this.StartLabel.AutoSize = true;
+            this.StartLabel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.StartLabel.Location = new System.Drawing.Point(8, 20);
+            this.StartLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.StartLabel.Name = "StartLabel";
+            this.StartLabel.Size = new System.Drawing.Size(30, 14);
+            this.StartLabel.TabIndex = 5;
+            this.StartLabel.Text = "Start";
             // 
             // NSlices2
             // 
@@ -1951,7 +1976,7 @@
             this.NSlices2.Margin = new System.Windows.Forms.Padding(1);
             this.NSlices2.Name = "NSlices2";
             this.NSlices2.Size = new System.Drawing.Size(40, 20);
-            this.NSlices2.TabIndex = 277;
+            this.NSlices2.TabIndex = 3;
             this.NSlices2.Text = "5";
             this.NSlices2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.NSlices2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ZStackParameterTextKeyDown);
@@ -1964,7 +1989,7 @@
             this.label42.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label42.Name = "label42";
             this.label42.Size = new System.Drawing.Size(42, 14);
-            this.label42.TabIndex = 278;
+            this.label42.TabIndex = 1;
             this.label42.Text = "#Slices";
             // 
             // ZEnd
@@ -1974,7 +1999,7 @@
             this.ZEnd.Margin = new System.Windows.Forms.Padding(1);
             this.ZEnd.Name = "ZEnd";
             this.ZEnd.Size = new System.Drawing.Size(50, 20);
-            this.ZEnd.TabIndex = 276;
+            this.ZEnd.TabIndex = 10;
             this.ZEnd.Text = "0";
             this.ZEnd.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -1985,7 +2010,7 @@
             this.SliceStep.Margin = new System.Windows.Forms.Padding(1);
             this.SliceStep.Name = "SliceStep";
             this.SliceStep.Size = new System.Drawing.Size(55, 20);
-            this.SliceStep.TabIndex = 274;
+            this.SliceStep.TabIndex = 2;
             this.SliceStep.Text = "1.0";
             this.SliceStep.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.SliceStep.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ZStackParameterTextKeyDown);
@@ -1997,7 +2022,7 @@
             this.ZStart.Margin = new System.Windows.Forms.Padding(1);
             this.ZStart.Name = "ZStart";
             this.ZStart.Size = new System.Drawing.Size(50, 20);
-            this.ZStart.TabIndex = 275;
+            this.ZStart.TabIndex = 8;
             this.ZStart.Text = "0";
             this.ZStart.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -2009,7 +2034,7 @@
             this.st_step.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_step.Name = "st_step";
             this.st_step.Size = new System.Drawing.Size(29, 14);
-            this.st_step.TabIndex = 275;
+            this.st_step.TabIndex = 0;
             this.st_step.Text = "Step";
             // 
             // st_um
@@ -2020,7 +2045,7 @@
             this.st_um.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_um.Name = "st_um";
             this.st_um.Size = new System.Drawing.Size(21, 14);
-            this.st_um.TabIndex = 276;
+            this.st_um.TabIndex = 4;
             this.st_um.Text = "μm";
             // 
             // st_display
@@ -2031,7 +2056,7 @@
             this.st_display.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_display.Name = "st_display";
             this.st_display.Size = new System.Drawing.Size(41, 13);
-            this.st_display.TabIndex = 102;
+            this.st_display.TabIndex = 1;
             this.st_display.Text = "Display";
             // 
             // menuStrip1
@@ -2047,8 +2072,8 @@
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Padding = new System.Windows.Forms.Padding(6, 1, 0, 1);
-            this.menuStrip1.Size = new System.Drawing.Size(641, 24);
-            this.menuStrip1.TabIndex = 283;
+            this.menuStrip1.Size = new System.Drawing.Size(639, 24);
+            this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             // 
             // fileToolStripMenuItem
@@ -2220,7 +2245,8 @@
             this.plotScanGrabToolStripMenuItem,
             this.plotPockelsGrabToolStripMenuItem,
             this.plotScanXYToolStripMenuItem,
-            this.plotScanXYZToolStripMenuItem});
+            this.plotScanXYZToolStripMenuItem,
+            this.plotLineScanTraceToolStripMenuItem});
             this.plotToolStripMenuItem.Name = "plotToolStripMenuItem";
             this.plotToolStripMenuItem.Size = new System.Drawing.Size(40, 22);
             this.plotToolStripMenuItem.Text = "Plot";
@@ -2228,44 +2254,51 @@
             // plotScanToolStripMenuItem
             // 
             this.plotScanToolStripMenuItem.Name = "plotScanToolStripMenuItem";
-            this.plotScanToolStripMenuItem.Size = new System.Drawing.Size(238, 22);
+            this.plotScanToolStripMenuItem.Size = new System.Drawing.Size(239, 22);
             this.plotScanToolStripMenuItem.Text = "Plot Scan";
             this.plotScanToolStripMenuItem.Click += new System.EventHandler(this.PlotScanToolStripMenuItem_Click);
             // 
             // plotPockelsToolStripMenuItem
             // 
             this.plotPockelsToolStripMenuItem.Name = "plotPockelsToolStripMenuItem";
-            this.plotPockelsToolStripMenuItem.Size = new System.Drawing.Size(238, 22);
+            this.plotPockelsToolStripMenuItem.Size = new System.Drawing.Size(239, 22);
             this.plotPockelsToolStripMenuItem.Text = "Plot Pockels";
             this.plotPockelsToolStripMenuItem.Click += new System.EventHandler(this.PlotPockelsToolStripMenuItem_Click);
             // 
             // plotScanGrabToolStripMenuItem
             // 
             this.plotScanGrabToolStripMenuItem.Name = "plotScanGrabToolStripMenuItem";
-            this.plotScanGrabToolStripMenuItem.Size = new System.Drawing.Size(238, 22);
+            this.plotScanGrabToolStripMenuItem.Size = new System.Drawing.Size(239, 22);
             this.plotScanGrabToolStripMenuItem.Text = "Plot Scan (+Uncage/Trigger)";
             this.plotScanGrabToolStripMenuItem.Click += new System.EventHandler(this.PlotScanGrabToolStripMenuItem_Click);
             // 
             // plotPockelsGrabToolStripMenuItem
             // 
             this.plotPockelsGrabToolStripMenuItem.Name = "plotPockelsGrabToolStripMenuItem";
-            this.plotPockelsGrabToolStripMenuItem.Size = new System.Drawing.Size(238, 22);
+            this.plotPockelsGrabToolStripMenuItem.Size = new System.Drawing.Size(239, 22);
             this.plotPockelsGrabToolStripMenuItem.Text = "Plot Pockels (+Uncage/Trigger)";
             this.plotPockelsGrabToolStripMenuItem.Click += new System.EventHandler(this.PlotPockelsGrabToolStripMenuItem_Click);
             // 
             // plotScanXYToolStripMenuItem
             // 
             this.plotScanXYToolStripMenuItem.Name = "plotScanXYToolStripMenuItem";
-            this.plotScanXYToolStripMenuItem.Size = new System.Drawing.Size(238, 22);
+            this.plotScanXYToolStripMenuItem.Size = new System.Drawing.Size(239, 22);
             this.plotScanXYToolStripMenuItem.Text = "PlotScan(XY)";
             this.plotScanXYToolStripMenuItem.Click += new System.EventHandler(this.plotScanXYToolStripMenuItem_Click);
             // 
             // plotScanXYZToolStripMenuItem
             // 
             this.plotScanXYZToolStripMenuItem.Name = "plotScanXYZToolStripMenuItem";
-            this.plotScanXYZToolStripMenuItem.Size = new System.Drawing.Size(238, 22);
+            this.plotScanXYZToolStripMenuItem.Size = new System.Drawing.Size(239, 22);
             this.plotScanXYZToolStripMenuItem.Text = "PlotScan(XYZ)";
             this.plotScanXYZToolStripMenuItem.Click += new System.EventHandler(this.plotScanXYZToolStripMenuItem_Click);
+            // 
+            // plotLineScanTraceToolStripMenuItem
+            // 
+            this.plotLineScanTraceToolStripMenuItem.Name = "plotLineScanTraceToolStripMenuItem";
+            this.plotLineScanTraceToolStripMenuItem.Size = new System.Drawing.Size(239, 22);
+            this.plotLineScanTraceToolStripMenuItem.Text = "Plot LineScan Trace";
+            this.plotLineScanTraceToolStripMenuItem.Click += new System.EventHandler(this.plotLineScanTraceToolStripMenuItem_Click);
             // 
             // windowsToolStripMenuItem
             // 
@@ -2350,7 +2383,7 @@
             this.electrophysiologyToolStripMenuItem,
             this.toolStripMenuItem1});
             this.ToolsToolStripMenuItem.Name = "ToolsToolStripMenuItem";
-            this.ToolsToolStripMenuItem.Size = new System.Drawing.Size(46, 22);
+            this.ToolsToolStripMenuItem.Size = new System.Drawing.Size(47, 22);
             this.ToolsToolStripMenuItem.Text = "Tools";
             this.ToolsToolStripMenuItem.Click += new System.EventHandler(this.settingToolStripMenuItem_Click);
             // 
@@ -2430,7 +2463,8 @@
             this.Uncage_while_image_check.Location = new System.Drawing.Point(17, 20);
             this.Uncage_while_image_check.Name = "Uncage_while_image_check";
             this.Uncage_while_image_check.Size = new System.Drawing.Size(131, 18);
-            this.Uncage_while_image_check.TabIndex = 317;
+            this.Uncage_while_image_check.TabIndex = 0;
+            this.Uncage_while_image_check.Tag = "NGrab";
             this.Uncage_while_image_check.Text = "Uncage while imaging";
             this.Uncage_while_image_check.UseVisualStyleBackColor = true;
             this.Uncage_while_image_check.Click += new System.EventHandler(this.Uncage_while_image_check_Click);
@@ -2439,11 +2473,11 @@
             // 
             this.Ch_rate2.AutoSize = true;
             this.Ch_rate2.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Ch_rate2.Location = new System.Drawing.Point(559, 665);
+            this.Ch_rate2.Location = new System.Drawing.Point(568, 665);
             this.Ch_rate2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Ch_rate2.Name = "Ch_rate2";
             this.Ch_rate2.Size = new System.Drawing.Size(46, 14);
-            this.Ch_rate2.TabIndex = 290;
+            this.Ch_rate2.TabIndex = 17;
             this.Ch_rate2.Text = "1,234 /s";
             this.Ch_rate2.TextAlign = System.Drawing.ContentAlignment.BottomRight;
             // 
@@ -2451,11 +2485,11 @@
             // 
             this.Ch_rate1.AutoSize = true;
             this.Ch_rate1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Ch_rate1.Location = new System.Drawing.Point(559, 650);
+            this.Ch_rate1.Location = new System.Drawing.Point(568, 650);
             this.Ch_rate1.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Ch_rate1.Name = "Ch_rate1";
             this.Ch_rate1.Size = new System.Drawing.Size(46, 14);
-            this.Ch_rate1.TabIndex = 289;
+            this.Ch_rate1.TabIndex = 16;
             this.Ch_rate1.Text = "1,234 /s";
             this.Ch_rate1.TextAlign = System.Drawing.ContentAlignment.BottomRight;
             // 
@@ -2463,11 +2497,11 @@
             // 
             this.Sync_rate.AutoSize = true;
             this.Sync_rate.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Sync_rate.Location = new System.Drawing.Point(556, 567);
+            this.Sync_rate.Location = new System.Drawing.Point(565, 567);
             this.Sync_rate.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Sync_rate.Name = "Sync_rate";
             this.Sync_rate.Size = new System.Drawing.Size(64, 14);
-            this.Sync_rate.TabIndex = 288;
+            this.Sync_rate.TabIndex = 11;
             this.Sync_rate.Text = "00.000 MHz";
             this.Sync_rate.TextAlign = System.Drawing.ContentAlignment.BottomRight;
             // 
@@ -2479,28 +2513,28 @@
             this.label13.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(0, 13);
-            this.label13.TabIndex = 287;
+            this.label13.TabIndex = 0;
             // 
             // label14
             // 
             this.label14.AutoSize = true;
             this.label14.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label14.Location = new System.Drawing.Point(540, 635);
+            this.label14.Location = new System.Drawing.Point(549, 635);
             this.label14.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(71, 14);
-            this.label14.TabIndex = 286;
+            this.label14.TabIndex = 15;
             this.label14.Text = "Photon Count";
             // 
             // label15
             // 
             this.label15.AutoSize = true;
             this.label15.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label15.Location = new System.Drawing.Point(540, 550);
+            this.label15.Location = new System.Drawing.Point(549, 550);
             this.label15.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(64, 14);
-            this.label15.TabIndex = 285;
+            this.label15.TabIndex = 10;
             this.label15.Text = "Laser pulse";
             // 
             // LaserPanel
@@ -2512,8 +2546,8 @@
             this.LaserPanel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.LaserPanel.Location = new System.Drawing.Point(318, 396);
             this.LaserPanel.Name = "LaserPanel";
-            this.LaserPanel.Size = new System.Drawing.Size(313, 139);
-            this.LaserPanel.TabIndex = 282;
+            this.LaserPanel.Size = new System.Drawing.Size(315, 139);
+            this.LaserPanel.TabIndex = 8;
             this.LaserPanel.TabStop = false;
             this.LaserPanel.Text = "Laser";
             // 
@@ -2522,7 +2556,7 @@
             this.zeroVoltage.Location = new System.Drawing.Point(261, 30);
             this.zeroVoltage.Name = "zeroVoltage";
             this.zeroVoltage.Size = new System.Drawing.Size(33, 19);
-            this.zeroVoltage.TabIndex = 128;
+            this.zeroVoltage.TabIndex = 3;
             this.zeroVoltage.Text = "0V";
             this.zeroVoltage.UseVisualStyleBackColor = true;
             this.zeroVoltage.Click += new System.EventHandler(this.ZeroVoltage_Click);
@@ -2534,7 +2568,7 @@
             this.needCalibLabel.Location = new System.Drawing.Point(18, 15);
             this.needCalibLabel.Name = "needCalibLabel";
             this.needCalibLabel.Size = new System.Drawing.Size(117, 14);
-            this.needCalibLabel.TabIndex = 124;
+            this.needCalibLabel.TabIndex = 0;
             this.needCalibLabel.Text = "** Need calibration **";
             // 
             // Calibrate1
@@ -2542,7 +2576,7 @@
             this.Calibrate1.Location = new System.Drawing.Point(215, 30);
             this.Calibrate1.Name = "Calibrate1";
             this.Calibrate1.Size = new System.Drawing.Size(45, 19);
-            this.Calibrate1.TabIndex = 123;
+            this.Calibrate1.TabIndex = 2;
             this.Calibrate1.Text = "Calib.";
             this.Calibrate1.UseVisualStyleBackColor = true;
             this.Calibrate1.Click += new System.EventHandler(this.Calibrate1_Click);
@@ -2558,7 +2592,7 @@
             this.laserPowerPanel.Name = "laserPowerPanel";
             this.laserPowerPanel.SelectedIndex = 0;
             this.laserPowerPanel.Size = new System.Drawing.Size(266, 103);
-            this.laserPowerPanel.TabIndex = 119;
+            this.laserPowerPanel.TabIndex = 1;
             // 
             // tabPage1
             // 
@@ -2586,7 +2620,7 @@
             this.powerRead1.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.powerRead1.Name = "powerRead1";
             this.powerRead1.Size = new System.Drawing.Size(36, 13);
-            this.powerRead1.TabIndex = 125;
+            this.powerRead1.TabIndex = 4;
             this.powerRead1.Text = "X mW";
             // 
             // needCalib1
@@ -2595,7 +2629,7 @@
             this.needCalib1.Location = new System.Drawing.Point(130, 5);
             this.needCalib1.Name = "needCalib1";
             this.needCalib1.Size = new System.Drawing.Size(125, 30);
-            this.needCalib1.TabIndex = 124;
+            this.needCalib1.TabIndex = 1;
             this.needCalib1.Text = "Need Calibration";
             this.needCalib1.UseVisualStyleBackColor = true;
             this.needCalib1.Click += new System.EventHandler(this.Calibrate1_Click);
@@ -2606,7 +2640,7 @@
             this.UncageLaser1.Location = new System.Drawing.Point(160, 54);
             this.UncageLaser1.Name = "UncageLaser1";
             this.UncageLaser1.Size = new System.Drawing.Size(71, 18);
-            this.UncageLaser1.TabIndex = 114;
+            this.UncageLaser1.TabIndex = 6;
             this.UncageLaser1.Text = "Uncaging";
             this.UncageLaser1.UseVisualStyleBackColor = true;
             this.UncageLaser1.Click += new System.EventHandler(this.ImageLaser1_CheckedChanged);
@@ -2617,7 +2651,7 @@
             this.ImageLaser1.Location = new System.Drawing.Point(90, 54);
             this.ImageLaser1.Name = "ImageLaser1";
             this.ImageLaser1.Size = new System.Drawing.Size(62, 18);
-            this.ImageLaser1.TabIndex = 113;
+            this.ImageLaser1.TabIndex = 5;
             this.ImageLaser1.Text = "Imaging";
             this.ImageLaser1.UseVisualStyleBackColor = true;
             this.ImageLaser1.Click += new System.EventHandler(this.ImageLaser1_CheckedChanged);
@@ -2630,7 +2664,7 @@
             this.st_Power.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_Power.Name = "st_Power";
             this.st_Power.Size = new System.Drawing.Size(67, 16);
-            this.st_Power.TabIndex = 42;
+            this.st_Power.TabIndex = 0;
             this.st_Power.Text = "Power (%)";
             // 
             // PowerSlider1
@@ -2643,7 +2677,7 @@
             this.PowerSlider1.Maximum = 100;
             this.PowerSlider1.Name = "PowerSlider1";
             this.PowerSlider1.Size = new System.Drawing.Size(226, 27);
-            this.PowerSlider1.TabIndex = 112;
+            this.PowerSlider1.TabIndex = 3;
             this.PowerSlider1.TickStyle = System.Windows.Forms.TickStyle.None;
             this.PowerSlider1.Value = 10;
             this.PowerSlider1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.PowerSlider1_MouseUp);
@@ -2655,7 +2689,7 @@
             this.Power1.Margin = new System.Windows.Forms.Padding(1);
             this.Power1.Name = "Power1";
             this.Power1.Size = new System.Drawing.Size(56, 26);
-            this.Power1.TabIndex = 111;
+            this.Power1.TabIndex = 2;
             this.Power1.Text = "10";
             this.Power1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.Power1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PowerText_change);
@@ -2862,7 +2896,7 @@
             this.laserWarningButton.Location = new System.Drawing.Point(21, 59);
             this.laserWarningButton.Name = "laserWarningButton";
             this.laserWarningButton.Size = new System.Drawing.Size(174, 45);
-            this.laserWarningButton.TabIndex = 126;
+            this.laserWarningButton.TabIndex = 2;
             this.laserWarningButton.Text = "Check laser setting!\r\nLaser pulse rate is not good!";
             this.laserWarningButton.UseVisualStyleBackColor = true;
             this.laserWarningButton.Click += new System.EventHandler(this.laserWarningButton_Click);
@@ -2881,8 +2915,8 @@
             this.acquisitionPanel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.acquisitionPanel.Location = new System.Drawing.Point(318, 537);
             this.acquisitionPanel.Name = "acquisitionPanel";
-            this.acquisitionPanel.Size = new System.Drawing.Size(201, 192);
-            this.acquisitionPanel.TabIndex = 319;
+            this.acquisitionPanel.Size = new System.Drawing.Size(220, 192);
+            this.acquisitionPanel.TabIndex = 9;
             this.acquisitionPanel.TabStop = false;
             this.acquisitionPanel.Text = "Acquisition";
             // 
@@ -2893,7 +2927,8 @@
             this.DO_whileImaging_check.Location = new System.Drawing.Point(17, 38);
             this.DO_whileImaging_check.Name = "DO_whileImaging_check";
             this.DO_whileImaging_check.Size = new System.Drawing.Size(109, 18);
-            this.DO_whileImaging_check.TabIndex = 323;
+            this.DO_whileImaging_check.TabIndex = 1;
+            this.DO_whileImaging_check.Tag = "NGrab";
             this.DO_whileImaging_check.Text = "DO while imaging";
             this.DO_whileImaging_check.UseVisualStyleBackColor = true;
             this.DO_whileImaging_check.Click += new System.EventHandler(this.Uncage_while_image_check_Click);
@@ -2905,7 +2940,8 @@
             this.analyzeEach.Location = new System.Drawing.Point(12, 151);
             this.analyzeEach.Name = "analyzeEach";
             this.analyzeEach.Size = new System.Drawing.Size(173, 18);
-            this.analyzeEach.TabIndex = 322;
+            this.analyzeEach.TabIndex = 7;
+            this.analyzeEach.Tag = "";
             this.analyzeEach.Text = "Analyze after each acquisition";
             this.analyzeEach.UseVisualStyleBackColor = true;
             this.analyzeEach.CheckedChanged += new System.EventHandler(this.analyzeEach_CheckedChanged);
@@ -2918,40 +2954,40 @@
             this.label79.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label79.Name = "label79";
             this.label79.Size = new System.Drawing.Size(70, 14);
-            this.label79.TabIndex = 321;
+            this.label79.TabIndex = 3;
             this.label79.Text = "Elapsed time:";
             // 
             // expectedRate
             // 
             this.expectedRate.AutoSize = true;
             this.expectedRate.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.expectedRate.Location = new System.Drawing.Point(558, 616);
+            this.expectedRate.Location = new System.Drawing.Point(567, 616);
             this.expectedRate.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.expectedRate.Name = "expectedRate";
             this.expectedRate.Size = new System.Drawing.Size(52, 14);
-            this.expectedRate.TabIndex = 324;
+            this.expectedRate.TabIndex = 14;
             this.expectedRate.Text = "80.0 MHz";
             // 
             // label67
             // 
             this.label67.AutoSize = true;
             this.label67.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label67.Location = new System.Drawing.Point(539, 600);
+            this.label67.Location = new System.Drawing.Point(548, 600);
             this.label67.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label67.Name = "label67";
             this.label67.Size = new System.Drawing.Size(77, 14);
-            this.label67.TabIndex = 323;
+            this.label67.TabIndex = 13;
             this.label67.Text = "Expected rate:";
             // 
             // Sync_rate2
             // 
             this.Sync_rate2.AutoSize = true;
             this.Sync_rate2.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Sync_rate2.Location = new System.Drawing.Point(556, 584);
+            this.Sync_rate2.Location = new System.Drawing.Point(565, 584);
             this.Sync_rate2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.Sync_rate2.Name = "Sync_rate2";
             this.Sync_rate2.Size = new System.Drawing.Size(64, 14);
-            this.Sync_rate2.TabIndex = 320;
+            this.Sync_rate2.TabIndex = 12;
             this.Sync_rate2.Text = "00.000 MHz";
             this.Sync_rate2.TextAlign = System.Drawing.ContentAlignment.BottomRight;
             // 
@@ -2963,7 +2999,7 @@
             this.st_BaseName.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_BaseName.Name = "st_BaseName";
             this.st_BaseName.Size = new System.Drawing.Size(62, 14);
-            this.st_BaseName.TabIndex = 10;
+            this.st_BaseName.TabIndex = 1;
             this.st_BaseName.Text = "Base Name";
             // 
             // st_PathName
@@ -2974,7 +3010,7 @@
             this.st_PathName.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_PathName.Name = "st_PathName";
             this.st_PathName.Size = new System.Drawing.Size(81, 14);
-            this.st_PathName.TabIndex = 39;
+            this.st_PathName.TabIndex = 7;
             this.st_PathName.Text = "Directory Name";
             // 
             // st_fileN
@@ -2985,7 +3021,7 @@
             this.st_fileN.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_fileN.Name = "st_fileN";
             this.st_fileN.Size = new System.Drawing.Size(29, 14);
-            this.st_fileN.TabIndex = 17;
+            this.st_fileN.TabIndex = 3;
             this.st_fileN.Text = "File#";
             // 
             // BaseName
@@ -2995,7 +3031,7 @@
             this.BaseName.Margin = new System.Windows.Forms.Padding(1);
             this.BaseName.Name = "BaseName";
             this.BaseName.Size = new System.Drawing.Size(134, 20);
-            this.BaseName.TabIndex = 5;
+            this.BaseName.TabIndex = 2;
             this.BaseName.Text = "Test";
             this.BaseName.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
             // 
@@ -3006,7 +3042,7 @@
             this.FileN.Margin = new System.Windows.Forms.Padding(1);
             this.FileN.Name = "FileN";
             this.FileN.Size = new System.Drawing.Size(56, 20);
-            this.FileN.TabIndex = 16;
+            this.FileN.TabIndex = 4;
             this.FileN.Text = "1";
             this.FileN.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.FileN.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -3020,7 +3056,7 @@
             this.DirectoryName.ReadOnly = true;
             this.DirectoryName.ScrollBars = System.Windows.Forms.ScrollBars.Horizontal;
             this.DirectoryName.Size = new System.Drawing.Size(289, 20);
-            this.DirectoryName.TabIndex = 40;
+            this.DirectoryName.TabIndex = 9;
             this.DirectoryName.Text = "C:\\\\";
             // 
             // FindPath
@@ -3030,7 +3066,7 @@
             this.FindPath.Margin = new System.Windows.Forms.Padding(1);
             this.FindPath.Name = "FindPath";
             this.FindPath.Size = new System.Drawing.Size(73, 21);
-            this.FindPath.TabIndex = 41;
+            this.FindPath.TabIndex = 8;
             this.FindPath.Text = "Set path ...";
             this.FindPath.TextAlign = System.Drawing.ContentAlignment.TopLeft;
             this.FindPath.UseVisualStyleBackColor = true;
@@ -3044,7 +3080,7 @@
             this.label70.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label70.Name = "label70";
             this.label70.Size = new System.Drawing.Size(53, 14);
-            this.label70.TabIndex = 151;
+            this.label70.TabIndex = 5;
             this.label70.Text = "File Name";
             // 
             // FileName
@@ -3054,7 +3090,7 @@
             this.FileName.Margin = new System.Windows.Forms.Padding(1);
             this.FileName.Name = "FileName";
             this.FileName.Size = new System.Drawing.Size(224, 20);
-            this.FileName.TabIndex = 150;
+            this.FileName.TabIndex = 6;
             this.FileName.Text = "Test";
             // 
             // Panel_Files
@@ -3073,7 +3109,7 @@
             this.Panel_Files.Location = new System.Drawing.Point(10, 588);
             this.Panel_Files.Name = "Panel_Files";
             this.Panel_Files.Size = new System.Drawing.Size(300, 138);
-            this.Panel_Files.TabIndex = 115;
+            this.Panel_Files.TabIndex = 6;
             this.Panel_Files.TabStop = false;
             this.Panel_Files.Text = "Next file";
             // 
@@ -3086,7 +3122,7 @@
             this.FullFileName.ReadOnly = true;
             this.FullFileName.ScrollBars = System.Windows.Forms.ScrollBars.Horizontal;
             this.FullFileName.Size = new System.Drawing.Size(289, 20);
-            this.FullFileName.TabIndex = 153;
+            this.FullFileName.TabIndex = 0;
             this.FullFileName.Text = "C:\\\\";
             // 
             // ImageIteration
@@ -3104,7 +3140,7 @@
             this.ImageIteration.Location = new System.Drawing.Point(10, 233);
             this.ImageIteration.Name = "ImageIteration";
             this.ImageIteration.Size = new System.Drawing.Size(300, 62);
-            this.ImageIteration.TabIndex = 333;
+            this.ImageIteration.TabIndex = 3;
             this.ImageIteration.TabStop = false;
             this.ImageIteration.Text = "Loop image sequence";
             // 
@@ -3115,7 +3151,7 @@
             this.LoopButton.Margin = new System.Windows.Forms.Padding(1);
             this.LoopButton.Name = "LoopButton";
             this.LoopButton.Size = new System.Drawing.Size(80, 26);
-            this.LoopButton.TabIndex = 340;
+            this.LoopButton.TabIndex = 8;
             this.LoopButton.Tag = "LoopButton";
             this.LoopButton.Text = "LOOP";
             this.LoopButton.UseVisualStyleBackColor = true;
@@ -3129,12 +3165,15 @@
             this.label88.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label88.Name = "label88";
             this.label88.Size = new System.Drawing.Size(49, 15);
-            this.label88.TabIndex = 337;
+            this.label88.TabIndex = 0;
             this.label88.Text = "Images";
             // 
             // tb_Pparameters
             // 
             this.tb_Pparameters.BackColor = System.Drawing.SystemColors.Control;
+            this.tb_Pparameters.Controls.Add(this.Rising_Input_CB);
+            this.tb_Pparameters.Controls.Add(this.rising_sync_CB);
+            this.tb_Pparameters.Controls.Add(this.CFD_on_CB);
             this.tb_Pparameters.Controls.Add(this.SPC_Off);
             this.tb_Pparameters.Controls.Add(this.Binning_setting);
             this.tb_Pparameters.Controls.Add(this.st_binning);
@@ -3155,18 +3194,52 @@
             this.tb_Pparameters.Location = new System.Drawing.Point(4, 23);
             this.tb_Pparameters.Name = "tb_Pparameters";
             this.tb_Pparameters.Padding = new System.Windows.Forms.Padding(3);
-            this.tb_Pparameters.Size = new System.Drawing.Size(314, 337);
+            this.tb_Pparameters.Size = new System.Drawing.Size(316, 337);
             this.tb_Pparameters.TabIndex = 2;
             this.tb_Pparameters.Text = "SPC";
             // 
+            // Rising_Input_CB
+            // 
+            this.Rising_Input_CB.AutoSize = true;
+            this.Rising_Input_CB.Location = new System.Drawing.Point(212, 217);
+            this.Rising_Input_CB.Name = "Rising_Input_CB";
+            this.Rising_Input_CB.Size = new System.Drawing.Size(89, 18);
+            this.Rising_Input_CB.TabIndex = 19;
+            this.Rising_Input_CB.Text = "Rising (Input)";
+            this.Rising_Input_CB.UseVisualStyleBackColor = true;
+            this.Rising_Input_CB.Click += new System.EventHandler(this.trigger_edge_clicked);
+            // 
+            // rising_sync_CB
+            // 
+            this.rising_sync_CB.AutoSize = true;
+            this.rising_sync_CB.Location = new System.Drawing.Point(212, 92);
+            this.rising_sync_CB.Name = "rising_sync_CB";
+            this.rising_sync_CB.Size = new System.Drawing.Size(91, 18);
+            this.rising_sync_CB.TabIndex = 18;
+            this.rising_sync_CB.Text = "Rising (Sync)";
+            this.rising_sync_CB.UseVisualStyleBackColor = true;
+            this.rising_sync_CB.Click += new System.EventHandler(this.trigger_edge_clicked);
+            // 
+            // CFD_on_CB
+            // 
+            this.CFD_on_CB.AutoSize = true;
+            this.CFD_on_CB.Location = new System.Drawing.Point(212, 282);
+            this.CFD_on_CB.Name = "CFD_on_CB";
+            this.CFD_on_CB.Size = new System.Drawing.Size(64, 18);
+            this.CFD_on_CB.TabIndex = 17;
+            this.CFD_on_CB.Text = "CFD ON";
+            this.CFD_on_CB.UseVisualStyleBackColor = true;
+            this.CFD_on_CB.Click += new System.EventHandler(this.CFD_on_CB_Click);
+            // 
             // SPC_Off
             // 
-            this.SPC_Off.Location = new System.Drawing.Point(236, 297);
+            this.SPC_Off.Location = new System.Drawing.Point(238, 308);
             this.SPC_Off.Name = "SPC_Off";
             this.SPC_Off.Size = new System.Drawing.Size(65, 23);
-            this.SPC_Off.TabIndex = 271;
+            this.SPC_Off.TabIndex = 16;
             this.SPC_Off.Text = "Turn off";
             this.SPC_Off.UseVisualStyleBackColor = true;
+            this.SPC_Off.Visible = false;
             this.SPC_Off.Click += new System.EventHandler(this.SPC_Off_Click);
             // 
             // Binning_setting
@@ -3181,42 +3254,42 @@
             "3 (200 ps)",
             "4 (400 ps)",
             "5 (800 ps)"});
-            this.Binning_setting.Location = new System.Drawing.Point(25, 245);
+            this.Binning_setting.Location = new System.Drawing.Point(25, 250);
             this.Binning_setting.Name = "Binning_setting";
             this.Binning_setting.Size = new System.Drawing.Size(95, 22);
-            this.Binning_setting.TabIndex = 264;
+            this.Binning_setting.TabIndex = 7;
             this.Binning_setting.SelectedIndexChanged += new System.EventHandler(this.Res_setting_SelectedIndexChanged);
             // 
             // st_binning
             // 
             this.st_binning.AutoSize = true;
             this.st_binning.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_binning.Location = new System.Drawing.Point(24, 230);
+            this.st_binning.Location = new System.Drawing.Point(24, 235);
             this.st_binning.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_binning.Name = "st_binning";
             this.st_binning.Size = new System.Drawing.Size(57, 14);
-            this.st_binning.TabIndex = 252;
+            this.st_binning.TabIndex = 5;
             this.st_binning.Text = "Resolution";
             // 
             // label97
             // 
             this.label97.AutoSize = true;
             this.label97.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label97.Location = new System.Drawing.Point(218, 230);
+            this.label97.Location = new System.Drawing.Point(218, 237);
             this.label97.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label97.Name = "label97";
             this.label97.Size = new System.Drawing.Size(46, 14);
-            this.label97.TabIndex = 269;
+            this.label97.TabIndex = 14;
             this.label97.Text = "Freq div";
             // 
             // FreqDivBox
             // 
             this.FreqDivBox.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.FreqDivBox.Location = new System.Drawing.Point(221, 245);
+            this.FreqDivBox.Location = new System.Drawing.Point(221, 252);
             this.FreqDivBox.Margin = new System.Windows.Forms.Padding(1);
             this.FreqDivBox.Name = "FreqDivBox";
             this.FreqDivBox.Size = new System.Drawing.Size(40, 20);
-            this.FreqDivBox.TabIndex = 270;
+            this.FreqDivBox.TabIndex = 15;
             this.FreqDivBox.Text = "1";
             this.FreqDivBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.FreqDivBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3225,19 +3298,19 @@
             // 
             this.label96.AutoSize = true;
             this.label96.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label96.Location = new System.Drawing.Point(145, 230);
+            this.label96.Location = new System.Drawing.Point(145, 237);
             this.label96.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label96.Name = "label96";
             this.label96.Size = new System.Drawing.Size(56, 14);
-            this.label96.TabIndex = 268;
+            this.label96.TabIndex = 10;
             this.label96.Text = "Start point";
             // 
             // StartPointBox
             // 
-            this.StartPointBox.Location = new System.Drawing.Point(155, 245);
+            this.StartPointBox.Location = new System.Drawing.Point(155, 252);
             this.StartPointBox.Name = "StartPointBox";
             this.StartPointBox.Size = new System.Drawing.Size(40, 20);
-            this.StartPointBox.TabIndex = 267;
+            this.StartPointBox.TabIndex = 11;
             this.StartPointBox.Text = "0";
             this.StartPointBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.StartPointBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3246,11 +3319,11 @@
             // 
             this.st_mode.AutoSize = true;
             this.st_mode.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_mode.Location = new System.Drawing.Point(24, 271);
+            this.st_mode.Location = new System.Drawing.Point(24, 276);
             this.st_mode.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_mode.Name = "st_mode";
             this.st_mode.Size = new System.Drawing.Size(33, 14);
-            this.st_mode.TabIndex = 266;
+            this.st_mode.TabIndex = 8;
             this.st_mode.Text = "Mode";
             // 
             // PQMode_Pulldown
@@ -3261,21 +3334,21 @@
             this.PQMode_Pulldown.Items.AddRange(new object[] {
             "T3 (> 40 MHz)",
             "T2 (< 40 MHz)"});
-            this.PQMode_Pulldown.Location = new System.Drawing.Point(26, 286);
+            this.PQMode_Pulldown.Location = new System.Drawing.Point(26, 291);
             this.PQMode_Pulldown.Name = "PQMode_Pulldown";
             this.PQMode_Pulldown.Size = new System.Drawing.Size(95, 22);
-            this.PQMode_Pulldown.TabIndex = 265;
+            this.PQMode_Pulldown.TabIndex = 9;
             this.PQMode_Pulldown.SelectedIndexChanged += new System.EventHandler(this.Res_setting_SelectedIndexChanged);
             // 
             // st_nTimeP
             // 
             this.st_nTimeP.AutoSize = true;
             this.st_nTimeP.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_nTimeP.Location = new System.Drawing.Point(10, 230);
+            this.st_nTimeP.Location = new System.Drawing.Point(10, 235);
             this.st_nTimeP.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_nTimeP.Name = "st_nTimeP";
             this.st_nTimeP.Size = new System.Drawing.Size(67, 14);
-            this.st_nTimeP.TabIndex = 263;
+            this.st_nTimeP.TabIndex = 4;
             this.st_nTimeP.Text = "#Time points";
             // 
             // Resolution_Pulldown
@@ -3291,10 +3364,10 @@
             "1024",
             "2048",
             "4096"});
-            this.Resolution_Pulldown.Location = new System.Drawing.Point(12, 245);
+            this.Resolution_Pulldown.Location = new System.Drawing.Point(12, 250);
             this.Resolution_Pulldown.Name = "Resolution_Pulldown";
             this.Resolution_Pulldown.Size = new System.Drawing.Size(95, 22);
-            this.Resolution_Pulldown.TabIndex = 262;
+            this.Resolution_Pulldown.TabIndex = 6;
             this.Resolution_Pulldown.SelectedIndexChanged += new System.EventHandler(this.Res_setting_SelectedIndexChanged);
             // 
             // sync2Group
@@ -3309,10 +3382,10 @@
             this.sync2Group.Controls.Add(this.label85);
             this.sync2Group.Controls.Add(this.sync_zc_level2);
             this.sync2Group.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.sync2Group.Location = new System.Drawing.Point(156, 12);
+            this.sync2Group.Location = new System.Drawing.Point(156, 6);
             this.sync2Group.Name = "sync2Group";
             this.sync2Group.Size = new System.Drawing.Size(125, 86);
-            this.sync2Group.TabIndex = 261;
+            this.sync2Group.TabIndex = 1;
             this.sync2Group.TabStop = false;
             this.sync2Group.Text = "Sync 2";
             // 
@@ -3324,7 +3397,7 @@
             this.label80.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label80.Name = "label80";
             this.label80.Size = new System.Drawing.Size(18, 13);
-            this.label80.TabIndex = 83;
+            this.label80.TabIndex = 8;
             this.label80.Text = "ps";
             // 
             // label81
@@ -3335,7 +3408,7 @@
             this.label81.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label81.Name = "label81";
             this.label81.Size = new System.Drawing.Size(22, 13);
-            this.label81.TabIndex = 82;
+            this.label81.TabIndex = 5;
             this.label81.Text = "mV";
             // 
             // label82
@@ -3346,7 +3419,7 @@
             this.label82.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label82.Name = "label82";
             this.label82.Size = new System.Drawing.Size(22, 13);
-            this.label82.TabIndex = 81;
+            this.label82.TabIndex = 2;
             this.label82.Text = "mV";
             // 
             // label83
@@ -3357,7 +3430,7 @@
             this.label83.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label83.Name = "label83";
             this.label83.Size = new System.Drawing.Size(35, 13);
-            this.label83.TabIndex = 80;
+            this.label83.TabIndex = 6;
             this.label83.Text = "Offset";
             // 
             // sync_offset2
@@ -3367,7 +3440,7 @@
             this.sync_offset2.Margin = new System.Windows.Forms.Padding(1);
             this.sync_offset2.Name = "sync_offset2";
             this.sync_offset2.Size = new System.Drawing.Size(46, 20);
-            this.sync_offset2.TabIndex = 79;
+            this.sync_offset2.TabIndex = 7;
             this.sync_offset2.Text = "7000";
             this.sync_offset2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.sync_offset2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3380,7 +3453,7 @@
             this.label84.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label84.Name = "label84";
             this.label84.Size = new System.Drawing.Size(21, 13);
-            this.label84.TabIndex = 78;
+            this.label84.TabIndex = 3;
             this.label84.Text = "ZC";
             // 
             // sync_threshold2
@@ -3390,7 +3463,7 @@
             this.sync_threshold2.Margin = new System.Windows.Forms.Padding(1);
             this.sync_threshold2.Name = "sync_threshold2";
             this.sync_threshold2.Size = new System.Drawing.Size(46, 20);
-            this.sync_threshold2.TabIndex = 76;
+            this.sync_threshold2.TabIndex = 1;
             this.sync_threshold2.Text = "50";
             this.sync_threshold2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.sync_threshold2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3403,7 +3476,7 @@
             this.label85.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label85.Name = "label85";
             this.label85.Size = new System.Drawing.Size(40, 13);
-            this.label85.TabIndex = 76;
+            this.label85.TabIndex = 0;
             this.label85.Text = "Thresh";
             // 
             // sync_zc_level2
@@ -3413,7 +3486,7 @@
             this.sync_zc_level2.Margin = new System.Windows.Forms.Padding(1);
             this.sync_zc_level2.Name = "sync_zc_level2";
             this.sync_zc_level2.Size = new System.Drawing.Size(46, 20);
-            this.sync_zc_level2.TabIndex = 77;
+            this.sync_zc_level2.TabIndex = 4;
             this.sync_zc_level2.Text = "0";
             this.sync_zc_level2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.sync_zc_level2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3422,21 +3495,21 @@
             // 
             this.st_tp.AutoSize = true;
             this.st_tp.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_tp.Location = new System.Drawing.Point(145, 271);
+            this.st_tp.Location = new System.Drawing.Point(145, 278);
             this.st_tp.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_tp.Name = "st_tp";
             this.st_tp.Size = new System.Drawing.Size(67, 14);
-            this.st_tp.TabIndex = 259;
+            this.st_tp.TabIndex = 12;
             this.st_tp.Text = "#Time points";
             // 
             // NTimePoints
             // 
             this.NTimePoints.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.NTimePoints.Location = new System.Drawing.Point(154, 288);
+            this.NTimePoints.Location = new System.Drawing.Point(154, 295);
             this.NTimePoints.Margin = new System.Windows.Forms.Padding(1);
             this.NTimePoints.Name = "NTimePoints";
             this.NTimePoints.Size = new System.Drawing.Size(40, 20);
-            this.NTimePoints.TabIndex = 260;
+            this.NTimePoints.TabIndex = 13;
             this.NTimePoints.Text = "128";
             this.NTimePoints.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.NTimePoints.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3453,10 +3526,10 @@
             this.groupBox7.Controls.Add(this.label21);
             this.groupBox7.Controls.Add(this.sync_zc_level);
             this.groupBox7.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox7.Location = new System.Drawing.Point(18, 12);
+            this.groupBox7.Location = new System.Drawing.Point(18, 6);
             this.groupBox7.Name = "groupBox7";
             this.groupBox7.Size = new System.Drawing.Size(125, 86);
-            this.groupBox7.TabIndex = 258;
+            this.groupBox7.TabIndex = 0;
             this.groupBox7.TabStop = false;
             this.groupBox7.Text = "Sync";
             // 
@@ -3468,7 +3541,7 @@
             this.label26.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label26.Name = "label26";
             this.label26.Size = new System.Drawing.Size(18, 13);
-            this.label26.TabIndex = 83;
+            this.label26.TabIndex = 8;
             this.label26.Text = "ps";
             // 
             // label24
@@ -3479,7 +3552,7 @@
             this.label24.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label24.Name = "label24";
             this.label24.Size = new System.Drawing.Size(22, 13);
-            this.label24.TabIndex = 82;
+            this.label24.TabIndex = 5;
             this.label24.Text = "mV";
             // 
             // label25
@@ -3490,7 +3563,7 @@
             this.label25.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label25.Name = "label25";
             this.label25.Size = new System.Drawing.Size(22, 13);
-            this.label25.TabIndex = 81;
+            this.label25.TabIndex = 2;
             this.label25.Text = "mV";
             // 
             // label23
@@ -3501,7 +3574,7 @@
             this.label23.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label23.Name = "label23";
             this.label23.Size = new System.Drawing.Size(35, 13);
-            this.label23.TabIndex = 80;
+            this.label23.TabIndex = 6;
             this.label23.Text = "Offset";
             // 
             // sync_offset
@@ -3511,7 +3584,7 @@
             this.sync_offset.Margin = new System.Windows.Forms.Padding(1);
             this.sync_offset.Name = "sync_offset";
             this.sync_offset.Size = new System.Drawing.Size(46, 20);
-            this.sync_offset.TabIndex = 79;
+            this.sync_offset.TabIndex = 7;
             this.sync_offset.Text = "7000";
             this.sync_offset.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.sync_offset.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3524,7 +3597,7 @@
             this.label22.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label22.Name = "label22";
             this.label22.Size = new System.Drawing.Size(21, 13);
-            this.label22.TabIndex = 78;
+            this.label22.TabIndex = 3;
             this.label22.Text = "ZC";
             // 
             // sync_threshold
@@ -3534,7 +3607,7 @@
             this.sync_threshold.Margin = new System.Windows.Forms.Padding(1);
             this.sync_threshold.Name = "sync_threshold";
             this.sync_threshold.Size = new System.Drawing.Size(46, 20);
-            this.sync_threshold.TabIndex = 76;
+            this.sync_threshold.TabIndex = 1;
             this.sync_threshold.Text = "50";
             this.sync_threshold.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.sync_threshold.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3547,7 +3620,7 @@
             this.label21.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label21.Name = "label21";
             this.label21.Size = new System.Drawing.Size(40, 13);
-            this.label21.TabIndex = 76;
+            this.label21.TabIndex = 0;
             this.label21.Text = "Thresh";
             // 
             // sync_zc_level
@@ -3557,7 +3630,7 @@
             this.sync_zc_level.Margin = new System.Windows.Forms.Padding(1);
             this.sync_zc_level.Name = "sync_zc_level";
             this.sync_zc_level.Size = new System.Drawing.Size(46, 20);
-            this.sync_zc_level.TabIndex = 77;
+            this.sync_zc_level.TabIndex = 4;
             this.sync_zc_level.Text = "0";
             this.sync_zc_level.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.sync_zc_level.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3577,10 +3650,10 @@
             this.groupBox6.Controls.Add(this.resolution);
             this.groupBox6.Controls.Add(this.label28);
             this.groupBox6.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox6.Location = new System.Drawing.Point(19, 107);
+            this.groupBox6.Location = new System.Drawing.Point(19, 109);
             this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Size = new System.Drawing.Size(125, 114);
-            this.groupBox6.TabIndex = 257;
+            this.groupBox6.Size = new System.Drawing.Size(125, 106);
+            this.groupBox6.TabIndex = 2;
             this.groupBox6.TabStop = false;
             this.groupBox6.Text = "Channel1";
             // 
@@ -3592,7 +3665,7 @@
             this.label30.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label30.Name = "label30";
             this.label30.Size = new System.Drawing.Size(18, 13);
-            this.label30.TabIndex = 92;
+            this.label30.TabIndex = 8;
             this.label30.Text = "ps";
             // 
             // label31
@@ -3603,7 +3676,7 @@
             this.label31.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label31.Name = "label31";
             this.label31.Size = new System.Drawing.Size(22, 13);
-            this.label31.TabIndex = 91;
+            this.label31.TabIndex = 5;
             this.label31.Text = "mV";
             // 
             // label32
@@ -3614,7 +3687,7 @@
             this.label32.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label32.Name = "label32";
             this.label32.Size = new System.Drawing.Size(22, 13);
-            this.label32.TabIndex = 90;
+            this.label32.TabIndex = 2;
             this.label32.Text = "mV";
             // 
             // label33
@@ -3625,7 +3698,7 @@
             this.label33.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label33.Name = "label33";
             this.label33.Size = new System.Drawing.Size(35, 13);
-            this.label33.TabIndex = 89;
+            this.label33.TabIndex = 6;
             this.label33.Text = "Offset";
             // 
             // ch_offset1
@@ -3635,7 +3708,7 @@
             this.ch_offset1.Margin = new System.Windows.Forms.Padding(1);
             this.ch_offset1.Name = "ch_offset1";
             this.ch_offset1.Size = new System.Drawing.Size(46, 20);
-            this.ch_offset1.TabIndex = 88;
+            this.ch_offset1.TabIndex = 7;
             this.ch_offset1.Text = "0";
             this.ch_offset1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.ch_offset1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3648,7 +3721,7 @@
             this.label34.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label34.Name = "label34";
             this.label34.Size = new System.Drawing.Size(21, 13);
-            this.label34.TabIndex = 87;
+            this.label34.TabIndex = 3;
             this.label34.Text = "ZC";
             // 
             // ch_threshold1
@@ -3658,7 +3731,7 @@
             this.ch_threshold1.Margin = new System.Windows.Forms.Padding(1);
             this.ch_threshold1.Name = "ch_threshold1";
             this.ch_threshold1.Size = new System.Drawing.Size(46, 20);
-            this.ch_threshold1.TabIndex = 84;
+            this.ch_threshold1.TabIndex = 1;
             this.ch_threshold1.Text = "50";
             this.ch_threshold1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.ch_threshold1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3671,7 +3744,7 @@
             this.label35.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label35.Name = "label35";
             this.label35.Size = new System.Drawing.Size(40, 13);
-            this.label35.TabIndex = 85;
+            this.label35.TabIndex = 0;
             this.label35.Text = "Thresh";
             // 
             // label29
@@ -3682,7 +3755,7 @@
             this.label29.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label29.Name = "label29";
             this.label29.Size = new System.Drawing.Size(18, 13);
-            this.label29.TabIndex = 251;
+            this.label29.TabIndex = 11;
             this.label29.Text = "ps";
             // 
             // ch_zc_level1
@@ -3692,7 +3765,7 @@
             this.ch_zc_level1.Margin = new System.Windows.Forms.Padding(1);
             this.ch_zc_level1.Name = "ch_zc_level1";
             this.ch_zc_level1.Size = new System.Drawing.Size(46, 20);
-            this.ch_zc_level1.TabIndex = 86;
+            this.ch_zc_level1.TabIndex = 4;
             this.ch_zc_level1.Text = "0";
             this.ch_zc_level1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.ch_zc_level1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3705,7 +3778,7 @@
             this.resolution.Margin = new System.Windows.Forms.Padding(1);
             this.resolution.Name = "resolution";
             this.resolution.Size = new System.Drawing.Size(40, 20);
-            this.resolution.TabIndex = 255;
+            this.resolution.TabIndex = 10;
             this.resolution.Text = "250";
             this.resolution.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
@@ -3717,7 +3790,7 @@
             this.label28.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label28.Name = "label28";
             this.label28.Size = new System.Drawing.Size(57, 13);
-            this.label28.TabIndex = 254;
+            this.label28.TabIndex = 9;
             this.label28.Text = "Resolution";
             // 
             // groupBox5
@@ -3735,10 +3808,10 @@
             this.groupBox5.Controls.Add(this.label41);
             this.groupBox5.Controls.Add(this.ch_zc_level2);
             this.groupBox5.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox5.Location = new System.Drawing.Point(157, 107);
+            this.groupBox5.Location = new System.Drawing.Point(157, 109);
             this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Size = new System.Drawing.Size(125, 114);
-            this.groupBox5.TabIndex = 256;
+            this.groupBox5.Size = new System.Drawing.Size(125, 106);
+            this.groupBox5.TabIndex = 3;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Channel 2";
             // 
@@ -3750,7 +3823,7 @@
             this.resolution2.Margin = new System.Windows.Forms.Padding(1);
             this.resolution2.Name = "resolution2";
             this.resolution2.Size = new System.Drawing.Size(40, 20);
-            this.resolution2.TabIndex = 263;
+            this.resolution2.TabIndex = 10;
             this.resolution2.Text = "250";
             this.resolution2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
@@ -3762,7 +3835,7 @@
             this.label87.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label87.Name = "label87";
             this.label87.Size = new System.Drawing.Size(57, 13);
-            this.label87.TabIndex = 256;
+            this.label87.TabIndex = 9;
             this.label87.Text = "Resolution";
             // 
             // label86
@@ -3773,7 +3846,7 @@
             this.label86.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label86.Name = "label86";
             this.label86.Size = new System.Drawing.Size(18, 13);
-            this.label86.TabIndex = 262;
+            this.label86.TabIndex = 11;
             this.label86.Text = "ps";
             // 
             // label36
@@ -3784,7 +3857,7 @@
             this.label36.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label36.Name = "label36";
             this.label36.Size = new System.Drawing.Size(18, 13);
-            this.label36.TabIndex = 92;
+            this.label36.TabIndex = 8;
             this.label36.Text = "ps";
             // 
             // label37
@@ -3795,7 +3868,7 @@
             this.label37.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label37.Name = "label37";
             this.label37.Size = new System.Drawing.Size(22, 13);
-            this.label37.TabIndex = 91;
+            this.label37.TabIndex = 5;
             this.label37.Text = "mV";
             // 
             // label38
@@ -3806,7 +3879,7 @@
             this.label38.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label38.Name = "label38";
             this.label38.Size = new System.Drawing.Size(22, 13);
-            this.label38.TabIndex = 90;
+            this.label38.TabIndex = 2;
             this.label38.Text = "mV";
             // 
             // label39
@@ -3817,7 +3890,7 @@
             this.label39.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label39.Name = "label39";
             this.label39.Size = new System.Drawing.Size(35, 13);
-            this.label39.TabIndex = 89;
+            this.label39.TabIndex = 6;
             this.label39.Text = "Offset";
             // 
             // ch_offset2
@@ -3827,7 +3900,7 @@
             this.ch_offset2.Margin = new System.Windows.Forms.Padding(1);
             this.ch_offset2.Name = "ch_offset2";
             this.ch_offset2.Size = new System.Drawing.Size(46, 20);
-            this.ch_offset2.TabIndex = 88;
+            this.ch_offset2.TabIndex = 7;
             this.ch_offset2.Text = "0";
             this.ch_offset2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.ch_offset2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3840,7 +3913,7 @@
             this.label40.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label40.Name = "label40";
             this.label40.Size = new System.Drawing.Size(21, 13);
-            this.label40.TabIndex = 87;
+            this.label40.TabIndex = 3;
             this.label40.Text = "ZC";
             // 
             // ch_threshold2
@@ -3850,7 +3923,7 @@
             this.ch_threshold2.Margin = new System.Windows.Forms.Padding(1);
             this.ch_threshold2.Name = "ch_threshold2";
             this.ch_threshold2.Size = new System.Drawing.Size(46, 20);
-            this.ch_threshold2.TabIndex = 84;
+            this.ch_threshold2.TabIndex = 1;
             this.ch_threshold2.Text = "50";
             this.ch_threshold2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.ch_threshold2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3863,7 +3936,7 @@
             this.label41.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label41.Name = "label41";
             this.label41.Size = new System.Drawing.Size(40, 13);
-            this.label41.TabIndex = 85;
+            this.label41.TabIndex = 0;
             this.label41.Text = "Thresh";
             // 
             // ch_zc_level2
@@ -3873,7 +3946,7 @@
             this.ch_zc_level2.Margin = new System.Windows.Forms.Padding(1);
             this.ch_zc_level2.Name = "ch_zc_level2";
             this.ch_zc_level2.Size = new System.Drawing.Size(46, 20);
-            this.ch_zc_level2.TabIndex = 86;
+            this.ch_zc_level2.TabIndex = 4;
             this.ch_zc_level2.Text = "0";
             this.ch_zc_level2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.ch_zc_level2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PQ_KeyDown);
@@ -3881,10 +3954,12 @@
             // tbScanParam
             // 
             this.tbScanParam.BackColor = System.Drawing.SystemColors.Control;
+            this.tbScanParam.Controls.Add(this.Trig_Every2);
+            this.tbScanParam.Controls.Add(this.SaveDelayResonant);
+            this.tbScanParam.Controls.Add(this.BiDrecYCheck);
             this.tbScanParam.Controls.Add(this.label58);
             this.tbScanParam.Controls.Add(this.label57);
             this.tbScanParam.Controls.Add(this.resonantMaxVoltage);
-            this.tbScanParam.Controls.Add(this.ZScanWithPiezo);
             this.tbScanParam.Controls.Add(this.ScanDelayUpDown_nano);
             this.tbScanParam.Controls.Add(this.EOMDelayUpDown_us);
             this.tbScanParam.Controls.Add(this.LineClockDelay_us);
@@ -3894,14 +3969,12 @@
             this.tbScanParam.Controls.Add(this.FocusAverage);
             this.tbScanParam.Controls.Add(this.label98);
             this.tbScanParam.Controls.Add(this.SineWaveScanning_CB);
+            this.tbScanParam.Controls.Add(this.LineScan_CB);
             this.tbScanParam.Controls.Add(this.SwitchXY_CB);
             this.tbScanParam.Controls.Add(this.FlipY_CB);
             this.tbScanParam.Controls.Add(this.FlipX_CB);
             this.tbScanParam.Controls.Add(this.label105);
-            this.tbScanParam.Controls.Add(this.MeasuredLineCorrection);
             this.tbScanParam.Controls.Add(this.ResonantCheckBox);
-            this.tbScanParam.Controls.Add(this.label95);
-            this.tbScanParam.Controls.Add(this.LineTimeCorrection);
             this.tbScanParam.Controls.Add(this.ScanFraction);
             this.tbScanParam.Controls.Add(this.FillFraction);
             this.tbScanParam.Controls.Add(this.MaxRangeY);
@@ -3910,7 +3983,6 @@
             this.tbScanParam.Controls.Add(this.MsPerLine);
             this.tbScanParam.Controls.Add(this.pixelsPerLine);
             this.tbScanParam.Controls.Add(this.linesPerFrame);
-            this.tbScanParam.Controls.Add(this.label94);
             this.tbScanParam.Controls.Add(this.BiDirecCB);
             this.tbScanParam.Controls.Add(this.label89);
             this.tbScanParam.Controls.Add(this.pb32);
@@ -3936,20 +4008,88 @@
             this.tbScanParam.Location = new System.Drawing.Point(4, 23);
             this.tbScanParam.Name = "tbScanParam";
             this.tbScanParam.Padding = new System.Windows.Forms.Padding(3);
-            this.tbScanParam.Size = new System.Drawing.Size(314, 337);
+            this.tbScanParam.Size = new System.Drawing.Size(316, 337);
             this.tbScanParam.TabIndex = 1;
+            this.tbScanParam.Tag = "";
             this.tbScanParam.Text = "Scan";
             // 
-            // ZScanWithPiezo
+            // Trig_Every2
             // 
-            this.ZScanWithPiezo.AutoSize = true;
-            this.ZScanWithPiezo.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.ZScanWithPiezo.Location = new System.Drawing.Point(151, 241);
-            this.ZScanWithPiezo.Name = "ZScanWithPiezo";
-            this.ZScanWithPiezo.Size = new System.Drawing.Size(114, 18);
-            this.ZScanWithPiezo.TabIndex = 344;
-            this.ZScanWithPiezo.Text = "Z-scan with piezo";
-            this.ZScanWithPiezo.UseVisualStyleBackColor = true;
+            this.Trig_Every2.AutoSize = true;
+            this.Trig_Every2.Enabled = false;
+            this.Trig_Every2.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Trig_Every2.Location = new System.Drawing.Point(28, 247);
+            this.Trig_Every2.Name = "Trig_Every2";
+            this.Trig_Every2.Size = new System.Drawing.Size(125, 18);
+            this.Trig_Every2.TabIndex = 53;
+            this.Trig_Every2.Tag = "Adv, NGrab, NRes";
+            this.Trig_Every2.Text = "Trigger every 2 lines";
+            this.Trig_Every2.UseVisualStyleBackColor = true;
+            // 
+            // SaveDelayResonant
+            // 
+            this.SaveDelayResonant.Enabled = false;
+            this.SaveDelayResonant.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.SaveDelayResonant.Location = new System.Drawing.Point(236, 232);
+            this.SaveDelayResonant.Name = "SaveDelayResonant";
+            this.SaveDelayResonant.Size = new System.Drawing.Size(74, 23);
+            this.SaveDelayResonant.TabIndex = 4;
+            this.SaveDelayResonant.Tag = "Adv,";
+            this.SaveDelayResonant.Text = "Save Delay";
+            this.SaveDelayResonant.UseVisualStyleBackColor = true;
+            this.SaveDelayResonant.Click += new System.EventHandler(this.SaveDelayResonant_Click);
+            // 
+            // BiDrecYCheck
+            // 
+            this.BiDrecYCheck.AutoSize = true;
+            this.BiDrecYCheck.Enabled = false;
+            this.BiDrecYCheck.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.BiDrecYCheck.Location = new System.Drawing.Point(13, 267);
+            this.BiDrecYCheck.Name = "BiDrecYCheck";
+            this.BiDrecYCheck.Size = new System.Drawing.Size(126, 18);
+            this.BiDrecYCheck.TabIndex = 52;
+            this.BiDrecYCheck.Tag = "Adv, NGrab, ";
+            this.BiDrecYCheck.Text = "Bi-directional scan Y";
+            this.BiDrecYCheck.UseVisualStyleBackColor = true;
+            this.BiDrecYCheck.Click += new System.EventHandler(this.Generic_ValueChanged);
+            // 
+            // label58
+            // 
+            this.label58.AutoSize = true;
+            this.label58.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label58.Location = new System.Drawing.Point(134, 74);
+            this.label58.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.label58.Name = "label58";
+            this.label58.Size = new System.Drawing.Size(91, 14);
+            this.label58.TabIndex = 30;
+            this.label58.Tag = "NGG";
+            this.label58.Text = "Resonant voltage";
+            // 
+            // label57
+            // 
+            this.label57.AutoSize = true;
+            this.label57.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label57.Location = new System.Drawing.Point(278, 76);
+            this.label57.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.label57.Name = "label57";
+            this.label57.Size = new System.Drawing.Size(15, 14);
+            this.label57.TabIndex = 32;
+            this.label57.Tag = "NGG";
+            this.label57.Text = "V";
+            // 
+            // resonantMaxVoltage
+            // 
+            this.resonantMaxVoltage.Enabled = false;
+            this.resonantMaxVoltage.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.resonantMaxVoltage.Location = new System.Drawing.Point(225, 71);
+            this.resonantMaxVoltage.Margin = new System.Windows.Forms.Padding(1);
+            this.resonantMaxVoltage.Name = "resonantMaxVoltage";
+            this.resonantMaxVoltage.Size = new System.Drawing.Size(50, 20);
+            this.resonantMaxVoltage.TabIndex = 31;
+            this.resonantMaxVoltage.Tag = "Adv, NGrab, NGG";
+            this.resonantMaxVoltage.Text = "5";
+            this.resonantMaxVoltage.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.resonantMaxVoltage.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
             // 
             // ScanDelayUpDown_nano
             // 
@@ -3960,7 +4100,7 @@
             0,
             0,
             0});
-            this.ScanDelayUpDown_nano.Location = new System.Drawing.Point(227, 175);
+            this.ScanDelayUpDown_nano.Location = new System.Drawing.Point(225, 171);
             this.ScanDelayUpDown_nano.Margin = new System.Windows.Forms.Padding(1);
             this.ScanDelayUpDown_nano.Maximum = new decimal(new int[] {
             1000000,
@@ -3974,17 +4114,18 @@
             -2147483648});
             this.ScanDelayUpDown_nano.Name = "ScanDelayUpDown_nano";
             this.ScanDelayUpDown_nano.Size = new System.Drawing.Size(63, 20);
-            this.ScanDelayUpDown_nano.TabIndex = 343;
+            this.ScanDelayUpDown_nano.TabIndex = 44;
+            this.ScanDelayUpDown_nano.Tag = "Adv";
             this.ScanDelayUpDown_nano.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.ScanDelayUpDown_nano.ThousandsSeparator = true;
+            this.ScanDelayUpDown_nano.Click += new System.EventHandler(this.ScanDelayUpDown_nano_Click);
             this.ScanDelayUpDown_nano.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ScanDelayUpDown_KeyDown);
-            this.ScanDelayUpDown_nano.MouseClick += new System.Windows.Forms.MouseEventHandler(this.ScanDelayUpDown_MouseClick);
             // 
             // EOMDelayUpDown_us
             // 
             this.EOMDelayUpDown_us.Enabled = false;
             this.EOMDelayUpDown_us.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.EOMDelayUpDown_us.Location = new System.Drawing.Point(227, 195);
+            this.EOMDelayUpDown_us.Location = new System.Drawing.Point(225, 191);
             this.EOMDelayUpDown_us.Margin = new System.Windows.Forms.Padding(1);
             this.EOMDelayUpDown_us.Maximum = new decimal(new int[] {
             1000,
@@ -3998,16 +4139,17 @@
             -2147483648});
             this.EOMDelayUpDown_us.Name = "EOMDelayUpDown_us";
             this.EOMDelayUpDown_us.Size = new System.Drawing.Size(63, 20);
-            this.EOMDelayUpDown_us.TabIndex = 342;
+            this.EOMDelayUpDown_us.TabIndex = 47;
+            this.EOMDelayUpDown_us.Tag = "Adv";
             this.EOMDelayUpDown_us.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.EOMDelayUpDown_us.Click += new System.EventHandler(this.EOMDelayUpDown_us_Clicked);
             this.EOMDelayUpDown_us.KeyDown += new System.Windows.Forms.KeyEventHandler(this.EOMDelayUpDown_KeyDown);
-            this.EOMDelayUpDown_us.MouseClick += new System.Windows.Forms.MouseEventHandler(this.EOMDelayUpDown_MouseClick);
             // 
             // LineClockDelay_us
             // 
             this.LineClockDelay_us.Enabled = false;
             this.LineClockDelay_us.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.LineClockDelay_us.Location = new System.Drawing.Point(227, 215);
+            this.LineClockDelay_us.Location = new System.Drawing.Point(225, 211);
             this.LineClockDelay_us.Margin = new System.Windows.Forms.Padding(1);
             this.LineClockDelay_us.Maximum = new decimal(new int[] {
             1000,
@@ -4016,20 +4158,21 @@
             0});
             this.LineClockDelay_us.Name = "LineClockDelay_us";
             this.LineClockDelay_us.Size = new System.Drawing.Size(63, 20);
-            this.LineClockDelay_us.TabIndex = 341;
+            this.LineClockDelay_us.TabIndex = 49;
+            this.LineClockDelay_us.Tag = "Adv";
             this.LineClockDelay_us.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.LineClockDelay_us.Click += new System.EventHandler(this.LineClockDelay_us_Click);
             this.LineClockDelay_us.KeyDown += new System.Windows.Forms.KeyEventHandler(this.LineClockDelay_KeyDown);
-            this.LineClockDelay_us.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.DelayUpDown_Click);
             // 
             // label56
             // 
             this.label56.AutoSize = true;
             this.label56.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label56.Location = new System.Drawing.Point(132, 217);
+            this.label56.Location = new System.Drawing.Point(130, 213);
             this.label56.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label56.Name = "label56";
             this.label56.Size = new System.Drawing.Size(96, 14);
-            this.label56.TabIndex = 340;
+            this.label56.TabIndex = 48;
             this.label56.Text = "L-Clock Delay (us)";
             // 
             // MiniScopePanel
@@ -4041,47 +4184,45 @@
             this.MiniScopePanel.Controls.Add(this.label100);
             this.MiniScopePanel.Controls.Add(this.label103);
             this.MiniScopePanel.Controls.Add(this.label52);
-            this.MiniScopePanel.Location = new System.Drawing.Point(148, 257);
+            this.MiniScopePanel.Location = new System.Drawing.Point(153, 258);
             this.MiniScopePanel.Name = "MiniScopePanel";
-            this.MiniScopePanel.Size = new System.Drawing.Size(161, 77);
-            this.MiniScopePanel.TabIndex = 321;
+            this.MiniScopePanel.Size = new System.Drawing.Size(159, 77);
+            this.MiniScopePanel.TabIndex = 51;
             this.MiniScopePanel.TabStop = false;
+            this.MiniScopePanel.Tag = "NGrab, miniScope, Adv";
             // 
             // EnableMiniScopeClockCheck
             // 
             this.EnableMiniScopeClockCheck.AutoSize = true;
-            this.EnableMiniScopeClockCheck.Enabled = false;
             this.EnableMiniScopeClockCheck.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.EnableMiniScopeClockCheck.Location = new System.Drawing.Point(3, 12);
+            this.EnableMiniScopeClockCheck.Location = new System.Drawing.Point(9, 13);
             this.EnableMiniScopeClockCheck.Name = "EnableMiniScopeClockCheck";
             this.EnableMiniScopeClockCheck.Size = new System.Drawing.Size(145, 18);
-            this.EnableMiniScopeClockCheck.TabIndex = 319;
+            this.EnableMiniScopeClockCheck.TabIndex = 0;
             this.EnableMiniScopeClockCheck.Text = "Enable MiniScope Clocks";
             this.EnableMiniScopeClockCheck.UseVisualStyleBackColor = true;
             this.EnableMiniScopeClockCheck.Click += new System.EventHandler(this.Generic_ValueChanged);
             // 
             // SClkTextBox
             // 
-            this.SClkTextBox.Enabled = false;
             this.SClkTextBox.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.SClkTextBox.Location = new System.Drawing.Point(77, 51);
             this.SClkTextBox.Margin = new System.Windows.Forms.Padding(1);
             this.SClkTextBox.Name = "SClkTextBox";
             this.SClkTextBox.Size = new System.Drawing.Size(50, 20);
-            this.SClkTextBox.TabIndex = 315;
+            this.SClkTextBox.TabIndex = 5;
             this.SClkTextBox.Text = "60";
             this.SClkTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.SClkTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
             // 
             // FClkTextBox
             // 
-            this.FClkTextBox.Enabled = false;
             this.FClkTextBox.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.FClkTextBox.Location = new System.Drawing.Point(77, 31);
             this.FClkTextBox.Margin = new System.Windows.Forms.Padding(1);
             this.FClkTextBox.Name = "FClkTextBox";
             this.FClkTextBox.Size = new System.Drawing.Size(50, 20);
-            this.FClkTextBox.TabIndex = 317;
+            this.FClkTextBox.TabIndex = 2;
             this.FClkTextBox.Text = "240";
             this.FClkTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.FClkTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -4094,7 +4235,7 @@
             this.label99.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label99.Name = "label99";
             this.label99.Size = new System.Drawing.Size(27, 14);
-            this.label99.TabIndex = 316;
+            this.label99.TabIndex = 1;
             this.label99.Text = "FClk";
             // 
             // label100
@@ -4105,7 +4246,7 @@
             this.label100.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label100.Name = "label100";
             this.label100.Size = new System.Drawing.Size(28, 14);
-            this.label100.TabIndex = 314;
+            this.label100.TabIndex = 4;
             this.label100.Text = "SClk";
             // 
             // label103
@@ -4116,7 +4257,7 @@
             this.label103.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label103.Name = "label103";
             this.label103.Size = new System.Drawing.Size(27, 14);
-            this.label103.TabIndex = 320;
+            this.label103.TabIndex = 3;
             this.label103.Text = "KHz";
             // 
             // label52
@@ -4127,7 +4268,7 @@
             this.label52.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label52.Name = "label52";
             this.label52.Size = new System.Drawing.Size(27, 14);
-            this.label52.TabIndex = 318;
+            this.label52.TabIndex = 6;
             this.label52.Text = "KHz";
             // 
             // ExtTriggerCB
@@ -4135,10 +4276,11 @@
             this.ExtTriggerCB.AutoSize = true;
             this.ExtTriggerCB.Enabled = false;
             this.ExtTriggerCB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.ExtTriggerCB.Location = new System.Drawing.Point(15, 277);
+            this.ExtTriggerCB.Location = new System.Drawing.Point(13, 315);
             this.ExtTriggerCB.Name = "ExtTriggerCB";
             this.ExtTriggerCB.Size = new System.Drawing.Size(75, 18);
-            this.ExtTriggerCB.TabIndex = 339;
+            this.ExtTriggerCB.TabIndex = 25;
+            this.ExtTriggerCB.Tag = "Adv, NGrab, ";
             this.ExtTriggerCB.Text = "Ext trigger";
             this.ExtTriggerCB.UseVisualStyleBackColor = true;
             this.ExtTriggerCB.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -4150,7 +4292,8 @@
             this.FocusAverage.Margin = new System.Windows.Forms.Padding(1);
             this.FocusAverage.Name = "FocusAverage";
             this.FocusAverage.Size = new System.Drawing.Size(40, 20);
-            this.FocusAverage.TabIndex = 310;
+            this.FocusAverage.TabIndex = 1;
+            this.FocusAverage.Tag = "NGrab";
             this.FocusAverage.Text = "1.0";
             this.FocusAverage.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.FocusAverage.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -4163,7 +4306,7 @@
             this.label98.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label98.Name = "label98";
             this.label98.Size = new System.Drawing.Size(80, 14);
-            this.label98.TabIndex = 311;
+            this.label98.TabIndex = 0;
             this.label98.Text = "Focus average";
             // 
             // SineWaveScanning_CB
@@ -4171,22 +4314,38 @@
             this.SineWaveScanning_CB.AutoSize = true;
             this.SineWaveScanning_CB.Enabled = false;
             this.SineWaveScanning_CB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.SineWaveScanning_CB.Location = new System.Drawing.Point(15, 259);
+            this.SineWaveScanning_CB.Location = new System.Drawing.Point(13, 283);
             this.SineWaveScanning_CB.Name = "SineWaveScanning_CB";
             this.SineWaveScanning_CB.Size = new System.Drawing.Size(122, 18);
-            this.SineWaveScanning_CB.TabIndex = 309;
+            this.SineWaveScanning_CB.TabIndex = 24;
+            this.SineWaveScanning_CB.Tag = "Adv, NGrab, NRes";
             this.SineWaveScanning_CB.Text = "Sinewave scanning";
             this.SineWaveScanning_CB.UseVisualStyleBackColor = true;
             this.SineWaveScanning_CB.Click += new System.EventHandler(this.Generic_ValueChanged);
             // 
+            // LineScan_CB
+            // 
+            this.LineScan_CB.AutoSize = true;
+            this.LineScan_CB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.LineScan_CB.Location = new System.Drawing.Point(13, 299);
+            this.LineScan_CB.Name = "LineScan_CB";
+            this.LineScan_CB.Size = new System.Drawing.Size(101, 18);
+            this.LineScan_CB.TabIndex = 26;
+            this.LineScan_CB.Tag = "NGrab, NRes";
+            this.LineScan_CB.Text = "Line scan trace";
+            this.LineScan_CB.UseVisualStyleBackColor = true;
+            this.LineScan_CB.Click += new System.EventHandler(this.LineScan_CB_Click);
+            // 
             // SwitchXY_CB
             // 
             this.SwitchXY_CB.AutoSize = true;
+            this.SwitchXY_CB.Enabled = false;
             this.SwitchXY_CB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.SwitchXY_CB.Location = new System.Drawing.Point(15, 187);
+            this.SwitchXY_CB.Location = new System.Drawing.Point(13, 180);
             this.SwitchXY_CB.Name = "SwitchXY_CB";
             this.SwitchXY_CB.Size = new System.Drawing.Size(102, 18);
-            this.SwitchXY_CB.TabIndex = 308;
+            this.SwitchXY_CB.TabIndex = 20;
+            this.SwitchXY_CB.Tag = "AdvNGrabNRes";
             this.SwitchXY_CB.Text = "Switch X and Y";
             this.SwitchXY_CB.UseVisualStyleBackColor = true;
             this.SwitchXY_CB.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -4194,11 +4353,13 @@
             // FlipY_CB
             // 
             this.FlipY_CB.AutoSize = true;
+            this.FlipY_CB.Enabled = false;
             this.FlipY_CB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.FlipY_CB.Location = new System.Drawing.Point(15, 223);
+            this.FlipY_CB.Location = new System.Drawing.Point(13, 212);
             this.FlipY_CB.Name = "FlipY_CB";
             this.FlipY_CB.Size = new System.Drawing.Size(76, 18);
-            this.FlipY_CB.TabIndex = 307;
+            this.FlipY_CB.TabIndex = 22;
+            this.FlipY_CB.Tag = "Adv, NGrab, ";
             this.FlipY_CB.Text = "Flip Y-axis";
             this.FlipY_CB.UseVisualStyleBackColor = true;
             this.FlipY_CB.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -4206,11 +4367,13 @@
             // FlipX_CB
             // 
             this.FlipX_CB.AutoSize = true;
+            this.FlipX_CB.Enabled = false;
             this.FlipX_CB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.FlipX_CB.Location = new System.Drawing.Point(15, 205);
+            this.FlipX_CB.Location = new System.Drawing.Point(13, 196);
             this.FlipX_CB.Name = "FlipX_CB";
             this.FlipX_CB.Size = new System.Drawing.Size(76, 18);
-            this.FlipX_CB.TabIndex = 306;
+            this.FlipX_CB.TabIndex = 21;
+            this.FlipX_CB.Tag = "Adv, NGrab, NRes";
             this.FlipX_CB.Text = "Flip X-axis";
             this.FlipX_CB.UseVisualStyleBackColor = true;
             this.FlipX_CB.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -4219,68 +4382,35 @@
             // 
             this.label105.AutoSize = true;
             this.label105.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label105.Location = new System.Drawing.Point(145, 198);
+            this.label105.Location = new System.Drawing.Point(143, 194);
             this.label105.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label105.Name = "label105";
             this.label105.Size = new System.Drawing.Size(82, 14);
-            this.label105.TabIndex = 322;
+            this.label105.TabIndex = 46;
             this.label105.Text = "EOM Delay (us)";
-            // 
-            // MeasuredLineCorrection
-            // 
-            this.MeasuredLineCorrection.AutoSize = true;
-            this.MeasuredLineCorrection.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.MeasuredLineCorrection.Location = new System.Drawing.Point(114, 319);
-            this.MeasuredLineCorrection.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.MeasuredLineCorrection.Name = "MeasuredLineCorrection";
-            this.MeasuredLineCorrection.Size = new System.Drawing.Size(22, 14);
-            this.MeasuredLineCorrection.TabIndex = 305;
-            this.MeasuredLineCorrection.Text = "1.0";
             // 
             // ResonantCheckBox
             // 
             this.ResonantCheckBox.AutoSize = true;
-            this.ResonantCheckBox.Location = new System.Drawing.Point(9, 78);
+            this.ResonantCheckBox.Location = new System.Drawing.Point(9, 74);
             this.ResonantCheckBox.Name = "ResonantCheckBox";
             this.ResonantCheckBox.Size = new System.Drawing.Size(119, 18);
-            this.ResonantCheckBox.TabIndex = 326;
+            this.ResonantCheckBox.TabIndex = 9;
+            this.ResonantCheckBox.Tag = "NGrab";
             this.ResonantCheckBox.Text = "Resonant scanning";
             this.ResonantCheckBox.UseVisualStyleBackColor = true;
-            this.ResonantCheckBox.CheckedChanged += new System.EventHandler(this.ResonantCheckBox_CheckedChanged);
-            // 
-            // label95
-            // 
-            this.label95.AutoSize = true;
-            this.label95.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label95.Location = new System.Drawing.Point(47, 319);
-            this.label95.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.label95.Name = "label95";
-            this.label95.Size = new System.Drawing.Size(55, 14);
-            this.label95.TabIndex = 304;
-            this.label95.Text = "Measured";
-            // 
-            // LineTimeCorrection
-            // 
-            this.LineTimeCorrection.Enabled = false;
-            this.LineTimeCorrection.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.LineTimeCorrection.Location = new System.Drawing.Point(108, 297);
-            this.LineTimeCorrection.Margin = new System.Windows.Forms.Padding(1);
-            this.LineTimeCorrection.Name = "LineTimeCorrection";
-            this.LineTimeCorrection.Size = new System.Drawing.Size(40, 20);
-            this.LineTimeCorrection.TabIndex = 301;
-            this.LineTimeCorrection.Text = "1.0";
-            this.LineTimeCorrection.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.LineTimeCorrection.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
+            this.ResonantCheckBox.Click += new System.EventHandler(this.ResonantCheckBox_Click);
             // 
             // ScanFraction
             // 
             this.ScanFraction.Enabled = false;
             this.ScanFraction.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.ScanFraction.Location = new System.Drawing.Point(227, 155);
+            this.ScanFraction.Location = new System.Drawing.Point(225, 151);
             this.ScanFraction.Margin = new System.Windows.Forms.Padding(1);
             this.ScanFraction.Name = "ScanFraction";
             this.ScanFraction.Size = new System.Drawing.Size(50, 20);
-            this.ScanFraction.TabIndex = 118;
+            this.ScanFraction.TabIndex = 42;
+            this.ScanFraction.Tag = "Adv, NGrab, NRes,";
             this.ScanFraction.Text = "0.900";
             this.ScanFraction.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.ScanFraction.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -4289,11 +4419,12 @@
             // 
             this.FillFraction.Enabled = false;
             this.FillFraction.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.FillFraction.Location = new System.Drawing.Point(227, 135);
+            this.FillFraction.Location = new System.Drawing.Point(225, 131);
             this.FillFraction.Margin = new System.Windows.Forms.Padding(1);
             this.FillFraction.Name = "FillFraction";
             this.FillFraction.Size = new System.Drawing.Size(50, 20);
-            this.FillFraction.TabIndex = 114;
+            this.FillFraction.TabIndex = 40;
+            this.FillFraction.Tag = "Adv, NGrab, ";
             this.FillFraction.Text = "0.800";
             this.FillFraction.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.FillFraction.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -4302,11 +4433,12 @@
             // 
             this.MaxRangeY.Enabled = false;
             this.MaxRangeY.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.MaxRangeY.Location = new System.Drawing.Point(227, 115);
+            this.MaxRangeY.Location = new System.Drawing.Point(225, 111);
             this.MaxRangeY.Margin = new System.Windows.Forms.Padding(1);
             this.MaxRangeY.Name = "MaxRangeY";
             this.MaxRangeY.Size = new System.Drawing.Size(50, 20);
-            this.MaxRangeY.TabIndex = 286;
+            this.MaxRangeY.TabIndex = 37;
+            this.MaxRangeY.Tag = "Adv, NGrab, ";
             this.MaxRangeY.Text = "5";
             this.MaxRangeY.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.MaxRangeY.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -4315,11 +4447,12 @@
             // 
             this.MaxRangeX.Enabled = false;
             this.MaxRangeX.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.MaxRangeX.Location = new System.Drawing.Point(227, 95);
+            this.MaxRangeX.Location = new System.Drawing.Point(225, 91);
             this.MaxRangeX.Margin = new System.Windows.Forms.Padding(1);
             this.MaxRangeX.Name = "MaxRangeX";
             this.MaxRangeX.Size = new System.Drawing.Size(50, 20);
-            this.MaxRangeX.TabIndex = 285;
+            this.MaxRangeX.TabIndex = 34;
+            this.MaxRangeX.Tag = "Adv, NGrab, ";
             this.MaxRangeX.Text = "5";
             this.MaxRangeX.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.MaxRangeX.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -4328,22 +4461,24 @@
             // 
             this.pixelTime.Enabled = false;
             this.pixelTime.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.pixelTime.Location = new System.Drawing.Point(65, 161);
+            this.pixelTime.Location = new System.Drawing.Point(65, 153);
             this.pixelTime.Margin = new System.Windows.Forms.Padding(1);
             this.pixelTime.Name = "pixelTime";
             this.pixelTime.Size = new System.Drawing.Size(50, 20);
-            this.pixelTime.TabIndex = 127;
+            this.pixelTime.TabIndex = 17;
+            this.pixelTime.Tag = "Adv, NGrab, ";
             this.pixelTime.Text = "12.500";
             this.pixelTime.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
             // MsPerLine
             // 
             this.MsPerLine.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.MsPerLine.Location = new System.Drawing.Point(72, 141);
+            this.MsPerLine.Location = new System.Drawing.Point(72, 133);
             this.MsPerLine.Margin = new System.Windows.Forms.Padding(1);
             this.MsPerLine.Name = "MsPerLine";
             this.MsPerLine.Size = new System.Drawing.Size(40, 20);
-            this.MsPerLine.TabIndex = 124;
+            this.MsPerLine.TabIndex = 15;
+            this.MsPerLine.Tag = "Adv, NGrab, ";
             this.MsPerLine.Text = "2";
             this.MsPerLine.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.MsPerLine.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -4351,12 +4486,12 @@
             // pixelsPerLine
             // 
             this.pixelsPerLine.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.pixelsPerLine.Location = new System.Drawing.Point(72, 101);
+            this.pixelsPerLine.Location = new System.Drawing.Point(72, 93);
             this.pixelsPerLine.Margin = new System.Windows.Forms.Padding(1);
             this.pixelsPerLine.Name = "pixelsPerLine";
             this.pixelsPerLine.ReadOnly = true;
             this.pixelsPerLine.Size = new System.Drawing.Size(40, 20);
-            this.pixelsPerLine.TabIndex = 121;
+            this.pixelsPerLine.TabIndex = 11;
             this.pixelsPerLine.Text = "128";
             this.pixelsPerLine.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.pixelsPerLine.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -4364,36 +4499,26 @@
             // linesPerFrame
             // 
             this.linesPerFrame.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.linesPerFrame.Location = new System.Drawing.Point(72, 121);
+            this.linesPerFrame.Location = new System.Drawing.Point(72, 113);
             this.linesPerFrame.Margin = new System.Windows.Forms.Padding(1);
             this.linesPerFrame.Name = "linesPerFrame";
             this.linesPerFrame.ReadOnly = true;
             this.linesPerFrame.Size = new System.Drawing.Size(40, 20);
-            this.linesPerFrame.TabIndex = 120;
+            this.linesPerFrame.TabIndex = 13;
             this.linesPerFrame.Text = "128";
             this.linesPerFrame.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.linesPerFrame.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
-            // 
-            // label94
-            // 
-            this.label94.AutoSize = true;
-            this.label94.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label94.Location = new System.Drawing.Point(6, 300);
-            this.label94.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.label94.Name = "label94";
-            this.label94.Size = new System.Drawing.Size(101, 14);
-            this.label94.TabIndex = 303;
-            this.label94.Text = "Line time correction";
             // 
             // BiDirecCB
             // 
             this.BiDirecCB.AutoSize = true;
             this.BiDirecCB.Enabled = false;
             this.BiDirecCB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.BiDirecCB.Location = new System.Drawing.Point(15, 241);
+            this.BiDirecCB.Location = new System.Drawing.Point(13, 229);
             this.BiDirecCB.Name = "BiDirecCB";
             this.BiDirecCB.Size = new System.Drawing.Size(115, 18);
-            this.BiDirecCB.TabIndex = 293;
+            this.BiDirecCB.TabIndex = 23;
+            this.BiDirecCB.Tag = "Adv, NGrab, NRes";
             this.BiDirecCB.Text = "Bi-directional scan";
             this.BiDirecCB.UseVisualStyleBackColor = true;
             this.BiDirecCB.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -4402,11 +4527,11 @@
             // 
             this.label89.AutoSize = true;
             this.label89.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label89.Location = new System.Drawing.Point(142, 118);
+            this.label89.Location = new System.Drawing.Point(140, 110);
             this.label89.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label89.Name = "label89";
             this.label89.Size = new System.Drawing.Size(85, 14);
-            this.label89.TabIndex = 292;
+            this.label89.TabIndex = 36;
             this.label89.Text = "Voltage range Y";
             // 
             // pb32
@@ -4416,7 +4541,8 @@
             this.pb32.Margin = new System.Windows.Forms.Padding(1);
             this.pb32.Name = "pb32";
             this.pb32.Size = new System.Drawing.Size(80, 23);
-            this.pb32.TabIndex = 264;
+            this.pb32.TabIndex = 2;
+            this.pb32.Tag = "NGrab";
             this.pb32.Text = "32 x 32";
             this.pb32.UseVisualStyleBackColor = true;
             this.pb32.Click += new System.EventHandler(this.pbPreset_general_Click);
@@ -4424,11 +4550,12 @@
             // pb1024
             // 
             this.pb1024.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.pb1024.Location = new System.Drawing.Point(109, 53);
+            this.pb1024.Location = new System.Drawing.Point(109, 49);
             this.pb1024.Margin = new System.Windows.Forms.Padding(1);
             this.pb1024.Name = "pb1024";
             this.pb1024.Size = new System.Drawing.Size(80, 23);
-            this.pb1024.TabIndex = 263;
+            this.pb1024.TabIndex = 7;
+            this.pb1024.Tag = "NGrab";
             this.pb1024.Text = "1024 x 1024";
             this.pb1024.UseVisualStyleBackColor = true;
             this.pb1024.Click += new System.EventHandler(this.pbPreset_general_Click);
@@ -4436,11 +4563,12 @@
             // pb512
             // 
             this.pb512.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.pb512.Location = new System.Drawing.Point(109, 28);
+            this.pb512.Location = new System.Drawing.Point(109, 26);
             this.pb512.Margin = new System.Windows.Forms.Padding(1);
             this.pb512.Name = "pb512";
             this.pb512.Size = new System.Drawing.Size(80, 23);
-            this.pb512.TabIndex = 262;
+            this.pb512.TabIndex = 6;
+            this.pb512.Tag = "NGrab";
             this.pb512.Text = "512 x 512";
             this.pb512.UseVisualStyleBackColor = true;
             this.pb512.Click += new System.EventHandler(this.pbPreset_general_Click);
@@ -4448,11 +4576,12 @@
             // pb64
             // 
             this.pb64.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.pb64.Location = new System.Drawing.Point(7, 28);
+            this.pb64.Location = new System.Drawing.Point(7, 26);
             this.pb64.Margin = new System.Windows.Forms.Padding(1);
             this.pb64.Name = "pb64";
             this.pb64.Size = new System.Drawing.Size(80, 23);
-            this.pb64.TabIndex = 261;
+            this.pb64.TabIndex = 3;
+            this.pb64.Tag = "NGrab";
             this.pb64.Text = "64 x 64";
             this.pb64.UseVisualStyleBackColor = true;
             this.pb64.Click += new System.EventHandler(this.pbPreset_general_Click);
@@ -4464,7 +4593,8 @@
             this.pb256.Margin = new System.Windows.Forms.Padding(1);
             this.pb256.Name = "pb256";
             this.pb256.Size = new System.Drawing.Size(80, 23);
-            this.pb256.TabIndex = 260;
+            this.pb256.TabIndex = 5;
+            this.pb256.Tag = "NGrab";
             this.pb256.Text = "256 x 256";
             this.pb256.UseVisualStyleBackColor = true;
             this.pb256.Click += new System.EventHandler(this.pbPreset_general_Click);
@@ -4472,11 +4602,12 @@
             // pb128
             // 
             this.pb128.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.pb128.Location = new System.Drawing.Point(7, 53);
+            this.pb128.Location = new System.Drawing.Point(7, 49);
             this.pb128.Margin = new System.Windows.Forms.Padding(1);
             this.pb128.Name = "pb128";
             this.pb128.Size = new System.Drawing.Size(80, 23);
-            this.pb128.TabIndex = 259;
+            this.pb128.TabIndex = 4;
+            this.pb128.Tag = "NGrab";
             this.pb128.Text = "128 x 128";
             this.pb128.UseVisualStyleBackColor = true;
             this.pb128.Click += new System.EventHandler(this.pbPreset_general_Click);
@@ -4485,142 +4616,144 @@
             // 
             this.label61.AutoSize = true;
             this.label61.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label61.Location = new System.Drawing.Point(142, 98);
+            this.label61.Location = new System.Drawing.Point(140, 90);
             this.label61.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label61.Name = "label61";
             this.label61.Size = new System.Drawing.Size(84, 14);
-            this.label61.TabIndex = 291;
+            this.label61.TabIndex = 33;
             this.label61.Text = "Voltage range X";
             // 
             // label10
             // 
             this.label10.AutoSize = true;
             this.label10.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label10.Location = new System.Drawing.Point(279, 117);
+            this.label10.Location = new System.Drawing.Point(277, 113);
             this.label10.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(15, 14);
-            this.label10.TabIndex = 288;
+            this.label10.TabIndex = 38;
             this.label10.Text = "V";
             // 
             // label11
             // 
             this.label11.AutoSize = true;
             this.label11.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label11.Location = new System.Drawing.Point(279, 101);
+            this.label11.Location = new System.Drawing.Point(277, 97);
             this.label11.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(15, 14);
-            this.label11.TabIndex = 287;
+            this.label11.TabIndex = 35;
             this.label11.Text = "V";
             // 
             // label1
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(14, 164);
+            this.label1.Location = new System.Drawing.Point(14, 156);
             this.label1.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(51, 14);
-            this.label1.TabIndex = 128;
+            this.label1.TabIndex = 16;
             this.label1.Text = "Pixel time";
             // 
             // st_us
             // 
             this.st_us.AutoSize = true;
             this.st_us.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_us.Location = new System.Drawing.Point(114, 164);
+            this.st_us.Location = new System.Drawing.Point(114, 156);
             this.st_us.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_us.Name = "st_us";
             this.st_us.Size = new System.Drawing.Size(19, 14);
-            this.st_us.TabIndex = 129;
+            this.st_us.TabIndex = 19;
             this.st_us.Text = "μs";
             // 
             // st_LineTime
             // 
-            this.st_LineTime.AutoSize = true;
             this.st_LineTime.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_LineTime.Location = new System.Drawing.Point(21, 144);
+            this.st_LineTime.Location = new System.Drawing.Point(7, 135);
             this.st_LineTime.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_LineTime.Name = "st_LineTime";
-            this.st_LineTime.Size = new System.Drawing.Size(49, 14);
-            this.st_LineTime.TabIndex = 125;
+            this.st_LineTime.Size = new System.Drawing.Size(61, 16);
+            this.st_LineTime.TabIndex = 14;
             this.st_LineTime.Text = "Line time";
+            this.st_LineTime.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // st_PixelsPerLine
             // 
             this.st_PixelsPerLine.AutoSize = true;
             this.st_PixelsPerLine.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_PixelsPerLine.Location = new System.Drawing.Point(12, 104);
+            this.st_PixelsPerLine.Location = new System.Drawing.Point(10, 96);
             this.st_PixelsPerLine.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_PixelsPerLine.Name = "st_PixelsPerLine";
             this.st_PixelsPerLine.Size = new System.Drawing.Size(58, 14);
-            this.st_PixelsPerLine.TabIndex = 123;
+            this.st_PixelsPerLine.TabIndex = 10;
             this.st_PixelsPerLine.Text = "Pixels/Line";
+            this.st_PixelsPerLine.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // st_LinesPerFrame
             // 
             this.st_LinesPerFrame.AutoSize = true;
             this.st_LinesPerFrame.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_LinesPerFrame.Location = new System.Drawing.Point(6, 124);
+            this.st_LinesPerFrame.Location = new System.Drawing.Point(2, 116);
             this.st_LinesPerFrame.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_LinesPerFrame.Name = "st_LinesPerFrame";
             this.st_LinesPerFrame.Size = new System.Drawing.Size(66, 14);
-            this.st_LinesPerFrame.TabIndex = 122;
+            this.st_LinesPerFrame.TabIndex = 12;
             this.st_LinesPerFrame.Text = "Lines/Frame";
+            this.st_LinesPerFrame.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // st_ms
             // 
             this.st_ms.AutoSize = true;
             this.st_ms.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_ms.Location = new System.Drawing.Point(114, 144);
+            this.st_ms.Location = new System.Drawing.Point(114, 136);
             this.st_ms.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_ms.Name = "st_ms";
             this.st_ms.Size = new System.Drawing.Size(21, 14);
-            this.st_ms.TabIndex = 126;
+            this.st_ms.TabIndex = 18;
             this.st_ms.Text = "ms";
             // 
             // label8
             // 
             this.label8.AutoSize = true;
             this.label8.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label8.Location = new System.Drawing.Point(276, 180);
+            this.label8.Location = new System.Drawing.Point(274, 176);
             this.label8.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(0, 14);
-            this.label8.TabIndex = 119;
+            this.label8.TabIndex = 45;
             // 
             // st_ScanFraction
             // 
             this.st_ScanFraction.AutoSize = true;
             this.st_ScanFraction.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_ScanFraction.Location = new System.Drawing.Point(154, 158);
+            this.st_ScanFraction.Location = new System.Drawing.Point(152, 154);
             this.st_ScanFraction.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_ScanFraction.Name = "st_ScanFraction";
             this.st_ScanFraction.Size = new System.Drawing.Size(72, 14);
-            this.st_ScanFraction.TabIndex = 117;
+            this.st_ScanFraction.TabIndex = 41;
             this.st_ScanFraction.Text = "Scan fraction";
             // 
             // st_ScanDelay
             // 
             this.st_ScanDelay.AutoSize = true;
             this.st_ScanDelay.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_ScanDelay.Location = new System.Drawing.Point(143, 178);
+            this.st_ScanDelay.Location = new System.Drawing.Point(141, 174);
             this.st_ScanDelay.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_ScanDelay.Name = "st_ScanDelay";
             this.st_ScanDelay.Size = new System.Drawing.Size(85, 14);
-            this.st_ScanDelay.TabIndex = 115;
+            this.st_ScanDelay.TabIndex = 43;
             this.st_ScanDelay.Text = "Scan Delay (ns)";
             // 
             // st_FillFraction
             // 
             this.st_FillFraction.AutoSize = true;
             this.st_FillFraction.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.st_FillFraction.Location = new System.Drawing.Point(167, 138);
+            this.st_FillFraction.Location = new System.Drawing.Point(165, 134);
             this.st_FillFraction.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_FillFraction.Name = "st_FillFraction";
             this.st_FillFraction.Size = new System.Drawing.Size(59, 14);
-            this.st_FillFraction.TabIndex = 113;
+            this.st_FillFraction.TabIndex = 39;
             this.st_FillFraction.Text = "Fill fraction";
             // 
             // AdvancedCheck
@@ -4630,10 +4763,21 @@
             this.AdvancedCheck.Location = new System.Drawing.Point(196, 54);
             this.AdvancedCheck.Name = "AdvancedCheck";
             this.AdvancedCheck.Size = new System.Drawing.Size(111, 18);
-            this.AdvancedCheck.TabIndex = 109;
+            this.AdvancedCheck.TabIndex = 8;
             this.AdvancedCheck.Text = "Advanced setting";
             this.AdvancedCheck.UseVisualStyleBackColor = true;
             this.AdvancedCheck.CheckedChanged += new System.EventHandler(this.AdvancedCheck_CheckedChanged);
+            // 
+            // ZScanWithPiezo
+            // 
+            this.ZScanWithPiezo.AutoSize = true;
+            this.ZScanWithPiezo.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ZScanWithPiezo.Location = new System.Drawing.Point(652, 313);
+            this.ZScanWithPiezo.Name = "ZScanWithPiezo";
+            this.ZScanWithPiezo.Size = new System.Drawing.Size(114, 18);
+            this.ZScanWithPiezo.TabIndex = 50;
+            this.ZScanWithPiezo.Text = "Z-scan with piezo";
+            this.ZScanWithPiezo.UseVisualStyleBackColor = true;
             // 
             // FlipMotorMirrorY
             // 
@@ -4643,7 +4787,7 @@
             this.FlipMotorMirrorY.Location = new System.Drawing.Point(15, 69);
             this.FlipMotorMirrorY.Name = "FlipMotorMirrorY";
             this.FlipMotorMirrorY.Size = new System.Drawing.Size(114, 18);
-            this.FlipMotorMirrorY.TabIndex = 313;
+            this.FlipMotorMirrorY.TabIndex = 2;
             this.FlipMotorMirrorY.Text = "Flip Y-mirror/motor";
             this.FlipMotorMirrorY.UseVisualStyleBackColor = true;
             this.FlipMotorMirrorY.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -4656,7 +4800,7 @@
             this.FlipMotorMirrorX.Location = new System.Drawing.Point(15, 51);
             this.FlipMotorMirrorX.Name = "FlipMotorMirrorX";
             this.FlipMotorMirrorX.Size = new System.Drawing.Size(114, 18);
-            this.FlipMotorMirrorX.TabIndex = 312;
+            this.FlipMotorMirrorX.TabIndex = 1;
             this.FlipMotorMirrorX.Text = "Flip X-mirror/motor";
             this.FlipMotorMirrorX.UseVisualStyleBackColor = true;
             this.FlipMotorMirrorX.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -4715,7 +4859,7 @@
             this.tb_ScanParameters.Location = new System.Drawing.Point(4, 23);
             this.tb_ScanParameters.Name = "tb_ScanParameters";
             this.tb_ScanParameters.Padding = new System.Windows.Forms.Padding(3);
-            this.tb_ScanParameters.Size = new System.Drawing.Size(314, 337);
+            this.tb_ScanParameters.Size = new System.Drawing.Size(316, 337);
             this.tb_ScanParameters.TabIndex = 0;
             this.tb_ScanParameters.Text = "Zoom/Loc";
             // 
@@ -4725,7 +4869,7 @@
             this.RotationDownButton.Location = new System.Drawing.Point(284, 187);
             this.RotationDownButton.Name = "RotationDownButton";
             this.RotationDownButton.Size = new System.Drawing.Size(25, 23);
-            this.RotationDownButton.TabIndex = 340;
+            this.RotationDownButton.TabIndex = 30;
             this.RotationDownButton.Text = "↓";
             this.RotationDownButton.UseVisualStyleBackColor = true;
             this.RotationDownButton.Click += new System.EventHandler(this.RotationUpDownButton);
@@ -4736,7 +4880,7 @@
             this.RotationUpButton.Location = new System.Drawing.Point(259, 187);
             this.RotationUpButton.Name = "RotationUpButton";
             this.RotationUpButton.Size = new System.Drawing.Size(25, 23);
-            this.RotationUpButton.TabIndex = 339;
+            this.RotationUpButton.TabIndex = 29;
             this.RotationUpButton.Text = "↑";
             this.RotationUpButton.UseVisualStyleBackColor = true;
             this.RotationUpButton.Click += new System.EventHandler(this.RotationUpDownButton);
@@ -4748,7 +4892,7 @@
             this.SuperImposeCheckBox.Location = new System.Drawing.Point(15, 310);
             this.SuperImposeCheckBox.Name = "SuperImposeCheckBox";
             this.SuperImposeCheckBox.Size = new System.Drawing.Size(89, 18);
-            this.SuperImposeCheckBox.TabIndex = 324;
+            this.SuperImposeCheckBox.TabIndex = 19;
             this.SuperImposeCheckBox.Text = "Superimpose";
             this.SuperImposeCheckBox.UseVisualStyleBackColor = true;
             this.SuperImposeCheckBox.CheckedChanged += new System.EventHandler(this.SuperImposeCheckBox_CheckedChanged);
@@ -4759,7 +4903,7 @@
             this.useCurrentButton.Location = new System.Drawing.Point(9, 281);
             this.useCurrentButton.Name = "useCurrentButton";
             this.useCurrentButton.Size = new System.Drawing.Size(121, 23);
-            this.useCurrentButton.TabIndex = 338;
+            this.useCurrentButton.TabIndex = 18;
             this.useCurrentButton.Text = "Curr img for template";
             this.useCurrentButton.UseVisualStyleBackColor = true;
             this.useCurrentButton.Click += new System.EventHandler(this.useCurrent_Button_Click);
@@ -4770,7 +4914,7 @@
             this.Enlarge_Button.Location = new System.Drawing.Point(138, 79);
             this.Enlarge_Button.Name = "Enlarge_Button";
             this.Enlarge_Button.Size = new System.Drawing.Size(52, 22);
-            this.Enlarge_Button.TabIndex = 337;
+            this.Enlarge_Button.TabIndex = 17;
             this.Enlarge_Button.Text = "Expand";
             this.Enlarge_Button.UseVisualStyleBackColor = true;
             this.Enlarge_Button.Click += new System.EventHandler(this.Enlarge_Button_Click);
@@ -4787,7 +4931,7 @@
             this.SplitDrop.Location = new System.Drawing.Point(11, 78);
             this.SplitDrop.Name = "SplitDrop";
             this.SplitDrop.Size = new System.Drawing.Size(117, 22);
-            this.SplitDrop.TabIndex = 336;
+            this.SplitDrop.TabIndex = 16;
             this.SplitDrop.SelectedIndexChanged += new System.EventHandler(this.SplitDrop_SelectedIndexChanged);
             // 
             // YOffset
@@ -4798,7 +4942,7 @@
             this.YOffset.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.YOffset.Name = "YOffset";
             this.YOffset.Size = new System.Drawing.Size(82, 14);
-            this.YOffset.TabIndex = 330;
+            this.YOffset.TabIndex = 10;
             this.YOffset.Text = "Y 0.00 (0.0 um)";
             // 
             // XOffset
@@ -4809,7 +4953,7 @@
             this.XOffset.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.XOffset.Name = "XOffset";
             this.XOffset.Size = new System.Drawing.Size(81, 14);
-            this.XOffset.TabIndex = 329;
+            this.XOffset.TabIndex = 9;
             this.XOffset.Text = "X 0.00 (0.0 um)";
             // 
             // MirrorRight
@@ -4818,7 +4962,7 @@
             this.MirrorRight.Location = new System.Drawing.Point(279, 33);
             this.MirrorRight.Name = "MirrorRight";
             this.MirrorRight.Size = new System.Drawing.Size(25, 23);
-            this.MirrorRight.TabIndex = 145;
+            this.MirrorRight.TabIndex = 12;
             this.MirrorRight.Text = "→";
             this.MirrorRight.UseVisualStyleBackColor = true;
             this.MirrorRight.Click += new System.EventHandler(this.MirrorUp_Click);
@@ -4829,7 +4973,7 @@
             this.MirrorLeft.Location = new System.Drawing.Point(229, 33);
             this.MirrorLeft.Name = "MirrorLeft";
             this.MirrorLeft.Size = new System.Drawing.Size(25, 23);
-            this.MirrorLeft.TabIndex = 144;
+            this.MirrorLeft.TabIndex = 11;
             this.MirrorLeft.Text = "←";
             this.MirrorLeft.UseVisualStyleBackColor = true;
             this.MirrorLeft.Click += new System.EventHandler(this.MirrorUp_Click);
@@ -4840,7 +4984,7 @@
             this.MirrorDown.Location = new System.Drawing.Point(254, 56);
             this.MirrorDown.Name = "MirrorDown";
             this.MirrorDown.Size = new System.Drawing.Size(25, 23);
-            this.MirrorDown.TabIndex = 143;
+            this.MirrorDown.TabIndex = 14;
             this.MirrorDown.Text = "↓";
             this.MirrorDown.UseVisualStyleBackColor = true;
             this.MirrorDown.Click += new System.EventHandler(this.MirrorUp_Click);
@@ -4853,7 +4997,7 @@
             this.CurrentFOVY.Name = "CurrentFOVY";
             this.CurrentFOVY.ReadOnly = true;
             this.CurrentFOVY.Size = new System.Drawing.Size(35, 20);
-            this.CurrentFOVY.TabIndex = 321;
+            this.CurrentFOVY.TabIndex = 36;
             this.CurrentFOVY.Text = "5";
             this.CurrentFOVY.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
@@ -4863,7 +5007,7 @@
             this.MirrorUp.Location = new System.Drawing.Point(254, 9);
             this.MirrorUp.Name = "MirrorUp";
             this.MirrorUp.Size = new System.Drawing.Size(25, 23);
-            this.MirrorUp.TabIndex = 142;
+            this.MirrorUp.TabIndex = 13;
             this.MirrorUp.Text = "↑";
             this.MirrorUp.UseVisualStyleBackColor = true;
             this.MirrorUp.Click += new System.EventHandler(this.MirrorUp_Click);
@@ -4876,7 +5020,7 @@
             this.CurrentFOVX.Name = "CurrentFOVX";
             this.CurrentFOVX.ReadOnly = true;
             this.CurrentFOVX.Size = new System.Drawing.Size(35, 20);
-            this.CurrentFOVX.TabIndex = 320;
+            this.CurrentFOVX.TabIndex = 33;
             this.CurrentFOVX.Text = "5";
             this.CurrentFOVX.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
@@ -4888,7 +5032,7 @@
             this.label54.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label54.Name = "label54";
             this.label54.Size = new System.Drawing.Size(21, 13);
-            this.label54.TabIndex = 325;
+            this.label54.TabIndex = 37;
             this.label54.Text = "μm";
             // 
             // label90
@@ -4899,7 +5043,7 @@
             this.label90.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label90.Name = "label90";
             this.label90.Size = new System.Drawing.Size(21, 13);
-            this.label90.TabIndex = 324;
+            this.label90.TabIndex = 34;
             this.label90.Text = "μm";
             // 
             // label92
@@ -4910,7 +5054,7 @@
             this.label92.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label92.Name = "label92";
             this.label92.Size = new System.Drawing.Size(15, 14);
-            this.label92.TabIndex = 323;
+            this.label92.TabIndex = 35;
             this.label92.Text = "Y";
             // 
             // label93
@@ -4921,7 +5065,7 @@
             this.label93.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label93.Name = "label93";
             this.label93.Size = new System.Drawing.Size(14, 14);
-            this.label93.TabIndex = 322;
+            this.label93.TabIndex = 32;
             this.label93.Text = "X";
             // 
             // FieldOfViewY
@@ -4931,7 +5075,7 @@
             this.FieldOfViewY.Margin = new System.Windows.Forms.Padding(1);
             this.FieldOfViewY.Name = "FieldOfViewY";
             this.FieldOfViewY.Size = new System.Drawing.Size(35, 20);
-            this.FieldOfViewY.TabIndex = 293;
+            this.FieldOfViewY.TabIndex = 43;
             this.FieldOfViewY.Text = "5";
             this.FieldOfViewY.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.FieldOfViewY.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -4943,7 +5087,7 @@
             this.FieldOfViewX.Margin = new System.Windows.Forms.Padding(1);
             this.FieldOfViewX.Name = "FieldOfViewX";
             this.FieldOfViewX.Size = new System.Drawing.Size(35, 20);
-            this.FieldOfViewX.TabIndex = 292;
+            this.FieldOfViewX.TabIndex = 40;
             this.FieldOfViewX.Text = "5";
             this.FieldOfViewX.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.FieldOfViewX.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -4956,7 +5100,7 @@
             this.label68.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label68.Name = "label68";
             this.label68.Size = new System.Drawing.Size(21, 13);
-            this.label68.TabIndex = 300;
+            this.label68.TabIndex = 44;
             this.label68.Text = "μm";
             // 
             // label65
@@ -4967,7 +5111,7 @@
             this.label65.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label65.Name = "label65";
             this.label65.Size = new System.Drawing.Size(21, 13);
-            this.label65.TabIndex = 299;
+            this.label65.TabIndex = 41;
             this.label65.Text = "μm";
             // 
             // label63
@@ -4978,7 +5122,7 @@
             this.label63.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label63.Name = "label63";
             this.label63.Size = new System.Drawing.Size(15, 14);
-            this.label63.TabIndex = 297;
+            this.label63.TabIndex = 42;
             this.label63.Text = "Y";
             // 
             // label64
@@ -4989,7 +5133,7 @@
             this.label64.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label64.Name = "label64";
             this.label64.Size = new System.Drawing.Size(14, 14);
-            this.label64.TabIndex = 296;
+            this.label64.TabIndex = 39;
             this.label64.Text = "X";
             // 
             // label27
@@ -5000,7 +5144,7 @@
             this.label27.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label27.Name = "label27";
             this.label27.Size = new System.Drawing.Size(62, 14);
-            this.label27.TabIndex = 319;
+            this.label27.TabIndex = 38;
             this.label27.Text = "@zoom = 1";
             // 
             // label12
@@ -5011,7 +5155,7 @@
             this.label12.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(52, 14);
-            this.label12.TabIndex = 318;
+            this.label12.TabIndex = 45;
             this.label12.Text = "Objective";
             // 
             // ZeroMirror
@@ -5020,7 +5164,7 @@
             this.ZeroMirror.Location = new System.Drawing.Point(254, 33);
             this.ZeroMirror.Name = "ZeroMirror";
             this.ZeroMirror.Size = new System.Drawing.Size(25, 23);
-            this.ZeroMirror.TabIndex = 301;
+            this.ZeroMirror.TabIndex = 15;
             this.ZeroMirror.Text = "0";
             this.ZeroMirror.UseVisualStyleBackColor = true;
             this.ZeroMirror.Click += new System.EventHandler(this.ZeroMirror_Click);
@@ -5038,7 +5182,7 @@
             this.Objective_Pulldown.Location = new System.Drawing.Point(148, 304);
             this.Objective_Pulldown.Name = "Objective_Pulldown";
             this.Objective_Pulldown.Size = new System.Drawing.Size(69, 24);
-            this.Objective_Pulldown.TabIndex = 317;
+            this.Objective_Pulldown.TabIndex = 46;
             this.Objective_Pulldown.SelectedIndexChanged += new System.EventHandler(this.Objective_Pulldown_SelectedIndexChanged);
             // 
             // NPixels_PulldownY
@@ -5063,7 +5207,7 @@
             this.NPixels_PulldownY.Location = new System.Drawing.Point(219, 148);
             this.NPixels_PulldownY.Name = "NPixels_PulldownY";
             this.NPixels_PulldownY.Size = new System.Drawing.Size(69, 22);
-            this.NPixels_PulldownY.TabIndex = 316;
+            this.NPixels_PulldownY.TabIndex = 24;
             this.NPixels_PulldownY.SelectedIndexChanged += new System.EventHandler(this.NPixel_PullDown_ValueChaned);
             // 
             // NPixels_PulldownX
@@ -5088,7 +5232,7 @@
             this.NPixels_PulldownX.Location = new System.Drawing.Point(219, 122);
             this.NPixels_PulldownX.Name = "NPixels_PulldownX";
             this.NPixels_PulldownX.Size = new System.Drawing.Size(69, 22);
-            this.NPixels_PulldownX.TabIndex = 315;
+            this.NPixels_PulldownX.TabIndex = 22;
             this.NPixels_PulldownX.SelectedIndexChanged += new System.EventHandler(this.NPixel_PullDown_ValueChaned);
             // 
             // MaxScanning
@@ -5097,7 +5241,7 @@
             this.MaxScanning.Location = new System.Drawing.Point(64, 44);
             this.MaxScanning.Name = "MaxScanning";
             this.MaxScanning.Size = new System.Drawing.Size(59, 23);
-            this.MaxScanning.TabIndex = 314;
+            this.MaxScanning.TabIndex = 6;
             this.MaxScanning.Text = "Max";
             this.MaxScanning.UseVisualStyleBackColor = true;
             this.MaxScanning.Click += new System.EventHandler(this.MaxScanning_Click);
@@ -5108,7 +5252,7 @@
             this.ZeroAngle.Location = new System.Drawing.Point(193, 187);
             this.ZeroAngle.Name = "ZeroAngle";
             this.ZeroAngle.Size = new System.Drawing.Size(25, 23);
-            this.ZeroAngle.TabIndex = 311;
+            this.ZeroAngle.TabIndex = 26;
             this.ZeroAngle.Text = "0";
             this.ZeroAngle.UseVisualStyleBackColor = true;
             this.ZeroAngle.Click += new System.EventHandler(this.ZeroAngle_Click);
@@ -5121,7 +5265,7 @@
             this.Rotation_EditBox.Name = "Rotation_EditBox";
             this.Rotation_EditBox.ReadOnly = true;
             this.Rotation_EditBox.Size = new System.Drawing.Size(35, 20);
-            this.Rotation_EditBox.TabIndex = 308;
+            this.Rotation_EditBox.TabIndex = 27;
             this.Rotation_EditBox.Text = "0";
             this.Rotation_EditBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.Rotation_EditBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -5133,7 +5277,7 @@
             this.Zoom.Margin = new System.Windows.Forms.Padding(1);
             this.Zoom.Name = "Zoom";
             this.Zoom.Size = new System.Drawing.Size(53, 20);
-            this.Zoom.TabIndex = 39;
+            this.Zoom.TabIndex = 5;
             this.Zoom.Text = "1.0";
             this.Zoom.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.Zoom.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
@@ -5146,7 +5290,7 @@
             this.label75.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label75.Name = "label75";
             this.label75.Size = new System.Drawing.Size(0, 14);
-            this.label75.TabIndex = 310;
+            this.label75.TabIndex = 28;
             // 
             // label71
             // 
@@ -5156,7 +5300,7 @@
             this.label71.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label71.Name = "label71";
             this.label71.Size = new System.Drawing.Size(79, 14);
-            this.label71.TabIndex = 309;
+            this.label71.TabIndex = 25;
             this.label71.Text = "Rotate -90..90\r\n";
             // 
             // label69
@@ -5167,7 +5311,7 @@
             this.label69.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label69.Name = "label69";
             this.label69.Size = new System.Drawing.Size(46, 14);
-            this.label69.TabIndex = 307;
+            this.label69.TabIndex = 20;
             this.label69.Text = "#Pixels";
             // 
             // label73
@@ -5178,7 +5322,7 @@
             this.label73.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label73.Name = "label73";
             this.label73.Size = new System.Drawing.Size(15, 14);
-            this.label73.TabIndex = 306;
+            this.label73.TabIndex = 23;
             this.label73.Text = "Y";
             // 
             // label74
@@ -5189,7 +5333,7 @@
             this.label74.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label74.Name = "label74";
             this.label74.Size = new System.Drawing.Size(14, 14);
-            this.label74.TabIndex = 305;
+            this.label74.TabIndex = 21;
             this.label74.Text = "X";
             // 
             // label62
@@ -5200,7 +5344,7 @@
             this.label62.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label62.Name = "label62";
             this.label62.Size = new System.Drawing.Size(76, 14);
-            this.label62.TabIndex = 298;
+            this.label62.TabIndex = 31;
             this.label62.Text = "Field of view";
             // 
             // Zoom10
@@ -5220,7 +5364,7 @@
             -2147483648});
             this.Zoom10.Name = "Zoom10";
             this.Zoom10.Size = new System.Drawing.Size(31, 20);
-            this.Zoom10.TabIndex = 34;
+            this.Zoom10.TabIndex = 2;
             this.Zoom10.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Zoom10.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ZoomPanel_Click);
             // 
@@ -5247,7 +5391,7 @@
             this.label55.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label55.Name = "label55";
             this.label55.Size = new System.Drawing.Size(52, 14);
-            this.label55.TabIndex = 149;
+            this.label55.TabIndex = 7;
             this.label55.Text = "Position";
             // 
             // Zoom100
@@ -5267,7 +5411,7 @@
             -2147483648});
             this.Zoom100.Name = "Zoom100";
             this.Zoom100.Size = new System.Drawing.Size(31, 20);
-            this.Zoom100.TabIndex = 38;
+            this.Zoom100.TabIndex = 1;
             this.Zoom100.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Zoom100.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ZoomPanel_Click);
             // 
@@ -5279,7 +5423,7 @@
             this.st_zoom.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_zoom.Name = "st_zoom";
             this.st_zoom.Size = new System.Drawing.Size(39, 14);
-            this.st_zoom.TabIndex = 37;
+            this.st_zoom.TabIndex = 0;
             this.st_zoom.Text = "Zoom";
             // 
             // ZoomP1
@@ -5299,7 +5443,7 @@
             -2147483648});
             this.ZoomP1.Name = "ZoomP1";
             this.ZoomP1.Size = new System.Drawing.Size(31, 20);
-            this.ZoomP1.TabIndex = 35;
+            this.ZoomP1.TabIndex = 4;
             this.ZoomP1.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.ZoomP1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ZoomPanel_Click);
             // 
@@ -5320,7 +5464,7 @@
             -2147483648});
             this.Zoom1.Name = "Zoom1";
             this.Zoom1.Size = new System.Drawing.Size(31, 20);
-            this.Zoom1.TabIndex = 33;
+            this.Zoom1.TabIndex = 3;
             this.Zoom1.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Zoom1.Value = new decimal(new int[] {
             1,
@@ -5337,7 +5481,7 @@
             this.label6.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(10, 14);
-            this.label6.TabIndex = 36;
+            this.label6.TabIndex = 8;
             this.label6.Text = ".";
             // 
             // FLIMSetting_tab
@@ -5351,13 +5495,17 @@
             this.FLIMSetting_tab.Location = new System.Drawing.Point(313, 34);
             this.FLIMSetting_tab.Name = "FLIMSetting_tab";
             this.FLIMSetting_tab.SelectedIndex = 0;
-            this.FLIMSetting_tab.Size = new System.Drawing.Size(322, 364);
-            this.FLIMSetting_tab.TabIndex = 281;
+            this.FLIMSetting_tab.Size = new System.Drawing.Size(324, 364);
+            this.FLIMSetting_tab.TabIndex = 0;
             this.FLIMSetting_tab.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ZoomPanel_Click);
             // 
             // ChannelSettingTab
             // 
             this.ChannelSettingTab.BackColor = System.Drawing.SystemColors.Control;
+            this.ChannelSettingTab.Controls.Add(this.photon_safe_mode_CB);
+            this.ChannelSettingTab.Controls.Add(this.photon_file_CB);
+            this.ChannelSettingTab.Controls.Add(this.UseOmeTiff_CB);
+            this.ChannelSettingTab.Controls.Add(this.FastSaving_CB);
             this.ChannelSettingTab.Controls.Add(this.KeepPagesInMemoryCheck);
             this.ChannelSettingTab.Controls.Add(this.AveFrameSeparately);
             this.ChannelSettingTab.Controls.Add(this.SaveInSeparatedFileCheck);
@@ -5366,9 +5514,58 @@
             this.ChannelSettingTab.Location = new System.Drawing.Point(4, 23);
             this.ChannelSettingTab.Name = "ChannelSettingTab";
             this.ChannelSettingTab.Padding = new System.Windows.Forms.Padding(3);
-            this.ChannelSettingTab.Size = new System.Drawing.Size(314, 337);
+            this.ChannelSettingTab.Size = new System.Drawing.Size(316, 337);
             this.ChannelSettingTab.TabIndex = 3;
+            this.ChannelSettingTab.Tag = "NGrab";
             this.ChannelSettingTab.Text = "Channel";
+            // 
+            // photon_safe_mode_CB
+            // 
+            this.photon_safe_mode_CB.AutoSize = true;
+            this.photon_safe_mode_CB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.photon_safe_mode_CB.Location = new System.Drawing.Point(21, 272);
+            this.photon_safe_mode_CB.Name = "photon_safe_mode_CB";
+            this.photon_safe_mode_CB.Size = new System.Drawing.Size(148, 18);
+            this.photon_safe_mode_CB.TabIndex = 8;
+            this.photon_safe_mode_CB.Text = "Photon safe mode (.phtn)";
+            this.photon_safe_mode_CB.UseVisualStyleBackColor = true;
+            this.photon_safe_mode_CB.Click += new System.EventHandler(this.Generic_ValueChanged);
+            // 
+            // photon_file_CB
+            // 
+            this.photon_file_CB.AutoSize = true;
+            this.photon_file_CB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.photon_file_CB.Location = new System.Drawing.Point(21, 253);
+            this.photon_file_CB.Name = "photon_file_CB";
+            this.photon_file_CB.Size = new System.Drawing.Size(114, 18);
+            this.photon_file_CB.TabIndex = 7;
+            this.photon_file_CB.Text = "Photon File Format";
+            this.photon_file_CB.UseVisualStyleBackColor = true;
+            this.photon_file_CB.Click += new System.EventHandler(this.Generic_ValueChanged);
+            // 
+            // UseOmeTiff_CB
+            // 
+            this.UseOmeTiff_CB.AutoSize = true;
+            this.UseOmeTiff_CB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.UseOmeTiff_CB.Location = new System.Drawing.Point(21, 227);
+            this.UseOmeTiff_CB.Name = "UseOmeTiff_CB";
+            this.UseOmeTiff_CB.Size = new System.Drawing.Size(142, 18);
+            this.UseOmeTiff_CB.TabIndex = 6;
+            this.UseOmeTiff_CB.Text = "Save as OME-TIFF (.btf)";
+            this.UseOmeTiff_CB.UseVisualStyleBackColor = true;
+            this.UseOmeTiff_CB.Click += new System.EventHandler(this.Generic_ValueChanged);
+            // 
+            // FastSaving_CB
+            // 
+            this.FastSaving_CB.AutoSize = true;
+            this.FastSaving_CB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.FastSaving_CB.Location = new System.Drawing.Point(21, 204);
+            this.FastSaving_CB.Name = "FastSaving_CB";
+            this.FastSaving_CB.Size = new System.Drawing.Size(140, 18);
+            this.FastSaving_CB.TabIndex = 5;
+            this.FastSaving_CB.Text = "Fast saving (bigger file)";
+            this.FastSaving_CB.UseVisualStyleBackColor = true;
+            this.FastSaving_CB.Click += new System.EventHandler(this.Generic_ValueChanged);
             // 
             // KeepPagesInMemoryCheck
             // 
@@ -5379,7 +5576,7 @@
             this.KeepPagesInMemoryCheck.Location = new System.Drawing.Point(21, 181);
             this.KeepPagesInMemoryCheck.Name = "KeepPagesInMemoryCheck";
             this.KeepPagesInMemoryCheck.Size = new System.Drawing.Size(140, 18);
-            this.KeepPagesInMemoryCheck.TabIndex = 349;
+            this.KeepPagesInMemoryCheck.TabIndex = 4;
             this.KeepPagesInMemoryCheck.Text = "Keep images in memory";
             this.KeepPagesInMemoryCheck.UseVisualStyleBackColor = true;
             this.KeepPagesInMemoryCheck.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -5391,7 +5588,7 @@
             this.AveFrameSeparately.Location = new System.Drawing.Point(21, 156);
             this.AveFrameSeparately.Name = "AveFrameSeparately";
             this.AveFrameSeparately.Size = new System.Drawing.Size(155, 18);
-            this.AveFrameSeparately.TabIndex = 348;
+            this.AveFrameSeparately.TabIndex = 3;
             this.AveFrameSeparately.Text = " Average frame separately";
             this.AveFrameSeparately.UseVisualStyleBackColor = true;
             this.AveFrameSeparately.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -5403,7 +5600,7 @@
             this.SaveInSeparatedFileCheck.Location = new System.Drawing.Point(21, 132);
             this.SaveInSeparatedFileCheck.Name = "SaveInSeparatedFileCheck";
             this.SaveInSeparatedFileCheck.Size = new System.Drawing.Size(129, 18);
-            this.SaveInSeparatedFileCheck.TabIndex = 347;
+            this.SaveInSeparatedFileCheck.TabIndex = 2;
             this.SaveInSeparatedFileCheck.Text = "Save in different files";
             this.SaveInSeparatedFileCheck.UseVisualStyleBackColor = true;
             this.SaveInSeparatedFileCheck.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -5417,7 +5614,7 @@
             this.groupBox4.Location = new System.Drawing.Point(165, 17);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Size = new System.Drawing.Size(120, 100);
-            this.groupBox4.TabIndex = 347;
+            this.groupBox4.TabIndex = 1;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Ch2";
             // 
@@ -5428,7 +5625,7 @@
             this.Intensity_Radio2.Location = new System.Drawing.Point(29, 60);
             this.Intensity_Radio2.Name = "Intensity_Radio2";
             this.Intensity_Radio2.Size = new System.Drawing.Size(65, 18);
-            this.Intensity_Radio2.TabIndex = 348;
+            this.Intensity_Radio2.TabIndex = 2;
             this.Intensity_Radio2.TabStop = true;
             this.Intensity_Radio2.Text = "Intensity";
             this.Intensity_Radio2.UseVisualStyleBackColor = true;
@@ -5441,7 +5638,7 @@
             this.Acquisition2.Location = new System.Drawing.Point(13, 21);
             this.Acquisition2.Name = "Acquisition2";
             this.Acquisition2.Size = new System.Drawing.Size(79, 18);
-            this.Acquisition2.TabIndex = 344;
+            this.Acquisition2.TabIndex = 0;
             this.Acquisition2.Text = "Acquisition";
             this.Acquisition2.UseVisualStyleBackColor = true;
             this.Acquisition2.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -5453,7 +5650,7 @@
             this.FLIM_Radio2.Location = new System.Drawing.Point(29, 42);
             this.FLIM_Radio2.Name = "FLIM_Radio2";
             this.FLIM_Radio2.Size = new System.Drawing.Size(47, 18);
-            this.FLIM_Radio2.TabIndex = 347;
+            this.FLIM_Radio2.TabIndex = 1;
             this.FLIM_Radio2.TabStop = true;
             this.FLIM_Radio2.Text = "FLIM";
             this.FLIM_Radio2.UseVisualStyleBackColor = true;
@@ -5468,7 +5665,7 @@
             this.groupBox2.Location = new System.Drawing.Point(21, 17);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(120, 100);
-            this.groupBox2.TabIndex = 346;
+            this.groupBox2.TabIndex = 0;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Ch1";
             // 
@@ -5479,7 +5676,7 @@
             this.Intensity_Radio1.Location = new System.Drawing.Point(25, 60);
             this.Intensity_Radio1.Name = "Intensity_Radio1";
             this.Intensity_Radio1.Size = new System.Drawing.Size(65, 18);
-            this.Intensity_Radio1.TabIndex = 346;
+            this.Intensity_Radio1.TabIndex = 2;
             this.Intensity_Radio1.TabStop = true;
             this.Intensity_Radio1.Text = "Intensity";
             this.Intensity_Radio1.UseVisualStyleBackColor = true;
@@ -5492,7 +5689,7 @@
             this.FLIM_Radio1.Location = new System.Drawing.Point(25, 42);
             this.FLIM_Radio1.Name = "FLIM_Radio1";
             this.FLIM_Radio1.Size = new System.Drawing.Size(47, 18);
-            this.FLIM_Radio1.TabIndex = 345;
+            this.FLIM_Radio1.TabIndex = 1;
             this.FLIM_Radio1.TabStop = true;
             this.FLIM_Radio1.Text = "FLIM";
             this.FLIM_Radio1.UseVisualStyleBackColor = true;
@@ -5505,7 +5702,7 @@
             this.Acquisition1.Location = new System.Drawing.Point(13, 21);
             this.Acquisition1.Name = "Acquisition1";
             this.Acquisition1.Size = new System.Drawing.Size(79, 18);
-            this.Acquisition1.TabIndex = 344;
+            this.Acquisition1.TabIndex = 0;
             this.Acquisition1.Text = "Acquisition";
             this.Acquisition1.UseVisualStyleBackColor = true;
             this.Acquisition1.Click += new System.EventHandler(this.Generic_ValueChanged);
@@ -5519,8 +5716,9 @@
             this.MotorTab.Location = new System.Drawing.Point(4, 23);
             this.MotorTab.Name = "MotorTab";
             this.MotorTab.Padding = new System.Windows.Forms.Padding(3);
-            this.MotorTab.Size = new System.Drawing.Size(314, 337);
+            this.MotorTab.Size = new System.Drawing.Size(316, 337);
             this.MotorTab.TabIndex = 4;
+            this.MotorTab.Tag = "NGrab";
             this.MotorTab.Text = "Motor";
             // 
             // SwitchXY_MotorMirror
@@ -5531,7 +5729,7 @@
             this.SwitchXY_MotorMirror.Location = new System.Drawing.Point(15, 32);
             this.SwitchXY_MotorMirror.Name = "SwitchXY_MotorMirror";
             this.SwitchXY_MotorMirror.Size = new System.Drawing.Size(136, 18);
-            this.SwitchXY_MotorMirror.TabIndex = 314;
+            this.SwitchXY_MotorMirror.TabIndex = 0;
             this.SwitchXY_MotorMirror.Text = "SwitchXY-mirror/motor";
             this.SwitchXY_MotorMirror.UseVisualStyleBackColor = true;
             // 
@@ -5541,7 +5739,7 @@
             this.StatusText.Location = new System.Drawing.Point(11, 729);
             this.StatusText.Name = "StatusText";
             this.StatusText.Size = new System.Drawing.Size(46, 13);
-            this.StatusText.TabIndex = 334;
+            this.StatusText.TabIndex = 18;
             this.StatusText.Text = "Status...";
             // 
             // MotorStatus
@@ -5550,58 +5748,24 @@
             this.MotorStatus.Location = new System.Drawing.Point(11, 744);
             this.MotorStatus.Name = "MotorStatus";
             this.MotorStatus.Size = new System.Drawing.Size(46, 13);
-            this.MotorStatus.TabIndex = 335;
+            this.MotorStatus.TabIndex = 19;
             this.MotorStatus.Text = "Status...";
-            // 
-            // resonantMaxVoltage
-            // 
-            this.resonantMaxVoltage.Enabled = false;
-            this.resonantMaxVoltage.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.resonantMaxVoltage.Location = new System.Drawing.Point(227, 75);
-            this.resonantMaxVoltage.Margin = new System.Windows.Forms.Padding(1);
-            this.resonantMaxVoltage.Name = "resonantMaxVoltage";
-            this.resonantMaxVoltage.Size = new System.Drawing.Size(50, 20);
-            this.resonantMaxVoltage.TabIndex = 345;
-            this.resonantMaxVoltage.Text = "5";
-            this.resonantMaxVoltage.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.resonantMaxVoltage.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Generic_KeyDown);
-            // 
-            // label57
-            // 
-            this.label57.AutoSize = true;
-            this.label57.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label57.Location = new System.Drawing.Point(280, 80);
-            this.label57.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.label57.Name = "label57";
-            this.label57.Size = new System.Drawing.Size(15, 14);
-            this.label57.TabIndex = 346;
-            this.label57.Text = "V";
-            // 
-            // label58
-            // 
-            this.label58.AutoSize = true;
-            this.label58.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label58.Location = new System.Drawing.Point(136, 78);
-            this.label58.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
-            this.label58.Name = "label58";
-            this.label58.Size = new System.Drawing.Size(91, 14);
-            this.label58.TabIndex = 347;
-            this.label58.Text = "Resonant voltage";
             // 
             // FLIMageMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(641, 763);
+            this.ClientSize = new System.Drawing.Size(639, 763);
             this.Controls.Add(this.MotorStatus);
             this.Controls.Add(this.StatusText);
             this.Controls.Add(this.ImageIteration);
             this.Controls.Add(this.expectedRate);
             this.Controls.Add(this.acquisitionPanel);
             this.Controls.Add(this.label67);
+            this.Controls.Add(this.ZScanWithPiezo);
             this.Controls.Add(this.menuStrip1);
             this.Controls.Add(this.st_display);
-            this.Controls.Add(this.groupBox3);
+            this.Controls.Add(this.MotorGroupPanel);
             this.Controls.Add(this.stagePanel);
             this.Controls.Add(this.Sync_rate2);
             this.Controls.Add(this.Panel_Files);
@@ -5637,8 +5801,8 @@
             this.stagePanel.PerformLayout();
             this.groupBox11.ResumeLayout(false);
             this.groupBox11.PerformLayout();
-            this.groupBox3.ResumeLayout(false);
-            this.groupBox3.PerformLayout();
+            this.MotorGroupPanel.ResumeLayout(false);
+            this.MotorGroupPanel.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.LaserPanel.ResumeLayout(false);
@@ -5745,7 +5909,7 @@
         public System.Windows.Forms.Button FocusButton;
         public System.Windows.Forms.Button GrabButton;
         public System.Windows.Forms.Label label18;
-        public System.Windows.Forms.GroupBox groupBox3;
+        public System.Windows.Forms.GroupBox MotorGroupPanel;
         public System.Windows.Forms.TextBox NSlices2;
         public System.Windows.Forms.Label label42;
         public System.Windows.Forms.TextBox ZEnd;
@@ -5812,8 +5976,8 @@
         public System.Windows.Forms.CheckBox UncageLaser3;
         public System.Windows.Forms.CheckBox UncageLaser4;
         public System.Windows.Forms.GroupBox groupBox11;
-        public System.Windows.Forms.Label label77;
-        public System.Windows.Forms.Label label72;
+        public System.Windows.Forms.Label StopLabel;
+        public System.Windows.Forms.Label StartLabel;
         public System.Windows.Forms.Button GoEnd;
         public System.Windows.Forms.Button GoStart;
         public System.Windows.Forms.GroupBox acquisitionPanel;
@@ -5945,9 +6109,6 @@
         public System.Windows.Forms.TextBox ch_zc_level2;
         public System.Windows.Forms.Label st_binning;
         public System.Windows.Forms.TabPage tbScanParam;
-        public System.Windows.Forms.Label MeasuredLineCorrection;
-        public System.Windows.Forms.Label label95;
-        public System.Windows.Forms.TextBox LineTimeCorrection;
         public System.Windows.Forms.TextBox ScanFraction;
         public System.Windows.Forms.TextBox FillFraction;
         public System.Windows.Forms.TextBox MaxRangeY;
@@ -5956,7 +6117,6 @@
         public System.Windows.Forms.TextBox MsPerLine;
         public System.Windows.Forms.TextBox pixelsPerLine;
         public System.Windows.Forms.TextBox linesPerFrame;
-        public System.Windows.Forms.Label label94;
         public System.Windows.Forms.CheckBox BiDirecCB;
         public System.Windows.Forms.Label label89;
         public System.Windows.Forms.Button pb32;
@@ -6036,12 +6196,15 @@
         public System.Windows.Forms.CheckBox SaveInSeparatedFileCheck;
         public System.Windows.Forms.CheckBox AveFrameSeparately;
         public System.Windows.Forms.CheckBox KeepPagesInMemoryCheck;
+        public System.Windows.Forms.CheckBox FastSaving_CB;
+        public System.Windows.Forms.CheckBox UseOmeTiff_CB;
         public System.Windows.Forms.ComboBox NPixels_PulldownX;
         public System.Windows.Forms.ComboBox NPixels_PulldownY;
         public System.Windows.Forms.CheckBox FlipX_CB;
         public System.Windows.Forms.CheckBox FlipY_CB;
         public System.Windows.Forms.CheckBox SwitchXY_CB;
         public System.Windows.Forms.CheckBox SineWaveScanning_CB;
+        public System.Windows.Forms.CheckBox LineScan_CB;
         public System.Windows.Forms.ComboBox Objective_Pulldown;
         public System.Windows.Forms.Label label12;
         public System.Windows.Forms.Label label27;
@@ -6108,6 +6271,7 @@
         public System.Windows.Forms.Button Enlarge_Button;
         public System.Windows.Forms.Button useCurrentButton;
         private System.Windows.Forms.ToolStripMenuItem plotScanXYToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem plotLineScanTraceToolStripMenuItem;
         public System.Windows.Forms.CheckBox SuperImposeCheckBox;
         public System.Windows.Forms.Button RotationDownButton;
         public System.Windows.Forms.Button RotationUpButton;
@@ -6117,6 +6281,14 @@
         public System.Windows.Forms.Label label58;
         public System.Windows.Forms.Label label57;
         public System.Windows.Forms.TextBox resonantMaxVoltage;
+        public System.Windows.Forms.CheckBox BiDrecYCheck;
+        private System.Windows.Forms.CheckBox CFD_on_CB;
+        public System.Windows.Forms.CheckBox photon_file_CB;
+        public System.Windows.Forms.CheckBox photon_safe_mode_CB;
+        private System.Windows.Forms.CheckBox rising_sync_CB;
+        private System.Windows.Forms.CheckBox Rising_Input_CB;
+        public System.Windows.Forms.Button SaveDelayResonant;
+        public System.Windows.Forms.CheckBox Trig_Every2;
     }
 }
 

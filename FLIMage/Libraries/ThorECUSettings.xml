@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ThorECUSettings>
+
+  <Connection portID="29" baudRate="115200" address="1">   
+  </Connection>
+  
+  <Configuration rsInitMode="0">   
+  </Configuration>
+
+</ThorECUSettings>

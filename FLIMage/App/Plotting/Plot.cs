@@ -22,7 +22,10 @@ namespace FLIMage.Plotting
 
         double[][] Xpart;
         double[][] Ypart;
-        int MaxNChannels = 4;
+        //Kengo BEGEIN 11-16-2023
+        //Change the value 
+        int MaxNChannels = 6;
+        //Kengo END
         int maxSample = 10000;
         //double[] yrange;
         double[] xrange;

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using MicroscopeHardwareLibs;
 
 namespace FLIMage
 {
@@ -15,6 +16,8 @@ namespace FLIMage
         [STAThread]
         static void Main()
         {
+            MicroscopeHardwareLibs.WindowsUtil.SetupNIAssemblyBinding();
+
             Process myProcess = Process.GetCurrentProcess();
             myProcess.PriorityClass = ProcessPriorityClass.RealTime;
 

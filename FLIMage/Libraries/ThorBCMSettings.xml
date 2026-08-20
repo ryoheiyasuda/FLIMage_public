@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ThorBCMSettings>
+    <GG portID="33" baudRate="115200" serialNumber="NA" />
+    <GR portID="34" baudRate="115200" serialNumber="NA" />
+    <CAM portID="35" baudRate="115200" serialNumber="NA" />
+	<MotorsConfig number="3" minPos="0" maxPos="1"/>
+</ThorBCMSettings>

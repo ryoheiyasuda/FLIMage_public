@@ -83,12 +83,12 @@
             this.U_counter2 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.ActiveHighCheck = new System.Windows.Forms.CheckBox();
             this.ChannelComboBox = new System.Windows.Forms.ComboBox();
             this.ChannelLabel = new System.Windows.Forms.Label();
             this.ShowRepeat = new System.Windows.Forms.CheckBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ActiveHighCheck = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.PulseNumber)).BeginInit();
             this.groupBox10.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.panel1)).BeginInit();
@@ -99,10 +99,11 @@
             // 
             // Uncage_Save
             // 
+            this.Uncage_Save.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Uncage_Save.Location = new System.Drawing.Point(268, 14);
             this.Uncage_Save.Name = "Uncage_Save";
             this.Uncage_Save.Size = new System.Drawing.Size(45, 21);
-            this.Uncage_Save.TabIndex = 391;
+            this.Uncage_Save.TabIndex = 18;
             this.Uncage_Save.Text = "Save";
             this.Uncage_Save.UseVisualStyleBackColor = true;
             this.Uncage_Save.Click += new System.EventHandler(this.Uncage_Save_Click);
@@ -114,7 +115,7 @@
             this.PulseName.Margin = new System.Windows.Forms.Padding(1);
             this.PulseName.Name = "PulseName";
             this.PulseName.Size = new System.Drawing.Size(92, 20);
-            this.PulseName.TabIndex = 388;
+            this.PulseName.TabIndex = 16;
             this.PulseName.Text = "Pulse set";
             this.PulseName.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
             // 
@@ -125,7 +126,7 @@
             this.PulseNumber.Margin = new System.Windows.Forms.Padding(1);
             this.PulseNumber.Name = "PulseNumber";
             this.PulseNumber.Size = new System.Drawing.Size(52, 20);
-            this.PulseNumber.TabIndex = 390;
+            this.PulseNumber.TabIndex = 17;
             this.PulseNumber.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.PulseNumber.ValueChanged += new System.EventHandler(this.PulseNumber_ValueChanged);
             // 
@@ -137,7 +138,7 @@
             this.label97.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label97.Name = "label97";
             this.label97.Size = new System.Drawing.Size(34, 14);
-            this.label97.TabIndex = 389;
+            this.label97.TabIndex = 15;
             this.label97.Text = "Name";
             // 
             // OutputRate
@@ -147,7 +148,7 @@
             this.OutputRate.Margin = new System.Windows.Forms.Padding(1);
             this.OutputRate.Name = "OutputRate";
             this.OutputRate.Size = new System.Drawing.Size(50, 20);
-            this.OutputRate.TabIndex = 387;
+            this.OutputRate.TabIndex = 12;
             this.OutputRate.Text = "0";
             this.OutputRate.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.OutputRate.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -160,7 +161,7 @@
             this.label92.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label92.Name = "label92";
             this.label92.Size = new System.Drawing.Size(86, 14);
-            this.label92.TabIndex = 379;
+            this.label92.TabIndex = 13;
             this.label92.Text = "Total length (ms)";
             // 
             // Length
@@ -170,7 +171,7 @@
             this.Length.Margin = new System.Windows.Forms.Padding(1);
             this.Length.Name = "Length";
             this.Length.Size = new System.Drawing.Size(50, 20);
-            this.Length.TabIndex = 378;
+            this.Length.TabIndex = 14;
             this.Length.Text = "0";
             this.Length.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Length.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -183,7 +184,7 @@
             this.label90.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label90.Name = "label90";
             this.label90.Size = new System.Drawing.Size(59, 14);
-            this.label90.TabIndex = 377;
+            this.label90.TabIndex = 9;
             this.label90.Text = "Delay (ms)";
             // 
             // Delay
@@ -193,7 +194,7 @@
             this.Delay.Margin = new System.Windows.Forms.Padding(1);
             this.Delay.Name = "Delay";
             this.Delay.Size = new System.Drawing.Size(50, 20);
-            this.Delay.TabIndex = 376;
+            this.Delay.TabIndex = 10;
             this.Delay.Text = "0";
             this.Delay.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Delay.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -206,7 +207,7 @@
             this.label10.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(67, 14);
-            this.label10.TabIndex = 375;
+            this.label10.TabIndex = 7;
             this.label10.Text = "Interval (ms)";
             // 
             // ISI
@@ -216,7 +217,7 @@
             this.ISI.Margin = new System.Windows.Forms.Padding(1);
             this.ISI.Name = "ISI";
             this.ISI.Size = new System.Drawing.Size(50, 20);
-            this.ISI.TabIndex = 374;
+            this.ISI.TabIndex = 8;
             this.ISI.Text = "0";
             this.ISI.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.ISI.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -249,11 +250,11 @@
             this.groupBox10.Controls.Add(this.label71);
             this.groupBox10.Controls.Add(this.FrameInterval);
             this.groupBox10.Controls.Add(this.label63);
-            this.groupBox10.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.groupBox10.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox10.Location = new System.Drawing.Point(333, 96);
             this.groupBox10.Name = "groupBox10";
             this.groupBox10.Size = new System.Drawing.Size(303, 192);
-            this.groupBox10.TabIndex = 370;
+            this.groupBox10.TabIndex = 5;
             this.groupBox10.TabStop = false;
             this.groupBox10.Text = "DO trigger during imaging";
             // 
@@ -265,7 +266,7 @@
             this.FrameNote.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.FrameNote.Name = "FrameNote";
             this.FrameNote.Size = new System.Drawing.Size(119, 14);
-            this.FrameNote.TabIndex = 429;
+            this.FrameNote.TabIndex = 11;
             this.FrameNote.Text = "(Frame interval = 0.0 s)";
             // 
             // SliceNote
@@ -276,7 +277,7 @@
             this.SliceNote.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.SliceNote.Name = "SliceNote";
             this.SliceNote.Size = new System.Drawing.Size(112, 14);
-            this.SliceNote.TabIndex = 428;
+            this.SliceNote.TabIndex = 23;
             this.SliceNote.Text = "(Slice interval = 0.0 s)";
             // 
             // BaseLine_Slice_s
@@ -287,7 +288,7 @@
             this.BaseLine_Slice_s.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.BaseLine_Slice_s.Name = "BaseLine_Slice_s";
             this.BaseLine_Slice_s.Size = new System.Drawing.Size(31, 14);
-            this.BaseLine_Slice_s.TabIndex = 427;
+            this.BaseLine_Slice_s.TabIndex = 18;
             this.BaseLine_Slice_s.Text = "0.0 s";
             // 
             // label17
@@ -298,7 +299,7 @@
             this.label17.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label17.Name = "label17";
             this.label17.Size = new System.Drawing.Size(36, 14);
-            this.label17.TabIndex = 425;
+            this.label17.TabIndex = 17;
             this.label17.Text = "Slices";
             // 
             // label19
@@ -309,7 +310,7 @@
             this.label19.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label19.Name = "label19";
             this.label19.Size = new System.Drawing.Size(90, 14);
-            this.label19.TabIndex = 424;
+            this.label19.TabIndex = 19;
             this.label19.Text = "Pulse-set interval";
             this.label19.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -321,7 +322,7 @@
             this.label18.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label18.Name = "label18";
             this.label18.Size = new System.Drawing.Size(122, 14);
-            this.label18.TabIndex = 423;
+            this.label18.TabIndex = 15;
             this.label18.Text = "Baseline before uncage";
             // 
             // SliceInterval_s
@@ -332,7 +333,7 @@
             this.SliceInterval_s.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.SliceInterval_s.Name = "SliceInterval_s";
             this.SliceInterval_s.Size = new System.Drawing.Size(31, 14);
-            this.SliceInterval_s.TabIndex = 422;
+            this.SliceInterval_s.TabIndex = 22;
             this.SliceInterval_s.Text = "0.0 s";
             // 
             // label14
@@ -343,7 +344,7 @@
             this.label14.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(44, 14);
-            this.label14.TabIndex = 420;
+            this.label14.TabIndex = 12;
             this.label14.Text = "Repeat:";
             // 
             // RepeatFrame
@@ -354,7 +355,7 @@
             this.RepeatFrame.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.RepeatFrame.Name = "RepeatFrame";
             this.RepeatFrame.Size = new System.Drawing.Size(28, 14);
-            this.RepeatFrame.TabIndex = 419;
+            this.RepeatFrame.TabIndex = 13;
             this.RepeatFrame.Text = "0 / 0";
             // 
             // FrameBeforePulse_ms
@@ -364,7 +365,7 @@
             this.FrameBeforePulse_ms.Margin = new System.Windows.Forms.Padding(1);
             this.FrameBeforePulse_ms.Name = "FrameBeforePulse_ms";
             this.FrameBeforePulse_ms.Size = new System.Drawing.Size(50, 20);
-            this.FrameBeforePulse_ms.TabIndex = 417;
+            this.FrameBeforePulse_ms.TabIndex = 4;
             this.FrameBeforePulse_ms.Text = "0";
             this.FrameBeforePulse_ms.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.FrameBeforePulse_ms.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -377,7 +378,7 @@
             this.label11.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(21, 14);
-            this.label11.TabIndex = 418;
+            this.label11.TabIndex = 5;
             this.label11.Text = "ms";
             this.label11.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -389,7 +390,7 @@
             this.label9.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(43, 14);
-            this.label9.TabIndex = 416;
+            this.label9.TabIndex = 3;
             this.label9.Text = "Frames";
             this.label9.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -400,7 +401,7 @@
             this.FrameInterval_ms.Margin = new System.Windows.Forms.Padding(1);
             this.FrameInterval_ms.Name = "FrameInterval_ms";
             this.FrameInterval_ms.Size = new System.Drawing.Size(50, 20);
-            this.FrameInterval_ms.TabIndex = 413;
+            this.FrameInterval_ms.TabIndex = 9;
             this.FrameInterval_ms.Text = "0";
             this.FrameInterval_ms.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.FrameInterval_ms.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -413,7 +414,7 @@
             this.label3.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(21, 14);
-            this.label3.TabIndex = 415;
+            this.label3.TabIndex = 10;
             this.label3.Text = "ms";
             this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -425,7 +426,7 @@
             this.label8.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(43, 14);
-            this.label8.TabIndex = 407;
+            this.label8.TabIndex = 8;
             this.label8.Text = "Frames";
             this.label8.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -436,7 +437,7 @@
             this.FramesBeforePulse.Margin = new System.Windows.Forms.Padding(1);
             this.FramesBeforePulse.Name = "FramesBeforePulse";
             this.FramesBeforePulse.Size = new System.Drawing.Size(50, 20);
-            this.FramesBeforePulse.TabIndex = 404;
+            this.FramesBeforePulse.TabIndex = 2;
             this.FramesBeforePulse.Text = "0";
             this.FramesBeforePulse.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.FramesBeforePulse.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -449,7 +450,7 @@
             this.label7.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(44, 14);
-            this.label7.TabIndex = 402;
+            this.label7.TabIndex = 24;
             this.label7.Text = "Repeat:";
             // 
             // U_counter
@@ -460,7 +461,7 @@
             this.U_counter.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.U_counter.Name = "U_counter";
             this.U_counter.Size = new System.Drawing.Size(28, 14);
-            this.U_counter.TabIndex = 323;
+            this.U_counter.TabIndex = 25;
             this.U_counter.Text = "0 / 0";
             // 
             // SyncWithSlice_Check
@@ -471,7 +472,7 @@
             this.SyncWithSlice_Check.Location = new System.Drawing.Point(149, 16);
             this.SyncWithSlice_Check.Name = "SyncWithSlice_Check";
             this.SyncWithSlice_Check.Size = new System.Drawing.Size(129, 18);
-            this.SyncWithSlice_Check.TabIndex = 316;
+            this.SyncWithSlice_Check.TabIndex = 14;
             this.SyncWithSlice_Check.TabStop = true;
             this.SyncWithSlice_Check.Text = "Insert between slices";
             this.SyncWithSlice_Check.UseVisualStyleBackColor = true;
@@ -484,7 +485,7 @@
             this.SyncWithFrame_Check.Location = new System.Drawing.Point(10, 16);
             this.SyncWithFrame_Check.Name = "SyncWithFrame_Check";
             this.SyncWithFrame_Check.Size = new System.Drawing.Size(113, 18);
-            this.SyncWithFrame_Check.TabIndex = 315;
+            this.SyncWithFrame_Check.TabIndex = 0;
             this.SyncWithFrame_Check.Text = "Sync with Frames";
             this.SyncWithFrame_Check.UseVisualStyleBackColor = true;
             this.SyncWithFrame_Check.Click += new System.EventHandler(this.Generic_RadioButton);
@@ -496,7 +497,7 @@
             this.SliceInterval.Margin = new System.Windows.Forms.Padding(1);
             this.SliceInterval.Name = "SliceInterval";
             this.SliceInterval.Size = new System.Drawing.Size(50, 20);
-            this.SliceInterval.TabIndex = 312;
+            this.SliceInterval.TabIndex = 20;
             this.SliceInterval.Text = "0";
             this.SliceInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.SliceInterval.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -508,7 +509,7 @@
             this.SlicesBeforePulse.Margin = new System.Windows.Forms.Padding(1);
             this.SlicesBeforePulse.Name = "SlicesBeforePulse";
             this.SlicesBeforePulse.Size = new System.Drawing.Size(50, 20);
-            this.SlicesBeforePulse.TabIndex = 310;
+            this.SlicesBeforePulse.TabIndex = 16;
             this.SlicesBeforePulse.Text = "0";
             this.SlicesBeforePulse.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.SlicesBeforePulse.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -521,7 +522,7 @@
             this.label73.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label73.Name = "label73";
             this.label73.Size = new System.Drawing.Size(122, 14);
-            this.label73.TabIndex = 309;
+            this.label73.TabIndex = 1;
             this.label73.Text = "Baseline before uncage";
             // 
             // label71
@@ -532,7 +533,7 @@
             this.label71.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label71.Name = "label71";
             this.label71.Size = new System.Drawing.Size(36, 14);
-            this.label71.TabIndex = 313;
+            this.label71.TabIndex = 21;
             this.label71.Text = "Slices";
             // 
             // FrameInterval
@@ -542,7 +543,7 @@
             this.FrameInterval.Margin = new System.Windows.Forms.Padding(1);
             this.FrameInterval.Name = "FrameInterval";
             this.FrameInterval.Size = new System.Drawing.Size(50, 20);
-            this.FrameInterval.TabIndex = 301;
+            this.FrameInterval.TabIndex = 7;
             this.FrameInterval.Text = "0";
             this.FrameInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.FrameInterval.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -555,7 +556,7 @@
             this.label63.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label63.Name = "label63";
             this.label63.Size = new System.Drawing.Size(90, 14);
-            this.label63.TabIndex = 302;
+            this.label63.TabIndex = 6;
             this.label63.Text = "Pulse-set interval";
             this.label63.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -567,7 +568,7 @@
             this.label5.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(89, 14);
-            this.label5.TabIndex = 325;
+            this.label5.TabIndex = 2;
             this.label5.Text = "Repeat pulse-set";
             this.label5.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -578,7 +579,7 @@
             this.DO_Repeat.Margin = new System.Windows.Forms.Padding(1);
             this.DO_Repeat.Name = "DO_Repeat";
             this.DO_Repeat.Size = new System.Drawing.Size(50, 20);
-            this.DO_Repeat.TabIndex = 324;
+            this.DO_Repeat.TabIndex = 3;
             this.DO_Repeat.Text = "0";
             this.DO_Repeat.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.DO_Repeat.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -589,7 +590,7 @@
             this.StartDO_button.Location = new System.Drawing.Point(246, 18);
             this.StartDO_button.Name = "StartDO_button";
             this.StartDO_button.Size = new System.Drawing.Size(42, 22);
-            this.StartDO_button.TabIndex = 322;
+            this.StartDO_button.TabIndex = 5;
             this.StartDO_button.Text = "Start";
             this.StartDO_button.UseVisualStyleBackColor = true;
             this.StartDO_button.Click += new System.EventHandler(this.Start_button_Click);
@@ -602,7 +603,7 @@
             this.label75.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label75.Name = "label75";
             this.label75.Size = new System.Drawing.Size(67, 14);
-            this.label75.TabIndex = 319;
+            this.label75.TabIndex = 1;
             this.label75.Text = "Interval (ms)";
             // 
             // DO_interval
@@ -612,7 +613,7 @@
             this.DO_interval.Margin = new System.Windows.Forms.Padding(1);
             this.DO_interval.Name = "DO_interval";
             this.DO_interval.Size = new System.Drawing.Size(50, 20);
-            this.DO_interval.TabIndex = 318;
+            this.DO_interval.TabIndex = 2;
             this.DO_interval.Text = "0";
             this.DO_interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.DO_interval.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -625,7 +626,7 @@
             this.label62.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label62.Name = "label62";
             this.label62.Size = new System.Drawing.Size(59, 14);
-            this.label62.TabIndex = 366;
+            this.label62.TabIndex = 5;
             this.label62.Text = "Width (ms)";
             // 
             // dwell
@@ -635,7 +636,7 @@
             this.dwell.Margin = new System.Windows.Forms.Padding(1);
             this.dwell.Name = "dwell";
             this.dwell.Size = new System.Drawing.Size(50, 20);
-            this.dwell.TabIndex = 365;
+            this.dwell.TabIndex = 6;
             this.dwell.Text = "0";
             this.dwell.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.dwell.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -648,7 +649,7 @@
             this.label12.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(45, 14);
-            this.label12.TabIndex = 364;
+            this.label12.TabIndex = 3;
             this.label12.Text = "#Pulses";
             // 
             // pulseN
@@ -658,7 +659,7 @@
             this.pulseN.Margin = new System.Windows.Forms.Padding(1);
             this.pulseN.Name = "pulseN";
             this.pulseN.Size = new System.Drawing.Size(50, 20);
-            this.pulseN.TabIndex = 363;
+            this.pulseN.TabIndex = 4;
             this.pulseN.Text = "0";
             this.pulseN.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.pulseN.KeyDown += new System.Windows.Forms.KeyEventHandler(this.digital_generic_KeyDown);
@@ -671,7 +672,7 @@
             this.label93.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label93.Name = "label93";
             this.label93.Size = new System.Drawing.Size(85, 14);
-            this.label93.TabIndex = 382;
+            this.label93.TabIndex = 11;
             this.label93.Text = "Output rate (Hz)";
             // 
             // panel1
@@ -691,11 +692,11 @@
             this.UncageOnlyPanel.Controls.Add(this.StartDO_button);
             this.UncageOnlyPanel.Controls.Add(this.label75);
             this.UncageOnlyPanel.Controls.Add(this.DO_interval);
-            this.UncageOnlyPanel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.UncageOnlyPanel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.UncageOnlyPanel.Location = new System.Drawing.Point(333, 40);
             this.UncageOnlyPanel.Name = "UncageOnlyPanel";
             this.UncageOnlyPanel.Size = new System.Drawing.Size(303, 54);
-            this.UncageOnlyPanel.TabIndex = 369;
+            this.UncageOnlyPanel.TabIndex = 4;
             this.UncageOnlyPanel.TabStop = false;
             this.UncageOnlyPanel.Text = "Digital output now";
             // 
@@ -707,7 +708,7 @@
             this.label15.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(52, 14);
-            this.label15.TabIndex = 413;
+            this.label15.TabIndex = 0;
             this.label15.Text = "Pulse-set";
             this.label15.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -719,7 +720,7 @@
             this.U_counter2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.U_counter2.Name = "U_counter2";
             this.U_counter2.Size = new System.Drawing.Size(22, 14);
-            this.U_counter2.TabIndex = 401;
+            this.U_counter2.TabIndex = 4;
             this.U_counter2.Text = "1/1";
             // 
             // label6
@@ -730,7 +731,7 @@
             this.label6.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(44, 14);
-            this.label6.TabIndex = 400;
+            this.label6.TabIndex = 3;
             this.label6.Text = "Repeat:";
             // 
             // groupBox1
@@ -754,21 +755,35 @@
             this.groupBox1.Controls.Add(this.pulseN);
             this.groupBox1.Controls.Add(this.label93);
             this.groupBox1.Controls.Add(this.label92);
+            this.groupBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox1.Location = new System.Drawing.Point(8, 40);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(319, 179);
-            this.groupBox1.TabIndex = 400;
+            this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Pulse set";
             // 
+            // ActiveHighCheck
+            // 
+            this.ActiveHighCheck.AutoSize = true;
+            this.ActiveHighCheck.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ActiveHighCheck.Location = new System.Drawing.Point(13, 62);
+            this.ActiveHighCheck.Name = "ActiveHighCheck";
+            this.ActiveHighCheck.Size = new System.Drawing.Size(79, 17);
+            this.ActiveHighCheck.TabIndex = 2;
+            this.ActiveHighCheck.Text = "Active high";
+            this.ActiveHighCheck.UseVisualStyleBackColor = true;
+            this.ActiveHighCheck.Click += new System.EventHandler(this.ActiveHighCheck_Click);
+            // 
             // ChannelComboBox
             // 
+            this.ChannelComboBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ChannelComboBox.FormattingEnabled = true;
             this.ChannelComboBox.Location = new System.Drawing.Point(64, 28);
             this.ChannelComboBox.Margin = new System.Windows.Forms.Padding(2);
             this.ChannelComboBox.Name = "ChannelComboBox";
             this.ChannelComboBox.Size = new System.Drawing.Size(62, 21);
-            this.ChannelComboBox.TabIndex = 394;
+            this.ChannelComboBox.TabIndex = 1;
             this.ChannelComboBox.SelectedIndexChanged += new System.EventHandler(this.ChannelComboBox_SelectedIndexChanged);
             // 
             // ChannelLabel
@@ -779,7 +794,7 @@
             this.ChannelLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.ChannelLabel.Name = "ChannelLabel";
             this.ChannelLabel.Size = new System.Drawing.Size(46, 14);
-            this.ChannelLabel.TabIndex = 393;
+            this.ChannelLabel.TabIndex = 0;
             this.ChannelLabel.Text = "Channel";
             // 
             // ShowRepeat
@@ -789,7 +804,7 @@
             this.ShowRepeat.Location = new System.Drawing.Point(23, 287);
             this.ShowRepeat.Name = "ShowRepeat";
             this.ShowRepeat.Size = new System.Drawing.Size(261, 18);
-            this.ShowRepeat.TabIndex = 401;
+            this.ShowRepeat.TabIndex = 6;
             this.ShowRepeat.Text = "Show whole trace for \"Sync with Frames\" mode";
             this.ShowRepeat.UseVisualStyleBackColor = true;
             this.ShowRepeat.CheckedChanged += new System.EventHandler(this.ShowRepeat_CheckedChanged);
@@ -802,7 +817,7 @@
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(646, 24);
-            this.menuStrip1.TabIndex = 402;
+            this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             // 
             // fileToolStripMenuItem
@@ -810,17 +825,6 @@
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
-            // 
-            // ActiveHighCheck
-            // 
-            this.ActiveHighCheck.AutoSize = true;
-            this.ActiveHighCheck.Location = new System.Drawing.Point(13, 62);
-            this.ActiveHighCheck.Name = "ActiveHighCheck";
-            this.ActiveHighCheck.Size = new System.Drawing.Size(79, 17);
-            this.ActiveHighCheck.TabIndex = 395;
-            this.ActiveHighCheck.Text = "Active high";
-            this.ActiveHighCheck.UseVisualStyleBackColor = true;
-            this.ActiveHighCheck.Click += new System.EventHandler(this.ActiveHighCheck_Click);
             // 
             // Digital_Trigger_Panel
             // 
@@ -837,6 +841,8 @@
             this.Controls.Add(this.menuStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
+            this.MaximumSize = new System.Drawing.Size(662, 526);
+            this.MinimumSize = new System.Drawing.Size(662, 526);
             this.Name = "Digital_Trigger_Panel";
             this.Text = "Digital Output Control";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Digital_Trigger_Panel_FormClosing);

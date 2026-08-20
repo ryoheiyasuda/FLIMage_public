@@ -45,7 +45,7 @@
             this.checkBox2.Location = new System.Drawing.Point(257, 40);
             this.checkBox2.Name = "checkBox2";
             this.checkBox2.Size = new System.Drawing.Size(85, 17);
-            this.checkBox2.TabIndex = 0;
+            this.checkBox2.TabIndex = 2;
             this.checkBox2.Text = "Digital Clock";
             this.checkBox2.UseVisualStyleBackColor = true;
             this.checkBox2.Click += new System.EventHandler(this.checkBox1_Click);
@@ -56,7 +56,7 @@
             this.checkBox3.Location = new System.Drawing.Point(387, 40);
             this.checkBox3.Name = "checkBox3";
             this.checkBox3.Size = new System.Drawing.Size(109, 17);
-            this.checkBox3.TabIndex = 1;
+            this.checkBox3.TabIndex = 3;
             this.checkBox3.Text = "Uncaging Shutter";
             this.checkBox3.UseVisualStyleBackColor = true;
             this.checkBox3.Click += new System.EventHandler(this.checkBox1_Click);
@@ -67,7 +67,7 @@
             this.checkBox4.Location = new System.Drawing.Point(33, 68);
             this.checkBox4.Name = "checkBox4";
             this.checkBox4.Size = new System.Drawing.Size(97, 17);
-            this.checkBox4.TabIndex = 2;
+            this.checkBox4.TabIndex = 4;
             this.checkBox4.Text = "Digital output 1";
             this.checkBox4.UseVisualStyleBackColor = true;
             this.checkBox4.Click += new System.EventHandler(this.checkBox1_Click);
@@ -78,7 +78,7 @@
             this.checkBox5.Location = new System.Drawing.Point(145, 68);
             this.checkBox5.Name = "checkBox5";
             this.checkBox5.Size = new System.Drawing.Size(97, 17);
-            this.checkBox5.TabIndex = 3;
+            this.checkBox5.TabIndex = 5;
             this.checkBox5.Text = "Digital output 2";
             this.checkBox5.UseVisualStyleBackColor = true;
             this.checkBox5.Click += new System.EventHandler(this.checkBox1_Click);
@@ -89,7 +89,7 @@
             this.checkBox6.Location = new System.Drawing.Point(257, 68);
             this.checkBox6.Name = "checkBox6";
             this.checkBox6.Size = new System.Drawing.Size(97, 17);
-            this.checkBox6.TabIndex = 4;
+            this.checkBox6.TabIndex = 6;
             this.checkBox6.Text = "Digital output 3";
             this.checkBox6.UseVisualStyleBackColor = true;
             this.checkBox6.Click += new System.EventHandler(this.checkBox1_Click);
@@ -100,7 +100,7 @@
             this.checkBox7.Location = new System.Drawing.Point(387, 68);
             this.checkBox7.Name = "checkBox7";
             this.checkBox7.Size = new System.Drawing.Size(72, 17);
-            this.checkBox7.TabIndex = 5;
+            this.checkBox7.TabIndex = 7;
             this.checkBox7.Text = "Reserved";
             this.checkBox7.UseVisualStyleBackColor = true;
             this.checkBox7.Click += new System.EventHandler(this.checkBox1_Click);
@@ -111,7 +111,7 @@
             this.checkBox1.Location = new System.Drawing.Point(145, 40);
             this.checkBox1.Name = "checkBox1";
             this.checkBox1.Size = new System.Drawing.Size(60, 17);
-            this.checkBox1.TabIndex = 6;
+            this.checkBox1.TabIndex = 1;
             this.checkBox1.Text = "Shutter";
             this.checkBox1.UseVisualStyleBackColor = true;
             this.checkBox1.Click += new System.EventHandler(this.checkBox1_Click);
@@ -122,7 +122,7 @@
             this.checkBox0.Location = new System.Drawing.Point(33, 40);
             this.checkBox0.Name = "checkBox0";
             this.checkBox0.Size = new System.Drawing.Size(77, 17);
-            this.checkBox0.TabIndex = 7;
+            this.checkBox0.TabIndex = 0;
             this.checkBox0.Text = "Trigger out";
             this.checkBox0.UseVisualStyleBackColor = true;
             this.checkBox0.Click += new System.EventHandler(this.checkBox1_Click);
@@ -141,9 +141,12 @@
             this.Controls.Add(this.checkBox3);
             this.Controls.Add(this.checkBox2);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximumSize = new System.Drawing.Size(562, 151);
+            this.MinimumSize = new System.Drawing.Size(562, 151);
             this.Name = "DigitalSignalPanel";
             this.Text = "Digital output control";
             this.Load += new System.EventHandler(this.DigitalSignalPanel_Load);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.DigitalSignalPanel_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -10,6 +10,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,6 +20,34 @@ namespace MathLibrary
 {
     public class ImageProcessing
     {
+        public static int? SimRandomSeed { get; set; }
+        public static bool SimUsePoissonNoise { get; set; } = true;
+        private static readonly double Sqrt2 = Math.Sqrt(2.0);
+        private static readonly float[][] YellowHighlightModColors = new float[][]
+        {
+            new float[] { 37, 52, 148 },
+            new float[] { 44, 127, 184 },
+            new float[] { 65, 182, 196 },
+            new float[] { 200, 200, 20 },
+            new float[] { 255, 255, 204 },
+        };
+        private static readonly float[][] YellowHighlightColors = new float[][]
+        {
+            new float[] { 37, 52, 148 },
+            new float[] { 44, 127, 184 },
+            new float[] { 65, 182, 196 },
+            new float[] { 255, 255, 25 },
+            new float[] { 255, 255, 204 },
+        };
+        private static readonly float[][] PlasmaColors = new float[][]
+        {
+            new float[] { 189, 0, 38 },
+            new float[] { 240, 59, 32 },
+            new float[] { 253, 141, 60 },
+            new float[] { 254, 217, 142 },
+            new float[] { 255, 255, 204 },
+        };
+
         static public ushort[,] ImportImage(string filename)
         {
             var bitmap = new Bitmap(filename);
@@ -74,6 +103,9 @@ namespace MathLibrary
 
         static public ushort[][][,,] PermuteFLIM5D(ushort[][][,,] FLIM_in, bool deepCopy)
         {
+            if (FLIM_in == null)
+                return null;
+
             int n_c = FLIM_in.Length;
             int n_z = 1; // FLIM_in[0].Length;
             for (int c = 0; c < n_c; c++)
@@ -617,9 +649,80 @@ namespace MathLibrary
             return maxValue / MatrixCalc.Std2D(matrixA) / MatrixCalc.Std2D(matrixB);
         }
 
+        static public ushort[,,] getLinesFLIM(ushort[,,] matrixA, int startLine, int endLine)
+        {
+            int height = matrixA.GetLength(0);
+            int width = matrixA.GetLength(1);
+            int n_time = matrixA.GetLength(2);
+
+            ushort[,,] result = new ushort[height, width, n_time];
+            if (endLine > height)
+                endLine = height;
+            if (startLine < 0)
+                startLine = 0;
+            int final_width = endLine - startLine;
+
+            for (int y = startLine; y < endLine; y++)
+                Array.Copy(matrixA, y * width * n_time, result, (y - startLine) * width * n_time, n_time * width);
+
+            return result;
+        }
+
+        /// <summary>
+        /// This is designed for bidirectionalX scanning --- when even and odd lines are misaligned, this can correct for it.
+        /// </summary>
+        /// <param name="matrixA"></param>
+        /// <param name="projectXY"></param>
+        /// <param name="XDrift"></param>
+        /// <returns></returns>
+        static public ushort[,,] CorrectEvenOddDifference(ushort[,,] matrixA, ushort[,] projectXY, double XDrift)
+        {
+            int height = matrixA.GetLength(0);
+            int width = matrixA.GetLength(1);
+            int n_time = matrixA.GetLength(2);
+
+            ushort[,,] resultX = new ushort[height, width, n_time];
+            int xDrift = (int)(XDrift / 2);
+
+            //Even 
+            for (int y = 0; y < height; y += 2)
+                for (int x = 0; x < width + xDrift; x++)
+                {
+                    var newX = x - xDrift;
+                    if (newX >= 0 && newX < width)
+                        Array.Copy(matrixA, (y * width + x) * n_time, resultX, (y * width + newX) * n_time, n_time);
+                }
+
+            //Odd
+            for (int y = 1; y < height; y += 2)
+                for (int x = 0; x < width + xDrift; x++)
+                {
+                    var newX = x + xDrift;
+                    if (newX >= 0 && newX < width)
+                        Array.Copy(matrixA, (y * width + x) * n_time, resultX, (y * width + newX) * n_time, n_time);
+                }
+
+            return resultX;
+        }
+
+        static public ushort[,,] flipImageX(ushort[,,] matrixA)
+        {
+            int height = matrixA.GetLength(0);
+            int width = matrixA.GetLength(1);
+            int n_time = matrixA.GetLength(2);
+
+            ushort[,,] resultX = new ushort[height, width, n_time];
+
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                    Array.Copy(matrixA, (y * width + x) * n_time, resultX, (y * width + (width - x - 1)) * n_time, n_time);
 
 
-        static public ushort[,,] MatrixCorrectDriftFLIM(ushort[,,] matrixA, double[] xyDrift) ///Let's do correctly. Y - X.
+            return resultX;
+        }
+
+
+        static public ushort[,,] MatrixCorrectDriftFLIM(ushort[,,] matrixA, double[] xyDrift)
         {
             int height = matrixA.GetLength(0);
             int width = matrixA.GetLength(1);
@@ -627,9 +730,10 @@ namespace MathLibrary
 
             ushort[,,] resultX = new ushort[height, width, n_time];
             ushort[,,] result = new ushort[height, width, n_time];
-            int xDrift = (int)xyDrift[0];
-            int yDrift = (int)xyDrift[1];
-
+            //int xDrift = (int)xyDrift[0];
+            //int yDrift = (int)xyDrift[1];
+            int xDrift = xyDrift[0] > 0 ? (int)(xyDrift[0] + 0.5) : (int)(xyDrift[0] - 0.5); // Kengo 06-02-2025
+            int yDrift = xyDrift[1] > 0 ? (int)(xyDrift[1] + 0.5) : (int)(xyDrift[1] - 0.5); // decimal treatment
 
 
             if (xDrift < 0)
@@ -681,24 +785,67 @@ namespace MathLibrary
             if (trange[1] > n_dtime)
                 trange[1] = n_dtime;
 
-            var timeSeries = new float[n_dtime];
-            for (int i = 0; i < n_dtime; i++)
-                timeSeries[i] = i;
+            int startTime = trange[0];
+            int endTime = trange[1];
+            double timeScale = psPerChannel / 1000.0;
+            int simdUshort = System.Numerics.Vector<ushort>.Count;
+            int simdFloat = System.Numerics.Vector<float>.Count;
+            bool useSimd = System.Numerics.Vector.IsHardwareAccelerated && endTime - startTime >= simdUshort;
+            float[] timeSeries = null;
+            ushort[] rowBuffer = new ushort[width * n_dtime];
+            int rowBytes = rowBuffer.Length * sizeof(ushort);
 
-            var Vec = new ushort[n_dtime];
+            if (useSimd)
+            {
+                timeSeries = new float[n_dtime];
+                for (int i = 0; i < n_dtime; i++)
+                    timeSeries[i] = i;
+            }
 
             for (int y = 0; y < height; y++)
+            {
+                Buffer.BlockCopy(acqFImg, y * rowBytes, rowBuffer, 0, rowBytes);
+
                 for (int x = 0; x < width; ++x)
                 {
-                    MatrixCalc.extract3rdAxis(acqFImg, ref Vec, y, x);
-                    double sumT = MatrixCalc.Dot_withRange(Vec, timeSeries, trange); //Return double.
-                    double sum = MatrixCalc.calcSumUshort(Vec, trange); //return uint16. should make it float?
+                    uint sum = 0;
+                    double sumT = 0;
+                    int pixelOffset = x * n_dtime;
+
+                    int t = startTime;
+                    if (useSimd)
+                    {
+                        System.Numerics.Vector<uint> sumVector = System.Numerics.Vector<uint>.Zero;
+                        for (; t <= endTime - simdUshort; t += simdUshort)
+                        {
+                            var photonVector = new System.Numerics.Vector<ushort>(rowBuffer, pixelOffset + t);
+                            System.Numerics.Vector.Widen(photonVector, out System.Numerics.Vector<uint> photonLow, out System.Numerics.Vector<uint> photonHigh);
+                            sumVector += photonLow;
+                            sumVector += photonHigh;
+
+                            System.Numerics.Vector<float> photonLowFloat = System.Numerics.Vector.ConvertToSingle(photonLow);
+                            System.Numerics.Vector<float> photonHighFloat = System.Numerics.Vector.ConvertToSingle(photonHigh);
+                            sumT += System.Numerics.Vector.Dot(photonLowFloat, new System.Numerics.Vector<float>(timeSeries, t));
+                            sumT += System.Numerics.Vector.Dot(photonHighFloat, new System.Numerics.Vector<float>(timeSeries, t + simdFloat));
+                        }
+
+                        for (int i = 0; i < simdUshort / 2; i++)
+                            sum += sumVector[i];
+                    }
+
+                    for (; t < endTime; t++)
+                    {
+                        ushort value = rowBuffer[pixelOffset + t];
+                        sum += value;
+                        sumT += value * t;
+                    }
 
                     if (sum != 0)
-                        LifetimeMap[y, x] = (float)(sumT / sum * psPerChannel / 1000.0) - offset;
+                        LifetimeMap[y, x] = (float)(sumT / sum * timeScale) - offset;
                     else
                         LifetimeMap[y, x] = 0.0f;
                 }
+            }
 
             return LifetimeMap;
         }
@@ -731,11 +878,6 @@ namespace MathLibrary
             if (StartLine > height)
                 StartLine = 0;
 
-            int simd_length = System.Numerics.Vector<ushort>.Count;
-            bool hard_accel = System.Numerics.Vector.IsHardwareAccelerated;
-
-            ushort[] Vec = new ushort[n_dtime];
-
             if (n_dtime == 1)
             {
                 for (int y = StartLine; y < EndLine; y++)
@@ -746,23 +888,37 @@ namespace MathLibrary
             }
             else
             {
-                for (int y = StartLine; y < EndLine; y++)
-                    for (int x = 0; x < width; ++x)
-                    {
-                        if (hard_accel && n_dtime >= simd_length)
-                        {
-                            MatrixCalc.extract3rdAxis(acqFImg, ref Vec, y, x);
-                            Destination[y, x] = MatrixCalc.calcSumFast(Vec, time_range);
-                        }
-                        else
-                        {
-                            int sum = 0;
-                            for (int t = time_range[0]; t < time_range[1]; ++t)
-                                sum += acqFImg[y, x, t];
+                GetProjectFromFLIMLinesDirect(acqFImg, Destination, time_range[0], time_range[1], StartLine, EndLine);
+            }
+        }
 
-                            Destination[y, x] = (ushort)sum;
+        private static unsafe void GetProjectFromFLIMLinesDirect(UInt16[,,] acqFImg, UInt16[,] destination, int tStart, int tEnd, int startLine, int endLine)
+        {
+            int width = acqFImg.GetLength(1);
+            int nDtime = acqFImg.GetLength(2);
+
+            fixed (ushort* srcBase = acqFImg)
+            fixed (ushort* dstBase = destination)
+            {
+                for (int y = startLine; y < endLine; y++)
+                {
+                    int srcLineOffset = y * width * nDtime;
+                    int dstLineOffset = y * width;
+
+                    for (int x = 0; x < width; x++)
+                    {
+                        ushort* src = srcBase + srcLineOffset + x * nDtime + tStart;
+                        int sum = 0;
+
+                        for (int t = tStart; t < tEnd; t++)
+                        {
+                            sum += *src;
+                            src++;
                         }
+
+                        dstBase[dstLineOffset + x] = unchecked((ushort)sum);
                     }
+                }
             }
         }
 
@@ -1011,7 +1167,7 @@ namespace MathLibrary
             return rgb;
         }
 
-        public static Bitmap FormatImageFLIM(double[] intensity_range, double[] FLIM_range, float[,] FLIMImg, UInt16[,] AcqImg, bool forceSquare, ColorScheme color_scheme)
+        public static Bitmap FormatImageFLIM(double[] intensity_range, double[] FLIM_range, double[] thresh_highlow, float[,] FLIMImg, UInt16[,] AcqImg, bool forceSquare, ColorScheme color_scheme)
         {
             if (FLIMImg == null || AcqImg == null)
                 return null;
@@ -1023,21 +1179,6 @@ namespace MathLibrary
             int width1 = FLIMImg.GetLength(1);
 
             int nPixels = Math.Max(height, width); //Fits to maximum.
-            int startX = 0;
-            int startY = 0;
-            int bytePerPixel = 3;
-
-            int stride = width * bytePerPixel;
-            byte[] pixels = new byte[stride * height];
-
-            if (forceSquare)
-            {
-                startX = (nPixels - width) / 2;
-                startY = (nPixels - height) / 2;
-                stride = nPixels * bytePerPixel;
-                pixels = new byte[stride * nPixels];
-            }
-
             float MaxInt = (float)intensity_range.Max();
             float MinInt = (float)intensity_range.Min();
             float Int_dif = MaxInt - MinInt;
@@ -1048,41 +1189,275 @@ namespace MathLibrary
 
 
             System.Drawing.Imaging.PixelFormat format = System.Drawing.Imaging.PixelFormat.Format24bppRgb;
-            Bitmap bmp;
-            if (forceSquare)
-            {
-                bmp = new Bitmap(nPixels, nPixels, format);
-            }
-            else
-            {
-                bmp = new Bitmap(width, height, format);
-            }
+            int bitmapWidth = forceSquare ? nPixels : width;
+            int bitmapHeight = forceSquare ? nPixels : height;
+            Bitmap bmp = new Bitmap(bitmapWidth, bitmapHeight, format);
 
             if (height != height1)
                 return bmp;
 
             if (Int_dif > 0 && flim_dif != 0)
             {
-                ushort[] intensity_ushort = MatrixCalc.LinearizeArray<ushort>(AcqImg);
-                float[] intensity_float = MatrixCalc.convertToFloat(intensity_ushort);
-                intensity_float = MatrixCalc.SubtractConstantFromVector(intensity_float, MinInt);
-                intensity_float = MatrixCalc.DivideConstantFromVector(intensity_float, Int_dif);
-                intensity_float = intensity_float.Select(x => x < 0 ? 0f : x > 1 ? 1f : x).ToArray();
-                float[] flim_floatLinear = MatrixCalc.LinearizeArray<float>(FLIMImg);
-                flim_floatLinear = MatrixCalc.SubtractConstantFromVector(flim_floatLinear, MinFLIM);
-                flim_floatLinear = MatrixCalc.DivideConstantFromVector(flim_floatLinear, flim_dif);
-                pixels = ValueToRGB(flim_floatLinear, intensity_float, color_scheme);
+                FormatImageFLIMBitmap(bmp, bitmapWidth, bitmapHeight,
+                    width, height, AcqImg, FLIMImg, MinInt, Int_dif, MinFLIM, flim_dif, thresh_highlow, color_scheme);
             }
-
-            if (!forceSquare)
-                bmp = new Bitmap(width, height, stride, format, GCHandle.Alloc(pixels, GCHandleType.Pinned).AddrOfPinnedObject());
-            else
-                bmp = new Bitmap(nPixels, nPixels, stride, format, GCHandle.Alloc(pixels, GCHandleType.Pinned).AddrOfPinnedObject());
 
             //Bitmap bmp1 = new Bitmap(bmp, new Size(targetWidth, targetHeight));
             //Bitmap bmp1 = ResizeBitmap(bmp, targetWidth, targetHeight);
             return bmp;
 
+        }
+
+        private static unsafe void FormatImageFLIMBitmap(Bitmap bmp, int bitmapWidth, int bitmapHeight,
+            int imageWidth, int imageHeight, UInt16[,] intensityImage, float[,] flimImage, float minIntensity, float intensityRange,
+            float minFLIM, float flimRange, double[] thresholdHighLow, ColorScheme colorScheme)
+        {
+            int startX = (bitmapWidth - imageWidth) / 2;
+            int startY = (bitmapHeight - imageHeight) / 2;
+            float highThreshold = thresholdHighLow != null && thresholdHighLow.Length > 1 ? (float)thresholdHighLow[1] : -1.0f;
+            float invIntensityRange = 1.0f / intensityRange;
+            float invFlimRange = 1.0f / flimRange;
+
+            fixed (ushort* intensityBase = intensityImage)
+            fixed (float* flimBase = flimImage)
+            {
+                BitmapData bd = bmp.LockBits(new Rectangle(0, 0, bitmapWidth, bitmapHeight), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+                try
+                {
+                    byte* scan0 = (byte*)bd.Scan0.ToPointer();
+                    int stride = bd.Stride;
+                    if (stride < 0)
+                    {
+                        scan0 += (bitmapHeight - 1) * stride;
+                        stride = -stride;
+                    }
+
+                    for (int y = 0; y < imageHeight; y++)
+                    {
+                        int srcLineOffset = y * imageWidth;
+                        byte* dstLine = scan0 + (startY + y) * stride + startX * 3;
+
+                        for (int x = 0; x < imageWidth; x++)
+                        {
+                            ushort intensityRaw = intensityBase[srcLineOffset + x];
+                            float gray;
+                            if (highThreshold > 0 && intensityRaw > highThreshold)
+                                gray = 0.0f;
+                            else
+                                gray = Clamp01((intensityRaw - minIntensity) * invIntensityRange);
+
+                            float flimValue = (flimBase[srcLineOffset + x] - minFLIM) * invFlimRange;
+                            WriteColorBgr(dstLine + x * 3, flimValue, gray, colorScheme);
+                        }
+                    }
+                }
+                finally
+                {
+                    bmp.UnlockBits(bd);
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Clamp01(float value)
+        {
+            if (value <= 0.0f)
+                return 0.0f;
+            if (value >= 1.0f)
+                return 1.0f;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte ScaleToByte(float value, float gray)
+        {
+            float scaled = value * gray;
+            if (scaled <= 0.0f)
+                return 0;
+            if (scaled >= 255.0f)
+                return 255;
+            return (byte)scaled;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteColorBgr(byte[] pixels, int index, float value, float gray, ColorScheme colorScheme)
+        {
+            GetColorBgr(value, gray, colorScheme, out byte blueByte, out byte greenByte, out byte redByte);
+            pixels[index] = blueByte;
+            pixels[index + 1] = greenByte;
+            pixels[index + 2] = redByte;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteColorBgr(byte* pixels, float value, float gray, ColorScheme colorScheme)
+        {
+            GetColorBgr(value, gray, colorScheme, out byte blueByte, out byte greenByte, out byte redByte);
+            pixels[0] = blueByte;
+            pixels[1] = greenByte;
+            pixels[2] = redByte;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void GetColorBgr(float value, float gray, ColorScheme colorScheme, out byte blueByte, out byte greenByte, out byte redByte)
+        {
+            // A lifetime is undefined when a pixel has no photons.  Such pixels can
+            // contain NaN and must remain black rather than entering palette lookup,
+            // where converting NaN to an array index throws IndexOutOfRangeException.
+            if (float.IsNaN(value) || float.IsNaN(gray))
+            {
+                blueByte = 0;
+                greenByte = 0;
+                redByte = 0;
+                return;
+            }
+
+            float red;
+            float green;
+            float blue;
+            const float eightBits = 255.0f;
+
+            if (colorScheme == ColorScheme.Fire)
+            {
+                if (value <= 0)
+                {
+                    red = eightBits * 0.67f;
+                    green = 0;
+                    blue = eightBits;
+                }
+                else if (value <= 0.33f)
+                {
+                    red = eightBits * (0.7f + value * 0.3f / 0.33f);
+                    green = eightBits * 0.244f;
+                    blue = eightBits * (1 - value / 0.33f);
+                }
+                else if (value <= 0.75f)
+                {
+                    red = eightBits;
+                    green = eightBits * (1.8f * (value - 0.75f) + 1);
+                    blue = 0;
+                }
+                else if (value <= 1.0f)
+                {
+                    red = eightBits;
+                    green = eightBits;
+                    blue = eightBits * (value * 4.0f - 3.0f);
+                }
+                else
+                {
+                    red = eightBits;
+                    green = eightBits;
+                    blue = eightBits;
+                }
+            }
+            else if (colorScheme == ColorScheme.Spectrum)
+            {
+                if (value <= 0)
+                {
+                    red = 0;
+                    green = 0;
+                    blue = eightBits;
+                }
+                else if (value <= 1.0f / 3.0f)
+                {
+                    red = 0;
+                    green = eightBits * 3.0f * value;
+                    blue = eightBits;
+                }
+                else if (value <= 2.0f / 3.0f)
+                {
+                    red = eightBits * (value * 3.0f - 1);
+                    green = eightBits;
+                    blue = eightBits * (-3.0f * value + 2.0f);
+                }
+                else if (value <= 1.0f)
+                {
+                    red = eightBits;
+                    green = eightBits * (-3.0f * value + 3.0f);
+                    blue = 0;
+                }
+                else
+                {
+                    red = eightBits;
+                    green = 0;
+                    blue = 0;
+                }
+            }
+            else if (colorScheme == ColorScheme.RB)
+            {
+                if (value <= 0)
+                {
+                    red = 0;
+                    green = 0;
+                    blue = eightBits;
+                }
+                else if (value <= 0.5f)
+                {
+                    red = eightBits * 2.0f * value;
+                    green = eightBits * 2.0f * value;
+                    blue = eightBits;
+                }
+                else if (value < 1.0f)
+                {
+                    red = eightBits;
+                    green = eightBits * (-2.0f * value + 2.0f);
+                    blue = eightBits * (-2.0f * value + 2.0f);
+                }
+                else
+                {
+                    red = eightBits;
+                    green = 0;
+                    blue = 0;
+                }
+            }
+            else
+            {
+                GetInterpolatedColor(value, colorScheme, out red, out green, out blue);
+            }
+
+            blueByte = ScaleToByte(blue, gray);
+            greenByte = ScaleToByte(green, gray);
+            redByte = ScaleToByte(red, gray);
+        }
+
+        private static void GetInterpolatedColor(float value, ColorScheme colorScheme, out float red, out float green, out float blue)
+        {
+            float[][] colors;
+            if (colorScheme == ColorScheme.YellowHighlight_Mod)
+                colors = YellowHighlightModColors;
+            else if (colorScheme == ColorScheme.YellowHighlight)
+                colors = YellowHighlightColors;
+            else
+                colors = PlasmaColors;
+
+            InterpolateColor(value, colors, out float[] c0, out float[] c1, out float frac);
+            red = (c1[0] - c0[0]) * frac + c0[0];
+            green = (c1[1] - c0[1]) * frac + c0[1];
+            blue = (c1[2] - c0[2]) * frac + c0[2];
+        }
+
+        private static void InterpolateColor(float value, float[][] colors, out float[] c0, out float[] c1, out float frac)
+        {
+            if (value <= 0)
+            {
+                c0 = colors[0];
+                c1 = colors[0];
+                frac = 0.0f;
+                return;
+            }
+
+            if (value >= 1)
+            {
+                c0 = colors[colors.Length - 1];
+                c1 = c0;
+                frac = 0.0f;
+                return;
+            }
+
+            float scaled = value * (colors.Length - 1);
+            int index = (int)Math.Floor(scaled);
+            c0 = colors[index];
+            c1 = colors[index + 1];
+            frac = scaled - index;
         }
 
         public static int GetMinInt(UInt16[][] Img)
@@ -1144,21 +1519,19 @@ namespace MathLibrary
 
             pixels = ValueToRGB(LifetimeValues, gray, color_scheme);
 
-            bmp = new Bitmap(width, height, stride, format, GCHandle.Alloc(pixels, GCHandleType.Pinned).AddrOfPinnedObject());
+            bmp = PixelsToBitmapCopy(pixels, width, height, stride, format);
 
             return bmp;
         }
 
 
-        public static Bitmap FormatImageLines(Bitmap OriginalBitmap, double[] range, UInt16[][] AcqImg, int StartLine, int EndLine)
+        public static Bitmap FormatImageLines(Bitmap OriginalBitmap, double[] range, double[] mask, UInt16[][] AcqImg, int StartLine, int EndLine)
         {
             if (AcqImg == null)
                 return null;
 
             int height = AcqImg.Length;
             int width = AcqImg[0].Length;
-
-            int bytePerPixel = 3;
 
             float MaxInt = (float)range[1];
             float MinInt = (float)range[0];
@@ -1167,55 +1540,13 @@ namespace MathLibrary
             int startX = (nPixels - width) / 2;
             int startY = (nPixels - height) / 2;
 
-            int stride = nPixels * bytePerPixel;
-            byte[] pixels = new byte[nPixels * nPixels * bytePerPixel];
-
-            //var rangePartitioner = Partitioner.Create(StartLine, EndLine);
-            //Parallel.ForEach(rangePartitioner, range1 =>
-            //{
-            //    for (int y = range1.Item1; y < range1.Item2; y++)
-            //    {
-
-            for (int y = StartLine; y < EndLine; y++)
-            {
-                int val;
-                for (int x = 0; x < width; x++)
-
-                    for (int b = 0; b < bytePerPixel; b++)
-                    {
-
-                        if (b < 3)
-                        {
-                            if (MaxInt > MinInt)
-                            {
-                                val = (int)((AcqImg[y][x] - MinInt) * 255 / (MaxInt - MinInt));
-                                if (val < 0)
-                                    val = 0;
-                                else if (val > 255)
-                                    val = 255;
-                            }
-                            else
-                            {
-                                val = 0;
-                            }
-
-                            //pixel2D[y][x * bytePerPixel + b] = (byte)val;
-                            pixels[(startY + y) * stride + (startX + x) * bytePerPixel + b] = (byte)val;
-                        }
-                        else
-                        {
-                            //pixel2D[y][x * bytePerPixel + b] = 255;
-                            pixels[(startY + y) * stride + (startX + x) * bytePerPixel + b] = 255; //Handle 32 bit.
-                        }
-
-                    }
-            }
-            //}
-            //); //parallel for
+            float scale = MaxInt > MinInt ? 255.0f / (MaxInt - MinInt) : 0.0f;
+            float maskLow = (float)mask[0];
+            float maskHigh = (float)mask[1];
 
             PixelFormat format = PixelFormat.Format24bppRgb;
-
-            Bitmap bmp = new Bitmap(nPixels, nPixels, stride, format, GCHandle.Alloc(pixels, GCHandleType.Pinned).AddrOfPinnedObject());
+            Bitmap bmp = new Bitmap(nPixels, nPixels, format);
+            FormatImageLinesBitmap(bmp, AcqImg, StartLine, EndLine, startX, startY, scale, MinInt, maskLow, maskHigh);
 
             if (OriginalBitmap != null)
             {
@@ -1240,11 +1571,12 @@ namespace MathLibrary
         /// </summary>
         /// <param name="OriginalBitmap"> Bitmap image </param>
         /// <param name="range"> range = {min, max} </param>
+        /// <param name="maxk"> maxk = {min, max} </param>
         /// <param name="AcqImg"> Acquired images </param>
         /// <param name="StartLine"></param>
         /// <param name="EndLine"></param>
         /// <returns></returns>
-        public static Bitmap FormatImageLines(Bitmap OriginalBitmap, double[] range, UInt16[,] AcqImg, int StartLine, int EndLine)
+        public static Bitmap FormatImageLines(Bitmap OriginalBitmap, double[] range, double[] mask, UInt16[,] AcqImg, int StartLine, int EndLine)
         {
             if (AcqImg == null)
                 return null;
@@ -1252,51 +1584,16 @@ namespace MathLibrary
             int height = AcqImg.GetLength(0);
             int width = AcqImg.GetLength(1);
 
-            int bytePerPixel = 3;
-
             float MaxInt = (float)range[1];
             float MinInt = (float)range[0];
 
-            int stride = width * bytePerPixel;
-            byte[] pixels = new byte[width * height * bytePerPixel];
-
-            for (int y = StartLine; y < EndLine; y++)
-            {
-                int val;
-                for (int x = 0; x < width; x++)
-
-                    for (int b = 0; b < bytePerPixel; b++)
-                    {
-
-                        if (b < 3)
-                        {
-                            if (MaxInt > MinInt)
-                            {
-                                val = (int)((AcqImg[y, x] - MinInt) * 255 / (MaxInt - MinInt));
-                                if (val < 0)
-                                    val = 0;
-                                else if (val > 255)
-                                    val = 255;
-                            }
-                            else
-                            {
-                                val = 0;
-                            }
-                            pixels[y * stride + x * bytePerPixel + b] = (byte)val;
-                        }
-                        else
-                        {
-                            pixels[y * stride + x * bytePerPixel + b] = 255; //Handle 32 bit.
-                        }
-
-                    }
-            }
-            //}
-            //); //parallel for
+            float scale = MaxInt > MinInt ? 255.0f / (MaxInt - MinInt) : 0.0f;
+            float maskLow = (float)mask[0];
+            float maskHigh = (float)mask[1];
 
             PixelFormat format = PixelFormat.Format24bppRgb;
-
-            Bitmap bmp = new Bitmap(width, height, stride, format, GCHandle.Alloc(pixels, GCHandleType.Pinned).AddrOfPinnedObject());
+            Bitmap bmp = new Bitmap(width, height, format);
+            FormatImageLinesBitmap(bmp, AcqImg, StartLine, EndLine, scale, MinInt, maskLow, maskHigh);
 
             if (OriginalBitmap != null)
             {
@@ -1314,6 +1611,94 @@ namespace MathLibrary
 
             return bmp;
 
+        }
+
+        private static unsafe void FormatImageLinesBitmap(Bitmap bmp, UInt16[][] acqImg, int startLine, int endLine,
+            int startX, int startY, float scale, float minIntensity, float maskLow, float maskHigh)
+        {
+            int bitmapWidth = bmp.Width;
+            int bitmapHeight = bmp.Height;
+            int imageWidth = acqImg[0].Length;
+            BitmapData bd = bmp.LockBits(new Rectangle(0, 0, bitmapWidth, bitmapHeight), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+            try
+            {
+                byte* scan0 = NormalizeScan0(bd, bitmapHeight, out int stride);
+                for (int y = startLine; y < endLine; y++)
+                {
+                    byte* dstLine = scan0 + (startY + y) * stride + startX * 3;
+                    UInt16[] srcLine = acqImg[y];
+                    for (int x = 0; x < imageWidth; x++)
+                    {
+                        byte val = ScaleIntensityToByte(srcLine[x], scale, minIntensity, maskLow, maskHigh);
+                        byte* dst = dstLine + x * 3;
+                        dst[0] = val;
+                        dst[1] = val;
+                        dst[2] = val;
+                    }
+                }
+            }
+            finally
+            {
+                bmp.UnlockBits(bd);
+            }
+        }
+
+        private static unsafe void FormatImageLinesBitmap(Bitmap bmp, UInt16[,] acqImg, int startLine, int endLine,
+            float scale, float minIntensity, float maskLow, float maskHigh)
+        {
+            int width = acqImg.GetLength(1);
+            int height = acqImg.GetLength(0);
+            BitmapData bd = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+            try
+            {
+                byte* scan0 = NormalizeScan0(bd, height, out int stride);
+                fixed (ushort* srcBase = acqImg)
+                {
+                    for (int y = startLine; y < endLine; y++)
+                    {
+                        ushort* srcLine = srcBase + y * width;
+                        byte* dstLine = scan0 + y * stride;
+                        for (int x = 0; x < width; x++)
+                        {
+                            byte val = ScaleIntensityToByte(srcLine[x], scale, minIntensity, maskLow, maskHigh);
+                            byte* dst = dstLine + x * 3;
+                            dst[0] = val;
+                            dst[1] = val;
+                            dst[2] = val;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                bmp.UnlockBits(bd);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte ScaleIntensityToByte(uint pixelValue, float scale, float minIntensity, float maskLow, float maskHigh)
+        {
+            if (scale <= 0 || pixelValue < maskLow || (pixelValue >= maskHigh && maskHigh > 0))
+                return 0;
+
+            int scaled = (int)((pixelValue - minIntensity) * scale);
+            if (scaled <= 0)
+                return 0;
+            if (scaled >= 255)
+                return 255;
+            return (byte)scaled;
+        }
+
+        private static unsafe byte* NormalizeScan0(BitmapData bd, int height, out int stride)
+        {
+            byte* scan0 = (byte*)bd.Scan0.ToPointer();
+            stride = bd.Stride;
+            if (stride < 0)
+            {
+                scan0 += (height - 1) * stride;
+                stride = -stride;
+            }
+            return scan0;
         }
         public static Bitmap MergeBitmaps(Bitmap bmp1, Bitmap bmp2)
         {
@@ -1398,7 +1783,7 @@ namespace MathLibrary
             return result;
         }
 
-        public static Bitmap FormatImage(double[] range, UInt16[][] AcqImg)
+        public static Bitmap FormatImage(double[] range, double[] mask, UInt16[][] AcqImg)
         {
             if (AcqImg == null)
                 return null;
@@ -1411,7 +1796,7 @@ namespace MathLibrary
             if (AcqImg == null)
                 return null;
             else
-                bmp1 = FormatImageLines(null, range, AcqImg, 0, height);
+                bmp1 = FormatImageLines(null, range, mask, AcqImg, 0, height);
 
             return bmp1;
         }
@@ -1426,7 +1811,7 @@ namespace MathLibrary
         {
             var maxV = MatrixCalc.calcMax<ushort>(AcqImg);
             var minV = MatrixCalc.calcMin<ushort>(AcqImg);
-            return ImageProcessing.FormatImage(new double[] { minV, maxV }, AcqImg);
+            return ImageProcessing.FormatImage(new double[] { minV, maxV }, new double[] { 0, -1 }, AcqImg);
         }
 
         /// <summary>
@@ -1435,7 +1820,7 @@ namespace MathLibrary
         /// <param name="range">range = { min, max} </param>
         /// <param name="AcqImg">16 bit image </param>
         /// <returns></returns>
-        public static Bitmap FormatImage(double[] range, UInt16[,] AcqImg)
+        public static Bitmap FormatImage(double[] range, double[] mask, UInt16[,] AcqImg)
         {
             if (AcqImg == null)
                 return null;
@@ -1448,7 +1833,7 @@ namespace MathLibrary
             if (AcqImg == null)
                 return null;
             else
-                bmp1 = FormatImageLines(null, range, AcqImg, 0, height);
+                bmp1 = FormatImageLines(null, range, mask, AcqImg, 0, height);
 
             return bmp1;
         }
@@ -1459,13 +1844,29 @@ namespace MathLibrary
             format = System.Drawing.Imaging.PixelFormat.Format24bppRgb;
 
             int stride = width * 3;
-            //Bitmap bmp = new Bitmap(width, height, format);
+            return PixelsToBitmapCopy(pixels, width, height, stride, format);
+        }
 
+        /// <summary>
+        /// Create a Bitmap by copying pixel data row by row. The Bitmap(w, h, stride, format, scan0)
+        /// constructor wraps the caller's memory instead, which requires the array to stay pinned
+        /// for the bitmap's lifetime; the pinned GCHandles were never freed and leaked one pixel
+        /// buffer per displayed image.
+        /// </summary>
+        public static Bitmap PixelsToBitmapCopy(byte[] pixels, int width, int height, int srcStride, System.Drawing.Imaging.PixelFormat format)
+        {
             Bitmap bmp = new Bitmap(width, height, format);
-
-            bmp = new Bitmap(width, height, stride, format, GCHandle.Alloc(pixels, GCHandleType.Pinned).AddrOfPinnedObject());
-
-            //Bitmap bmp1 = ResizeBitmap(bmp, targetWidth, targetHeight);
+            BitmapData bd = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, format);
+            try
+            {
+                int rowBytes = Math.Min(srcStride, Math.Abs(bd.Stride));
+                for (int y = 0; y < height; y++)
+                    Marshal.Copy(pixels, y * srcStride, bd.Scan0 + y * bd.Stride, rowBytes);
+            }
+            finally
+            {
+                bmp.UnlockBits(bd);
+            }
             return bmp;
         }
 
@@ -1533,13 +1934,13 @@ namespace MathLibrary
             double pulseI, int n_stripe)
         {
             UInt16[,,] acqFImg = new ushort[height, width, n_dtime];
-            
+
             var beta3 = (double[])beta2.Clone();
             beta3[0] = beta2[0] / 5;
             beta3[2] = beta2[2] / 5;
             //double[] beta0 = { 10, 1 / t_decay, tau_g / res, offset / res };
             //double[] beta2 = { 4, 1 / (2.6 / res), 6, 1 / (0.5 / res), tau_g / res, offset / res };
-            Random rnd = new Random();
+            Random rnd = SimRandomSeed.HasValue ? new Random(SimRandomSeed.Value) : new Random();
             var width_each = width / n_stripe;
             double[] t1 = Enumerable.Range(0, n_dtime).Select(x => (double)x).ToArray();
             double[] F0 = Exp2GaussArray(beta2, t1, pulseI);
@@ -1558,16 +1959,33 @@ namespace MathLibrary
                                 F = F0[t];
                             else
                                 F = F1[t];
-                            //Algorithm due to Donald Knuth, 1969.
-                            double p = 1.0, L = Math.Exp(-F);
-                            int k = 0;
-                            do
+                            if (SimUsePoissonNoise)
                             {
-                                k++;
-                                p *= rnd.NextDouble();
+                                //Algorithm due to Donald Knuth, 1969.
+                                double p = 1.0, L = Math.Exp(-F);
+                                int k = 0;
+                                do
+                                {
+                                    k++;
+                                    p *= rnd.NextDouble();
+                                }
+                                while (p > L);
+                                F_int = k - 1;
                             }
-                            while (p > L);
-                            F_int = k - 1;
+                            else
+                            {
+                                if (Double.IsNaN(F) || F <= 0)
+                                    F_int = 0;
+                                else if (Double.IsInfinity(F) || F > ushort.MaxValue)
+                                    F_int = ushort.MaxValue;
+                                else
+                                    F_int = (int)Math.Round(F);
+                            }
+
+                            if (F_int < 0)
+                                F_int = 0;
+                            else if (F_int > ushort.MaxValue)
+                                F_int = ushort.MaxValue;
 
                             acqFImg[y, x, t] = (UInt16)F_int; //(F - 0.5);
                         }
@@ -1577,49 +1995,92 @@ namespace MathLibrary
         }
 
 
-        public static double Exp2Gauss(double[] beta0, double x, double pulseI)
-        {
-            double y;
-            double pop1 = beta0[0];
-            double k1 = beta0[1];
-            double pop2 = beta0[2];
-            double k2 = beta0[3];
-            double tauG = beta0[4];
-            double t0 = beta0[5];
+        //public static double Exp2Gauss(double[] beta0, double x, double pulseI)
+        //{
+        //    double y;
+        //    double pop1 = beta0[0];
+        //    double k1 = beta0[1];
+        //    double pop2 = beta0[2];
+        //    double k2 = beta0[3];
+        //    double tauG = beta0[4];
+        //    double t0 = beta0[5];
 
-            double[] beta1 = { pop1, k1, tauG, t0 };
-            double[] beta2 = { pop2, k2, tauG, t0 };
+        //    double[] beta1 = { pop1, k1, tauG, t0 };
+        //    double[] beta2 = { pop2, k2, tauG, t0 };
 
-            y = ExpGauss(beta1, x, pulseI) + ExpGauss(beta2, x, pulseI);
-            return y;
-        }
+        //    y = 0.0;
+        //    for (int i = 0; i < 2; i++)
+        //    {
+        //        double[] betai = i == 0 ? beta1 : beta2;
+        //        double ki = i == 0 ? k1 : k2;
+        //        int m_required = (int)Math.Ceiling(-1 / ki / pulseI * Math.Log(1e-4));
+        //        int n_pulses = 4; // Math.Max(1, m_required);
+
+        //        y += ExpGauss(betai, x, pulseI, n_pulses);
+        //    }
+        //    return y;
+        //}
 
         public static double[] Exp2GaussArray(double[] beta0, double[] x, double pulseI)
         {
             double[] y = new double[x.Length];
-
-            for (int i = 0; i < x.Length; i++)
-            {
-                y[i] = Exp2Gauss(beta0, x[i], pulseI);
-            }
+            Exp2GaussArrayInPlace(beta0, x, pulseI, y);
             return y;
         }
 
-        public static double ExpGauss(double[] beta0, double x, double pulseI)
+        public static void Exp2GaussArrayInPlace(double[] beta0, double[] x, double pulseI, double[] y)
         {
-            double y;
-            //double res = State.Spc.spcData.resolution[0]; //picoseconds
-            //double pulseI = 1.0e12 / State.Spc.datainfo.syncRate[0] / res;
+            double tauG = beta0[4];
+            double t0 = beta0[5];
+            double baseline = beta0[6];
 
+            for (int i = 0; i < x.Length; i++)
+                y[i] = baseline;
+
+            for (int m = 0; m < 2; m++)
+            {
+                double ai = beta0[2 * m]; //amplitude
+                double ki = beta0[2 * m + 1]; //Rate
+
+                int m_required = (int)Math.Ceiling(-1 / ki / pulseI * Math.Log(1e-4));
+                int n_pulses = Math.Max(1, m_required);
+
+                AddExpGaussComponentInPlace(ai, ki, tauG, t0, pulseI, n_pulses, x, y);
+            }
+        }
+
+        public static void Exp2GaussJacobianInPlace(double[] beta0, double[] x, double pulseI, double[][] jt)
+        {
+            ClearJacobian(jt, x.Length);
+
+            double tauG = beta0[4];
+            double t0 = beta0[5];
+            for (int m = 0; m < 2; m++)
+            {
+                double amplitude = beta0[2 * m];
+                double rate = beta0[2 * m + 1];
+                int m_required = (int)Math.Ceiling(-1 / rate / pulseI * Math.Log(1e-4));
+                int nPulses = Math.Max(1, m_required);
+                AddExpGaussJacobianComponentInPlace(amplitude, rate, tauG, t0, pulseI, nPulses, x,
+                    jt[2 * m], jt[2 * m + 1], jt[4], jt[5]);
+            }
+
+            for (int i = 0; i < x.Length; i++)
+                jt[6][i] = 1.0;
+        }
+
+        public static double ExpGauss(double[] beta0, double x, double pulseI, int n_pulses)
+        {
+            double y = 0.0;
             double pop1 = beta0[0];
             double k1 = beta0[1];
             double tauG = beta0[2];
             double t0 = beta0[3];
 
-            double[] beta1 = { pop1, k1, tauG, t0 };
-            double[] beta2 = { pop1, k1, tauG, t0 - pulseI };
-
-            y = MatrixCalc.ExpGauss(beta1, x) + MatrixCalc.ExpGauss(beta2, x);
+            for (int m = 0; m <= n_pulses; m++)
+            {
+                y += ExpGaussValue(pop1, k1, tauG, t0 - m * pulseI, x);
+            }
 
             return y;
         }
@@ -1628,12 +2089,244 @@ namespace MathLibrary
         public static double[] ExpGaussArray(double[] beta0, double[] x, double pulseI)
         {
             double[] y = new double[x.Length];
+            ExpGaussArrayInPlace(beta0, x, pulseI, y);
+            return y;
+        }
+
+        public static void ExpGaussArrayInPlace(double[] beta0, double[] x, double pulseI, double[] y)
+        {
+            double pop1 = beta0[0];
+            double k1 = beta0[1];
+            double tauG = beta0[2];
+            double t0 = beta0[3];
+            double baseline = beta0[4];
+
+            int m_required = (int)Math.Ceiling(-1 / k1 / pulseI * Math.Log(1e-4));
+            int n_pulses = Math.Max(1, m_required);
 
             for (int i = 0; i < x.Length; i++)
+                y[i] = baseline;
+
+            AddExpGaussComponentInPlace(pop1, k1, tauG, t0, pulseI, n_pulses, x, y);
+        }
+
+        public static void ExpGaussJacobianInPlace(double[] beta0, double[] x, double pulseI, double[][] jt)
+        {
+            ClearJacobian(jt, x.Length);
+
+            double amplitude = beta0[0];
+            double rate = beta0[1];
+            double tauG = beta0[2];
+            double t0 = beta0[3];
+
+            int m_required = (int)Math.Ceiling(-1 / rate / pulseI * Math.Log(1e-4));
+            int nPulses = Math.Max(1, m_required);
+            AddExpGaussJacobianComponentInPlace(amplitude, rate, tauG, t0, pulseI, nPulses, x,
+                jt[0], jt[1], jt[2], jt[3]);
+
+            for (int i = 0; i < x.Length; i++)
+                jt[4][i] = 1.0;
+        }
+
+        private static double ExpGaussValue(double amplitude, double rate, double tauG, double t0, double x)
+        {
+            double xShift = x - t0;
+            double exponent = tauG * tauG * rate * rate / 2 - xShift * rate;
+            double erfcArg = (tauG * tauG * rate - xShift) / (Sqrt2 * tauG);
+            return amplitude * ExpTimesErfc(exponent, erfcArg) / 2;
+        }
+
+        private static void AddExpGaussComponentInPlace(double amplitude, double rate, double tauG, double t0, double pulseI, int nPulses, double[] x, double[] y)
+        {
+            double tauG2 = tauG * tauG;
+            double tauG2Rate = tauG2 * rate;
+            double expBase = tauG2 * rate * rate / 2.0;
+            double invSqrt2TauG = 1.0 / (Sqrt2 * tauG);
+
+            double x0;
+            double dx;
+            if (TryGetUniformStep(x, out x0, out dx))
             {
-                y[i] = ExpGauss(beta0, x[i], pulseI);
+                double erfcStep = -dx * invSqrt2TauG;
+
+                for (int pulse = 0; pulse <= nPulses; pulse++)
+                {
+                    double shiftedT0 = t0 - pulse * pulseI;
+                    double xShift0 = x0 - shiftedT0;
+                    double expArgument = expBase - xShift0 * rate;
+                    double erfcArg = (tauG2Rate - xShift0) * invSqrt2TauG;
+
+                    for (int i = 0; i < x.Length; i++)
+                    {
+                        y[i] += amplitude * ExpTimesErfc(expArgument, erfcArg) / 2.0;
+                        expArgument -= dx * rate;
+                        erfcArg += erfcStep;
+                    }
+                }
             }
-            return y;
+            else
+            {
+                for (int pulse = 0; pulse <= nPulses; pulse++)
+                {
+                    double shiftedT0 = t0 - pulse * pulseI;
+                    for (int i = 0; i < x.Length; i++)
+                    {
+                        double xShift = x[i] - shiftedT0;
+                        double exponent = expBase - xShift * rate;
+                        double erfcArg = (tauG2Rate - xShift) * invSqrt2TauG;
+                        y[i] += amplitude * ExpTimesErfc(exponent, erfcArg) / 2.0;
+                    }
+                }
+            }
+        }
+
+        private static void AddExpGaussJacobianComponentInPlace(double amplitude, double rate, double tauG, double t0, double pulseI, int nPulses,
+            double[] x, double[] dAmplitude, double[] dRate, double[] dTauG, double[] dT0)
+        {
+            double tauG2 = tauG * tauG;
+            double tauG2Rate = tauG2 * rate;
+            double expBase = tauG2 * rate * rate / 2.0;
+            double invSqrt2TauG = 1.0 / (Sqrt2 * tauG);
+            double invSqrt2 = 1.0 / Sqrt2;
+            double dErfcArgDRate = tauG * invSqrt2;
+
+            double x0;
+            double dx;
+            if (TryGetUniformStep(x, out x0, out dx))
+            {
+                double erfcStep = -dx * invSqrt2TauG;
+
+                for (int pulse = 0; pulse <= nPulses; pulse++)
+                {
+                    double shiftedT0 = t0 - pulse * pulseI;
+                    double xShift = x0 - shiftedT0;
+                    double expArgument = expBase - xShift * rate;
+                    double erfcArg = (tauG2Rate - xShift) * invSqrt2TauG;
+
+                    for (int i = 0; i < x.Length; i++)
+                    {
+                        AddExpGaussJacobianPoint(amplitude, rate, tauG, tauG2, xShift, expArgument, erfcArg,
+                            dErfcArgDRate, invSqrt2, dAmplitude, dRate, dTauG, dT0, i);
+                        xShift += dx;
+                        expArgument -= dx * rate;
+                        erfcArg += erfcStep;
+                    }
+                }
+            }
+            else
+            {
+                for (int pulse = 0; pulse <= nPulses; pulse++)
+                {
+                    double shiftedT0 = t0 - pulse * pulseI;
+                    for (int i = 0; i < x.Length; i++)
+                    {
+                        double xShift = x[i] - shiftedT0;
+                        double expArgument = expBase - xShift * rate;
+                        double erfcArg = (tauG2Rate - xShift) * invSqrt2TauG;
+                        AddExpGaussJacobianPoint(amplitude, rate, tauG, tauG2, xShift, expArgument, erfcArg,
+                            dErfcArgDRate, invSqrt2, dAmplitude, dRate, dTauG, dT0, i);
+                    }
+                }
+            }
+        }
+
+        private static void AddExpGaussJacobianPoint(double amplitude, double rate, double tauG, double tauG2, double xShift,
+            double expArgument, double erfcArg, double dErfcArgDRate, double invSqrt2,
+            double[] dAmplitude, double[] dRate, double[] dTauG, double[] dT0, int index)
+        {
+            double q = 0.5 * ExpTimesErfc(expArgument, erfcArg);
+            double expScaled = ExpScaledForErfcDerivative(expArgument, erfcArg);
+            double dQdExp = q;
+            double dQdErfcArg = -expScaled / SqrtPi;
+
+            double dExpDRate = tauG2 * rate - xShift;
+            double dExpDTauG = tauG * rate * rate;
+            double dExpDT0 = rate;
+
+            double dErfcArgDTauG = (rate + xShift / tauG2) * invSqrt2;
+            double dErfcArgDT0 = invSqrt2 / tauG;
+
+            dAmplitude[index] += q;
+            dRate[index] += amplitude * (dQdExp * dExpDRate + dQdErfcArg * dErfcArgDRate);
+            dTauG[index] += amplitude * (dQdExp * dExpDTauG + dQdErfcArg * dErfcArgDTauG);
+            dT0[index] += amplitude * (dQdExp * dExpDT0 + dQdErfcArg * dErfcArgDT0);
+        }
+
+        private static void ClearJacobian(double[][] jt, int length)
+        {
+            for (int i = 0; i < jt.Length; i++)
+                Array.Clear(jt[i], 0, length);
+        }
+
+        private const double MaxExpArgument = 709.782712893384;
+        private const double MinExpArgument = -745.133219101941;
+        private const double SqrtPi = 1.772453850905516;
+
+        private static double ExpTimesErfc(double exponent, double erfcArg)
+        {
+            if (Double.IsNaN(exponent) || Double.IsNaN(erfcArg))
+                return 0.0;
+
+            if (erfcArg > 8.0)
+            {
+                double logScale = exponent - erfcArg * erfcArg;
+                if (logScale < MinExpArgument)
+                    return 0.0;
+                if (logScale > MaxExpArgument)
+                    return Double.MaxValue;
+
+                return Math.Exp(logScale) * ErfcxAsymptotic(erfcArg);
+            }
+
+            if (exponent < MinExpArgument)
+                return 0.0;
+
+            double erfc = MatrixCalc.Erfc(erfcArg);
+            if (erfc <= 0)
+                return 0.0;
+
+            if (exponent > MaxExpArgument)
+                return Double.MaxValue;
+
+            return Math.Exp(exponent) * erfc;
+        }
+
+        private static double ExpScaledForErfcDerivative(double exponent, double erfcArg)
+        {
+            double logScale = exponent - erfcArg * erfcArg;
+            if (Double.IsNaN(logScale) || logScale < MinExpArgument)
+                return 0.0;
+            if (logScale > MaxExpArgument)
+                return Double.MaxValue;
+            return Math.Exp(logScale);
+        }
+
+        private static double ErfcxAsymptotic(double x)
+        {
+            double invX2 = 1.0 / (x * x);
+            double series = 1.0 - 0.5 * invX2 + 0.75 * invX2 * invX2 - 1.875 * invX2 * invX2 * invX2;
+            if (series <= 0)
+                series = 1.0;
+
+            return series / (SqrtPi * x);
+        }
+
+        private static bool TryGetUniformStep(double[] x, out double x0, out double dx)
+        {
+            x0 = x.Length > 0 ? x[0] : 0.0;
+            dx = x.Length > 1 ? x[1] - x[0] : 0.0;
+
+            if (x.Length < 3)
+                return true;
+
+            double tolerance = Math.Max(1.0, Math.Abs(dx)) * 1e-12;
+            for (int i = 2; i < x.Length; i++)
+            {
+                if (Math.Abs((x[i] - x[i - 1]) - dx) > tolerance)
+                    return false;
+            }
+
+            return true;
         }
 
     }

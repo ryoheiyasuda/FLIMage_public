@@ -167,7 +167,7 @@ namespace FLIMage.HardwareControls
         public void MeasureTagLensParameters()
         {
             UpdateStateFromGUI(flimage); //Get Parameter from the window.
-            flimage.SetupFLIMParameters();
+            flimage.SetupFLIMParameters_GUI(State);
             parameters.enableFastZscan = false;
             if (flimage.flimage_io.tcspc_on)
                 return;
@@ -176,7 +176,7 @@ namespace FLIMage.HardwareControls
             flimage.flimage_io.FiFo_StopMeas(true);
             System.Threading.Thread.Sleep(100);
         }
-
+        
         /// <summary>
         /// Called by "Measure" button. Measures the tag lens parameters with FLIM, and then aadjust the parameters.
         /// </summary>
