@@ -7,8 +7,6 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 
 * The compilation time is typically ~2 min on a reasonable desktop (like iCore7 3GHz).
 
-* For support, please contact Florida Lifetime Imaging LLC (http://www.lifetime-imaging.com/).
-
 * The solution file is made in Visual Studio 2017 or 2022 (free "Community" version should build this) in ./FLIMage
 
 * To build this software, please get the following packages, either by direct download or NuGet: BitMiracle.LibTiff.NET 2.4.626 or higher, System.Numerics.Vector.4.5.0 or higher, and C# DotNet 4.6.1 or higher. It will compile only on x64 mode. If you like to speed-up some calculation, you could install Intel MKL library (the same library used in Numpy and Matlab). Some calculations (FFT etc) will use the library when available.
@@ -21,9 +19,9 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 
 * NI-card: If you want to use National Instruments cards, you need to install National instrument driver with DotNet support (we use version 18.6). Then, put their DotNet assembly DLL in $(ProjectDir)..\\Libraries. We tested with PCIe-6231/6232 and PCI-6371/6373. It should compile without these libraries for analysis. 
 
-* TCSPC card: If you want to use TCSPC card from PicoQuant (TimeHarp 260 / MultiHarp) or Becker Hickl (SPC-150), you need to install the device drivers and DLLs. Contact these companies for purchasing DLLs. Contact Florida Lifetime Imaging LLC for support (info@lifetime-imaging.com).
+* TCSPC card: If you want to use TCSPC card from PicoQuant (TimeHarp 260 / MultiHarp) or Becker Hickl (SPC-150), you need to install the device drivers and DLLs.
 
-* For Thorlab linear stage controls and other Thorlab hardware controls, you may need additional DLL files from Thorlab. Contact Florida Lifetime Imaging LLC for support((info@lifetime-imaging.com).
+* For Thorlab linear stage controls and other Thorlab hardware controls, you may need additional DLL files from Thorlab.
 
 * Tag-lens: 
 It is possible to scan in Z-axis extremely fast (~200-1000KHz) with Tag-lens. We are not actively pursuing this feature now, but the code is available in this tree.
