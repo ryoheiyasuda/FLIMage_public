@@ -3,8 +3,6 @@ This software allows for controlling TCSPC hardware and generate fluorescence li
 
 * Compiled and packaged installer can be found in  https://github.com/ryoheiyasuda/FLIMage_Installer (provided "as is")
 
-* The code is under BSD free software license.
-
 * The compilation time is typically ~2 min on a reasonable desktop (like iCore7 3GHz).
 
 * The solution file is made in Visual Studio 2017 or 2022 (free "Community" version should build this) in ./FLIMage
