@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Xml.Schema;
 
 namespace PhysiologyCSharp
 {
@@ -22,9 +23,12 @@ namespace PhysiologyCSharp
         public int currentPulseN = 1;
         public int[] cycle = null;
         public int epoch = 1;
+        public int add_pulse = -1; //From version 4.0.
 
         public int nChannelsPatch = 2;
         public int nChannelsStim = 2;
+
+        public int bipolar = 0;
 
         public Dictionary<string, PulseParameters> PulseSet = new Dictionary<string, PulseParameters>();
 
@@ -49,25 +53,82 @@ namespace PhysiologyCSharp
             ReadParameters(initFilePath);
         }
 
-        public void mkPulse(string key, out double[] dataOut, out double[] time)
+        public void mkPulseFromPulse(PulseParameters pulse, out double[] dataOut, out double[] time)
         {
             int nSamples = (int)(outputRate / 1000.0 * pulseSetTotalLength_ms);
             dataOut = new double[nSamples];
             time = new double[nSamples];
-            var pulse = PulseSet[key];
+
+
+            var pulse_num = pulse.Num;
 
             for (int i = 0; i < nSamples; i++)
                 time[i] = i / outputRate * 1000;
 
             for (int i = 0; i < pulse.Num; i++)
             {
-                int pulseS = (int)((pulse.Delay_ms + pulse.Interval_ms * i) / 1000 * outputRate);
-                int pulseE = (int)((pulse.Delay_ms + pulse.Interval_ms * i + pulse.Width_ms) / 1000 * outputRate);
-                for (int j = pulseS; j < pulseE; j++)
+                if (pulse.bipolar == 0)
                 {
-                    if (j < nSamples)
-                        dataOut[j] = pulse.Amp;
+                    int pulseS = (int)((pulse.Delay_ms + pulse.Interval_ms * i) / 1000 * outputRate);
+                    int pulseE = (int)((pulse.Delay_ms + pulse.Interval_ms * i + pulse.Width_ms) / 1000 * outputRate);
+
+                    for (int j = pulseS; j < pulseE; j++)
+                    {
+                        if (j < nSamples)
+                            dataOut[j] = pulse.Amp;
+                    }
                 }
+                else
+                {
+                    int pulseS = (int)Math.Round((pulse.Delay_ms + pulse.Interval_ms * i) / 1000 * outputRate);
+                    int pulseM = (int)Math.Round((pulse.Delay_ms + pulse.Interval_ms * i + pulse.Width_ms / 2) / 1000 * outputRate);
+                    int pulseE = (int)Math.Round((pulse.Delay_ms + pulse.Interval_ms * i + pulse.Width_ms) / 1000 * outputRate);
+
+                    for (int j = pulseS; j < pulseM; j++)
+                    {
+                        if (j < nSamples)
+                            dataOut[j] = pulse.Amp;
+                    }
+
+                    for (int j = pulseM; j < pulseE; j++)
+                    {
+                        if (j < nSamples)
+                            dataOut[j] = - pulse.Amp;
+                    }
+
+                }
+            }
+        }
+
+
+        public void mkPulse(string key, out double[] dataOut, out double[] time)
+        {
+            var pulse = PulseSet[key];
+            mkPulseFromPulse(pulse, out dataOut, out time);
+
+            for (int j = 0; j < 10; j++)
+            {
+                if (pulse.add_pulse >= 0)
+                {
+                    pulse = ReadParametersByNumberAndKey(pulse.add_pulse, key);
+                    if (pulse != null)
+                    {
+                        mkPulseFromPulse(pulse, out double[] dataOut2, out double[] time2);
+                        var array_size = Math.Max(dataOut.Length, dataOut2.Length);
+                        Array.Resize(ref dataOut, array_size);
+                        Array.Resize(ref dataOut2, array_size);
+
+                        for (int i = 0; i < array_size; i++)
+                            dataOut[i] += dataOut2[i];
+
+                        if (time.Length < time2.Length)
+                            time = time2;
+                    }
+                    else
+                        break;
+                }
+                else
+                    break;
             }
         }
 
@@ -107,6 +168,70 @@ namespace PhysiologyCSharp
             StringToParam(text);
         }
 
+        public PulseParameters ReadParametersByNumberAndKey(int n, string key)
+        {
+            PulseParameters pulse = null;
+            string fname = filePathByNumber(n);
+            if (File.Exists(fname))
+            {
+                string text = File.ReadAllText(fname);
+                pulse = readParamForKey(key, text);
+            }
+            return pulse;
+        }
+
+        public PulseParameters readParamForKey(string key, string text)
+        {
+            PulseParameters pulse = new PulseParameters();
+            string[] lines = text.Split('\n');
+            string pulseSetKey = "";
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i].Replace("\r", "");
+                string[] sP = line.Split('=');
+                if (sP[0] == "PulseSet")
+                {
+                    pulseSetKey = sP[1];
+                    Debug.WriteLine("Pulse Set = " + pulseSetKey + ";");
+                }
+                else if (pulseSetKey == key)
+                {
+                    FieldInfo field;
+                    object obj;
+
+                    if (pulseSetKey == "")
+                    {
+                        field = this.GetType().GetField(sP[0]);
+                        obj = this;
+                    }
+                    else
+                    {
+                        field = pulse.GetType().GetField(sP[0]);
+                        obj = pulse;
+                    }
+
+                    if (field != null)
+                    {
+                        if (field.FieldType == typeof(int[]))
+                        {
+                            if (sP[1].Contains("null"))
+                                field.SetValue(obj, null);
+                            else
+                            {
+                                int[] intVals = Array.ConvertAll(sP[1].Split(','), int.Parse);
+                                field.SetValue(obj, intVals);
+                            }
+                        }
+                        else
+                            field.SetValue(obj, Convert.ChangeType(sP[1], field.FieldType));
+                    }
+                }
+            }
+
+            return pulse;
+        }
+
+
         public int StringToParam(string text)
         {
             string[] lines = text.Split('\n');
@@ -122,6 +247,7 @@ namespace PhysiologyCSharp
                     {
                         pulseSetKey = sP[1];
                         Debug.WriteLine("Pulse Set = " + pulseSetKey + ";");
+                        PulseSet[pulseSetKey] = new PulseParameters();
                     }
                     else
                     {
@@ -227,6 +353,8 @@ namespace PhysiologyCSharp
             public double Amp = 100;
             public double Interval_ms = 50;
             public double Delay_ms = 10;
+            public int bipolar = 0;
+            public int add_pulse = -1;
         }
     } //class
 } //name space

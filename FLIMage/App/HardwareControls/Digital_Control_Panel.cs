@@ -335,6 +335,8 @@ namespace FLIMage.HardwareControls
 
             digital_running = false;
             this.BeginInvokeIfRequired(o => o.UpdateDOCounter());
+
+            flimage.ExternalCommand("DODone");
         }
 
         public void UpdateDOCounter()

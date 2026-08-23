@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -18,6 +18,7 @@ namespace Utilities
         public List<string> options = new List<string>();
         public List<string> LegendStr = new List<string>();
         public List<float> lineWidths = new List<float>();
+        private readonly object dataLock = new object();
 
         public int HighlihtedLegendID = -1;
 
@@ -68,55 +69,92 @@ namespace Utilities
         }
         public void ClearData()
         {
-            xList.Clear();
-            yList.Clear();
-            options.Clear();
-            LegendStr.Clear();
-            lineWidths.Clear();
-            HighlihtedLegendID = -1;
+            lock (dataLock)
+            {
+                xList.Clear();
+                yList.Clear();
+                options.Clear();
+                LegendStr.Clear();
+                lineWidths.Clear();
+                HighlihtedLegendID = -1;
+            }
         }
         public void AddData(List<double> y, string plotType, float linewidth)
         {
             var x = new double[y.Count];
             for (int i = 0; i < y.Count; i++)
                 x[i] = i;
-            xList.Add(x);
-            yList.Add(y.ToArray());
-            options.Add(plotType);
-            lineWidths.Add(linewidth);
+            lock (dataLock)
+            {
+                xList.Add(x);
+                yList.Add(y.ToArray());
+                options.Add(plotType);
+                lineWidths.Add(linewidth);
+            }
         }
         public void AddData(double[] x, double[] y, string plotType, float linewidth)
         {
-            xList.Add((double[])x.Clone());
-            yList.Add((double[])y.Clone());
-            options.Add(plotType);
-            lineWidths.Add(linewidth);
+            if (x == null)
+                return;
+            lock (dataLock)
+            {
+                xList.Add((double[])x.Clone());
+                yList.Add(y == null ? null : (double[])y.Clone());
+                options.Add(plotType);
+                lineWidths.Add(linewidth);
+            }
         }
         public void AddLegend(List<string> legend_List)
         {
-            LegendStr = legend_List.ToArray().ToList();
+            lock (dataLock)
+            {
+                LegendStr = legend_List.ToArray().ToList();
+            }
         }
         public void AddLegendWithHighlight(List<string> legend_List, int highlightID)
         {
-            LegendStr = legend_List.ToArray().ToList();
-            HighlihtedLegendID = highlightID;
+            lock (dataLock)
+            {
+                LegendStr = legend_List.ToArray().ToList();
+                HighlihtedLegendID = highlightID;
+            }
         }
 
         public void DataPlot_Paint(object sender, PaintEventArgs e)
         {
-            axis.clearData();
-            for (int i = 0; i < xList.Count; i++)
+            // Take a snapshot under a lock so list sizes can't change mid-paint.
+            double[][] xs;
+            double[][] ys;
+            string[] opts;
+            float[] widths;
+            List<string> legend;
+            int highlightedId;
+
+            lock (dataLock)
             {
-                Pen p = PlotOnPanel.ConvertStringToPen(options[i], lineWidths[i], i);
-                if (i < yList.Count && i < options.Count)
-                    axis.addData(xList[i], yList[i], p, options[i]);
+                xs = xList.ToArray();
+                ys = yList.ToArray();
+                opts = options.ToArray();
+                widths = lineWidths.ToArray();
+                legend = LegendStr.ToList();
+                highlightedId = HighlihtedLegendID;
+            }
+
+            axis.clearData();
+            int n = Math.Min(Math.Min(xs.Length, ys.Length), Math.Min(opts.Length, widths.Length));
+            for (int i = 0; i < n; i++)
+            {
+                if (xs[i] == null || xs[i].Length == 0 || ys[i] == null)
+                    continue;
+                Pen p = PlotOnPanel.ConvertStringToPen(opts[i], widths[i], i);
+                axis.addData(xs[i], ys[i], p, opts[i]);
             }
             axis.XTitle = XTitle;
             axis.YTitle = YTitle;
 
-            if (LegendStr.Count != 0)
+            if (legend.Count != 0)
             {
-                axis.DrawLegendWithHighlight(e, LegendStr, HighlihtedLegendID);
+                axis.DrawLegendWithHighlight(e, legend, highlightedId);
             }
 
             if (autoAxisPosition)
@@ -574,9 +612,18 @@ namespace Utilities
 
         public void addData(double[] X1, double[] Y1)
         {
-            X = X1;
-            Y = Y1;
-            PlotData data = new PlotData(X, Y);
+            // Be defensive: during heavy processing (e.g. calc-upon-open) callers can temporarily
+            // have incomplete data (null arrays) due to race/initialization order.
+            if (X1 == null || X1.Length == 0)
+                return;
+
+            // Clone to avoid sharing buffers with producer threads/UI updates.
+            var x = (double[])X1.Clone();
+            var y = (Y1 == null) ? new double[x.Length] : (double[])Y1.Clone();
+
+            X = x;
+            Y = y;
+            PlotData data = new PlotData(x, y);
             data.PlotPen = penListColor[dataList.Count % penListColor.Count];
             dataList.Add(data);
         }
@@ -684,7 +731,15 @@ namespace Utilities
 
             for (int i = 0; i < dataList.Count; i++)
             {
-                X = dataList[i].x_data;
+                var xData = dataList[i].x_data;
+                if (xData == null || xData.Length == 0)
+                {
+                    dataList[i].x_dataMod = Array.Empty<double>();
+                    dataList[i].y_dataMod = Array.Empty<double>();
+                    continue;
+                }
+
+                X = xData;
                 Y = dataList[i].y_data;
 
                 getMaxMin(); //Does not change Xmax or Xmin if not autoscale. Produces Xmod and Ymod
@@ -787,29 +842,50 @@ namespace Utilities
 
         public void getMaxMin()
         {
-            Xmod = new double[X.Length];
-            if (logScaleX)
-                for (int i = 0; i < X.Length; i++)
-                {
-                    if (!Double.IsNaN(Log_ReplaceNegativewith_X) && X[i] <= 0 && Log_ReplaceNegativewith_X > 0)
-                        Xmod[i] = Math.Log10(Log_ReplaceNegativewith_X);
-                    else
-                        Xmod[i] = Math.Log10(X[i]);
-                }
-            else
-                Xmod = (double[])X.Clone();
+            var x = X;
+            if (x == null || x.Length == 0)
+            {
+                Xmod = Array.Empty<double>();
+                Ymod = Array.Empty<double>();
+                return;
+            }
 
-            Ymod = new double[Y.Length];
-            if (logScaleY)
-                for (int i = 0; i < Y.Length; i++)
+            var y = Y;
+            if (y == null || y.Length == 0)
+                y = new double[x.Length];
+
+            int len = Math.Min(x.Length, y.Length);
+            if (len <= 0)
+            {
+                Xmod = Array.Empty<double>();
+                Ymod = Array.Empty<double>();
+                return;
+            }
+
+            Xmod = new double[len];
+            Ymod = new double[len];
+
+            if (logScaleX)
+                for (int i = 0; i < len; i++)
                 {
-                    if (!Double.IsNaN(Log_ReplaceNegativewith_Y) && Y[i] <= 0 && Log_ReplaceNegativewith_Y > 0)
-                        Ymod[i] = Math.Log10(Log_ReplaceNegativewith_Y);
-                    else
-                        Ymod[i] = Math.Log10(Y[i]);
+                    double xi = x[i];
+                    if (!Double.IsNaN(Log_ReplaceNegativewith_X) && xi <= 0 && Log_ReplaceNegativewith_X > 0)
+                        xi = Log_ReplaceNegativewith_X;
+                    Xmod[i] = Math.Log10(xi);
                 }
             else
-                Ymod = (double[])Y.Clone();
+                Array.Copy(x, Xmod, len);
+
+            if (logScaleY)
+                for (int i = 0; i < len; i++)
+                {
+                    double yi = y[i];
+                    if (!Double.IsNaN(Log_ReplaceNegativewith_Y) && yi <= 0 && Log_ReplaceNegativewith_Y > 0)
+                        yi = Log_ReplaceNegativewith_Y;
+                    Ymod[i] = Math.Log10(yi);
+                }
+            else
+                Array.Copy(y, Ymod, len);
 
             removeNAN();
 

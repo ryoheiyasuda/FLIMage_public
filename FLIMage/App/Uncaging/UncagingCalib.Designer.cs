@@ -30,7 +30,7 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(UncagingCalibration));
             this.ApplyButton = new System.Windows.Forms.Button();
-            this.label10 = new System.Windows.Forms.Label();
+            this.Note_Label = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.UncagingCalibY = new System.Windows.Forms.TextBox();
@@ -50,15 +50,15 @@
             this.ApplyButton.UseVisualStyleBackColor = true;
             this.ApplyButton.Click += new System.EventHandler(this.ApplyCalib_Click);
             // 
-            // label10
+            // Note_Label
             // 
-            this.label10.AutoSize = true;
-            this.label10.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label10.Location = new System.Drawing.Point(41, 92);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(155, 28);
-            this.label10.TabIndex = 292;
-            this.label10.Text = "Right click on actual  uncaging \r\nlocation on the image";
+            this.Note_Label.AutoSize = true;
+            this.Note_Label.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Note_Label.Location = new System.Drawing.Point(41, 92);
+            this.Note_Label.Name = "Note_Label";
+            this.Note_Label.Size = new System.Drawing.Size(155, 28);
+            this.Note_Label.TabIndex = 292;
+            this.Note_Label.Text = "Right click on actual  uncaging \r\nlocation on the image";
             // 
             // label4
             // 
@@ -110,9 +110,9 @@
             this.label1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(41, 131);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(86, 14);
+            this.label1.Size = new System.Drawing.Size(127, 14);
             this.label1.TabIndex = 324;
-            this.label1.Text = "(Orange cursor)";
+            this.label1.Text = "(One position calibration)";
             // 
             // Cancel_Button
             // 
@@ -133,7 +133,7 @@
             this.Controls.Add(this.Cancel_Button);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.ApplyButton);
-            this.Controls.Add(this.label10);
+            this.Controls.Add(this.Note_Label);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.UncagingCalibX);
             this.Controls.Add(this.UncagingCalibY);
@@ -151,7 +151,7 @@
         #endregion
 
         public System.Windows.Forms.Button ApplyButton;
-        public System.Windows.Forms.Label label10;
+        public System.Windows.Forms.Label Note_Label;
         public System.Windows.Forms.Label label4;
         public System.Windows.Forms.Label label5;
         public System.Windows.Forms.TextBox UncagingCalibY;

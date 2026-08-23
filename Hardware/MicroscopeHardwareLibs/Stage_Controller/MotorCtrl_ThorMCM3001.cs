@@ -242,7 +242,11 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
 
         public void MovementDone()
         {
-            e = new MotrEventArgs("MovementDone");
+            //Kengo BIGEN 11-23-2023
+            //immediately invoke EventArgs
+            //e = new MotrEventArgs("MovementDone");
+            MotH?.Invoke(this, new MotrEventArgs("MovementDone"));
+            //Kengo END
             start_moving = false;
             moving = false;
             GetPosition();
@@ -335,7 +339,10 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                 XPos = pos[0];
                 YPos = pos[1];
                 ZPos = pos[2];
-                MotH?.Invoke(this, e);
+                //Kengo BIGEN 11-23-2023
+                //immediately invoke EventArgs
+                //MotH?.Invoke(this, e);
+                //Kengo END
             }
             else
             {
@@ -350,8 +357,12 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                 GetPosition();
             else if (moving)
             {
-                e = new MotrEventArgs("Moving");
-                MotH?.Invoke(this, e);
+                //Kengo BIGEN 11-23-2023
+                //immediately invoke EventArgs
+                //e = new MotrEventArgs("Moving");
+                //MotH?.Invoke(this, e);
+                MotH?.Invoke(this, new MotrEventArgs("Moving"));
+                //Kengo END
             }
         }
 

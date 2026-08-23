@@ -75,7 +75,7 @@ namespace MicroscopeHardwareLibs
             for (int i = 0; i < 36; i++)
             {
                 System.Threading.Thread.Sleep(1);
-                new NiDaq.DigitalOutputPort(port, new byte[] { portVal[i] });
+                new NiDaq.DigitalOutputPort(port, new byte[] { portVal[i] }, 4);
             }
         }
 

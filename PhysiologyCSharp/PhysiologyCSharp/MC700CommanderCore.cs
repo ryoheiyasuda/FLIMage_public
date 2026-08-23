@@ -1,102 +1,65 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 using System.Windows.Forms;
 
 namespace PhysiologyCSharp
 {
     public class MC700CommanderCore
     {
+        private readonly MultiClampTelegraphClient telegraphClient;
         public MC700B_Parameters[] MC700_Params;
 
         public MC700CommanderCore()
         {
+            MC700_Params = Array.Empty<MC700B_Parameters>();
+
             try
             {
-                MC_init();
+                telegraphClient = new MultiClampTelegraphClient();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                MessageBox.Show("Error in loading DLL (MC700CommanderDLL.dll)." + ex.Message);   
+                MessageBox.Show("Error in starting managed MC700 telegraph client. " + ex.Message);
             }
         }
 
         public void GetMC700BGain()
         {
-            for (int i = 0; i < 3; i++)
+            if (telegraphClient == null)
             {
-                MC_broadCast();
-                System.Threading.Thread.Sleep(10);
+                MC700_Params = Array.Empty<MC700B_Parameters>();
+                return;
             }
 
-            int n = MC_amplifiersLength();
-            MC700_Params = new MC700B_Parameters[n];
-            int actualN = n;
-            for (int i = 0; i < n; i++)
+            var states = telegraphClient.GetAmplifierStates();
+            MC700_Params = new MC700B_Parameters[states.Length];
+
+            for (int i = 0; i < states.Length; i++)
             {
-                MC700_Params[i] = new MC700B_Parameters();
-
-                MC700B_Param MC_param = new MC700B_Param();
-                MC_getGain(i, ref MC_param);
-
-                if (MC_param.ID == 0)
+                var state = states[i];
+                MC700_Params[i] = new MC700B_Parameters
                 {
-                    actualN = i;
-                    break;
-                }
-
-                var fields_Struct = MC_param.GetType().GetFields();
-                
-                for (int j = 0; j < fields_Struct.Length; j++)
-                {
-                    var value = fields_Struct[j].GetValue(MC_param);
-                    var name = fields_Struct[j].Name;
-                    MC700_Params[i].GetType().GetField(name).SetValue(MC700_Params[i], value);
-                }
+                    ID = state.ID,
+                    mode = state.mode,
+                    primary_gain = state.primary_gain,
+                    scaleFactor = state.scaleFactor,
+                    LPF_cutoff = state.LPF_cutoff,
+                    external_cmd_sensitivity = state.external_cmd_sensitivity,
+                    second_alpha = state.second_alpha,
+                    second_LPF_cutoff = state.second_LPF_cutoff
+                };
             }
-
-            Array.Resize(ref MC700_Params, actualN);
-            //
         }
 
         public void Close()
         {
-            MC_shutdown();
+            if (telegraphClient != null)
+            {
+                telegraphClient.Dispose();
+            }
         }
-
 
         public class MC700B_Parameters
         {
-            public int ID;
-            public int mode;
-            public double primary_gain;
-            public double scaleFactor;
-            public double LPF_cutoff;
-            public double external_cmd_sensitivity;
-            public double second_alpha;
-            public double second_LPF_cutoff;
-        }
-
-        [DllImport("MC700BCommanderDLL.dll", EntryPoint = "MC_init", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int MC_init();
-
-        [DllImport("MC700BCommanderDLL.dll", EntryPoint = "MC_broadCast", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int MC_broadCast();
-
-        [DllImport("MC700BCommanderDLL.dll", EntryPoint = "MC_amplifiersLength", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int MC_amplifiersLength();
-
-        [DllImport("MC700BCommanderDLL.dll", EntryPoint = "MC_shutdown", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int MC_shutdown();
-
-        [DllImport("MC700BCommanderDLL.dll", EntryPoint = "MC_getGain", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int MC_getGain(int id, ref MC700B_Param amp_param);
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        public struct MC700B_Param{
             public int ID;
             public int mode;
             public double primary_gain;

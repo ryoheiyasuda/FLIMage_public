@@ -21,7 +21,7 @@ namespace MicroscopeHardwareLibs
         bool waitForData = false;
         public byte[] returnBytes = new byte[1];
         public string returnString = "";
-        Char newLineChar = '\r';
+        public Char newLineChar = '\r';
         bool waitingCR = false;
 
         int expectedLength = 0;
@@ -58,6 +58,7 @@ namespace MicroscopeHardwareLibs
             port.StopBits = StopBits.One;
             port.NewLine = newLineChar.ToString();
             port.Handshake = Handshake.None;
+            port.Parity = Parity.None;
             port.RtsEnable = true;
             port.DtrEnable = true;
             port.ReadTimeout = waitTimeMilli;
@@ -129,7 +130,7 @@ namespace MicroscopeHardwareLibs
         //Wiat for data needs to be turend on before calling this.
         private bool ReadBuffer_Simple(out byte[] ret, int expected_length, bool waitCR) //Done = true
         {
-            if (port!= null && !port.IsOpen)
+            if (port == null || (port!= null && !port.IsOpen))
             {
                 ret = null;
                 return false;
@@ -138,7 +139,33 @@ namespace MicroscopeHardwareLibs
             expectedLength = expected_length;
             byte[] buf = new byte[1024];
 
-            if (mode != "SutterMP285" || waitCR)
+            if (mode == "Zaber")
+            {
+                try
+                {
+                    for (int i = 0; i < waitTimeMilli / sub_wait; i++)
+                    {
+                        System.Threading.Thread.Sleep(sub_wait);
+                        int bytesToRead = port.BytesToRead;
+                        if (bytesToRead > 0)
+                        {
+                            System.Threading.Thread.Sleep(sub_wait);
+                            returnBytes = new byte[bytesToRead];
+                            int bytes_readed = port.Read(returnBytes, 0, bytesToRead);
+                            returnString = Encoding.ASCII.GetString(returnBytes);
+                            waitForData = false;
+                            waitingCR = false;
+                            break;
+                        }
+                    }
+                }
+                catch (Exception EX)
+                {
+                    Debug.WriteLine(EX.Message);
+                }
+
+            }
+            else if (mode != "SutterMP285" || waitCR)
             {
                 try
                 {
@@ -180,7 +207,14 @@ namespace MicroscopeHardwareLibs
 
                     if (bytesToRead >= expected_length)
                     {
-                        port.Read(buf, 0, bytesToRead);
+                        try
+                        {
+                            port.Read(buf, 0, bytesToRead);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine("port.Read error in SerialCommandObj: " + ex.Message);
+                        }
 
                         if (buf[expected_length - 1] == newLineChar)
                         {
@@ -313,6 +347,11 @@ namespace MicroscopeHardwareLibs
                 var done = ReadBuffer_Simple(out ret, expected_length, false);
                 return done;
             }
+        }
+
+        public bool SendAndWait(string Command)
+        {
+            return SendAndWait(Command, 0, out byte[] ret);
         }
 
         public string SendAndWaitCR(string Command)

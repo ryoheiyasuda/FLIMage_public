@@ -44,6 +44,7 @@
             this.CalculateUponOpen = new System.Windows.Forms.CheckBox();
             this.OpenExcel = new System.Windows.Forms.Button();
             this.SubtractCheck = new System.Windows.Forms.CheckBox();
+            this.Mask_CB = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.RealtimePlot)).BeginInit();
             this.SuspendLayout();
             // 
@@ -143,7 +144,7 @@
             // 
             this.TC_Reset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.TC_Reset.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.TC_Reset.Location = new System.Drawing.Point(460, 206);
+            this.TC_Reset.Location = new System.Drawing.Point(460, 209);
             this.TC_Reset.Name = "TC_Reset";
             this.TC_Reset.Size = new System.Drawing.Size(122, 27);
             this.TC_Reset.TabIndex = 482;
@@ -155,7 +156,7 @@
             // 
             this.CalcTimeCourse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.CalcTimeCourse.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.CalcTimeCourse.Location = new System.Drawing.Point(460, 258);
+            this.CalcTimeCourse.Location = new System.Drawing.Point(460, 261);
             this.CalcTimeCourse.Name = "CalcTimeCourse";
             this.CalcTimeCourse.Size = new System.Drawing.Size(122, 27);
             this.CalcTimeCourse.TabIndex = 481;
@@ -177,7 +178,7 @@
             // 
             this.CalculateSinglePage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.CalculateSinglePage.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.CalculateSinglePage.Location = new System.Drawing.Point(460, 232);
+            this.CalculateSinglePage.Location = new System.Drawing.Point(460, 235);
             this.CalculateSinglePage.Name = "CalculateSinglePage";
             this.CalculateSinglePage.Size = new System.Drawing.Size(122, 27);
             this.CalculateSinglePage.TabIndex = 484;
@@ -219,7 +220,7 @@
             // 
             this.OpenExcel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.OpenExcel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.OpenExcel.Location = new System.Drawing.Point(539, 284);
+            this.OpenExcel.Location = new System.Drawing.Point(539, 287);
             this.OpenExcel.Name = "OpenExcel";
             this.OpenExcel.Size = new System.Drawing.Size(42, 27);
             this.OpenExcel.TabIndex = 487;
@@ -242,11 +243,25 @@
             this.SubtractCheck.UseVisualStyleBackColor = true;
             this.SubtractCheck.Click += new System.EventHandler(this.Intensity_radio_Click);
             // 
+            // Mask_CB
+            // 
+            this.Mask_CB.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.Mask_CB.AutoSize = true;
+            this.Mask_CB.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
+            this.Mask_CB.Location = new System.Drawing.Point(458, 191);
+            this.Mask_CB.Name = "Mask_CB";
+            this.Mask_CB.Size = new System.Drawing.Size(109, 17);
+            this.Mask_CB.TabIndex = 489;
+            this.Mask_CB.Text = "Mask for Intensity";
+            this.Mask_CB.UseVisualStyleBackColor = true;
+            this.Mask_CB.CheckedChanged += new System.EventHandler(this.Mask_CB_CheckedChanged);
+            // 
             // plot_timeCourse
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(588, 315);
+            this.Controls.Add(this.Mask_CB);
             this.Controls.Add(this.SubtractCheck);
             this.Controls.Add(this.OpenExcel);
             this.Controls.Add(this.CalculateUponOpen);
@@ -291,5 +306,6 @@
         private System.Windows.Forms.CheckBox CalculateUponOpen;
         private System.Windows.Forms.Button OpenExcel;
         private System.Windows.Forms.CheckBox SubtractCheck;
+        private System.Windows.Forms.CheckBox Mask_CB;
     }
 }

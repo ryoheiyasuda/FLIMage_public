@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -48,6 +48,19 @@ namespace TCSPC_controls
         public int ComputerID = 0;
         public int FLIMserial = 1;
 
+        public bool read_from_file = false;
+
+        // ------------------------------------------------------------
+        // Fiber photometry (single-point) acquisition
+        // ------------------------------------------------------------
+        // When enabled, TCSPC_Decode/DecodeEngine will create 1x1 "frames"
+        // every fiberBin_ms based on macro-time (no scanning markers required).
+        // fiberStartMode: 0 = soft trigger (start on first photon)
+        //                1 = external trigger (start on marker; uses spcData.FrameID bit)
+        public bool fiberPhotometryMode = false;
+        public double fiberBin_ms = 20.0; // default 20 ms
+        public int fiberStartMode = 0;
+        public bool lineScanMode = false;
 
         public SPCData spcData = new SPCData();
         public RateInfo rateInfo = new RateInfo();
@@ -90,6 +103,10 @@ namespace TCSPC_controls
             public int n_dataPoint = 50; // will be method.
             public int startPoint = 0;
             public int binning = 2;  //PQ only.
+    
+            public bool savePhotonsInFile = true;
+            public string PhotonsFileName = "";
+            public uint[] photonBinary = null;
 
             //specific to PQ
             public String HW_Model = "THarp 260 N";
@@ -113,12 +130,19 @@ namespace TCSPC_controls
             public double[] ch_zc_level = { 0, 0 };
             public int[] ch_offset = { 0, 0 };
 
+            public int CFD_on = 0;
+            public int input_trigger_edge = 1;
+            public int sync_trigger_edge = 1;
+
             public double line_time_correction = 1.0;
             public double measured_line_time_correction = 1.0;
 
             public int SkipFirstLines = 0;
+            public int SkipFirstFrames = 0;
 
             public int pixel_binning = 0;
+
+            public int line_clock_division = 1;
 
             //Specific to PQ
             public int n_devicesPQ = 1;
@@ -142,6 +166,9 @@ namespace TCSPC_controls
             public double[] tac_limit_low = { 5, 5 }; //%
             public double[] tac_limit_high = { 95, 95 }; //%
             public short module_type = 150;
+
+            public int bundle_all_channels = 0;
+            public int input_deadtime = 0;
         }
 
     }

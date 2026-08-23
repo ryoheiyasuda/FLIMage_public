@@ -80,7 +80,7 @@ namespace FLIMage.HardwareControls
 
             int ShadingCh = image_display.currentChannel;
 
-            shading.AddShadingImage(FLIMage.flimage_io.FLIM_ImgData, LaserN, ShadingCh);
+            shading.AddShadingImage(image_display.FLIM_ImgData, LaserN, ShadingCh);
             fileIO.SaveFloatImageInTiff(shading.ShadingImages[LaserN], shading_filePath[LaserN]);
             //fileIO.SaveArray(shading_filePath[LaserN], shading.ShadingImages[LaserN]);
 

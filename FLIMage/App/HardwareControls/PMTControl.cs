@@ -64,12 +64,12 @@ namespace FLIMage.HardwareControls
 
         FLIMageMain flimage;
 
-        public PMTControl(ScanParameters state, FLIMageMain flim)
+        public PMTControl(ScanParameters state1, FLIMageMain flim)
         {
             InitializeComponent();
             PMTPanel.Enabled = false;
             GalvoPanel.Enabled = false;
-            State = state;
+            State = state1;
             flimage = flim;
             thorECU_scan_on = flimage.flimage_io.thorECU_on;
 

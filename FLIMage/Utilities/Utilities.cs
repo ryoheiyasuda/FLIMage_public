@@ -86,7 +86,7 @@ namespace Utilities
             EnumWindows(delegate (IntPtr hWnd, int lParam)
             {
                 if (hWnd == shellWindow) return true;
-                //if (!IsWindowVisible(hWnd)) return true;
+                if (!IsWindowVisible(hWnd)) return true;
 
                 int length = GetWindowTextLength(hWnd);
                 if (length == 0) return true;

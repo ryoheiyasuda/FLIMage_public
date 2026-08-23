@@ -86,7 +86,10 @@
             this.label68 = new System.Windows.Forms.Label();
             this.uncage_power = new System.Windows.Forms.TextBox();
             this.label62 = new System.Windows.Forms.Label();
-            this.undage_dwell = new System.Windows.Forms.TextBox();
+            //Kengo BEGIN 12-14-2023
+            //typo undage_dwell --> uncage_dwell
+            this.uncage_dwell = new System.Windows.Forms.TextBox();
+            //Kengo END
             this.label12 = new System.Windows.Forms.Label();
             this.uncage_pulseN = new System.Windows.Forms.TextBox();
             this.label93 = new System.Windows.Forms.Label();
@@ -111,6 +114,7 @@
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.advancedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.calibrationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.resetCalibrationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.miscSettingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.TriggerWithImagingCheck = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.PulseNumber)).BeginInit();
@@ -129,17 +133,18 @@
             this.UncagingPosY.Margin = new System.Windows.Forms.Padding(1);
             this.UncagingPosY.Name = "UncagingPosY";
             this.UncagingPosY.Size = new System.Drawing.Size(50, 20);
-            this.UncagingPosY.TabIndex = 360;
+            this.UncagingPosY.TabIndex = 3;
             this.UncagingPosY.Text = "0";
             this.UncagingPosY.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.UncagingPosY.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
             // 
             // Uncage_Save
             // 
+            this.Uncage_Save.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Uncage_Save.Location = new System.Drawing.Point(268, 14);
             this.Uncage_Save.Name = "Uncage_Save";
             this.Uncage_Save.Size = new System.Drawing.Size(45, 21);
-            this.Uncage_Save.TabIndex = 391;
+            this.Uncage_Save.TabIndex = 30;
             this.Uncage_Save.Text = "Save";
             this.Uncage_Save.UseVisualStyleBackColor = true;
             this.Uncage_Save.Click += new System.EventHandler(this.Uncage_Save_Click);
@@ -151,7 +156,7 @@
             this.PulseName.Margin = new System.Windows.Forms.Padding(1);
             this.PulseName.Name = "PulseName";
             this.PulseName.Size = new System.Drawing.Size(92, 20);
-            this.PulseName.TabIndex = 388;
+            this.PulseName.TabIndex = 28;
             this.PulseName.Text = "Pulse set";
             this.PulseName.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
             // 
@@ -162,7 +167,7 @@
             this.PulseNumber.Margin = new System.Windows.Forms.Padding(1);
             this.PulseNumber.Name = "PulseNumber";
             this.PulseNumber.Size = new System.Drawing.Size(52, 20);
-            this.PulseNumber.TabIndex = 390;
+            this.PulseNumber.TabIndex = 29;
             this.PulseNumber.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.PulseNumber.ValueChanged += new System.EventHandler(this.PulseNumber_ValueChanged);
             // 
@@ -173,7 +178,7 @@
             this.Shutter2.Location = new System.Drawing.Point(8, 241);
             this.Shutter2.Name = "Shutter2";
             this.Shutter2.Size = new System.Drawing.Size(160, 18);
-            this.Shutter2.TabIndex = 358;
+            this.Shutter2.TabIndex = 7;
             this.Shutter2.Text = "Uncaging shutter open now";
             this.Shutter2.UseVisualStyleBackColor = true;
             this.Shutter2.Click += new System.EventHandler(this.Shutter2_Click);
@@ -186,7 +191,7 @@
             this.label97.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label97.Name = "label97";
             this.label97.Size = new System.Drawing.Size(34, 14);
-            this.label97.TabIndex = 389;
+            this.label97.TabIndex = 27;
             this.label97.Text = "Name";
             // 
             // OutputRate
@@ -196,7 +201,7 @@
             this.OutputRate.Margin = new System.Windows.Forms.Padding(1);
             this.OutputRate.Name = "OutputRate";
             this.OutputRate.Size = new System.Drawing.Size(50, 20);
-            this.OutputRate.TabIndex = 387;
+            this.OutputRate.TabIndex = 5;
             this.OutputRate.Text = "0";
             this.OutputRate.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.OutputRate.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -209,7 +214,7 @@
             this.label95.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label95.Name = "label95";
             this.label95.Size = new System.Drawing.Size(21, 14);
-            this.label95.TabIndex = 385;
+            this.label95.TabIndex = 20;
             this.label95.Text = "ms";
             // 
             // label94
@@ -220,7 +225,7 @@
             this.label94.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label94.Name = "label94";
             this.label94.Size = new System.Drawing.Size(98, 14);
-            this.label94.TabIndex = 384;
+            this.label94.TabIndex = 18;
             this.label94.Text = "Shutter delay (AO)";
             // 
             // AnalogShutterDelay
@@ -230,7 +235,7 @@
             this.AnalogShutterDelay.Margin = new System.Windows.Forms.Padding(1);
             this.AnalogShutterDelay.Name = "AnalogShutterDelay";
             this.AnalogShutterDelay.Size = new System.Drawing.Size(50, 20);
-            this.AnalogShutterDelay.TabIndex = 383;
+            this.AnalogShutterDelay.TabIndex = 19;
             this.AnalogShutterDelay.Text = "0";
             this.AnalogShutterDelay.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.AnalogShutterDelay.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -242,7 +247,7 @@
             this.UncagingPosX.Margin = new System.Windows.Forms.Padding(1);
             this.UncagingPosX.Name = "UncagingPosX";
             this.UncagingPosX.Size = new System.Drawing.Size(50, 20);
-            this.UncagingPosX.TabIndex = 359;
+            this.UncagingPosX.TabIndex = 1;
             this.UncagingPosX.Text = "0";
             this.UncagingPosX.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.UncagingPosX.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -255,7 +260,7 @@
             this.label92.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label92.Name = "label92";
             this.label92.Size = new System.Drawing.Size(61, 14);
-            this.label92.TabIndex = 379;
+            this.label92.TabIndex = 16;
             this.label92.Text = "Total length";
             // 
             // label65
@@ -266,7 +271,7 @@
             this.label65.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label65.Name = "label65";
             this.label65.Size = new System.Drawing.Size(15, 14);
-            this.label65.TabIndex = 361;
+            this.label65.TabIndex = 2;
             this.label65.Text = "Y";
             // 
             // Uncage_Length
@@ -276,7 +281,7 @@
             this.Uncage_Length.Margin = new System.Windows.Forms.Padding(1);
             this.Uncage_Length.Name = "Uncage_Length";
             this.Uncage_Length.Size = new System.Drawing.Size(50, 20);
-            this.Uncage_Length.TabIndex = 378;
+            this.Uncage_Length.TabIndex = 17;
             this.Uncage_Length.Text = "0";
             this.Uncage_Length.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Uncage_Length.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -289,7 +294,7 @@
             this.label90.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label90.Name = "label90";
             this.label90.Size = new System.Drawing.Size(59, 14);
-            this.label90.TabIndex = 377;
+            this.label90.TabIndex = 14;
             this.label90.Text = "Delay (ms)";
             // 
             // label64
@@ -300,7 +305,7 @@
             this.label64.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label64.Name = "label64";
             this.label64.Size = new System.Drawing.Size(14, 14);
-            this.label64.TabIndex = 362;
+            this.label64.TabIndex = 0;
             this.label64.Text = "X";
             // 
             // Uncage_Delay
@@ -310,7 +315,7 @@
             this.Uncage_Delay.Margin = new System.Windows.Forms.Padding(1);
             this.Uncage_Delay.Name = "Uncage_Delay";
             this.Uncage_Delay.Size = new System.Drawing.Size(50, 20);
-            this.Uncage_Delay.TabIndex = 376;
+            this.Uncage_Delay.TabIndex = 15;
             this.Uncage_Delay.Text = "0";
             this.Uncage_Delay.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Uncage_Delay.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -323,7 +328,7 @@
             this.label10.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(67, 14);
-            this.label10.TabIndex = 375;
+            this.label10.TabIndex = 12;
             this.label10.Text = "Interval (ms)";
             // 
             // Uncage_ISI
@@ -333,7 +338,7 @@
             this.Uncage_ISI.Margin = new System.Windows.Forms.Padding(1);
             this.Uncage_ISI.Name = "Uncage_ISI";
             this.Uncage_ISI.Size = new System.Drawing.Size(50, 20);
-            this.Uncage_ISI.TabIndex = 374;
+            this.Uncage_ISI.TabIndex = 13;
             this.Uncage_ISI.Text = "0";
             this.Uncage_ISI.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Uncage_ISI.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -349,7 +354,7 @@
             this.UncageMultiRoi.Location = new System.Drawing.Point(194, 76);
             this.UncageMultiRoi.Name = "UncageMultiRoi";
             this.UncageMultiRoi.Size = new System.Drawing.Size(95, 22);
-            this.UncageMultiRoi.TabIndex = 373;
+            this.UncageMultiRoi.TabIndex = 26;
             this.UncageMultiRoi.SelectedIndexChanged += new System.EventHandler(this.UncageMultiRoi_SelectedIndexChanged);
             // 
             // label4
@@ -360,7 +365,7 @@
             this.label4.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(48, 14);
-            this.label4.TabIndex = 372;
+            this.label4.TabIndex = 25;
             this.label4.Text = "Location";
             // 
             // uncageNote
@@ -371,7 +376,7 @@
             this.uncageNote.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.uncageNote.Name = "uncageNote";
             this.uncageNote.Size = new System.Drawing.Size(32, 14);
-            this.uncageNote.TabIndex = 371;
+            this.uncageNote.TabIndex = 8;
             this.uncageNote.Text = "Note:";
             // 
             // groupBox10
@@ -402,11 +407,11 @@
             this.groupBox10.Controls.Add(this.label71);
             this.groupBox10.Controls.Add(this.Uncage_FrameInterval);
             this.groupBox10.Controls.Add(this.label63);
-            this.groupBox10.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.groupBox10.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox10.Location = new System.Drawing.Point(333, 96);
             this.groupBox10.Name = "groupBox10";
             this.groupBox10.Size = new System.Drawing.Size(303, 192);
-            this.groupBox10.TabIndex = 370;
+            this.groupBox10.TabIndex = 5;
             this.groupBox10.TabStop = false;
             this.groupBox10.Text = "Uncage/Trigger during imaging";
             // 
@@ -418,7 +423,7 @@
             this.FrameNote.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.FrameNote.Name = "FrameNote";
             this.FrameNote.Size = new System.Drawing.Size(119, 14);
-            this.FrameNote.TabIndex = 429;
+            this.FrameNote.TabIndex = 11;
             this.FrameNote.Text = "(Frame interval = 0.0 s)";
             // 
             // SliceNote
@@ -429,7 +434,7 @@
             this.SliceNote.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.SliceNote.Name = "SliceNote";
             this.SliceNote.Size = new System.Drawing.Size(112, 14);
-            this.SliceNote.TabIndex = 428;
+            this.SliceNote.TabIndex = 23;
             this.SliceNote.Text = "(Slice interval = 0.0 s)";
             // 
             // BaseLine_Slice_s
@@ -440,7 +445,7 @@
             this.BaseLine_Slice_s.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.BaseLine_Slice_s.Name = "BaseLine_Slice_s";
             this.BaseLine_Slice_s.Size = new System.Drawing.Size(31, 14);
-            this.BaseLine_Slice_s.TabIndex = 427;
+            this.BaseLine_Slice_s.TabIndex = 18;
             this.BaseLine_Slice_s.Text = "0.0 s";
             // 
             // label17
@@ -451,7 +456,7 @@
             this.label17.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label17.Name = "label17";
             this.label17.Size = new System.Drawing.Size(36, 14);
-            this.label17.TabIndex = 425;
+            this.label17.TabIndex = 17;
             this.label17.Text = "Slices";
             // 
             // label19
@@ -462,7 +467,7 @@
             this.label19.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label19.Name = "label19";
             this.label19.Size = new System.Drawing.Size(90, 14);
-            this.label19.TabIndex = 424;
+            this.label19.TabIndex = 19;
             this.label19.Text = "Pulse-set interval";
             this.label19.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -474,7 +479,7 @@
             this.label18.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label18.Name = "label18";
             this.label18.Size = new System.Drawing.Size(122, 14);
-            this.label18.TabIndex = 423;
+            this.label18.TabIndex = 15;
             this.label18.Text = "Baseline before uncage";
             // 
             // SliceInterval_s
@@ -485,7 +490,7 @@
             this.SliceInterval_s.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.SliceInterval_s.Name = "SliceInterval_s";
             this.SliceInterval_s.Size = new System.Drawing.Size(31, 14);
-            this.SliceInterval_s.TabIndex = 422;
+            this.SliceInterval_s.TabIndex = 22;
             this.SliceInterval_s.Text = "0.0 s";
             // 
             // label14
@@ -496,7 +501,7 @@
             this.label14.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(44, 14);
-            this.label14.TabIndex = 420;
+            this.label14.TabIndex = 12;
             this.label14.Text = "Repeat:";
             // 
             // RepeatFrame
@@ -507,7 +512,7 @@
             this.RepeatFrame.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.RepeatFrame.Name = "RepeatFrame";
             this.RepeatFrame.Size = new System.Drawing.Size(28, 14);
-            this.RepeatFrame.TabIndex = 419;
+            this.RepeatFrame.TabIndex = 13;
             this.RepeatFrame.Text = "0 / 0";
             // 
             // FrameBeforeUncage_ms
@@ -517,7 +522,7 @@
             this.FrameBeforeUncage_ms.Margin = new System.Windows.Forms.Padding(1);
             this.FrameBeforeUncage_ms.Name = "FrameBeforeUncage_ms";
             this.FrameBeforeUncage_ms.Size = new System.Drawing.Size(50, 20);
-            this.FrameBeforeUncage_ms.TabIndex = 417;
+            this.FrameBeforeUncage_ms.TabIndex = 4;
             this.FrameBeforeUncage_ms.Text = "0";
             this.FrameBeforeUncage_ms.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.FrameBeforeUncage_ms.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -530,7 +535,7 @@
             this.label11.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(21, 14);
-            this.label11.TabIndex = 418;
+            this.label11.TabIndex = 5;
             this.label11.Text = "ms";
             this.label11.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -542,7 +547,7 @@
             this.label9.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(43, 14);
-            this.label9.TabIndex = 416;
+            this.label9.TabIndex = 3;
             this.label9.Text = "Frames";
             this.label9.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -553,7 +558,7 @@
             this.Uncage_FrameInterval_ms.Margin = new System.Windows.Forms.Padding(1);
             this.Uncage_FrameInterval_ms.Name = "Uncage_FrameInterval_ms";
             this.Uncage_FrameInterval_ms.Size = new System.Drawing.Size(50, 20);
-            this.Uncage_FrameInterval_ms.TabIndex = 413;
+            this.Uncage_FrameInterval_ms.TabIndex = 9;
             this.Uncage_FrameInterval_ms.Text = "0";
             this.Uncage_FrameInterval_ms.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Uncage_FrameInterval_ms.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -566,7 +571,7 @@
             this.label3.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(21, 14);
-            this.label3.TabIndex = 415;
+            this.label3.TabIndex = 10;
             this.label3.Text = "ms";
             this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -578,7 +583,7 @@
             this.label8.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(43, 14);
-            this.label8.TabIndex = 407;
+            this.label8.TabIndex = 8;
             this.label8.Text = "Frames";
             this.label8.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -589,7 +594,7 @@
             this.FramesBeforeUncage.Margin = new System.Windows.Forms.Padding(1);
             this.FramesBeforeUncage.Name = "FramesBeforeUncage";
             this.FramesBeforeUncage.Size = new System.Drawing.Size(50, 20);
-            this.FramesBeforeUncage.TabIndex = 404;
+            this.FramesBeforeUncage.TabIndex = 2;
             this.FramesBeforeUncage.Text = "0";
             this.FramesBeforeUncage.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.FramesBeforeUncage.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -602,7 +607,7 @@
             this.label7.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(44, 14);
-            this.label7.TabIndex = 402;
+            this.label7.TabIndex = 24;
             this.label7.Text = "Repeat:";
             // 
             // U_counter
@@ -613,7 +618,7 @@
             this.U_counter.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.U_counter.Name = "U_counter";
             this.U_counter.Size = new System.Drawing.Size(28, 14);
-            this.U_counter.TabIndex = 323;
+            this.U_counter.TabIndex = 25;
             this.U_counter.Text = "0 / 0";
             // 
             // SyncWithSlice_Check
@@ -624,7 +629,7 @@
             this.SyncWithSlice_Check.Location = new System.Drawing.Point(149, 16);
             this.SyncWithSlice_Check.Name = "SyncWithSlice_Check";
             this.SyncWithSlice_Check.Size = new System.Drawing.Size(129, 18);
-            this.SyncWithSlice_Check.TabIndex = 316;
+            this.SyncWithSlice_Check.TabIndex = 14;
             this.SyncWithSlice_Check.TabStop = true;
             this.SyncWithSlice_Check.Text = "Insert between slices";
             this.SyncWithSlice_Check.UseVisualStyleBackColor = true;
@@ -637,7 +642,7 @@
             this.SyncWithFrame_Check.Location = new System.Drawing.Point(10, 16);
             this.SyncWithFrame_Check.Name = "SyncWithFrame_Check";
             this.SyncWithFrame_Check.Size = new System.Drawing.Size(113, 18);
-            this.SyncWithFrame_Check.TabIndex = 315;
+            this.SyncWithFrame_Check.TabIndex = 0;
             this.SyncWithFrame_Check.Text = "Sync with Frames";
             this.SyncWithFrame_Check.UseVisualStyleBackColor = true;
             this.SyncWithFrame_Check.Click += new System.EventHandler(this.Generic_RadioButton);
@@ -649,7 +654,7 @@
             this.Uncage_SliceInterval.Margin = new System.Windows.Forms.Padding(1);
             this.Uncage_SliceInterval.Name = "Uncage_SliceInterval";
             this.Uncage_SliceInterval.Size = new System.Drawing.Size(50, 20);
-            this.Uncage_SliceInterval.TabIndex = 312;
+            this.Uncage_SliceInterval.TabIndex = 20;
             this.Uncage_SliceInterval.Text = "0";
             this.Uncage_SliceInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Uncage_SliceInterval.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -661,7 +666,7 @@
             this.SlicesBeforeUncage.Margin = new System.Windows.Forms.Padding(1);
             this.SlicesBeforeUncage.Name = "SlicesBeforeUncage";
             this.SlicesBeforeUncage.Size = new System.Drawing.Size(50, 20);
-            this.SlicesBeforeUncage.TabIndex = 310;
+            this.SlicesBeforeUncage.TabIndex = 16;
             this.SlicesBeforeUncage.Text = "0";
             this.SlicesBeforeUncage.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.SlicesBeforeUncage.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -674,7 +679,7 @@
             this.label73.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label73.Name = "label73";
             this.label73.Size = new System.Drawing.Size(122, 14);
-            this.label73.TabIndex = 309;
+            this.label73.TabIndex = 1;
             this.label73.Text = "Baseline before uncage";
             // 
             // label71
@@ -685,7 +690,7 @@
             this.label71.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label71.Name = "label71";
             this.label71.Size = new System.Drawing.Size(36, 14);
-            this.label71.TabIndex = 313;
+            this.label71.TabIndex = 21;
             this.label71.Text = "Slices";
             // 
             // Uncage_FrameInterval
@@ -695,7 +700,7 @@
             this.Uncage_FrameInterval.Margin = new System.Windows.Forms.Padding(1);
             this.Uncage_FrameInterval.Name = "Uncage_FrameInterval";
             this.Uncage_FrameInterval.Size = new System.Drawing.Size(50, 20);
-            this.Uncage_FrameInterval.TabIndex = 301;
+            this.Uncage_FrameInterval.TabIndex = 7;
             this.Uncage_FrameInterval.Text = "0";
             this.Uncage_FrameInterval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Uncage_FrameInterval.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -708,7 +713,7 @@
             this.label63.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label63.Name = "label63";
             this.label63.Size = new System.Drawing.Size(90, 14);
-            this.label63.TabIndex = 302;
+            this.label63.TabIndex = 6;
             this.label63.Text = "Pulse-set interval";
             this.label63.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -720,7 +725,7 @@
             this.label5.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(89, 14);
-            this.label5.TabIndex = 325;
+            this.label5.TabIndex = 2;
             this.label5.Text = "Repeat pulse-set";
             this.label5.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -731,7 +736,7 @@
             this.Uncage_Repeat.Margin = new System.Windows.Forms.Padding(1);
             this.Uncage_Repeat.Name = "Uncage_Repeat";
             this.Uncage_Repeat.Size = new System.Drawing.Size(50, 20);
-            this.Uncage_Repeat.TabIndex = 324;
+            this.Uncage_Repeat.TabIndex = 3;
             this.Uncage_Repeat.Text = "0";
             this.Uncage_Repeat.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.Uncage_Repeat.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -742,7 +747,7 @@
             this.StartUncaging_button.Location = new System.Drawing.Point(246, 18);
             this.StartUncaging_button.Name = "StartUncaging_button";
             this.StartUncaging_button.Size = new System.Drawing.Size(42, 22);
-            this.StartUncaging_button.TabIndex = 322;
+            this.StartUncaging_button.TabIndex = 7;
             this.StartUncaging_button.Text = "Start";
             this.StartUncaging_button.UseVisualStyleBackColor = true;
             this.StartUncaging_button.Click += new System.EventHandler(this.StartUncaging_button_Click);
@@ -755,7 +760,7 @@
             this.label75.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label75.Name = "label75";
             this.label75.Size = new System.Drawing.Size(67, 14);
-            this.label75.TabIndex = 319;
+            this.label75.TabIndex = 1;
             this.label75.Text = "Interval (ms)";
             // 
             // uncage_interval
@@ -765,7 +770,7 @@
             this.uncage_interval.Margin = new System.Windows.Forms.Padding(1);
             this.uncage_interval.Name = "uncage_interval";
             this.uncage_interval.Size = new System.Drawing.Size(50, 20);
-            this.uncage_interval.TabIndex = 318;
+            this.uncage_interval.TabIndex = 2;
             this.uncage_interval.Text = "0";
             this.uncage_interval.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.uncage_interval.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -778,7 +783,7 @@
             this.label68.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label68.Name = "label68";
             this.label68.Size = new System.Drawing.Size(57, 14);
-            this.label68.TabIndex = 368;
+            this.label68.TabIndex = 10;
             this.label68.Text = "Power(%)";
             // 
             // uncage_power
@@ -788,7 +793,7 @@
             this.uncage_power.Margin = new System.Windows.Forms.Padding(1);
             this.uncage_power.Name = "uncage_power";
             this.uncage_power.Size = new System.Drawing.Size(50, 20);
-            this.uncage_power.TabIndex = 367;
+            this.uncage_power.TabIndex = 11;
             this.uncage_power.Text = "0";
             this.uncage_power.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.uncage_power.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -801,20 +806,23 @@
             this.label62.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label62.Name = "label62";
             this.label62.Size = new System.Drawing.Size(59, 14);
-            this.label62.TabIndex = 366;
+            this.label62.TabIndex = 8;
             this.label62.Text = "Width (ms)";
             // 
-            // undage_dwell
+            // uncage_dwell
             // 
-            this.undage_dwell.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.undage_dwell.Location = new System.Drawing.Point(66, 101);
-            this.undage_dwell.Margin = new System.Windows.Forms.Padding(1);
-            this.undage_dwell.Name = "undage_dwell";
-            this.undage_dwell.Size = new System.Drawing.Size(50, 20);
-            this.undage_dwell.TabIndex = 365;
-            this.undage_dwell.Text = "0";
-            this.undage_dwell.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.undage_dwell.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
+            //Kengo BEGIN 12-14-2023
+            //typo undage_dwell --> uncage_dwell
+            this.uncage_dwell.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.uncage_dwell.Location = new System.Drawing.Point(66, 101);
+            this.uncage_dwell.Margin = new System.Windows.Forms.Padding(1);
+            this.uncage_dwell.Name = "uncage_dwell";
+            this.uncage_dwell.Size = new System.Drawing.Size(50, 20);
+            this.uncage_dwell.TabIndex = 9;
+            this.uncage_dwell.Text = "0";
+            this.uncage_dwell.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.uncage_dwell.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
+            //Kengo END
             // 
             // label12
             // 
@@ -824,7 +832,7 @@
             this.label12.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(45, 14);
-            this.label12.TabIndex = 364;
+            this.label12.TabIndex = 6;
             this.label12.Text = "#Pulses";
             // 
             // uncage_pulseN
@@ -834,7 +842,7 @@
             this.uncage_pulseN.Margin = new System.Windows.Forms.Padding(1);
             this.uncage_pulseN.Name = "uncage_pulseN";
             this.uncage_pulseN.Size = new System.Drawing.Size(50, 20);
-            this.uncage_pulseN.TabIndex = 363;
+            this.uncage_pulseN.TabIndex = 7;
             this.uncage_pulseN.Text = "0";
             this.uncage_pulseN.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.uncage_pulseN.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
@@ -847,7 +855,7 @@
             this.label93.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label93.Name = "label93";
             this.label93.Size = new System.Drawing.Size(64, 14);
-            this.label93.TabIndex = 382;
+            this.label93.TabIndex = 4;
             this.label93.Text = "Output rate:";
             // 
             // panel1
@@ -876,7 +884,7 @@
             this.label1.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(109, 14);
-            this.label1.TabIndex = 397;
+            this.label1.TabIndex = 9;
             this.label1.Text = "Pockels cell + shutter";
             // 
             // label2
@@ -887,7 +895,7 @@
             this.label2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(41, 14);
-            this.label2.TabIndex = 398;
+            this.label2.TabIndex = 12;
             this.label2.Text = "Mirrors";
             // 
             // ShowShutter
@@ -899,7 +907,7 @@
             this.ShowShutter.Location = new System.Drawing.Point(159, 294);
             this.ShowShutter.Name = "ShowShutter";
             this.ShowShutter.Size = new System.Drawing.Size(92, 18);
-            this.ShowShutter.TabIndex = 399;
+            this.ShowShutter.TabIndex = 10;
             this.ShowShutter.Text = "Show shutter";
             this.ShowShutter.UseVisualStyleBackColor = true;
             this.ShowShutter.CheckedChanged += new System.EventHandler(this.ShowShutter_CheckedChanged);
@@ -915,11 +923,11 @@
             this.UncageOnlyPanel.Controls.Add(this.StartUncaging_button);
             this.UncageOnlyPanel.Controls.Add(this.label75);
             this.UncageOnlyPanel.Controls.Add(this.uncage_interval);
-            this.UncageOnlyPanel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.UncageOnlyPanel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.UncageOnlyPanel.Location = new System.Drawing.Point(333, 40);
             this.UncageOnlyPanel.Name = "UncageOnlyPanel";
             this.UncageOnlyPanel.Size = new System.Drawing.Size(303, 54);
-            this.UncageOnlyPanel.TabIndex = 369;
+            this.UncageOnlyPanel.TabIndex = 4;
             this.UncageOnlyPanel.TabStop = false;
             this.UncageOnlyPanel.Text = "Uncage now";
             // 
@@ -931,7 +939,7 @@
             this.label21.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label21.Name = "label21";
             this.label21.Size = new System.Drawing.Size(32, 14);
-            this.label21.TabIndex = 415;
+            this.label21.TabIndex = 5;
             this.label21.Text = "Time:";
             // 
             // elapsedTimeLabel
@@ -942,7 +950,7 @@
             this.elapsedTimeLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.elapsedTimeLabel.Name = "elapsedTimeLabel";
             this.elapsedTimeLabel.Size = new System.Drawing.Size(22, 14);
-            this.elapsedTimeLabel.TabIndex = 414;
+            this.elapsedTimeLabel.TabIndex = 6;
             this.elapsedTimeLabel.Text = "0 s";
             // 
             // label15
@@ -953,7 +961,7 @@
             this.label15.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(52, 14);
-            this.label15.TabIndex = 413;
+            this.label15.TabIndex = 0;
             this.label15.Text = "Pulse-set";
             this.label15.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -965,7 +973,7 @@
             this.U_counter2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.U_counter2.Name = "U_counter2";
             this.U_counter2.Size = new System.Drawing.Size(22, 14);
-            this.U_counter2.TabIndex = 401;
+            this.U_counter2.TabIndex = 4;
             this.U_counter2.Text = "1/1";
             // 
             // label6
@@ -976,7 +984,7 @@
             this.label6.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(44, 14);
-            this.label6.TabIndex = 400;
+            this.label6.TabIndex = 3;
             this.label6.Text = "Repeat:";
             // 
             // label96
@@ -987,7 +995,7 @@
             this.label96.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label96.Name = "label96";
             this.label96.Size = new System.Drawing.Size(21, 14);
-            this.label96.TabIndex = 386;
+            this.label96.TabIndex = 21;
             this.label96.Text = "ms";
             // 
             // groupBox1
@@ -1019,14 +1027,18 @@
             this.groupBox1.Controls.Add(this.label68);
             this.groupBox1.Controls.Add(this.uncage_power);
             this.groupBox1.Controls.Add(this.label62);
-            this.groupBox1.Controls.Add(this.undage_dwell);
+            //Kengo BEGIN 12-14-2023
+            //typo undage_dwell --> uncage_dwell
+            this.groupBox1.Controls.Add(this.uncage_dwell);
+            //Kengo END
             this.groupBox1.Controls.Add(this.label12);
             this.groupBox1.Controls.Add(this.uncage_pulseN);
             this.groupBox1.Controls.Add(this.label93);
+            this.groupBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox1.Location = new System.Drawing.Point(8, 40);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(319, 179);
-            this.groupBox1.TabIndex = 400;
+            this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Pulse set";
             // 
@@ -1038,7 +1050,7 @@
             this.label13.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(21, 14);
-            this.label13.TabIndex = 394;
+            this.label13.TabIndex = 24;
             this.label13.Text = "ms";
             // 
             // label16
@@ -1049,7 +1061,7 @@
             this.label16.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label16.Name = "label16";
             this.label16.Size = new System.Drawing.Size(97, 14);
-            this.label16.TabIndex = 393;
+            this.label16.TabIndex = 22;
             this.label16.Text = "Shutter delay (DO)";
             // 
             // DigitalShutterDelay
@@ -1059,9 +1071,13 @@
             this.DigitalShutterDelay.Margin = new System.Windows.Forms.Padding(1);
             this.DigitalShutterDelay.Name = "DigitalShutterDelay";
             this.DigitalShutterDelay.Size = new System.Drawing.Size(50, 20);
-            this.DigitalShutterDelay.TabIndex = 392;
+            this.DigitalShutterDelay.TabIndex = 23;
             this.DigitalShutterDelay.Text = "0";
             this.DigitalShutterDelay.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            //Kengo BEGIN 12-18-2023
+            //add KeyDown event
+            this.DigitalShutterDelay.KeyDown += new System.Windows.Forms.KeyEventHandler(this.uncage_generic_KeyDown);
+            //Kengo END
             // 
             // ShowRepeat
             // 
@@ -1070,7 +1086,7 @@
             this.ShowRepeat.Location = new System.Drawing.Point(274, 294);
             this.ShowRepeat.Name = "ShowRepeat";
             this.ShowRepeat.Size = new System.Drawing.Size(258, 18);
-            this.ShowRepeat.TabIndex = 401;
+            this.ShowRepeat.TabIndex = 11;
             this.ShowRepeat.Text = "Show whole trace for \"sync with frames\" mode";
             this.ShowRepeat.UseVisualStyleBackColor = true;
             this.ShowRepeat.Click += new System.EventHandler(this.ShowShutter_Click);
@@ -1083,7 +1099,7 @@
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(646, 24);
-            this.menuStrip1.TabIndex = 402;
+            this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             // 
             // fileToolStripMenuItem
@@ -1096,6 +1112,7 @@
             // 
             this.advancedToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.calibrationToolStripMenuItem,
+            this.resetCalibrationToolStripMenuItem,
             this.miscSettingToolStripMenuItem});
             this.advancedToolStripMenuItem.Name = "advancedToolStripMenuItem";
             this.advancedToolStripMenuItem.Size = new System.Drawing.Size(72, 20);
@@ -1104,14 +1121,21 @@
             // calibrationToolStripMenuItem
             // 
             this.calibrationToolStripMenuItem.Name = "calibrationToolStripMenuItem";
-            this.calibrationToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
+            this.calibrationToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
             this.calibrationToolStripMenuItem.Text = "Calibration";
             this.calibrationToolStripMenuItem.Click += new System.EventHandler(this.calibrationToolStripMenuItem_Click);
+            // 
+            // resetCalibrationToolStripMenuItem
+            // 
+            this.resetCalibrationToolStripMenuItem.Name = "resetCalibrationToolStripMenuItem";
+            this.resetCalibrationToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.resetCalibrationToolStripMenuItem.Text = "Reset Calibration";
+            this.resetCalibrationToolStripMenuItem.Click += new System.EventHandler(this.resetCalibrationToolStripMenuItem_Click);
             // 
             // miscSettingToolStripMenuItem
             // 
             this.miscSettingToolStripMenuItem.Name = "miscSettingToolStripMenuItem";
-            this.miscSettingToolStripMenuItem.Size = new System.Drawing.Size(138, 22);
+            this.miscSettingToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
             this.miscSettingToolStripMenuItem.Text = "Misc setting";
             this.miscSettingToolStripMenuItem.Click += new System.EventHandler(this.miscSettingToolStripMenuItem_Click);
             // 
@@ -1122,7 +1146,7 @@
             this.TriggerWithImagingCheck.Location = new System.Drawing.Point(8, 224);
             this.TriggerWithImagingCheck.Name = "TriggerWithImagingCheck";
             this.TriggerWithImagingCheck.Size = new System.Drawing.Size(135, 18);
-            this.TriggerWithImagingCheck.TabIndex = 403;
+            this.TriggerWithImagingCheck.TabIndex = 6;
             this.TriggerWithImagingCheck.Text = "Triggered with imaging";
             this.TriggerWithImagingCheck.UseVisualStyleBackColor = true;
             // 
@@ -1148,6 +1172,8 @@
             this.Controls.Add(this.menuStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
+            this.MaximumSize = new System.Drawing.Size(662, 726);
+            this.MinimumSize = new System.Drawing.Size(662, 726);
             this.Name = "Uncaging_Trigger_Panel";
             this.Text = "Uncaging Control";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Uncaging_Trigger_Panel_FormClosing);
@@ -1210,7 +1236,10 @@
         public System.Windows.Forms.Label label68;
         public System.Windows.Forms.TextBox uncage_power;
         public System.Windows.Forms.Label label62;
-        public System.Windows.Forms.TextBox undage_dwell;
+        //Kengo BEGIN 12-14-2023
+        //typo undage_dwell --> uncage_dwell
+        public System.Windows.Forms.TextBox uncage_dwell;
+        //Kengo END
         public System.Windows.Forms.Label label12;
         public System.Windows.Forms.TextBox uncage_pulseN;
         public System.Windows.Forms.Label label93;
@@ -1254,5 +1283,6 @@
         public System.Windows.Forms.Label label21;
         public System.Windows.Forms.Label elapsedTimeLabel;
         public System.Windows.Forms.CheckBox TriggerWithImagingCheck;
+        private System.Windows.Forms.ToolStripMenuItem resetCalibrationToolStripMenuItem;
     }
 }

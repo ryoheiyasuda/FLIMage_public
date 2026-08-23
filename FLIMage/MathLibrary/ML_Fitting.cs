@@ -35,13 +35,13 @@ namespace MathLibrary
             public double betatol = 1e-6;
             public double rtol = 1e-8;
 
-            int dimmension = 1;
+            int dim1 = 1;
 
-            //For 2-dimmensional fitting.
+            //For 2-dimensional fitting.
             public double[,] x2;
 
             public Func<double[], double[], double[]> modelFunc; //
-            public Func<double[], double[,], double[]> modelFunc2; //For multidimensional
+            public Func<double[], double[,], double[]> modelFunc2; //For multidimnsional
 
             /// <summary>
             /// This is the most regular Nlinfit.
@@ -58,7 +58,7 @@ namespace MathLibrary
 
                 int n1 = x1.Length;
 
-                dimmension = 1;
+                dim1 = 1;
                 weights = Enumerable.Repeat<double>(1.0, n1).ToArray();
                 betaMax = Enumerable.Repeat(double.PositiveInfinity, beta1.Length).ToArray();
                 betaMin = Enumerable.Repeat(double.NegativeInfinity, beta1.Length).ToArray();
@@ -66,7 +66,7 @@ namespace MathLibrary
 
 
             /// <summary>
-            /// three dimmensional mode of Nlinfit.
+            /// three dimensional mode of Nlinfit.
             /// </summary>
             /// <param name="beta1"></param>
             /// <param name="xy">[x, y]</param>
@@ -83,7 +83,7 @@ namespace MathLibrary
                 int n1 = xy.GetLength(1);
                 int n = z.Length;
 
-                dimmension = 2;
+                dim1 = 2;
                 weights = Enumerable.Repeat<double>(1.0, n).ToArray();
                 betaMax = Enumerable.Repeat(double.PositiveInfinity, beta1.Length).ToArray();
                 betaMin = Enumerable.Repeat(double.NegativeInfinity, beta1.Length).ToArray();
@@ -126,6 +126,10 @@ namespace MathLibrary
 
                 Jt = MatrixCalc.MatrixCreate2D<double>(p_fit, n);
                 double[] yfit;
+                if (dim1 == 1)
+                    yfit = modelFunc(beta1, x);
+                else
+                    yfit = modelFunc2(beta1, x2);
                 double[] yplus;
 
                 int k = 0;
@@ -142,16 +146,10 @@ namespace MathLibrary
 
                         betaNew[i] = beta1[i] + delta;
 
-                        if (dimmension == 1)
-                        {
-                            yfit = modelFunc(beta1, x);
+                        if (dim1 == 1)
                             yplus = modelFunc(betaNew, x);
-                        }
                         else //2d.
-                        {
-                            yfit = modelFunc2(beta1, x2);
                             yplus = modelFunc2(betaNew, x2);
-                        }
 
                         for (int j = 0; j < n; j++)
                             Jt[k][j] = (yplus[j] - yfit[j]) / delta * weights[j]; //deltaY/deltaB * weight
@@ -171,7 +169,23 @@ namespace MathLibrary
             /// <returns></returns>
             private double[] CalcStep(double lambda, double[] beta, out double[] step1)
             {
-                double[] step = GetStep(lambda);
+                double[] r;
+                if (dim1 == 1)
+                {
+                    var yfit = modelFunc(beta, x);
+                    r = new double[yfit.Length];
+                    for (int i = 0; i < yfit.Length; i++)
+                        r[i] = (yfit[i] - y[i]) * weights[i];
+                }
+                else
+                {
+                    var yfit = modelFunc2(beta, x2);
+                    r = new double[yfit.Length];
+                    for (int i = 0; i < yfit.Length; i++)
+                        r[i] = (yfit[i] - y[i]) * weights[i];
+                }
+
+                double[] step = GetStep(r, lambda);
                 double[] beta1 = new double[beta.Length];
 
                 step1 = new double[beta.Length]; //Actual step. Start with all 0.
@@ -184,10 +198,10 @@ namespace MathLibrary
                 {
                     if (!fix[i])
                     {
-                        if (beta[i] + step[k] > betaMax[i] || beta[i] + step[k] < betaMin[i]) //bounce back if it exceeds the boundary.
-                            step1[i] = -step[k];
-                        else
-                            step1[i] = step[k];
+                        //if (beta[i] + step[k] > betaMax[i] || beta[i] + step[k] < betaMin[i]) //bounce back if it exceeds the boundary.
+                        //    step1[i] = -step[k];
+                        //else
+                        step1[i] = step[k];
                         k++;
                     }
 
@@ -315,10 +329,14 @@ namespace MathLibrary
                 {
                     if (fix[i])
                         beta[i] = beta0[i];
+                    else if (beta[i] > betaMax[i])
+                        beta[i] = betaMax[i];
+                    else if (beta[i] < betaMin[i])
+                        beta[i] = betaMin[i];
                 }
 
 
-                if (dimmension == 1)
+                if (dim1 == 1)
                     fitCurve = modelFunc(beta, x);
                 else
                     fitCurve = modelFunc2(beta, x2);
@@ -352,32 +370,21 @@ namespace MathLibrary
             /// <param name="r">residual</param>
             /// <param name="lambda">slope parameter</param>
             /// <returns></returns>
-            public double[] GetStep(double lambda)
+            public double[] GetStep(double[] r, double lambda)
             {
-                //int p = Jt.Length; //beta length
+                int p = Jt.Length; //beta length
 
-                ////var J = MatrixCalc.MatrixTranspose(Jt);
-                ////var JMatrix = MatrixCalc.MatrixProduct(Jt, J); 
-                ////Dot product. Final product = p x p.
+                var JMatrix = DirectJtJ(Jt); //Same as above, but much faster.
 
-                //var JMatrix = DirectJtJ(Jt); //Same as above, but much faster.
-
-                //for (int i = 0; i < p; i++)
-                //    JMatrix[i][i] *= (1 + lambda);  //J'J + lambda*diag(J'J)
+                for (int i = 0; i < p; i++)
+                    JMatrix[i][i] *= (1 + lambda);  //J'J + lambda*diag(J'J)
 
 
-                //var Jtr = MatrixCalc.MatrixProduct(Jt, r);
+                var Jtr = MatrixCalc.MatrixProduct(Jt, r);
 
-                ////Solve delta for JMatrix*step = J'r
-                //var step = MatrixCalc.MatrixProduct(MatrixCalc.MatrixInverse(JMatrix), Jtr);
+                //Solve delta for JMatrix*step = J'r without forming explicit inverse
+                var step = MatrixCalc.MatrixSolve(JMatrix, Jtr);
 
-                ////Solution with MathNet.Save as above equation.Same results.
-                ////This gives 1e-8 level similarity with the above, but still i like my solution.
-                ////It is fast and simple.
-                ////var JtrV = Vector<double>.Build.Dense(Jtr);
-                ////var JmatrixV = Matrix<double>.Build.DenseOfRowArrays(JMatrix);
-                ////var step = JmatrixV.Solve(JtrV).AsArray();
-                var step = new double[] { 0, 0 };
                 return step;
             }
 
@@ -391,7 +398,7 @@ namespace MathLibrary
 
                 double[] yfit;
 
-                if (dimmension == 1)
+                if (dim1 == 1)
                     yfit = modelFunc(beta, x);
                 else
                     yfit = modelFunc2(beta, x2);

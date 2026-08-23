@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -9,13 +9,20 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FLIMage</RootNamespace>
     <AssemblyName>FLIMage</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <GenerateResourceMSBuildRuntime>CurrentRuntime</GenerateResourceMSBuildRuntime>
+    <GenerateResourceMSBuildArchitecture>CurrentArchitecture</GenerateResourceMSBuildArchitecture>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+    <GenerateClickOnceManifests Condition="'$(MSBuildRuntimeType)' == '' Or '$(MSBuildRuntimeType)' == 'Core'">false</GenerateClickOnceManifests>
+    <GenerateTrustInfo Condition="'$(MSBuildRuntimeType)' == '' Or '$(MSBuildRuntimeType)' == 'Core'">false</GenerateTrustInfo>
+    <TargetZone Condition="'$(MSBuildRuntimeType)' == '' Or '$(MSBuildRuntimeType)' == 'Core'">
+    </TargetZone>
     <PublishUrl>Z:\Yasuda_lab\Imaging_Program_Scanimage3_8\C#\FLIMage Setup Win10\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -116,7 +123,7 @@
     <GenerateManifests>true</GenerateManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <TargetZone>LocalIntranet</TargetZone>
+    <TargetZone Condition="'$(MSBuildRuntimeType)' == 'Full'">LocalIntranet</TargetZone>
   </PropertyGroup>
   <PropertyGroup>
     <SignManifests>false</SignManifests>
@@ -129,20 +136,60 @@
     <ApplicationManifest>flimage.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BitMiracle.LibTiff.NET">
-      <HintPath>..\Libraries\BitMiracle.LibTiff.NET.dll</HintPath>
+    <Reference Include="BitMiracle.LibTiff.NET, Version=2.4.560.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\BitMiracle.LibTiff.NET.2.4.560\lib\net20\BitMiracle.LibTiff.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=10.0.0.5, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.10.0.5\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="SharpAvi, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpAvi.3.0.1\lib\net45\SharpAvi.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpCompress, Version=0.49.1.0, Culture=neutral, PublicKeyToken=afb0a02973931d96, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpCompress.0.49.1\lib\net48\SharpCompress.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Buffers, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.6.1\lib\net462\System.Buffers.dll</HintPath>
+    </Reference>
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.IO.Pipelines, Version=10.0.0.5, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IO.Pipelines.10.0.5\lib\net462\System.IO.Pipelines.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.6.3\lib\net462\System.Memory.dll</HintPath>
+    </Reference>
     <Reference Include="System.Numerics" />
-    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    <Reference Include="System.Numerics.Vectors, Version=4.1.6.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.6.1\lib\net462\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Resources.Extensions">
+      <HintPath>..\packages\System.Resources.Extensions.4.7.0\lib\netstandard2.0\System.Resources.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.1.2\lib\net462\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Text.Encoding.CodePages, Version=10.0.0.5, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encoding.CodePages.10.0.5\lib\net462\System.Text.Encoding.CodePages.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web, Version=10.0.0.5, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encodings.Web.10.0.5\lib\net462\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json, Version=10.0.0.5, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Json.10.0.5\lib\net462\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.4.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.6.3\lib\net462\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple" />
+    <Reference Include="System.Windows" />
     <Reference Include="System.Windows.Forms.DataVisualization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -153,14 +200,23 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="ZstdSharp, Version=0.8.7.0, Culture=neutral, PublicKeyToken=8d151af33a4ad5cf, processorArchitecture=MSIL">
+      <HintPath>..\packages\ZstdSharp.Port.0.8.7\lib\net462\ZstdSharp.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataHandling\FileFormat.cs" />
+    <Compile Include="DataHandling\OmeTiffLibraryWrapper.cs" />
+    <Compile Include="DataHandling\PtuFileReader.cs" />
+    <Compile Include="DataHandling\ZoomDataResonant.cs" />
     <Compile Include="Dialogs\ScanAreaWindow.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\ScanAreaWindow.Designer.cs">
       <DependentUpon>ScanAreaWindow.cs</DependentUpon>
     </Compile>
+    <Compile Include="FlowControls\FLIM_Utilities.cs" />
     <Compile Include="Plugins\Image_sequence2.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -229,6 +285,9 @@
     <Compile Include="Analysis\Image_Display.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Analysis\PhasorPlotWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Analysis\Image_Display.Designer.cs">
       <DependentUpon>Image_Display.cs</DependentUpon>
     </Compile>
@@ -244,6 +303,12 @@
     </Compile>
     <Compile Include="HardwareControls\StageControls\MotorCtrlPanel.Designer.cs">
       <DependentUpon>MotorCtrlPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HardwareControls\StageControls\ZoZoMotorControl\ZoZoMotorControl.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="HardwareControls\StageControls\ZoZoMotorControl\ZoZoMotorControl.Designer.cs">
+      <DependentUpon>ZoZoMotorControl.cs</DependentUpon>
     </Compile>
     <Compile Include="HardwareControls\Hardware_Config.cs">
       <SubType>Form</SubType>
@@ -355,6 +420,9 @@
     <EmbeddedResource Include="HardwareControls\StageControls\MotorCtrlPanel.resx">
       <DependentUpon>MotorCtrlPanel.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="HardwareControls\StageControls\ZoZoMotorControl\ZoZoMotorControl.resx">
+      <DependentUpon>ZoZoMotorControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="HardwareControls\Hardware_Config.resx">
       <DependentUpon>Hardware_Config.cs</DependentUpon>
     </EmbeddedResource>
@@ -395,6 +463,7 @@
     <EmbeddedResource Include="Uncaging\Uncaging_Trigger_Panel.resx">
       <DependentUpon>Uncaging_Trigger_Panel.cs</DependentUpon>
     </EmbeddedResource>
+    <None Include="app.config" />
     <None Include="flimage.manifest" />
     <None Include="Main\packages.config" />
     <None Include="packages.config" />
@@ -488,29 +557,21 @@
       <Project>{0fe8cf20-6830-4a3f-bca2-e3bd27e15ae9}</Project>
       <Name>MicroscopeHardwareLibs</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Hardware\TagLensController\TagLensController.csproj">
-      <Project>{0a7b6826-6cef-49d0-a2f6-647ca600e6d6}</Project>
-      <Name>TagLensController</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Hardware\TCSPC_Controller\TCSPC_Controls.csproj">
       <Project>{c0327d48-d301-408a-86bf-8d6ec3b9df5d}</Project>
       <Name>TCSPC_Controls</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Hardware\TagLensController\TagLensController.csproj">
+      <Project>{0a7b6826-6cef-49d0-a2f6-647ca600e6d6}</Project>
+      <Name>TagLensController</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\PhysiologyCSharp\PhysiologyCSharp\PhysiologyCSharp.csproj">
       <Project>{8b25b5d5-a501-4e47-878d-8ed84bf3f125}</Project>
       <Name>PhysiologyCSharp</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Fisiology\Fisiology.csproj">
-      <Project>{38c92a74-005a-44f8-8bcd-dd6e193b7f00}</Project>
-      <Name>Fisiology</Name>
-    </ProjectReference>
     <ProjectReference Include="..\MathLibrary\MathLibrary.csproj">
       <Project>{9fd3b2db-4c5e-4444-9eed-3e146d767d63}</Project>
       <Name>MathLibrary</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\MotorCtrlTest\MotorCtrlTest.csproj">
-      <Project>{88e7c71d-c6ae-43a0-89c5-8832478ecf27}</Project>
-      <Name>MotorCtrlTest</Name>
     </ProjectReference>
     <ProjectReference Include="..\Utilities\Utilities.csproj">
       <Project>{cddcfe35-fcf1-493b-a65d-cd03b22aa9d0}</Project>
@@ -519,13 +580,24 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- Copy Libraries into output via MSBuild instead of PreBuild xcopy (avoids cmd wildcard or quote issues, exit code 4). Tetsuya 20260503 -->
+  <Target Name="CopyLibrariesToOutput" BeforeTargets="BeforeBuild">
+    <MakeDir Directories="$(OutDir)" Condition="!Exists('$(OutDir)')" />
+    <ItemGroup>
+      <_LibrariesToCopy Include="$(MSBuildProjectDirectory)\..\Libraries\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_LibrariesToCopy)" DestinationFiles="@(_LibrariesToCopy->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
   <PropertyGroup>
-    <PreBuildEvent>copy "$(SolutionDir)\Libraries\*.*" "$(OutDir)"</PreBuildEvent>
+    <PostBuildEvent>del $(OutDir)\NationalInstruments*.*</PostBuildEvent>
   </PropertyGroup>
-  <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
-  </PropertyGroup>
+  <Import Project="..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets" Condition="Exists('..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets'))" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

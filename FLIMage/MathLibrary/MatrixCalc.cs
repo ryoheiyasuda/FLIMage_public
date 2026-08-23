@@ -19,6 +19,7 @@ namespace MathLibrary
         static int simd_float = System.Numerics.Vector<float>.Count;
         static int simd_double = System.Numerics.Vector<double>.Count;
         static bool simd_on = System.Numerics.Vector.IsHardwareAccelerated;
+        const int arrayCalcChunkElements = 65536;
         static public bool IntelMKL_on = MathNet.Numerics.Control.TryUseNativeMKL();
 
         public static byte[] changeDepthFrom16To8(ushort[,,] array3d)
@@ -131,6 +132,9 @@ namespace MathLibrary
             int siz = Marshal.SizeOf(typeof(T));
             var n_simd = simd_byte / siz;
 
+            if (linearArray.Length < n_simd)
+                return calcMin_Normal(linearArray);
+
             int i = 0;
             var minVec = new System.Numerics.Vector<T>(linearArray, 0);
             for (i = n_simd; i <= linearArray.Length - n_simd; i += n_simd)
@@ -143,7 +147,7 @@ namespace MathLibrary
             minVec.CopyTo(minArray);
             dynamic minValue = minArray.Min();
 
-            int remainingLength = linearArray.Length - i - 1;
+            int remainingLength = linearArray.Length - i;
             T[] restArray;
             if (remainingLength > 0)
             {
@@ -161,6 +165,8 @@ namespace MathLibrary
         {
             int siz = Marshal.SizeOf(typeof(T));
             var n_simd = simd_byte / siz;
+            if (linearArray.Length < n_simd)
+                return calcMax_Normal(linearArray);
             var maxArray = new T[n_simd];
 
             int i = 0;
@@ -181,7 +187,7 @@ namespace MathLibrary
             maxVec.CopyTo(maxArray);
             double maxValue = calcMax_Normal(maxArray);
 
-            int remainingLength = linearArray.Length - i - 1;
+            int remainingLength = linearArray.Length - i;
             T[] restArray;
             if (remainingLength > 0)
             {
@@ -717,7 +723,7 @@ namespace MathLibrary
         /// <returns></returns>
         public static double[] linearRegression(double[] xdata, double[] ydata)
         {
-            Tuple<double, double> p = MathNet.Numerics.LinearRegression.SimpleRegression.Fit(xdata, ydata);
+            var p = MathNet.Numerics.LinearRegression.SimpleRegression.Fit(xdata, ydata);
             double a = p.Item1; // == 10; intercept
             double b = p.Item2; // == 0.5; slope
 
@@ -915,7 +921,7 @@ namespace MathLibrary
         }
 
         /// <summary>
-        /// Making new 5D stack in multi-dimmensional matrix.
+        /// Making new 5D stack in multi-dimnsional matrix.
         /// </summary>
         /// <param name="n_c"></param>
         /// <param name="n_z"></param>
@@ -1401,7 +1407,7 @@ namespace MathLibrary
                 {
                     double temp = offset[1];
                     offset[1] = offset[0];
-                    offset[0] = offset[1];
+                    offset[0] = temp;
                 }
 
                 for (int j = 0; j < 2; j++)
@@ -1949,25 +1955,43 @@ namespace MathLibrary
         static public void ArrayCalc<T>(T[,,] arrayA, T[,,] arrayB, CalculationType Op)
             where T : struct
         {
-            var linear1 = new T[arrayA.Length];
-            var linear2 = new T[arrayB.Length];
             int siz = Marshal.SizeOf(typeof(T));
+            int length = arrayA.Length;
+            if (length == 0)
+                return;
 
-            Buffer.BlockCopy(arrayA, 0, linear1, 0, arrayA.Length * siz);
-            Buffer.BlockCopy(arrayB, 0, linear2, 0, arrayB.Length * siz);
+            int chunkElements = Math.Min(length, arrayCalcChunkElements);
+            var linear1 = new T[chunkElements];
+            var linear2 = new T[chunkElements];
 
-            ArrayCalc(linear1, linear2, Op);
+            for (int offset = 0; offset < length; offset += chunkElements)
+            {
+                int count = Math.Min(chunkElements, length - offset);
+                int byteOffset = offset * siz;
+                int byteCount = count * siz;
 
-            Buffer.BlockCopy(linear1, 0, arrayA, 0, arrayA.Length * siz);
+                Buffer.BlockCopy(arrayA, byteOffset, linear1, 0, byteCount);
+                Buffer.BlockCopy(arrayB, byteOffset, linear2, 0, byteCount);
+
+                ArrayCalc(linear1, linear2, count, Op);
+
+                Buffer.BlockCopy(linear1, 0, arrayA, byteOffset, byteCount);
+            }
         }
 
         static public void ArrayCalc<T>(T[] arrayA, T[] arrayB, CalculationType Op)
             where T : struct
         {
+            ArrayCalc(arrayA, arrayB, arrayA.Length, Op);
+        }
+
+        static private void ArrayCalc<T>(T[] arrayA, T[] arrayB, int count, CalculationType Op)
+            where T : struct
+        {
             int siz = Marshal.SizeOf(typeof(T));
             var n_simd = simd_byte / siz;
 
-            int n = arrayA.Length;
+            int n = count;
             bool add = Op == CalculationType.Add;
             bool sub = Op == CalculationType.Subtract;
             bool mul = Op == CalculationType.Multiply;
@@ -2116,6 +2140,16 @@ namespace MathLibrary
 
             }
 
+        }
+
+        static public T[,,] Blanck3DMatrix<T>(T[,,] matrixA)
+        {
+            int rows = matrixA.GetLength(0);
+            int cols = matrixA.GetLength(1);
+            int third = matrixA.GetLength(2);
+
+            T[,,] result = new T[rows, cols, third];
+            return result;
         }
 
 
@@ -2566,6 +2600,35 @@ namespace MathLibrary
             }
             return result;
         } //MatrixInverse
+
+        /// <summary>
+        /// Solve linear system represented by a square matrix and a vector.
+        /// Uses LU decomposition without forming an explicit inverse.
+        /// </summary>
+        /// <param name="matrix">Coefficient matrix</param>
+        /// <param name="vector">Right-hand side vector</param>
+        /// <returns>Solution vector</returns>
+        static public double[] MatrixSolve(double[][] matrix, double[] vector)
+        {
+            int n = matrix.GetLength(0);
+
+            if (vector.Length != n)
+                throw new ArgumentException("Matrix and vector dimensions do not match.");
+
+            for (int i = 0; i < n; i++)
+                if (matrix[i].Length != n)
+                    throw new ArgumentException("Matrix must be square.");
+
+            // Work on a copy to avoid mutating the input matrix during decomposition
+            var matrixCopy = MatrixCopy2D<double>(matrix);
+            MatrixDecompose(matrixCopy, out double[][] lum, out int[] perm);
+
+            double[] b = new double[n];
+            for (int i = 0; i < n; i++)
+                b[i] = vector[perm[i]];
+
+            return Helper(lum, b);
+        }
 
         /// <summary>
         /// MatrixDecompose

@@ -83,14 +83,22 @@ namespace FLIMage.HardwareControls
             State.Init.DO_uncagingShutter = DO_uncagingShutterCheck.Checked;
 
             State.Init.UncagingShutterAnalogPort = PockelsBoard.Text + "/" + Shutter_AOChannel.Text;
-            
+
             State.Init.DigitalShutterPort = Shutter_DOChannel.Text;
 
             State.Init.SampleClockPort = SampleClkPort.Text;
             State.Init.TriggerInput = TriggerInput.Text;
 
-            State.Init.shutterPort = ShutterOutputBoard.Text + "/port0/" + ShutterOutputChannel.Text;
-            State.Init.triggerPort = TriggerOutputBoard.Text + "/port0/" + TriggerOutputChannel.Text;
+            State.Init.shutterPort = ShutterOutputBoard.Text + "/Port0/" + ShutterOutputChannel.Text;
+            State.Init.triggerPort = TriggerOutputBoard.Text + "/Port0/" + TriggerOutputChannel.Text;
+
+            State.Init.ResonantOn = ResonantBoard_TB.Text + "/Port0/" + Resonant_ON_TB.Text;
+            State.Init.ResonantSwitchPort = ResonantBoard_TB.Text + "/Port0/" + ResonantSwitch_TB.Text;
+            State.Init.ResonantAOBoard = ResonantBoard_TB.Text;
+            State.Init.ResonantZoom = ResonantBoard_TB.Text + "/" + Resonant_Amp_TB.Text;
+            State.Init.ResonantMirrorX = ResonantBoard_TB.Text + "/" + Resonant_X_TB.Text;
+            State.Init.ResonantMirrorY = ResonantBoard_TB.Text + "/" + Resonant_Y_TB.Text;
+            State.Init.ResonantClockInput_fromScanner = Resonant_LineClockInput_TB.Text;
 
             State.Init.MarkerInput = MarkerInput.Text;
             State.Init.ExternalTriggerInputPort = ExternalTriggerChannel.Text;
@@ -108,18 +116,55 @@ namespace FLIMage.HardwareControls
                 State.Init.FLIM_mode = "BH";
             else if (MH_radio.Checked)
                 State.Init.FLIM_mode = "MH";
+            else if (PH_Radio.Checked)
+                State.Init.FLIM_mode = "PH";
+            else if (HH_Radio.Checked)
+                State.Init.FLIM_mode = "HH";
             else
                 State.Init.FLIM_mode = "PQ";
 
-            State.Init.MotorHWName = "MP-285A";
-            if (Thorlab_MCM3000_Radio.Checked)
-                State.Init.MotorHWName = "ThorMCM3000";
-            else if (Sutter_MP285_Radio.Checked)
-                State.Init.MotorHWName = "MP-285";
-            else if (Thorlab_MCM5000_Radio.Checked)
-                State.Init.MotorHWName = "ThorMCM5000"; 
-            else if (ThorBScope_Radio.Checked)
-                State.Init.MotorHWName = "ThorBScope";
+            if (Custom_Resonant_Radio.Checked || Custom_Radio.Checked || Polygon_Radio.Checked)
+            {
+                State.Init.MicroscopeSystem = "";
+                State.Init.enableRegularGalvo = true;
+                State.Init.enableResonantScanner = Custom_Resonant_Radio.Checked;
+                if (Polygon_Radio.Checked)
+                    State.Init.MicroscopeSystem = "Polygon";
+            }
+            else if (MiniscopeRadio.Checked)
+            {
+                State.Init.MicroscopeSystem = "MiniScope";
+                State.Init.enableRegularGalvo = true;
+                State.Init.enableResonantScanner = false;
+            }
+            else if (BScopeGG_Radio.Checked)
+            {
+                State.Init.MicroscopeSystem = "Thorlab BScope GG";
+                State.Init.enableRegularGalvo = true;
+                State.Init.enableResonantScanner = false;
+            }
+            else if (BScope_RG_Radio.Checked)
+            {
+                State.Init.MicroscopeSystem = "Thorlab BScope RG";
+                State.Init.enableRegularGalvo = true;
+                State.Init.enableResonantScanner = true;
+            }
+
+            State.Init.resonantScanner_COMPort = Thor_ECU_COM.Text;
+            if (State.Init.resonantScanner_COMPort.Contains("COM"))
+            {
+                if (State.Init.MicroscopeSystem.ToLower().Contains("bscope"))
+                    State.Init.resonantScannerSystem = "BScope";
+                else
+                    State.Init.resonantScannerSystem = "ThorECU";
+            }
+
+            State.Init.PMTModule_COMPort = Thor_PMT_COM.Text;
+            if (State.Init.PMTModule_COMPort.Contains("COM"))
+            {
+                    State.Init.resonantScannerSystem = "ThorECU";
+            }
+
         }
 
         private void setupGUI()
@@ -203,6 +248,14 @@ namespace FLIMage.HardwareControls
             TriggerOutputBoard.Text = sP[0];
             TriggerOutputChannel.Text = sP[2];
 
+            ResonantBoard_TB.Text = State.Init.ResonantAOBoard;
+            Resonant_X_TB.Text = State.Init.ResonantMirrorX.Split('/')[1];
+            Resonant_Y_TB.Text = State.Init.ResonantMirrorY.Split('/')[1];
+            Resonant_Amp_TB.Text = State.Init.ResonantZoom.Split('/')[1];
+            Resonant_ON_TB.Text = State.Init.ResonantOn.Split('/')[2];
+            ResonantSwitch_TB.Text = State.Init.ResonantSwitchPort;
+            Resonant_LineClockInput_TB.Text = State.Init.ResonantClockInput_fromScanner;
+
             MarkerInput.Text = State.Init.MarkerInput;
 
             ExternalTriggerChannel.Text = State.Init.ExternalTriggerInputPort;
@@ -217,12 +270,25 @@ namespace FLIMage.HardwareControls
             BH_radio.Checked = State.Init.FLIM_mode == "BH";
             PQ_radio.Checked = State.Init.FLIM_mode == "PQ";
             MH_radio.Checked = State.Init.FLIM_mode == "MH";
+            PH_Radio.Checked = State.Init.FLIM_mode == "PH";
+            HH_Radio.Checked = State.Init.FLIM_mode == "HH";
 
             ThorBScope_Radio.Checked = State.Init.MotorHWName == "ThorBScope";
+            Thorlab_MCM301_Radio.Checked = State.Init.MotorHWName == "ThorMCM301";
             Thorlab_MCM5000_Radio.Checked = State.Init.MotorHWName == "ThorMCM5000";
             Thorlab_MCM3000_Radio.Checked = State.Init.MotorHWName == "ThorMCM3000";
             Sutter_MP285_Radio.Checked = State.Init.MotorHWName == "MP-285";
             Sutter_MP285A_Radio.Checked = State.Init.MotorHWName == "MP-285A";
+
+            BScopeGG_Radio.Checked = State.Init.MicroscopeSystem.ToLower().Contains("bscope") && State.Init.MicroscopeSystem.ToLower().Contains("gg");
+            BScope_RG_Radio.Checked = State.Init.MicroscopeSystem.ToLower().Contains("bscope") && State.Init.MicroscopeSystem.ToLower().Contains("rg");
+            MiniscopeRadio.Checked = State.Init.MicroscopeSystem.ToLower().Contains("mini");
+            Custom_Radio.Checked = State.Init.MicroscopeSystem == "" && !State.Init.enableResonantScanner;
+            Custom_Resonant_Radio.Checked = State.Init.MicroscopeSystem == "" && State.Init.enableResonantScanner;
+            Polygon_Radio.Checked = State.Init.MicroscopeSystem.ToLower().Contains("polygon");
+
+            Thor_ECU_COM.Text = State.Init.resonantScanner_COMPort;
+            Thor_PMT_COM.Text = State.Init.PMTModule_COMPort;
 
             Motor_onCheck.Checked = State.Init.motor_on;
             FLIM_onCheck.Checked = State.Init.FLIM_on;
@@ -309,6 +375,11 @@ namespace FLIMage.HardwareControls
             else if (Thorlab_MCM5000_Radio.Checked || ThorBScope_Radio.Checked)
             {
                 MotorCOM.Text = "COM31";
+                MotorCOM.ReadOnly = true;
+            }
+            else if (Thorlab_MCM301_Radio.Checked)
+            {
+                MotorCOM.Text = "COM32"; // Not used yet
                 MotorCOM.ReadOnly = true;
             }
             else

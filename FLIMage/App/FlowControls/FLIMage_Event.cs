@@ -1,7 +1,8 @@
-﻿using FLIMage.HardwareControls;
+using FLIMage.HardwareControls;
 using FLIMage.HardwareControls.StageControls;
 using MicroscopeHardwareLibs.Stage_Contoller;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -10,8 +11,10 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 using TCSPC_controls;
 
 namespace FLIMage.FlowControls
@@ -34,6 +37,40 @@ namespace FLIMage.FlowControls
         public DataTable eventNotifyTable = new DataTable();
         public DataTable saveFileParameterTable = new DataTable();
 
+        // ── Command serialization (stage 1) ──────────────────────────────────
+        // Every remote command (from the pipe receive thread or from the
+        // RemoteControl "Client output" window) is funneled through a single
+        // background worker so that ExecuteReceivedCommand never runs on two
+        // threads at once. This fixes the pre-existing UI-thread vs receive-thread
+        // race and is the foundation for multi-client support (stage 2): the
+        // worker stays identical, only the reply routing becomes per-session.
+        //
+        // Reply routing is owned by the caller: whoever enqueues awaits the
+        // returned Task and writes the reply to its own sink (the pipe stream
+        // for the receive thread, the UI for the window). The worker only
+        // computes the reply string.
+        //
+        // No command gating is applied here: as today, callers are expected to
+        // poll GetAnalysisStatus and avoid sending conflicting commands during a
+        // background analysis. Serialization only guarantees one command runs at
+        // a time; it does not police what commands are sent.
+        // by Kengo(Claude) 06-10-2026
+        public struct CommandResult
+        {
+            public string Reply;
+            public CommandMode Mode;
+        }
+
+        class CmdJob
+        {
+            public string Message;
+            public TaskCompletionSource<CommandResult> Reply =
+                new TaskCompletionSource<CommandResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        }
+
+        readonly BlockingCollection<CmdJob> _cmdQueue = new BlockingCollection<CmdJob>();
+        Thread _cmdWorker;
+
         public FLIMage_Event(FLIMageMain fc)
         {
             flimage = fc;
@@ -43,7 +80,7 @@ namespace FLIMage.FlowControls
             text_server = fc.text_server;
 
             flimage.flimage_io.EventNotify += new FLIMage_IO.FLIMage_EventHandler(EventHandling);
-            com_server.r_tick += new COMserver.ReadHandler(RemoteEventHandling);
+            com_server.CommandHandler = RemoteCommandHandling;
 
             uf = new UserFunction(fc);
 
@@ -68,6 +105,7 @@ namespace FLIMage.FlowControls
             eventNotifyTable.Rows.Add(15, "ParametersChanged", false);
             eventNotifyTable.Rows.Add(16, "SaveImageDone", false);
             eventNotifyTable.Rows.Add(17, "ExtCommandExecuted", false);
+            eventNotifyTable.Rows.Add(18, "AnalysisDone", true);
 
             saveFileParameterTable.Columns.Add("CommandName", typeof(string));
             saveFileParameterTable.Columns.Add("NArguments", typeof(int));
@@ -99,6 +137,65 @@ namespace FLIMage.FlowControls
             {
                 ReadEventNotifyList();
             }
+
+            StartCommandWorker();
+        }
+
+        // ── Command worker (stage 1) ─────────────────────────────────────────
+        void StartCommandWorker()
+        {
+            _cmdWorker = new Thread(CommandWorkerLoop)
+            {
+                IsBackground = true,
+                Name = "PipeCmdWorker"
+            };
+            _cmdWorker.Start();
+        }
+
+        void CommandWorkerLoop()
+        {
+            foreach (var job in _cmdQueue.GetConsumingEnumerable())
+            {
+                CommandResult result = new CommandResult { Reply = "", Mode = CommandMode.None };
+                try
+                {
+                    result.Reply = ExecuteReceivedCommand(job.Message, true, out CommandMode cm);
+                    result.Mode = cm;
+                }
+                catch (Exception ex)
+                {
+                    result.Reply = "Error: " + ex.Message;
+                    result.Mode = CommandMode.None;
+                }
+                job.Reply.TrySetResult(result);
+            }
+        }
+
+        // Enqueue a command for serialized execution and return a Task that
+        // completes with the reply. Every command goes through the single worker;
+        // there is no fast path, so ordering and one-at-a-time execution hold for
+        // all commands.
+        public Task<CommandResult> EnqueueCommand(string message)
+        {
+            var job = new CmdJob { Message = message };
+            try
+            {
+                _cmdQueue.Add(job);
+            }
+            catch (InvalidOperationException)
+            {
+                // Queue already completed (shutting down). Fail gracefully.
+                job.Reply.TrySetResult(new CommandResult { Reply = "", Mode = CommandMode.None });
+            }
+            return job.Reply.Task;
+        }
+
+        // Stop the worker and drain the queue. Called during shutdown.
+        public void StopCommandWorker()
+        {
+            try { _cmdQueue.CompleteAdding(); }
+            catch (Exception ex) { Debug.WriteLine("StopCommandWorker: " + ex.Message); }
+            _cmdWorker?.Join(1000);
         }
 
         public void WriteEventNotifyList()
@@ -168,7 +265,7 @@ namespace FLIMage.FlowControls
 
         public void UnSubscribe()
         {
-            com_server.r_tick -= RemoteEventHandling;
+            com_server.CommandHandler = null;
             flimage.flimage_io.EventNotify -= EventHandling;
         }
 
@@ -186,7 +283,7 @@ namespace FLIMage.FlowControls
                 }
 
                 if (com_server.connected)
-                    com_server.sendCommand(eventStr);
+                    com_server.Broadcast(eventStr); //All connected clients receive the event.
                 else
                     UpdateComServerNotConnectedText();
 
@@ -204,21 +301,18 @@ namespace FLIMage.FlowControls
         }
 
 
+        // With the multi-client server (stage 2), "no client connected" is a
+        // normal state while the accept loops keep listening, so this only
+        // updates the status display. The old single-client version also
+        // called com_server.Close() here to release the half-open pipe; that
+        // would now kill the accept loops and disconnect other clients.
+        // by Kengo(Claude) 06-11-2026
         public void UpdateComServerNotConnectedText()
         {
-            if (flimage.script != null)
+            if (flimage.script != null && !com_server.connected)
             {
-                if (!com_server.connectedR)
-                {
-                    flimage.script.displayStatusText("PIPE not communicating (flimage to Client) ...", CommandReceivedFrom.FLIMage);
-                    com_server.Close();
-                }
-
-                if (!com_server.connected)
-                {
-                    flimage.script.displayStatusText("PIPE not communicating (Client to flimage) ...", CommandReceivedFrom.Client);
-                    com_server.Close();
-                }
+                flimage.script.displayStatusText("PIPE not communicating (flimage to Client) ...", CommandReceivedFrom.FLIMage);
+                flimage.script.displayStatusText("PIPE not communicating (Client to flimage) ...", CommandReceivedFrom.Client);
             }
         }
 
@@ -323,25 +417,26 @@ namespace FLIMage.FlowControls
             //}
             else if (s.Contains("flimage."))
             {
-                string[] sP = s.Split('.');
                 if (query)
                 {
                     replyMessage = flimageQuery(s, ref cm);
                 }
                 else
                 {
-                    if (sP.Length > 1)
+                    int commandStart = s.IndexOf("flimage.", StringComparison.Ordinal) + "flimage.".Length;
+                    if (commandStart >= "flimage.".Length && commandStart < s.Length)
                     {
                         String argument = "";
-                        String command = sP[1];
-                        if (sP[1].Contains("("))
+                        String command = s.Substring(commandStart);
+                        if (command.Contains("("))
                         {
-                            String[] ssP = sP[1].Split(new char[] { '(', ')' });
+                            String[] ssP = command.Split(new char[] { '(', ')' });
                             command = ssP[0];
-                            argument = ssP[1];
+                            if (ssP.Length > 1)
+                                argument = ssP[1];
                         }
 
-                        if (flimage.ExternalCommand(command))
+                        if (flimage.ExternalCommand(command, argument))
                         {
                             replyMessage = "Done";
                             cm = CommandMode.Execution;
@@ -387,7 +482,8 @@ namespace FLIMage.FlowControls
                     tempStr = fio.ExecuteLine(s, false);
                     if (tempStr != "")
                     {
-                        replyMessage = s + " = " + tempStr.ToString();
+                        string[] sP = s.Split('=');
+                        replyMessage = sP[0] + " = " + tempStr.ToString();
                     }
                     else
                     {
@@ -417,6 +513,15 @@ namespace FLIMage.FlowControls
                         writeString = EventStr;
                         String fileName = SaveParameterFile();
                         writeString = String.Format("AcquisitionDone");
+                        if (ifParameterSave)
+                            writeString = writeString + String.Format("{0}ParameterFileSaved, {1}", "\r\n", fileName);
+                        break;
+                    }
+                case "ReadFileDone":
+                    {
+                        writeString = EventStr;
+                        String fileName = SaveParameterFile();
+                        writeString = String.Format("ReadFileDone");
                         if (ifParameterSave)
                             writeString = writeString + String.Format("{0}ParameterFileSaved, {1}", "\r\n", fileName);
                         break;
@@ -550,7 +655,7 @@ namespace FLIMage.FlowControls
                                 FileCounter = State.Files.fileCounter;
                             else
                                 FileCounter = State.Files.fileCounter - 1;
-                            saveFileParameterTable.Rows[i][2] = flimage.fileIO.FLIM_FilePath(RequestedChannel - 1, ChannelSaveInSeparatedFile, FileCounter, FileIO.ImageType.Intensity, "", State.Files.pathName);
+                            saveFileParameterTable.Rows[i][2] = flimage.fileIO.FLIM_FilePath(RequestedChannel - 1, ChannelSaveInSeparatedFile, FileCounter, FileIO.ImageType.Intensity, "", State.Files.pathName, State.Files.baseName, ".tif");
                             Debug.WriteLine("FileName: " + saveFileParameterTable.Rows[i][2]);
                             break;
                         }
@@ -625,34 +730,74 @@ namespace FLIMage.FlowControls
 
             switch (CommandInput)
             {
+                case "MovePiezoStep":
+                    {
+                        if (flimage.flimage_io.piezo != null)
+                        {
+                            flimage.ExternalCommand("MovePiezoStep", valueStack[0]);
+                            cm = CommandMode.Execution; //It is execution and set parameter.
+                            writeString = String.Format("MovePiezoStep, {0}", flimage.flimage_io.piezo.getPosition_um());
+                        }
+                        else
+                        {
+                            writeString = "Piezo is not setup";
+                        }
+                        break;
+                    }
                 case "SetMotorPosition":
                     {
                         double[] values = new double[valueStack.Length];
                         for (int i = 0; i < valueStack.Length; i++)
                             values[i] = Convert.ToDouble(valueStack[i]);
-                        //double[] XYZ = motorCtrl.convertToUncalibratedPosition(values, true);
-                        double[] motorPos = motorCtrl.getCalibratedAbsolutePosition(); //current position in um
-                        double[] tol = new double[] { 0.2, 0.2, 0.05 };
+                        //KENGO BEGIN 8-11-2025
+                        //Error handling while motorCtrl is null
+                        if (motorCtrl != null)
+                        {
+                            //double[] XYZ = motorCtrl.convertToUncalibratedPosition(values, true);
+                            double[] motorPos = motorCtrl.getCalibratedAbsolutePosition(); //current position in um
+                            double[] tol = new double[] { 0.2, 0.2, 0.05 };
 
-                        Debug.WriteLine("Set motor position to {0}, {1}, {2}", values[0], values[1], values[2]);
-                        motorCtrl.SetNewPosition_um(values);
-                        flimage.ExternalCommand("SetMotorPosition");
-                        motorPos = motorCtrl.getCalibratedAbsolutePosition();
+                            Debug.WriteLine("Set motor position to {0}, {1}, {2}", values[0], values[1], values[2]);
+                            motorCtrl.SetNewPosition_um(values);
+                            flimage.ExternalCommand("SetMotorPosition");
+                            motorPos = motorCtrl.getCalibratedAbsolutePosition();
 
-                        //for (int i = 0; i < 5; i++)
-                        //{
-                        //    motorCtrl.SetNewPosition_um(values);
-                        //    flimage.ExternalCommand("SetMotorPosition");
-                        //    motorCtrl.GetPosition();
-                        //    motorPos = motorCtrl.getCalibratedAbsolutePosition();
-                        //    if (Math.Abs(motorPos[0] - values[0]) < tol[0] && 
-                        //        Math.Abs(motorPos[1] - values[1]) < tol[1] && 
-                        //        Math.Abs(motorPos[2] - values[2]) < tol[2])
-                        //        break;
-                        //}
+                            //for (int i = 0; i < 5; i++)
+                            //{
+                            //    motorCtrl.SetNewPosition_um(values);
+                            //    flimage.ExternalCommand("SetMotorPosition");
+                            //    motorCtrl.GetPosition();
+                            //    motorPos = motorCtrl.getCalibratedAbsolutePosition();
+                            //    if (Math.Abs(motorPos[0] - values[0]) < tol[0] && 
+                            //        Math.Abs(motorPos[1] - values[1]) < tol[1] && 
+                            //        Math.Abs(motorPos[2] - values[2]) < tol[2])
+                            //        break;
+                            //}
 
-                        writeString = String.Format("SetMotorPositionDone, {0}, {1}, {2}", motorPos[0], motorPos[1], motorPos[2]);
-                        cm = CommandMode.Execution; //It is execution and set parameter.
+                            cm = CommandMode.Execution; //It is execution and set parameter.
+                            writeString = String.Format("SetMotorPositionDone, {0}, {1}, {2}", motorPos[0], motorPos[1], motorPos[2]);
+                        }
+                        else
+                        {
+                            writeString = "Error: Motor is not setup";
+                        }
+                        //KENGO END
+                        break;
+                    }
+                // Remote command to read calibrated relative XYZ (um) without moving stage or touching other state. Tetsuya 20260503
+                case "GetRelativeXYZ":
+                    {
+                        if (motorCtrl != null && motorCtrl.connected)
+                        {
+                            double[] r = motorCtrl.getCalibratedRelativePosition();
+                            writeString = String.Format("RelativeXYZ, {0}, {1}, {2}", r[0], r[1], r[2]);
+                            cm = CommandMode.Get_Parameter;
+                        }
+                        else
+                        {
+                            writeString = "Error: Motor is not setup";
+                            cm = CommandMode.None;
+                        }
                         break;
                     }
                 case "StartLoop":
@@ -667,10 +812,117 @@ namespace FLIMage.FlowControls
                         cm = CommandMode.Execution;
                         break;
                     }
+                case "SetPower":
+                    {
+                        // SetPower, ch, value  (ch: 1-indexed, value: 0-100)
+                        int ch = Convert.ToInt32(valueStack[0]) - 1;
+                        int val = Convert.ToInt32(valueStack[1]);
+                        if (ch >= 0 && ch < State.Acq.power.Length && val >= 0 && val <= 100)
+                        {
+                            State.Acq.power[ch] = val;
+                            // ReSetupValues calls updateState which zeros EOM via putValue_S_ToStartPos(true).
+                            // ParkMirrors must be called AFTER ReSetupValues to override the zeroing.
+                            flimage.ReSetupValues(issueUpdateFile);
+                            flimage.flimage_io.ResetFocus();
+                            if (!flimage.flimage_io.grabbing && !flimage.flimage_io.focusing && !flimage.flimage_io.refocusing)
+                                flimage.flimage_io.ParkMirrors(false);
+                            writeString = String.Format("Power, {0}, {1}", ch + 1, val);
+                            cm = CommandMode.Execution;  // prevent second ReSetupValues at end of switch
+                        }
+                        else
+                            writeString = "Error: invalid channel or value";
+                        break;
+                    }
+                case "GetPower":
+                    {
+                        // GetPower, ch  (ch: 1-indexed)
+                        int ch = Convert.ToInt32(valueStack[0]) - 1;
+                        if (ch >= 0 && ch < State.Acq.power.Length)
+                        {
+                            writeString = String.Format("Power, {0}, {1}", ch + 1, State.Acq.power[ch]);
+                            cm = CommandMode.Get_Parameter;
+                        }
+                        else
+                            writeString = "Error: invalid channel";
+                        break;
+                    }
                 case "StartGrab":
                     {
                         flimage.ExternalCommand("StartGrab");
                         cm = CommandMode.Execution;
+                        break;
+                    }
+                case "SetOverwriteWarningOff":
+                    {
+                        flimage.ExternalCommand("SetOverwriteWarningOff");
+                        cm = CommandMode.Execution;
+                        break;
+                    }
+                case "SetOverwriteWarningOn":
+                    {
+                        flimage.ExternalCommand("SetOverwriteWarningOn");
+                        cm = CommandMode.Execution;
+                        break;
+                    }
+
+                case "StartDO":
+                    {
+                        flimage.ExternalCommand("StartDO");
+                        cm = CommandMode.Execution;
+                        break;
+                    }
+
+                case "StopDO":
+                    {
+                        flimage.ExternalCommand("StopDO");
+                        cm = CommandMode.Execution;
+                        break;
+                    }
+
+                case "SetCenter":
+                    {
+                        flimage.SetCenter();
+                        break;
+                    }
+
+                case "CreateUncagingLocation":
+                    {
+                        //Kengo BIGEN 12-1-2023
+                        //Extend to take multiple locations
+                        //double[] values = new double[valueStack.Length];
+                        //for (int i = 0; i < valueStack.Length; i++)
+                        //    values[i] = Convert.ToDouble(valueStack[i]);
+                        //double x = values[0];
+                        //double y = values[1];
+                        //double[] Frac = HardwareControls.IOControls.PixelsToFracOnScreen(new double[] { x, y }, State);
+
+                        //flimage.image_display.uncagingLocs.Add(new double[] {Frac[0], Frac[1]});
+                        //flimage.UpdateUncagingFromDisplay();
+                        //flimage.image_display.DrawImages_public();
+                        //writeString = String.Format("CreateUncagingLoc, {0}, {1}", Frac[0], Frac[1]);
+                        if (valueStack.Length % 2 != 0 || valueStack.Length == 0)
+                            break;
+                        String s = "";
+                        for (int i = 0; i < valueStack.Length; i += 2)
+                        {
+                            double x = Convert.ToDouble(valueStack[i]);
+                            double y = Convert.ToDouble(valueStack[i + 1]);
+                            double[] Frac = HardwareControls.IOControls.PixelsToFracOnScreen(new double[] { x, y }, State);
+                            flimage.image_display.uncagingLocs.Add(new double[] { Frac[0], Frac[1] });
+                            s += String.Format(", {0}, {1}", Frac[0], Frac[1]);
+                        }
+                        flimage.UpdateUncagingFromDisplay();
+                        flimage.image_display.DrawImages_public();
+                        writeString = "CreateUncagingLoc" + s;
+                        //Kengo END
+                        break;
+                    }
+
+                case "ClearUncagingLocation":
+                    {
+                        flimage.image_display.uncagingLocs.Clear();
+                        flimage.UpdateUncagingFromDisplay();
+                        flimage.image_display.DrawImages_public();
                         break;
                     }
                 case "IsDORunning":
@@ -693,7 +945,7 @@ namespace FLIMage.FlowControls
                     }
                 case "IsGrabbing":
                     {
-                        int value = (flimage.flimage_io.grabbing || flimage.flimage_io.post_grabbing_process == false || flimage.flimage_io.focusing) ? 1 : 0;
+                        int value = (flimage.flimage_io.grabbing || flimage.flimage_io.focusing) ? 1 : 0;
                         writeString = String.Format("IsGrabbing, {0}", value);
                         cm = CommandMode.Get_Parameter;
                         break;
@@ -704,6 +956,7 @@ namespace FLIMage.FlowControls
                         cm = CommandMode.Execution;
                         break;
                     }
+
                 case "SetUncagingLocation":
                     {
                         double[] values = new double[valueStack.Length];
@@ -724,18 +977,6 @@ namespace FLIMage.FlowControls
                     }
                 case "StartUncaging":
                     {
-                        double[] values = new double[valueStack.Length];
-                        for (int i = 0; i < valueStack.Length; i++)
-                            values[i] = Convert.ToDouble(valueStack[i]);
-
-                        double x = values[0];
-                        double y = values[1];
-
-                        flimage.image_display.uncagingLocFrac = HardwareControls.IOControls.PixelsToFracOnScreen(new double[] { x, y }, State);
-
-                        flimage.image_display.uncaging_on = true;
-                        flimage.image_display.ActivateUncaging(true);
-                        flimage.UpdateUncagingFromDisplay();
                         flimage.ExternalCommand("StartUncaging");
                         cm = CommandMode.Execution;
                         break;
@@ -801,27 +1042,47 @@ namespace FLIMage.FlowControls
                     }
                 case "GetIntensityFilePath":
                     {
-                        writeString = String.Format("IntensityFilePath, {0}", flimage.fileIO.FLIM_FilePath(RequestedChannel - 1, ChannelSaveInSeparatedFile, State.Files.fileCounter - 1, FileIO.ImageType.Intensity, "", State.Files.pathName));
+                        writeString = String.Format("IntensityFilePath, {0}", flimage.fileIO.FLIM_FilePath(RequestedChannel - 1, ChannelSaveInSeparatedFile, State.Files.fileCounter - 1, FileIO.ImageType.Intensity, "", State.Files.pathName, State.Files.baseName, ".tif"));
                         cm = CommandMode.Get_Parameter;
                         break;
                     }
                 case "GetCurrentPosition":
                 case "GetMotorPosition":
                     {
-                        motorCtrl.GetPosition();
-                        double[] motorPos = motorCtrl.getCalibratedAbsolutePosition();
-                        writeString = String.Format("CurrentPosition, {0}, {1}, {2}", motorPos[0], motorPos[1], motorPos[2]);
-                        cm = CommandMode.Get_Parameter;
+                        //KENGO BEGIN 8-11-2025
+                        //Error handling while motorCtrl is null
+                        if (motorCtrl != null)
+                        {
+                            motorCtrl.GetPosition();
+                            double[] motorPos = motorCtrl.getCalibratedAbsolutePosition();
+                            writeString = String.Format("CurrentPosition, {0}, {1}, {2}", motorPos[0], motorPos[1], motorPos[2]);
+                            cm = CommandMode.Get_Parameter;
+                        }
+                        else
+                        {
+                            writeString = "Error: Motor is not setup";
+                        }
+                        //KENGO END
                         break;
                     }
                 case "GetCurrentPosition_um":
                     {
-                        motorCtrl.GetPosition();
-                        double[] motorPos = motorCtrl.getCalibratedAbsolutePosition();
-                        double[] offset = ImageParameterCalculation.MirrorOffsetToMicrometers(State);
-                        writeString = String.Format("CurrentPosition_um, {0}, {1}, {2}", motorPos[0] + offset[0], 
-                            motorPos[1] + offset[1], motorPos[2]);
-                        cm = CommandMode.Get_Parameter;
+                        //KENGO BEGIN 8-11-2025
+                        //Error handling while motorCtrl is null
+                        if (motorCtrl != null)
+                        {
+                            motorCtrl.GetPosition();
+                            double[] motorPos = motorCtrl.getCalibratedAbsolutePosition();
+                            double[] offset = ImageParameterCalculation.MirrorOffsetToMicrometers(State);
+                            writeString = String.Format("CurrentPosition_um, {0}, {1}, {2}", motorPos[0] + offset[0], 
+                                motorPos[1] + offset[1], motorPos[2]);
+                            cm = CommandMode.Get_Parameter;
+                        }
+                        else
+                        {
+                            writeString = "Error: Motor is not setup";
+                        }
+                        //KENGO END
                         break;
                     }
                 case "GetFOVXY":
@@ -953,11 +1214,131 @@ namespace FLIMage.FlowControls
                         cm = CommandMode.None;
                         break;
                     }
+                // Kengo BEGIN 12-30-2025
+                case "GetCurrentPage":
+                    {
+                        if (flimage.image_display.displayZProjection)
+                            writeString = String.Format("CurrentPage, {0} - {1}", flimage.image_display.FLIM_ImgData.ZProjection_Range[0] + 1, flimage.image_display.FLIM_ImgData.ZProjection_Range[1]);
+                        else
+                            writeString = String.Format("CurrentPage, {0}", flimage.image_display.FLIM_ImgData.currentPage + 1);
+                        cm = CommandMode.None;
+                        break;
+                    }
+                // END
+                case "GetFullFileName":
+                    {
+                        writeString = String.Format("FullFileName, {0}", flimage.image_display.FLIM_ImgData.fullFileName);
+                        cm = CommandMode.None;
+                        break;
+                    }
+                case "GetFileCounter":
+                    {
+                        writeString = String.Format("FileCounter, {0}", flimage.image_display.FLIM_ImgData.fileCounter);
+                        cm = CommandMode.None;
+                        break;
+                    }
+                case "GetMemoryInfo":
+                    {
+                        // Managed heap, private bytes, and time-course retention counters for leak diagnosis.
+                        long managedBytes = GC.GetTotalMemory(false);
+                        long privateBytes = Process.GetCurrentProcess().PrivateMemorySize64;
+                        int tcfFileCount = 0;
+                        int tcImInfoCount = 0;
+                        try
+                        {
+                            var tcf = flimage.image_display.TCF;
+                            if (tcf != null && tcf.TCF != null)
+                            {
+                                tcfFileCount = tcf.TCF.Count;
+                                tcImInfoCount = tcf.TCF.Sum(t => t.ImInfos == null ? 0 : t.ImInfos.Count);
+                            }
+                        }
+                        catch { }
+                        writeString = String.Format("MemoryInfo, {0}, {1}, {2}, {3}, {4}",
+                            managedBytes, privateBytes, tcfFileCount, tcImInfoCount,
+                            flimage.analyzeAfterEachAcquisition ? 1 : 0);
+                        cm = CommandMode.None;
+                        break;
+                    }
+                case "ForceGC":
+                    {
+                        long before = GC.GetTotalMemory(false);
+                        System.Runtime.GCSettings.LargeObjectHeapCompactionMode =
+                            System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                        GC.Collect();
+                        long after = GC.GetTotalMemory(true);
+                        writeString = String.Format("ForceGC, {0}, {1}", before, after);
+                        cm = CommandMode.None;
+                        break;
+                    }
+                case "GetAnalyzeAfterAcq":
+                    {
+                        writeString = String.Format("AnalyzeAfterAcq, {0}", flimage.analyzeAfterEachAcquisition ? 1 : 0);
+                        cm = CommandMode.None;
+                        break;
+                    }
+                case "GetCurrentChannel":
+                    {
+                        writeString = String.Format("CurrentChannel, {0}", flimage.image_display.currentChannel + 1);
+                        cm = CommandMode.None;
+                        break;
+                    }
+                case "GetVersion":
+                    {
+                        writeString = String.Format("Version, {0}", flimage.versionText);
+                        cm = CommandMode.None;
+                        break;
+                    }
+                case "GetAnalysisStatus":
+                    {
+                        writeString = String.Format("GetAnalysisStatus, {0}", flimage.image_display.AnalysisStatus); // Kengo 05-23-2025 change the reply format
+                        cm = CommandMode.None;
+                        break;
+                    }
+                //KENGO BEGIN 05-21-2025
+                //To get last value of realtime plot 
+                case "GetRealtimeValue":
+                    {
+                        double value = 0;
+                        if (flimage.image_display.realtimeData.Count > 0)
+                            value = flimage.image_display.realtimeData[flimage.image_display.realtimeData.Count - 1];
+                        writeString = String.Format("GetRealtimeValue, {0}", value);
+                        cm = CommandMode.Get_Parameter;
+                        break;
+                    }
+                //Kengo END
+                //Tetsuya 6-9-2024
+                case "MotorDisconnect":
+                    {
+                        motorCtrl.disconnect();
+                        writeString = String.Format("Motor control disconnected");
+                        break;
+                    }
+                case "MotorReopen":
+                    {
+                        motorCtrl.reopen();
+                        writeString = String.Format("Motor control reopened");
+                        break;
+                    }
+                // END Tetsuya 6-9-2024
                 case "OpenFile":
                 case "ReadImageJROI":
+                //Kengo BEGIN 05-19-2025 Add remote commands
+                case "TranslateFrames":
+                case "SaveImageJROI":
+                case "SaveROIs":
+                case "RecoverROIs":
+                case "RemoveAllROIs":
+                case "ShiftAllROIs":
+                case "BatchProcessing":
+                //Kengo END
                 case "BinFrames":
                 case "CalcTimeCourse":
                 case "SetFLIMIntensityOffset":
+                case "SetMinFLIMIntensity":
+                case "SetMaxFLIMIntensity":
                 case "FixTau":
                 case "FixTauAll":
                 case "SetChannel":
@@ -966,8 +1347,31 @@ namespace FLIMage.FlowControls
                 case "ApplyFitOffset":
                 case "FitEachFrame":
                 case "FitData":
+                case "SetFitParams":
+                case "HoldThisImage":
+                case "ConcatenateImages":
+                case "SaveCurrentImage":
+                case "ExportCurrentIntensityImageInTIFF":
+                //Kengo BEGIN 05-22-2025 Add
+                case "Focus": 
+                case "StopMotor":
+                case "SetZeroAll":
+                case "SetAnalyzeAfterAcq":
+                case "SaveSetting":
+                case "DeleteCurrentPage":
+                case "BlankCurrentPage":
+                case "ExtractPages":
+                //END
+                //KENGO BEGIN 12-30-2025 add
+                case "SetPages":
+                case "SetFileCounter":
+                case "ResetTimeCourse": // KENGO 1-4-2026
+                case "CalcCurrentPage":
+                //END
+                case "SetDIOPanel":
                     {
                         String arg;
+                        Console.WriteLine("set dio executed");
                         for (int i = 0; i < valueStack.Length; i++)
                             if (valueStack[i] == null)
                             {
@@ -975,12 +1379,22 @@ namespace FLIMage.FlowControls
                                 break;
                             }
                         arg = String.Join(",", valueStack);
-                        flimage.ExternalCommand(CommandInput, arg);
+                        if (!flimage.ExternalCommand(CommandInput, arg))
+                            writeString = CommandString + ": Invalid";
                         cm = CommandMode.Execution;
                         break;
                     }
+                ///tetsuya 12/20/2024
+                case "ReadRois":
+                    {
+                        flimage.image_display.ReadRois(true);
+                        flimage.image_display.DrawImages_public();
+                        break;
+                    }
+                /// end tetsuya
                 default:
                     {
+                        writeString = CommandString + ": Invalid Command"; //Kengo ADD 05-19-2025
                         cm = CommandMode.None;
                         break;
                     }
@@ -988,7 +1402,7 @@ namespace FLIMage.FlowControls
 
             Debug.WriteLine(writeString);
 
-            if (cm == CommandMode.Set_Parameter || cm == CommandMode.Get_Parameter)
+            if (cm == CommandMode.Set_Parameter) // || cm == CommandMode.Get_Parameter)
             {
                 flimage.ReSetupValues(issueUpdateFile);
             }
@@ -998,24 +1412,16 @@ namespace FLIMage.FlowControls
         }
 
 
-        public void RemoteEventHandling(COMserver cm, EventArgs e)
+        // Called by COMserver from each client session's receive thread
+        // (possibly several threads concurrently). Routes execution through
+        // the serializing worker; blocking here is fine (one thread per
+        // client) and keeps the request/reply contract: COMserver writes the
+        // returned reply back on the pipe of the client that sent the command.
+        // by Kengo(Claude) 06-11-2026
+        public String RemoteCommandHandling(String receivedMessage)
         {
-            if (com_server.connectedR)
-            {
-                flimage.script.messageReceived(com_server, e);
-
-                String receivedMessage = com_server.ReceivedR;
-
-                CommandMode command_mode;
-                String replyMessage = ExecuteReceivedCommand(receivedMessage, true, out command_mode);
-
-                if (com_server.ssR.WriteString(replyMessage) == 0) //Sending message to COM server.
-                {
-                    com_server.connectedR = false;
-                }
-            }
-
-            UpdateComServerNotConnectedText();
+            flimage.script?.messageReceived(receivedMessage);
+            return EnqueueCommand(receivedMessage).GetAwaiter().GetResult().Reply;
         }
 
         public enum CommandReceivedFrom

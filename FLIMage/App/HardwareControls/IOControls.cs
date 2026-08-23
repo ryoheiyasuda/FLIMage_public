@@ -1,4 +1,4 @@
-﻿using MathLibrary;
+using MathLibrary;
 using MicroscopeHardwareLibs;
 using System;
 using System.Collections.Generic;
@@ -8,14 +8,14 @@ using System.Linq;
 using System.Text;
 using System.Timers;
 using System.Windows.Forms;
+using static FLIMage.HardwareControls.IOControls;
+using static System.Windows.Forms.AxHost;
 
 namespace FLIMage.HardwareControls
 {
     //This class controls National Instruments cards.
     public class IOControls
     {
-        const int nCyclePerClock_resonant = 8;
-
         public class Calibration
         {
             public ScanParameters State;
@@ -120,18 +120,18 @@ namespace FLIMage.HardwareControls
                 try
                 {
 #endif
-                calib.noiseThreshold = noiseThreshold;
-                calib.contrastThreshold = contrastThreshold;
-                success = calib.calcibrateEOMs(plot);
-                if (beta != null)
-                {
-                    beta = calib.beta;
-                    calibrationCurve = calib.calibrationCurve;
-                    MakeCalibrationCurveFit();
-                    calibrationOutput = calib.calibrationOutput;
-                    noiseValue = calib.noiseValue;
-                }
-                return success;
+                    calib.noiseThreshold = noiseThreshold;
+                    calib.contrastThreshold = contrastThreshold;
+                    success = calib.calcibrateEOMs(plot);
+                    if (beta != null)
+                    {
+                        beta = calib.beta;
+                        calibrationCurve = calib.calibrationCurve;
+                        MakeCalibrationCurveFit();
+                        calibrationOutput = calib.calibrationOutput;
+                        noiseValue = calib.noiseValue;
+                    }
+                    return success;
 #if !DEBUG
                 }
                 catch (Exception E)
@@ -201,8 +201,8 @@ namespace FLIMage.HardwareControls
                 EOM_AI = new pockelAI(State);
                 EOM_AO = new AnalogOutput(State, shading, false, true, false, false);
 
-                double maxV = 1.9;
-                double minV = -0.1;
+                double maxV = State.Init.EOM_MaxVoltage;
+                double minV = State.Init.EOM_MinVoltage;
                 int nChannels = State.Init.EOM_nChannels;
                 double outputRate = 4000;
                 int sampleN = 2000;
@@ -294,25 +294,19 @@ namespace FLIMage.HardwareControls
                     dioTrigger dio = new dioTrigger(State);
                     bool syncClock = true;
                     int nSamples = input_values.GetLength(1);
-                    var AIThread = System.Threading.Tasks.Task.Factory.StartNew((Action)delegate
-                    {
-                        EOM_AI.TurnExportClock(syncClock);
-                        EOM_AI.SetupAI(nSamples + 1, outputRate); //It seems like there is 1 clock delay?
-                        EOM_AI.Start();
-                        EOM_AO.PutValue(input_values, outputRate, syncClock);
-                        EOM_AO.Start();
-                        if (State.Init.DO_uncagingShutter)
-                            new Digital_Out(DigitalUncagingShutterPort, false);
-                        dio.Evoke();
-                    });
+                    // Run synchronously (we immediately waited anyway) and avoid redundant Thread.Sleep.
+                    // WaitUntilDone already blocks until acquisition completes (or times out).
+                    EOM_AI.TurnExportClock(syncClock);
+                    EOM_AI.SetupAI(nSamples + 1, outputRate); //It seems like there is 1 clock delay?
+                    EOM_AI.Start();
+                    EOM_AO.PutValue(input_values, outputRate, syncClock);
+                    EOM_AO.Start();
+                    if (State.Init.DO_uncagingShutter)
+                        new Digital_Out(DigitalUncagingShutterPort, false);
+                    dio.Evoke();
 
-                    AIThread.Wait();
-
-                    int timeout = (int)(nSamples / outputRate * 1000.0);
-                    System.Threading.Thread.Sleep(timeout);
-
-                    bool success1 = EOM_AI.WaitUntilDone(1000);
-                    System.Threading.Thread.Sleep(5);
+                    int expectedMs = (int)Math.Ceiling(nSamples / outputRate * 1000.0);
+                    bool success1 = EOM_AI.WaitUntilDone(expectedMs + 2000); // generous margin for DAQ startup/USB/etc
                     EOM_AO.Stop();
 
                     if (!success1)
@@ -665,6 +659,42 @@ namespace FLIMage.HardwareControls
         }
 
 
+        public class ResonantOn
+        {
+            public String port;
+            public ScanParameters State;
+
+            public ResonantOn(ScanParameters State_in)
+            {
+                State = State_in;
+                port = State.Init.ResonantOn;
+            }
+
+            public void open()
+            {
+                try
+                {
+                    new Digital_Out(port, true);
+                }
+                catch (Exception EX)
+                {
+                    MessageBox.Show("Error in turning resonant ON: " + EX.Message);
+                }
+            }
+
+            public void Close()
+            {
+                try
+                {
+                    new Digital_Out(port, false);
+                }
+                catch (Exception EX)
+                {
+                    MessageBox.Show("Error in closing shutter: " + EX.Message);
+                }
+            }
+        }
+
         //THis class is to control shutter through digital IO
         public class ShutterCtrl
         {
@@ -685,7 +715,7 @@ namespace FLIMage.HardwareControls
                 }
                 catch (Exception EX)
                 {
-                    MessageBox.Show("Error in opening shutter: " + EX.Message);
+                    MessageBox.Show("Error in turning resonant ON: " + EX.Message);
                 }
             }
 
@@ -699,6 +729,28 @@ namespace FLIMage.HardwareControls
                 {
                     MessageBox.Show("Error in closing shutter: " + EX.Message);
                 }
+            }
+        }
+
+
+        public class ResonantScannerSwitch
+        {
+            ScanParameters State;
+            String port;
+            public ResonantScannerSwitch(ScanParameters State_in)
+            {
+                State = State_in;
+                port = State.Init.ResonantSwitchPort;
+            }
+
+            public void On()
+            {
+                new Digital_Out(port, true);
+            }
+
+            public void Off()
+            {
+                new Digital_Out(port, false);
             }
         }
 
@@ -806,8 +858,16 @@ namespace FLIMage.HardwareControls
 
             if (nSamplesA == nSamplesB)
             {
-                Buffer.BlockCopy(DataA, 0, DataAll, 0, Buffer.ByteLength(DataA));
-                Buffer.BlockCopy(DataB, 0, DataAll, Buffer.ByteLength(DataA), Buffer.ByteLength(DataB));
+                try
+                {
+                    Buffer.BlockCopy(DataA, 0, DataAll, 0, Buffer.ByteLength(DataA));
+                    Buffer.BlockCopy(DataB, 0, DataAll, Buffer.ByteLength(DataA), Buffer.ByteLength(DataB));
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Problem in combining data: " + ex.Message);
+                    DataAll = null;
+                }
             }
             else
             {
@@ -888,15 +948,32 @@ namespace FLIMage.HardwareControls
             if (image_focusing && includeClock) //This is only condition that continuous is true.
             {
                 nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame);
+                if (!State.Acq.BiDirectionalScanY && State.Acq.SkipFirstLines > 0)
+                {
+                    nSamples = (int)(outputRate / 1000.0 * msPerLine * (State.Acq.linesPerFrame + State.Acq.SkipFirstLines));
+                }
                 continous = true;
             }
 
+            int nFrames = State.Acq.nFrames + State.Spc.spcData.SkipFirstFrames;
+
             if (image_grabbing && (includeDigital || includeUncage))
-                nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame * State.Acq.nFrames);
+            {
+                nSamples = (int)(outputRate / 1000.0 * msPerLine * State.Acq.linesPerFrame * nFrames);
+                if (!State.Acq.BiDirectionalScanY && State.Acq.SkipFirstLines > 0)
+                {
+                    nSamples = (int)(outputRate / 1000.0 * msPerLine * (State.Acq.linesPerFrame + State.Acq.SkipFirstLines) * nFrames);
+                }
+            }
 
             if (includeClock) //nSamples will be changed.
             {
-                int linePerCycle = State.Acq.linesPerFrame * State.Acq.nFrames;
+                int linePerCycle = State.Acq.linesPerFrame * nFrames;
+
+                if (!State.Acq.BiDirectionalScanY && State.Acq.SkipFirstLines > 0)
+                {
+                    linePerCycle = (State.Acq.linesPerFrame + State.Acq.SkipFirstLines) * nFrames;
+                }
 
                 bool[] waveform = new bool[nSamples];
 
@@ -1204,6 +1281,8 @@ namespace FLIMage.HardwareControls
             String board;
             ScanParameters State;
             NiDaq.DigitalOutputSignal digital_out;
+            NiDaq.DigitalOutputSignal digital_out2;
+            int nCyclePerClock_resonant = 1;
 
             public TriggeredLineClock(ScanParameters State_in)
             {
@@ -1213,15 +1292,22 @@ namespace FLIMage.HardwareControls
                 outputPort = State.Init.ResonantClockOutput_regulated;
                 clock_outputPort = State.Init.ResonantClockOutput_divClock;
                 clock_export_destination = State.Init.ResonantClockInput_from_divClock;
+
+                nCyclePerClock_resonant = State.Spc.spcData.line_clock_division;
             }
 
             public void Start()
             {
-                int nSamples = 8;
+                int nSamples = 4;
                 inputRate = State.Init.resonantFreq_Hz;
-                digital_out = new NiDaq.DigitalOutputSignal(new string[] { board + "/" + outputPort, board + "/" + clock_outputPort });
+
+                digital_out = new NiDaq.DigitalOutputSignal(new string[] { board + "/" + clock_outputPort });
                 digital_out.MakeLineTriggeredClock(nSamples, inputRate, nCyclePerClock_resonant, LineClock_In);
-                //NiDaq.ConnectTerminals(clock_outputPort, clock_export_destination);
+                //This scheme requires another board.
+                //var digital_out2 = new NiDaq.DigitalOutputSignal(new string[] { board + "/" + outputPort });
+                //digital_out2.MakePulseEveryNPulses(nSamples, inputRate, clock_export_destination);
+                //digital_out2.Start();
+
                 digital_out.Start();
             }
 
@@ -1231,6 +1317,11 @@ namespace FLIMage.HardwareControls
                 {
                     digital_out.Stop();
                     digital_out.Dispose();
+                }
+                if (digital_out2 != null)
+                {
+                    digital_out2.Stop();
+                    digital_out2.Dispose();
                 }
             }
         }
@@ -1254,6 +1345,11 @@ namespace FLIMage.HardwareControls
             public double[,] DataAll;
             public double[,] DataZ;
 
+            // Optional override: when set, use this mirror (X,Y) waveform instead of the raster scanner waveform.
+            // Expected shape: [2, nSamples], in volts (already rotated/offset as desired).
+            public bool UseCustomMirrorOutputXY = false;
+            public double[,] CustomMirrorOutputXY = null;
+
             public event FrameDoneHandler FrameDone;
             public EventArgs e = null;
             public delegate void FrameDoneHandler(AnalogOutput mirrorAO, EventArgs e);
@@ -1276,6 +1372,8 @@ namespace FLIMage.HardwareControls
             bool resonantScanning = false;
             bool includeZ = false;
             int addUncagingAO = 0;
+
+            int nCyclePerClock_resonant = 1;
 
             public AnalogOutput(ScanParameters State_in, Shading shading_in, bool includeMirror_in, bool EOM_in, bool for_resonant, bool include_z_in)
             {
@@ -1355,6 +1453,8 @@ namespace FLIMage.HardwareControls
                     AO_Ports = null;
                     analog_output = null;
                 }
+
+                nCyclePerClock_resonant = State.Spc.spcData.line_clock_division;
             }
 
 
@@ -1445,24 +1545,43 @@ namespace FLIMage.HardwareControls
                     return null;
 
                 outputRate = State.Init.resonantFreq_Hz * nCyclePerClock_resonant;
-                int nSamples = State.Acq.linesPerFrame / 2 * nCyclePerClock_resonant; //Bidirectional scan.
+                int nSamples = State.Acq.linesPerFrame / 2 * nCyclePerClock_resonant; //GOOD
+
+                //Bidirectional scan.
                 int fly_back_last_line = nSamples - nCyclePerClock_resonant / 2;
                 int line_length = nCyclePerClock_resonant / 2;
+
+                int nSplit = State.Acq.nSplitScanning;
+                int FB_y = 0;
+                int nSamples_all0 = nSamples;
+                if (!State.Acq.BiDirectionalScanY && State.Acq.SkipFirstLines > 0)
+                {
+                    FB_y = State.Acq.SkipFirstLines / 2 * nCyclePerClock_resonant;
+                    nSamples_all0 = nSamples + FB_y;
+                }
+
                 if (includeMirror)
                 {
-                    int nSplit = State.Acq.nSplitScanning;
+                    if (State.Acq.BiDirectionalScanY)
+                        DataXY = new double[2, nSamples_all0 * 2];
+                    else
+                        DataXY = new double[2, nSamples_all0];
 
-                    DataXY = new double[2, nSamples * 2];
                     double voltX = State.Acq.XOffset;
+                    //double voltX = 0; //State.Acq.XMaxVoltage_Resonant / State.Acq.zoom;
                     double voltY = State.Acq.YMaxVoltage / State.Acq.zoom * State.Acq.scanVoltageMultiplier[1];
 
                     if (nSplit <= 1)
                     {
-                        for (int y = 0; y < nSamples; y++)
+                        for (int y = 0; y < nSamples_all0; y++)
                             DataXY[0, y] = voltX;
 
-                        for (int y = 0; y < nSamples; y++)
-                            DataXY[1, y] = ((double)y / nSamples - 0.5) * voltY + State.Acq.YOffset;
+
+                        for (int y = 0; y < FB_y; y++)
+                            DataXY[1, y] = ((double)(FB_y - y) / (double)FB_y - 0.5) * voltY + State.Acq.YOffset;
+
+                        for (int y = FB_y; y < nSamples + FB_y; y++)
+                            DataXY[1, y] = ((double)(y - FB_y) / (double)nSamples - 0.5) * voltY + State.Acq.YOffset;
 
                         //for (int y = nSamples; y < nSamples * 2; y++)
                         //    DataXY[1, y] = ((double)(nSamples * 2 - y) / nSamples - 0.5) * voltY + State.Acq.YOffset;
@@ -1473,8 +1592,8 @@ namespace FLIMage.HardwareControls
                         {
                             var xpos = State.Acq.XOffset_Split[p];
                             var ypos = State.Acq.YOffset_Split[p];
-                            var startY = (State.Acq.linesPerFrame / nSplit) * p;
-                            var endY = State.Acq.linesPerFrame / nSplit * (p + 1);
+                            var startY = (State.Acq.linesPerFrame + State.Acq.SkipFirstLines) / nSplit * p;
+                            var endY = (State.Acq.linesPerFrame + State.Acq.SkipFirstLines) / nSplit * (p + 1);
 
                             for (int y = startY; y < endY; y++)
                             {
@@ -1484,11 +1603,22 @@ namespace FLIMage.HardwareControls
                         }
                     }
 
-                    for (int y = nSamples; y < nSamples * 2; y++)
+                    if (State.Acq.BiDirectionalScanY)
                     {
-                        DataXY[0, y] = DataXY[0, y - nSamples];
-                        DataXY[1, y] = DataXY[1, y - nSamples];
+                        for (int y = nSamples_all0; y < nSamples_all0 * 2; y++)
+                        {
+                            DataXY[0, y] = DataXY[0, y - nSamples_all0];
+                            DataXY[1, y] = DataXY[1, 2 * nSamples_all0 - y-1];
+                        }
                     }
+                    //else
+                    //{
+                    //    for (int y = nSamples; y < nSamples * 2; y++)
+                    //    {
+                    //        DataXY[0, y] = DataXY[0, y - nSamples];
+                    //        DataXY[1, y] = DataXY[1, y - nSamples];
+                    //    }
+                    //}
 
                 }
                 else
@@ -1502,12 +1632,14 @@ namespace FLIMage.HardwareControls
                 {
                     if (State.Acq.scanZWithPiezo && State.Acq.nSlices > 1)
                     {
-                        DataAll = ReplicateByFrameNumber(DataAll, State.Acq.nSlices / 2);
+                        DataAll = ReplicateByFrameNumber(DataAll, State.Acq.nSlices / 2 + State.Spc.spcData.SkipFirstFrames);
                         var nSamples_all = DataAll.GetLength(1);
                         DataZ = new double[1, nSamples_all];
                         var centerV = (State.Init.piezo_voltage_range.Max() + State.Init.piezo_voltage_range.Min()) / 2;
-                        var startV = State.Acq.scanZWithPiezoRange_um[0] / State.Init.Piezo_um_per_V - centerV;
-                        var endV = State.Acq.scanZWithPiezoRange_um[1] / State.Init.Piezo_um_per_V - centerV;
+                        // scanZWithPiezoRange_um is stored in um relative to center (see V_to_um / um_to_V),
+                        // so convert to absolute AO voltage by adding centerV (not subtracting it).
+                        var startV = State.Acq.scanZWithPiezoRange_um[0] / State.Init.Piezo_um_per_V + centerV;
+                        var endV = State.Acq.scanZWithPiezoRange_um[1] / State.Init.Piezo_um_per_V + centerV;
                         var stepV = (endV - startV) / State.Acq.nSlices;
                         for (int i = 0; i < State.Acq.nSlices; i++)
                         {
@@ -1529,7 +1661,7 @@ namespace FLIMage.HardwareControls
                 //if (State.Acq.externalTrigger)
                 //    triggerP = State.Init.ExternalTriggerInputPort;
 
-                String sampleClockP = State.Init.ResonantClockInput_from_divClock;
+                String sampleClockP = State.Init.ResonantClockInput_fromScanner;
 
                 var error = analog_output.PutValue(DataAll, outputRate, sampleClockP, triggerP, true, true);
 
@@ -1544,6 +1676,7 @@ namespace FLIMage.HardwareControls
                 if (includeMirror)
                 {
                     analog_output.SetReturnFunction(DataXY.GetLength(1));
+                    analog_output.EveryNSamplesEvent -= EveryNSampleEvent;
                     analog_output.EveryNSamplesEvent += EveryNSampleEvent;
                 }
                 return DataXY;
@@ -1559,11 +1692,12 @@ namespace FLIMage.HardwareControls
                 }
 
                 outputRate = State.Acq.outputRate;
+                bool useCustomXY = includeMirror && UseCustomMirrorOutputXY && CustomMirrorOutputXY != null;
                 if (includeMirror)
                 {
                     try
                     {
-                        DataXY = MakeMirrorOutputXY(State);
+                        DataXY = useCustomXY ? (double[,])CustomMirrorOutputXY.Clone() : MakeMirrorOutputXY(State);
                     }
                     catch (Exception ex)
                     {
@@ -1578,6 +1712,12 @@ namespace FLIMage.HardwareControls
                 {
                     try
                     {
+                        // If we are using a custom mirror path, generate a matching EOM output for that path.
+                        // For line-scan-trace (closed polygon), we keep EOM constant ON (no flyback/blanking/shading by XY).
+                        // Otherwise, use the standard raster-scan EOM waveform.
+                        if (useCustomXY && DataXY != null)
+                            DataEOM = MakeEOMOutput_FromMirrorPath(focus, shutter_open, DataXY);
+                        else
                         DataEOM = MakeEOMOutput(State, shading, focus, shutter_open); //focus will not change nSamples.
                     }
                     catch (Exception ex)
@@ -1594,7 +1734,7 @@ namespace FLIMage.HardwareControls
                 if (includeZ)
                 {
                     var nSamples = DataAll.GetLength(1);
-                    DataAll = ReplicateByFrameNumber(DataAll, State.Acq.nSlices * 2);
+                    DataAll = ReplicateByFrameNumber(DataAll, State.Acq.nSlices * 2 + State.Spc.spcData.SkipFirstFrames);
                     DataZ = calculateZMotion(State, nSamples, outputRate);
                     DataAll = ConcatChannels(DataAll, DataZ);
                 }
@@ -1618,9 +1758,82 @@ namespace FLIMage.HardwareControls
                 if (includeMirror)
                 {
                     analog_output.SetReturnFunction(DataXY.GetLength(1));
+                    analog_output.EveryNSamplesEvent -= EveryNSampleEvent;
                     analog_output.EveryNSamplesEvent += EveryNSampleEvent;
                 }
                 return DataXY;
+            }
+
+            private double[,] MakeEOMOutput_FromMirrorPath(bool focus, bool shutter_open, double[,] mirrorXY)
+            {
+                if (mirrorXY == null)
+                    return null;
+
+                int nSamples = mirrorXY.GetLength(1);
+
+                int addUncaging = 0;
+                if (State.Init.AO_uncagingShutter)
+                {
+                    addUncaging = 1;
+                    // Keep behavior consistent with MakeEOMOutput(): reserve the last AO channel for uncaging shutter.
+                    int requiredLen = State.Init.EOM_nChannels + 1;
+                    int len = Math.Max(State.Init.uncagingShutter?.Length ?? 0, requiredLen);
+                    State.Init.uncagingShutter = new bool[len];
+                    State.Init.uncagingShutter[State.Init.EOM_nChannels] = true;
+                }
+
+                int EOM_nChannels = State.Init.EOM_nChannels;
+                var imageLaser = State.Init.imagingLasers;
+                var uncageLaser = State.Init.uncagingLasers;
+                var power = State.Acq.power;
+
+                double shutterValue = shutter_open ? 5.0 : 0.0;
+
+                var eomOut = new double[EOM_nChannels + addUncaging, nSamples];
+
+                for (int ch = 0; ch < EOM_nChannels; ch++)
+                {
+                    bool imaging_on = (imageLaser != null && ch < imageLaser.Length && imageLaser[ch]);
+                    bool uncaging_on = (uncageLaser != null && ch < uncageLaser.Length && uncageLaser[ch] && focus);
+                    bool emit = imaging_on || uncaging_on;
+
+                    double pow = (power != null && ch < power.Length) ? power[ch] : 0.0;
+
+                    // Use calibrated "zero" voltage when not emitting.
+                    double zero = shading != null ? shading.getZeroEOMVoltage(ch) : 0.0;
+
+                    if (!emit)
+                    {
+                        for (int i = 0; i < nSamples; i++)
+                            eomOut[ch, i] = zero;
+                        continue;
+                    }
+
+                    // Line-scan-trace requirement: EOM is always ON during the closed trace.
+                    // Keep it constant (no shading-by-position, no blanking).
+                    double v;
+                    if (shading != null)
+                    {
+                        v = shading.getEOMVoltage_NoShading(pow, ch);
+                        if (v > 2) v = 2;
+                        else if (v < -2) v = -2;
+                    }
+                    else
+                    {
+                        v = pow / 100.0;
+                    }
+
+                    for (int i = 0; i < nSamples; i++)
+                        eomOut[ch, i] = v;
+                }
+
+                if (addUncaging == 1)
+                {
+                    for (int i = 0; i < nSamples; i++)
+                        eomOut[EOM_nChannels, i] = shutterValue;
+                }
+
+                return eomOut;
             }
 
             public void PutValue(double[,] values, double outputRate1, bool slaveMode)
@@ -1670,7 +1883,10 @@ namespace FLIMage.HardwareControls
                 {
                     try
                     {
-                        DataXY = makeMirrorOutput_Imaging_Uncaging(State);
+                        bool useCustomXY = UseCustomMirrorOutputXY && CustomMirrorOutputXY != null;
+                        DataXY = useCustomXY
+                            ? makeMirrorOutput_Imaging_Uncaging(State, CustomMirrorOutputXY)
+                            : makeMirrorOutput_Imaging_Uncaging(State);
                     }
                     catch (Exception ex)
                     {
@@ -1735,6 +1951,7 @@ namespace FLIMage.HardwareControls
                 if (includeMirror)
                 {
                     analog_output.SetReturnFunction(GetNSamplesScan(State));
+                    analog_output.EveryNSamplesEvent -= EveryNSampleEvent;
                     analog_output.EveryNSamplesEvent += EveryNSampleEvent;
                 }
 
@@ -1785,7 +2002,7 @@ namespace FLIMage.HardwareControls
                 if (State.Init.enableResonantScanner && State.Acq.resonantScanning)
                 {
                     maxX = 0; //maxX * State.Acq.scanVoltageMultiplier[0] / State.Acq.zoom; To the center.
-                    maxY = 0;
+                    //maxY = 0;
                 }
 
                 values[0, 0] = -0.5 * maxX; //Default position at left top corner for galvo.
@@ -1908,8 +2125,10 @@ namespace FLIMage.HardwareControls
             var nSamples_all = nSamples * State.Acq.nSlices * 2;
             var DataZ1 = new double[1, nSamples_all];
             var centerV = (State.Init.piezo_voltage_range.Max() + State.Init.piezo_voltage_range.Min()) / 2;
-            var startV = State.Acq.scanZWithPiezoRange_um[0] / State.Init.Piezo_um_per_V - centerV;
-            var endV = State.Acq.scanZWithPiezoRange_um[1] / State.Init.Piezo_um_per_V - centerV;
+            // scanZWithPiezoRange_um is stored in um relative to center (see V_to_um / um_to_V),
+            // so convert to absolute AO voltage by adding centerV (not subtracting it).
+            var startV = State.Acq.scanZWithPiezoRange_um[0] / State.Init.Piezo_um_per_V + centerV;
+            var endV = State.Acq.scanZWithPiezoRange_um[1] / State.Init.Piezo_um_per_V + centerV;
             if (State.Acq.nSlices < 1)
             {
                 for (int j = 0; j < nSamples_all; j++)
@@ -1982,6 +2201,7 @@ namespace FLIMage.HardwareControls
             double minV = 0;
             double centerV = 0;
             double current_voltage = 0;
+            double current_position_um = 0;
             double current_voltage_feedback_signal = 0;
             public double time_for_movement_ms = 50;
             public double stack_start_um = 0;
@@ -1999,6 +2219,7 @@ namespace FLIMage.HardwareControls
                 minV = State.Init.piezo_voltage_range.Min();
                 centerV = (State.Init.piezo_voltage_range[1] + State.Init.piezo_voltage_range[0]) / 2;
                 current_voltage = 0;
+                current_position_um = 0;
                 move_piezo_V_step(0);
                 //System.Threading.Thread.Sleep(100);
                 move_to_center();
@@ -2026,6 +2247,12 @@ namespace FLIMage.HardwareControls
                     else
                         stack_end_um = max_um;
                 }
+            }
+
+            public void move_to_zero()
+            {
+                move_piezo_V(0);
+                current_voltage_feedback_signal = getPosition_V();
             }
 
             public void move_to_center()
@@ -2186,7 +2413,7 @@ namespace FLIMage.HardwareControls
                     posXY[0, pulse] = State.Uncaging.UncagingPositionsVX[k];
                     posXY[1, pulse] = State.Uncaging.UncagingPositionsVY[k];
                 }
-                else if (pos > 1 && State.Uncaging.multiUncagingPosition && State.Uncaging.UncagingPositionsVX.Length > pos - 1)
+                else if (pos >= 1 && State.Uncaging.multiUncagingPosition && State.Uncaging.UncagingPositionsVX.Length >= pos - 1)
                 {
                     posXY[0, pulse] = State.Uncaging.UncagingPositionsVX[pos - 1];
                     posXY[1, pulse] = State.Uncaging.UncagingPositionsVY[pos - 1];
@@ -2219,37 +2446,40 @@ namespace FLIMage.HardwareControls
 
             double[,] posXY = DefinePulsePosition(State);
 
-            for (int ch = 0; ch < 2; ch++)
+            if (posXY.GetLength(1) > 0)
             {
-                int delayT = (int)(outputRate * (pulseDelay + pulseWidth) / 1000.0);
-                for (int i = 0; i < delayT; i++)
+                for (int ch = 0; ch < 2; ch++)
                 {
-                    DataXY[ch, i] = posXY[ch, 0]; //Fills all with this first.
-                                                  //Beginning. set to position 0.
-                }
-
-                int startT = delayT;
-                for (int pulse = 1; pulse < nPulses; pulse++)
-                {
-                    int endT = delayT + (int)(outputRate * (pulseISI * pulse) / 1000.0);
-                    if (endT > samplesPerChannel)
-                        endT = samplesPerChannel;
-
-                    for (int i = startT; i < endT; i++)
+                    int delayT = (int)(outputRate * (pulseDelay + pulseWidth) / 1000.0);
+                    for (int i = 0; i < delayT; i++)
                     {
-                        DataXY[ch, i] = posXY[ch, pulse]; //Right after finishing the previous pulse, moves to the next location.
+                        DataXY[ch, i] = posXY[ch, 0]; //Fills all with this first.
+                                                      //Beginning. set to position 0.
                     }
 
-                    if (endT == samplesPerChannel)
-                        break;
-                    startT = endT;
-                }
-
-                if (nPulses > 0)
-                    for (int i = startT; i < samplesPerChannel; i++)
+                    int startT = delayT;
+                    for (int pulse = 1; pulse < nPulses; pulse++)
                     {
-                        DataXY[ch, i] = posXY[ch, nPulses - 1]; //Keep the last one?
+                        int endT = delayT + (int)(outputRate * (pulseISI * pulse) / 1000.0);
+                        if (endT > samplesPerChannel)
+                            endT = samplesPerChannel;
+
+                        for (int i = startT; i < endT; i++)
+                        {
+                            DataXY[ch, i] = posXY[ch, pulse]; //Right after finishing the previous pulse, moves to the next location.
+                        }
+
+                        if (endT == samplesPerChannel)
+                            break;
+                        startT = endT;
                     }
+
+                    if (nPulses > 0)
+                        for (int i = startT; i < samplesPerChannel; i++)
+                        {
+                            DataXY[ch, i] = posXY[ch, nPulses - 1]; //Keep the last one?
+                        }
+                }
             }
 
             return DataXY;
@@ -2385,10 +2615,18 @@ namespace FLIMage.HardwareControls
             double msPerLine = State.Acq.msPerLine;
             if (State.Acq.fastZScan)
                 msPerLine = State.Acq.FastZ_msPerLine;
+
             double frameInterval = ((double)State.Acq.linesPerFrame * msPerLine / 1000.0); //in seconds
+            if (!State.Acq.BiDirectionalScanY && State.Acq.SkipFirstLines > 0)
+            {
+                frameInterval += (double)State.Acq.SkipFirstLines * msPerLine / 1000.0;
+            }
 
             if (for_frame)
-                samplesPerChannel = (int)(outputRate * frameInterval * State.Acq.nFrames);
+            {
+                int nFrames = State.Acq.nFrames + State.Spc.spcData.SkipFirstFrames;
+                samplesPerChannel = (int)(outputRate * frameInterval * nFrames);
+            }
 
 
             if (samplesPerChannel % 2 == 1) //NI-DAQ cannot wirte add number samples.
@@ -2508,6 +2746,14 @@ namespace FLIMage.HardwareControls
                 var portList = new List<string>();
                 var maxValues = new List<double>();
                 var minValues = new List<double>();
+
+                var max1 = Math.Max((double)Math.Abs(State_in.Init.EOM_MinVoltage), (double)Math.Abs(State_in.Init.EOM_MaxVoltage));
+
+                if (max1 > 2.0)
+                {
+                    maxV_EOM = 5;
+                    minV_EOM = -5;
+                }
 
                 if (State.Init.EOM_nChannels > 0)
                 {
@@ -2630,14 +2876,14 @@ namespace FLIMage.HardwareControls
                 {
 #endif
 
-                if (running)
-                {
-                    if (SClk != null)
-                        SClk.Stop();
-                    if (FClk != null)
-                        FClk.Stop();
-                }
-                Dispose();
+                    if (running)
+                    {
+                        if (SClk != null)
+                            SClk.Stop();
+                        if (FClk != null)
+                            FClk.Stop();
+                    }
+                    Dispose();
 #if !DEBUG
                 }
                 catch (Exception Ex)
@@ -2692,13 +2938,20 @@ namespace FLIMage.HardwareControls
                 if (State.Acq.fastZScan)
                     msPerLine = State.Acq.FastZ_msPerLine;
 
-                nLines = State.Acq.linesPerFrame * State.Acq.nFrames;
+                int LinesPerFrame = State.Acq.linesPerFrame;
+                if (!State.Acq.BiDirectionalScanY && State.Acq.SkipFirstLines > 0)
+                {
+                    LinesPerFrame = State.Acq.linesPerFrame + State.Acq.SkipFirstLines;
+                }
+
+                int nFrames = State.Acq.nFrames + State.Spc.spcData.SkipFirstFrames;
+                nLines = LinesPerFrame * nFrames;
 
                 frequency = 1000.0 / msPerLine;
                 dutyCycle = 0.0001; //0.2 us
 
-                freqFrame = 1000.0 / msPerLine / State.Acq.linesPerFrame;
-                dutyFrame = dutyCycle / State.Acq.linesPerFrame;
+                freqFrame = 1000.0 / msPerLine / LinesPerFrame;
+                dutyFrame = dutyCycle / LinesPerFrame;
 
                 delay = State.Acq.LineClockDelay_us;
 
@@ -2724,13 +2977,13 @@ namespace FLIMage.HardwareControls
                 try
                 {
 #endif
-                if (lineClockCounter != null)
-                {
-                    if (running)
-                        lineClockCounter.Stop();
-                    running = false;
-                    Dispose();
-                }
+                    if (lineClockCounter != null)
+                    {
+                        if (running)
+                            lineClockCounter.Stop();
+                        running = false;
+                        Dispose();
+                    }
 #if !DEBUG
                 }
                 catch (Exception Ex)
@@ -2756,6 +3009,9 @@ namespace FLIMage.HardwareControls
             else if (State.Acq.fastZScan)
                 msPerLine = State.Acq.FastZ_msPerLine;
 
+            double fillFraction = State.Acq.resonantScanning || State.Acq.polygonScanning
+                ? State.Acq.fillFraction_resonant
+                : State.Acq.fillFraction;
             double ScanFraction = State.Acq.BiDirectionalScan ? 1 : State.Acq.scanFraction;
             double ScanDelay = 0;
 
@@ -2769,21 +3025,24 @@ namespace FLIMage.HardwareControls
                 ScanDelay = State.Acq.ScanDelay;
             }
 
-            return ScanDelay + msPerLine * (1 - State.Acq.fillFraction / ScanFraction) / 2;
+            return ScanDelay + msPerLine * (1 - fillFraction / ScanFraction) / 2;
         }
 
         public static double GetBidirectionalDelay_ms(ScanParameters State)
         {
             if (State.Acq.resonantScanning)
-                return GetAcquisitionDelay_ms(State) + 500.0 / State.Init.resonantFreq_Hz;
+            {
+                var msPerLine = 500.0 / State.Init.resonantFreq_Hz;
+                return GetAcquisitionDelay_ms(State) + msPerLine;
+            }
             else
                 return GetAcquisitionDelay_ms(State); // GetAcquisitionDelay_ms(State) + State.Acq.ScanDelay2 / State.Acq.zoom;
         }
 
         public static double[,] MakeEOMOutput(ScanParameters State, Shading shading, bool Focus, bool shutter_open)
         {
-            double NLines = (double)State.Acq.linesPerFrame;
-            int NFrames = State.Acq.nFrames;
+            double NLines = (double)State.Acq.linesPerFrame; //Taken care for SkipFirstLine later.
+            int NFrames = State.Acq.nFrames + State.Spc.spcData.SkipFirstFrames;
             double OutputRate = State.Acq.outputRate;
             double msPerLine = State.Acq.msPerLine;
             if (State.Acq.fastZScan)
@@ -2803,6 +3062,13 @@ namespace FLIMage.HardwareControls
             bool[] uncageLaser = State.Init.uncagingLasers;
             int[] power = State.Acq.power;
             int EOM_nChannels = State.Init.EOM_nChannels;
+
+            int FB_y = 0;
+            if (!State.Acq.BiDirectionalScanY && State.Acq.SkipFirstLines > 0)
+            {
+                NLines += State.Acq.SkipFirstLines;
+                FB_y = (int)(msPerLine * OutputRate * State.Acq.SkipFirstLines / 1000.0);
+            }
 
             int nSamplesY = (int)(msPerLine * OutputRate * NLines / 1000.0);
             int nSamplesX = (int)(msPerLine * OutputRate / 1000.0);
@@ -2946,7 +3212,7 @@ namespace FLIMage.HardwareControls
                         }
 
                     }
-                    else
+                    else //Regular Scanning
                     {
                         for (int j = 0; j < NLines; j++)
                         {
@@ -2991,6 +3257,12 @@ namespace FLIMage.HardwareControls
                                     EOMOuput[ch, i + j * nSamplesX] = vol;
                             }
                         }
+
+                        for (int i = 0; i < FB_y; i++)
+                        {
+                            EOMOuput[ch, i] = zero;
+                        }
+
                     }
                 } //ImageLaser.               
                 else if (uncageLaser[ch] && !Focus)
@@ -3017,7 +3289,7 @@ namespace FLIMage.HardwareControls
 
         public static double[,] makeEOMOutput_Imaging_Uncaging(ScanParameters State, Shading shading)
         {
-            int nFrames = State.Acq.nFrames;
+            int nFrames = State.Acq.nFrames + State.Spc.spcData.SkipFirstFrames;
             double OutputRate = State.Acq.outputRate;
 
             double[,] OutputFrame = ReplicateByFrameNumber(MakeEOMOutput(State, shading, false, false), nFrames);
@@ -3028,7 +3300,14 @@ namespace FLIMage.HardwareControls
             if (State.Acq.fastZScan)
                 msPerLine = State.Acq.FastZ_msPerLine;
 
-            double frameInterval = ((double)State.Acq.linesPerFrame * msPerLine / 1000.0); //in seconds
+            int LinesPerFrame = State.Acq.linesPerFrame;
+            if (!State.Acq.BiDirectionalScanY && State.Acq.SkipFirstLines > 0)
+            {
+                LinesPerFrame = (State.Acq.linesPerFrame + State.Acq.SkipFirstLines);
+            }
+
+            double frameInterval = ((double)LinesPerFrame * msPerLine / 1000.0); //in seconds
+
 
             bool anyUncaging = State.Init.uncagingLasers.Any(item => item == true);
             double sDelay = State.Uncaging.AnalogShutter_delay;
@@ -3092,10 +3371,23 @@ namespace FLIMage.HardwareControls
 
         public static double[,] makeMirrorOutput_Imaging_Uncaging(ScanParameters State)
         {
-            int nFrames = State.Acq.nFrames;
+            return makeMirrorOutput_Imaging_Uncaging(State, MakeMirrorOutputXY(State));
+        }
+
+        /// <summary>
+        /// Build a mirror waveform for imaging + uncaging based on an arbitrary base-frame XY path.
+        /// The base-frame path is replicated for nFrames and then modified so mirrors ramp to the uncaging
+        /// position during each uncaging pulse, hold, and ramp back to the scan path.
+        /// </summary>
+        public static double[,] makeMirrorOutput_Imaging_Uncaging(ScanParameters State, double[,] baseFrameXY)
+        {
+            int nFrames = State.Acq.nFrames + State.Spc.spcData.SkipFirstFrames;
             double OutputRate = State.Acq.outputRate;
 
-            double[,] OutputFrame = ReplicateByFrameNumber(MakeMirrorOutputXY(State), nFrames);
+            if (baseFrameXY == null)
+                return null;
+
+            double[,] OutputFrame = ReplicateByFrameNumber(baseFrameXY, nFrames);
             int nChannels = OutputFrame.GetLength(0);
             int nSamples = OutputFrame.GetLength(1);
 
@@ -3103,7 +3395,13 @@ namespace FLIMage.HardwareControls
             if (State.Acq.fastZScan)
                 msPerLine = State.Acq.FastZ_msPerLine;
 
-            double frameInterval = ((double)State.Acq.linesPerFrame * msPerLine / 1000.0); //in seconds
+            double fly_backY_ms = 0;
+            double frameInterval = ((double)State.Acq.linesPerFrame * msPerLine / 1000.0); //GOOD
+            if (!State.Acq.BiDirectionalScanY && State.Acq.SkipFirstLines > 0)
+            {
+                fly_backY_ms = fly_backY_ms = State.Acq.SkipFirstLines * msPerLine / 1000.0;
+                frameInterval += fly_backY_ms;
+            }
 
             int nTrain = State.Uncaging.trainRepeat;
             int nUncaging = State.Uncaging.nPulses;
@@ -3196,6 +3494,10 @@ namespace FLIMage.HardwareControls
         public static int GetNSamplesScan(ScanParameters State)
         {
             double NLines = (double)State.Acq.linesPerFrame;
+            if (!State.Acq.BiDirectionalScanY && State.Acq.SkipFirstLines > 0)
+            {
+                NLines += State.Acq.SkipFirstLines;
+            }
             double OutputRate = State.Acq.outputRate;
             double msPerLine = State.Acq.msPerLine;
             if (State.Acq.fastZScan)
@@ -3206,7 +3508,7 @@ namespace FLIMage.HardwareControls
 
         public static double[,] MakeMirrorOutputXY(ScanParameters State)
         {
-            double NLines = (double)State.Acq.linesPerFrame;
+            double NLines = (double)State.Acq.linesPerFrame; //Taken care of later.
             double OutputRate = State.Acq.outputRate;
             double msPerLine = State.Acq.msPerLine;
             if (State.Acq.fastZScan)
@@ -3234,10 +3536,20 @@ namespace FLIMage.HardwareControls
 
             int nSamplesYFB = nSamplesXFB; // or nSamplesX if whole last line.
 
+            if (!State.Acq.BiDirectionalScanY && State.Acq.SkipFirstLines > 0)
+            {
+                nSamplesYFB = nSamplesX * State.Acq.SkipFirstLines;
+                nSamples_All += nSamplesYFB;
+            }
 
             int nSamplesYScan = nSamples_All - nSamplesYFB; // nSamplesX; // nSamplesXFB; Last Line?
 
-            double[,] mirrorOutput = new double[2, nSamples_All];
+            double[,] mirrorOutput;
+
+            if (State.Acq.BiDirectionalScanY)
+                mirrorOutput = new double[2, nSamples_All * 2];
+            else
+                mirrorOutput = new double[2, nSamples_All];
 
             if (State.Acq.SineWaveScan)
             {
@@ -3293,14 +3605,32 @@ namespace FLIMage.HardwareControls
 
             }//Bidirectional
 
-            for (int i = 0; i < nSamplesYScan; i++)
+            
+            if (State.Acq.BiDirectionalScanY)
             {
-                mirrorOutput[1, i] = ((double)i / (double)nSamplesYScan - 0.5) * MaxVY;
-            }
+                for (int y = 0; y < nSamples_All; y++)
+                {
+                    mirrorOutput[1, y] = ((double)(nSamples_All - y) / (double)nSamples_All - 0.5) * MaxVY;
+                }
 
-            for (int i = nSamplesYScan; i < nSamples_All; i++)
+                for (int y = nSamples_All; y < nSamples_All * 2; y++)
+                {
+                    mirrorOutput[0, y] = mirrorOutput[0, y - nSamples_All];
+                    mirrorOutput[1, y] = mirrorOutput[1, 2 * nSamples_All - y - 1];
+                }
+            }
+            else
             {
-                mirrorOutput[1, i] = ((double)(nSamples_All - i) / (double)nSamplesYFB - 0.5) * MaxVY;
+                for (int i = 0; i < nSamplesYFB; i++)
+                {
+                    mirrorOutput[1, i] = ((double)(nSamplesYFB - i) / (double)nSamplesYFB - 0.5) * MaxVY;
+                }
+
+                for (int i = nSamplesYFB; i < nSamplesYFB + nSamplesYScan; i++)
+                {
+                    mirrorOutput[1, i] = ((double)(i - nSamplesYFB) / (double)nSamplesYScan - 0.5) * MaxVY;
+                }
+
             }
 
             RotateAndOffset(mirrorOutput, State, -1);
@@ -3352,35 +3682,57 @@ namespace FLIMage.HardwareControls
 
         public static double[] PositionFracToVoltage(double[] FracPosition_On_Display, ScanParameters State)
         {
+            return PositionFracToVoltage(FracPosition_On_Display, State, true);
+        }
+
+        /// <summary>
+        /// Convert from position fraction on the display to the voltage.
+        /// </summary>
+        /// <param name="FracPosition_On_Display">Fraction on display</param>
+        /// <param name="State">Scan Parameter State</param>
+        /// <param name="include_calibration">Include calibration</param>
+        /// <returns></returns>
+        public static double[] PositionFracToVoltage(double[] FracPosition_On_Display, ScanParameters State, bool include_calibration)
+        {
             double[,] voltagePosition = new double[2, 1];
             double[] voltagePosition_final = new double[2];
 
-            if (!State.Acq.SineWaveScan)
-            {
-                double maxX = State.Acq.XMaxVoltage / State.Acq.zoom;
-                double maxY = State.Acq.YMaxVoltage / State.Acq.zoom;
+            double[] maxX = new double[] { State.Acq.XMaxVoltage / State.Acq.zoom, State.Acq.YMaxVoltage / State.Acq.zoom };
 
-                voltagePosition[0, 0] = (FracPosition_On_Display[0] - 0.5) * maxX; //for disaply, multiplicator is not necessary.
-                voltagePosition[1, 0] = (FracPosition_On_Display[1] - 0.5) * maxY;
+            if (!State.Acq.SineWaveScan) //NOT signwave!
+            {
+                voltagePosition[0, 0] = (FracPosition_On_Display[0] - 0.5) * maxX[0]; //for disaply, multiplicator is not necessary.
+                voltagePosition[1, 0] = (FracPosition_On_Display[1] - 0.5) * maxX[1];
             }
             else
             {
                 double valX = Math.Sin(Math.PI / 4 * (State.Acq.fillFraction * (FracPosition_On_Display[0] - 0.5))) / State.Acq.fillFraction;
                 double valY = (FracPosition_On_Display[1] - 0.5);
                 //double valY = Math.Sin(FracPosition_On_Display[1] - 0.5);
-                voltagePosition[0, 0] = valX * State.Acq.XMaxVoltage / State.Acq.zoom;
-                voltagePosition[1, 0] = valY * State.Acq.YMaxVoltage / State.Acq.zoom;
+                voltagePosition[0, 0] = valX * maxX[0];
+                voltagePosition[1, 0] = valY * maxX[1];
 
+            }
+
+            if (include_calibration)
+            {
+                voltagePosition[0, 0] = (voltagePosition[0, 0] - State.Uncaging.CalibV[0] / State.Acq.zoom) / State.Uncaging.Calib_beta[0];
+                voltagePosition[1, 0] = (voltagePosition[1, 0] - State.Uncaging.CalibV[1]) / State.Uncaging.Calib_beta[1];
             }
 
             int NSplit = State.Acq.nSplitScanning;
             double splitHeight = 1 / (double)NSplit;
             int split_pos = (int)Math.Floor(FracPosition_On_Display[1] * State.Acq.scanVoltageMultiplier[1] / splitHeight);
 
+
+
             RotateAndOffset(voltagePosition, State, split_pos);
 
+            //for (int i = 0; i < 2; i++)
+            //    voltagePosition_final[i] = (voltagePosition[i, 0] - State.Uncaging.CalibV[i]) / State.Uncaging.Calib_beta[i];
+
             for (int i = 0; i < 2; i++)
-                voltagePosition_final[i] = voltagePosition[i, 0] + State.Uncaging.CalibV[i];
+                voltagePosition_final[i] = voltagePosition[i, 0];
 
             return voltagePosition_final;
         }

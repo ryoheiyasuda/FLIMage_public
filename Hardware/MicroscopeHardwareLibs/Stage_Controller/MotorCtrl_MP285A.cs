@@ -280,8 +280,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                     velocity = vel * 5;
                 }
 
-                e = new MotrEventArgs("Status");
-                MotH?.Invoke(this, e);
+                MotH?.Invoke(this, new MotrEventArgs("Status"));
             }
             reading = false;
         }
@@ -303,7 +302,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
 
         public void MovementDone()
         {
-            e = new MotrEventArgs("MovementDone");
+            MotH?.Invoke(this, new MotrEventArgs("MovementDone"));
             start_moving = false;
             moving = false;
             GetPosition();
@@ -343,10 +342,9 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
         {
             freezing = true;
             if (mp285.crash_response)
-                e = new MotrEventArgs("FreezeA");
+                MotH?.Invoke(this, new MotrEventArgs("FreezeA"));
             else
-                e = new MotrEventArgs("Freeze");
-            MotH?.Invoke(this, e);
+                MotH?.Invoke(this, new MotrEventArgs("Freeze"));
         }
 
 
@@ -364,10 +362,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                 YPos = pos[1];
                 ZPos = pos[2];
 
-                if (e.Name == "Freeze" || e.Name == "FreezeA")
-                    e.Name = "GetPositionDone";
-
-                MotH?.Invoke(this, e);
+                MotH?.Invoke(this, new MotrEventArgs("GetPositionDone"));
             }
             else if (success == -1)
             {
@@ -387,15 +382,12 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                 if (!start_moving && !moving && continuous_readCheck && !reading)
                 {
                     GetPosition();
-                    MotH?.Invoke(this, e);
 
                     GetStatus();
-                    MotH?.Invoke(this, e);
                 }
                 else if (moving)
                 {
-                    e = new MotrEventArgs("Moving");
-                    MotH?.Invoke(this, e);
+                    MotH?.Invoke(this, new MotrEventArgs("Moving"));
                 }
             }
         }

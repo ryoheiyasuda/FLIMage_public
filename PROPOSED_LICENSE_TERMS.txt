@@ -1,0 +1,80 @@
+DRAFT FOR INSTITUTIONAL REVIEW - NOT YET THE GOVERNING LICENSE
+
+FLIMage Research Software License Terms
+
+Copyright (c) 2016-2026, Max Planck Florida Institute for Neuroscience.
+All rights reserved.
+
+By downloading, viewing, accessing, using, copying, modifying, or distributing
+FLIMage, including its source code, executable files, documentation, and related
+data and information (collectively, the "Software"), you agree to these terms.
+
+1. Permitted use
+
+You may use, copy, modify, display, and distribute the Software solely for
+non-commercial research or educational purposes. No right is granted for a
+commercial purpose or for use primarily intended to produce commercial
+advantage or monetary compensation. Permission for any other use must be
+obtained separately in writing from Max Planck Florida Institute for
+Neuroscience ("MPFI").
+
+2. Experimental software
+
+The Software is research software, may be experimental, and may not have been
+tested for every application, instrument configuration, operating condition, or
+failure mode. You are responsible for evaluating whether it is suitable for
+your intended use and for applying appropriate care, safeguards, validation,
+and supervision. The Software is not intended for clinical diagnosis, treatment,
+or any other use in which failure could cause personal injury or material
+damage.
+
+3. No warranties
+
+THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT REPRESENTATIONS,
+WARRANTIES, OR CONDITIONS OF ANY KIND, WHETHER EXPRESS, IMPLIED, OR STATUTORY.
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, MPFI DISCLAIMS ALL WARRANTIES AND
+CONDITIONS, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+TITLE, ACCURACY, NON-INFRINGEMENT, AND WARRANTIES ARISING FROM A COURSE OF
+PERFORMANCE, COURSE OF DEALING, COURSE OF CONDUCT, OR USAGE OF TRADE.
+
+No opinion, advice, statement, documentation, or other communication from MPFI
+or any of its trustees, directors, officers, employees, researchers, agents,
+licensors, or suppliers creates a warranty. MPFI does not warrant that the
+Software will be accurate, complete, current, reliable, secure, uninterrupted,
+error-free, or compatible with any particular hardware or software.
+
+4. Limitation of liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, MPFI AND ITS TRUSTEES, DIRECTORS,
+OFFICERS, EMPLOYEES, RESEARCHERS, AGENTS, LICENSORS, AND SUPPLIERS (THE "MPFI
+PARTIES") WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, CONSEQUENTIAL, OR PUNITIVE DAMAGES OR LOSSES OF ANY KIND ARISING
+FROM OR RELATING TO THE SOFTWARE OR THESE TERMS. THIS INCLUDES LOSS OF USE,
+DATA, REVENUE, PROFITS, BUSINESS, OR GOODWILL; BUSINESS INTERRUPTION; COSTS OF
+SUBSTITUTE GOODS OR SERVICES; AND REASONABLE ROYALTIES, REGARDLESS OF THE
+THEORY OF LIABILITY AND EVEN IF AN MPFI PARTY WAS ADVISED THAT SUCH DAMAGE OR
+LOSS WAS POSSIBLE.
+
+These limitations are an essential basis on which the Software is made
+available. You remain responsible for compliance with all laws, regulations,
+institutional rules, third-party licenses, and safety requirements applicable
+to your possession and use of the Software.
+
+Some jurisdictions do not permit certain warranty exclusions or limitations of
+liability. Where a disclaimer or limitation above is not enforceable, it will
+apply to the fullest extent permitted by applicable law.
+
+5. Redistribution
+
+Every copy or substantial portion of the Software that you distribute, whether
+modified or unmodified and whether in source or executable form, must include
+or clearly reference these terms and retain the copyright notice above. You
+must identify material modifications you make and may not state or imply that
+MPFI endorses you, your work, or any product or service without MPFI's prior
+written permission.
+
+6. Third-party materials
+
+These terms do not grant rights in third-party software, libraries, drivers,
+documentation, data, trademarks, patents, or other materials. Such materials,
+if any, remain subject to their respective terms and notices.

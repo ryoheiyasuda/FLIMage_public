@@ -1,4 +1,4 @@
-﻿namespace FLIMage.Analysis
+namespace FLIMage.Analysis
 {
     partial class Image_Display
     {
@@ -97,6 +97,14 @@
             this.MaxSldr3 = new System.Windows.Forms.TrackBar();
             this.MaxIntensity3 = new System.Windows.Forms.TextBox();
             this.Fitting_Group = new System.Windows.Forms.GroupBox();
+            this.ThreshCB = new System.Windows.Forms.CheckBox();
+            this.BG = new System.Windows.Forms.Label();
+            this.BG_perPixels = new System.Windows.Forms.TextBox();
+            this.cb_BGfix = new System.Windows.Forms.CheckBox();
+            this.label13 = new System.Windows.Forms.Label();
+            this.Fit_BG = new System.Windows.Forms.CheckBox();
+            this.lowThreshFLIM = new System.Windows.Forms.TextBox();
+            this.highThreshFLIM = new System.Windows.Forms.TextBox();
             this.label12 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.psPerUnit = new System.Windows.Forms.TextBox();
@@ -137,10 +145,16 @@
             this.exportCurrentImagePNGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportCurrentImageBMPToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportColorBarJPGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportMovieAVIToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparatorFiberPhotometryCsv = new System.Windows.Forms.ToolStripSeparator();
+            this.exportFiberPhotometryCsvToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.BatchProcessingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.convertAllPhtonFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showImageDescriptionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.openFLIMImageInNewWindowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
+            this.saveSplitscanInDifferentFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.rOIsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveRoisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.recoverRoisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -155,6 +169,7 @@
             this.analysisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.timeBinningToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.alignSlicesframesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.alignEvenOddLinesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.makeSinlgeFileMovieFromFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.stimulationTriggeredIntegrationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.getFocusFrameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -163,6 +178,8 @@
             this.fastZCalibrationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.deleteCurrentPageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.blankCurrentPageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.extractPagesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
             this.colorSchemeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.spectrumToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -171,10 +188,11 @@
             this.redBlueToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.yellowHighlighterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.highlighterYellowBluePrinterModToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toggleZStackAndTimecourseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.windowsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.timeCoursePlotToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.phasorAnalysisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.setttingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.keepPagesInMemoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.intelMKLLibraryOnToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pythonScriptToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.averageTimeCoursePythonToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -238,7 +256,7 @@
             this.MergeCB = new System.Windows.Forms.CheckBox();
             this.ThreeDROIPanel = new System.Windows.Forms.PictureBox();
             this.LineBox = new System.Windows.Forms.PictureBox();
-            this.toggleZStackAndTimecourseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.label14 = new System.Windows.Forms.Label();
             this.rightClickMenuStrip_inROI.SuspendLayout();
             this.rightClickMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.MinSldr1)).BeginInit();
@@ -284,7 +302,7 @@
             this.logScale.Location = new System.Drawing.Point(212, 2);
             this.logScale.Name = "logScale";
             this.logScale.Size = new System.Drawing.Size(73, 18);
-            this.logScale.TabIndex = 298;
+            this.logScale.TabIndex = 2;
             this.logScale.Text = "Log scale";
             this.logScale.UseVisualStyleBackColor = true;
             this.logScale.Click += new System.EventHandler(this.UpdateImage_Simple);
@@ -298,7 +316,7 @@
             this.ShowFLIM.Location = new System.Drawing.Point(437, 33);
             this.ShowFLIM.Name = "ShowFLIM";
             this.ShowFLIM.Size = new System.Drawing.Size(80, 18);
-            this.ShowFLIM.TabIndex = 299;
+            this.ShowFLIM.TabIndex = 5;
             this.ShowFLIM.Text = "Show FLIM";
             this.ShowFLIM.UseVisualStyleBackColor = true;
             this.ShowFLIM.Click += new System.EventHandler(this.Channel1_Clicked);
@@ -311,7 +329,7 @@
             this.Channel1.Location = new System.Drawing.Point(11, 21);
             this.Channel1.Name = "Channel1";
             this.Channel1.Size = new System.Drawing.Size(149, 20);
-            this.Channel1.TabIndex = 300;
+            this.Channel1.TabIndex = 0;
             this.Channel1.TabStop = true;
             this.Channel1.Text = "Ch1 (Intensity/FLIM)";
             this.Channel1.UseVisualStyleBackColor = true;
@@ -324,7 +342,7 @@
             this.Channel2.Location = new System.Drawing.Point(11, 50);
             this.Channel2.Name = "Channel2";
             this.Channel2.Size = new System.Drawing.Size(149, 20);
-            this.Channel2.TabIndex = 301;
+            this.Channel2.TabIndex = 1;
             this.Channel2.Text = "Ch2 (Intensity/FLIM)";
             this.Channel2.UseVisualStyleBackColor = true;
             this.Channel2.Click += new System.EventHandler(this.Channel1_Clicked);
@@ -336,7 +354,7 @@
             this.imgOffset1.Location = new System.Drawing.Point(175, 106);
             this.imgOffset1.Name = "imgOffset1";
             this.imgOffset1.Size = new System.Drawing.Size(37, 14);
-            this.imgOffset1.TabIndex = 431;
+            this.imgOffset1.TabIndex = 28;
             this.imgOffset1.Text = "2.0 ns";
             // 
             // Apply_Offset
@@ -345,7 +363,7 @@
             this.Apply_Offset.Location = new System.Drawing.Point(179, 141);
             this.Apply_Offset.Name = "Apply_Offset";
             this.Apply_Offset.Size = new System.Drawing.Size(84, 23);
-            this.Apply_Offset.TabIndex = 430;
+            this.Apply_Offset.TabIndex = 30;
             this.Apply_Offset.Text = "Apply offset";
             this.Apply_Offset.UseVisualStyleBackColor = true;
             this.Apply_Offset.Click += new System.EventHandler(this.Apply_Offset_Click);
@@ -354,10 +372,10 @@
             // 
             this.fix_all.AutoSize = true;
             this.fix_all.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.fix_all.Location = new System.Drawing.Point(98, 158);
+            this.fix_all.Location = new System.Drawing.Point(110, 191);
             this.fix_all.Name = "fix_all";
             this.fix_all.Size = new System.Drawing.Size(81, 18);
-            this.fix_all.TabIndex = 429;
+            this.fix_all.TabIndex = 18;
             this.fix_all.Text = "Fix/Unfix all";
             this.fix_all.UseVisualStyleBackColor = true;
             this.fix_all.Click += new System.EventHandler(this.FixAll_CheckedChanged);
@@ -366,22 +384,22 @@
             // 
             this.label75.AutoSize = true;
             this.label75.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label75.Location = new System.Drawing.Point(9, 174);
+            this.label75.Location = new System.Drawing.Point(21, 216);
             this.label75.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label75.Name = "label75";
             this.label75.Size = new System.Drawing.Size(52, 14);
-            this.label75.TabIndex = 428;
+            this.label75.TabIndex = 21;
             this.label75.Text = "xi square";
             // 
             // xi_square
             // 
             this.xi_square.AutoSize = true;
             this.xi_square.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.xi_square.Location = new System.Drawing.Point(61, 176);
+            this.xi_square.Location = new System.Drawing.Point(74, 218);
             this.xi_square.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.xi_square.Name = "xi_square";
             this.xi_square.Size = new System.Drawing.Size(34, 14);
-            this.xi_square.TabIndex = 427;
+            this.xi_square.TabIndex = 22;
             this.xi_square.Text = "0.000";
             this.xi_square.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
@@ -393,7 +411,7 @@
             this.label73.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label73.Name = "label73";
             this.label73.Size = new System.Drawing.Size(39, 14);
-            this.label73.TabIndex = 426;
+            this.label73.TabIndex = 25;
             this.label73.Text = "Fit end";
             // 
             // label74
@@ -404,7 +422,7 @@
             this.label74.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label74.Name = "label74";
             this.label74.Size = new System.Drawing.Size(43, 14);
-            this.label74.TabIndex = 425;
+            this.label74.TabIndex = 23;
             this.label74.Text = "Fit start";
             // 
             // fit_end
@@ -414,7 +432,7 @@
             this.fit_end.Margin = new System.Windows.Forms.Padding(1);
             this.fit_end.Name = "fit_end";
             this.fit_end.Size = new System.Drawing.Size(50, 20);
-            this.fit_end.TabIndex = 424;
+            this.fit_end.TabIndex = 26;
             this.fit_end.Text = "0";
             this.fit_end.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.fit_end.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Analysis_KeyDown);
@@ -427,7 +445,7 @@
             this.label67.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label67.Name = "label67";
             this.label67.Size = new System.Drawing.Size(90, 14);
-            this.label67.TabIndex = 402;
+            this.label67.TabIndex = 27;
             this.label67.Text = "T0 (Image offset)";
             // 
             // t0_Img
@@ -437,7 +455,7 @@
             this.t0_Img.Margin = new System.Windows.Forms.Padding(1);
             this.t0_Img.Name = "t0_Img";
             this.t0_Img.Size = new System.Drawing.Size(50, 20);
-            this.t0_Img.TabIndex = 401;
+            this.t0_Img.TabIndex = 29;
             this.t0_Img.Text = "0";
             this.t0_Img.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -448,7 +466,7 @@
             this.fit_start.Margin = new System.Windows.Forms.Padding(1);
             this.fit_start.Name = "fit_start";
             this.fit_start.Size = new System.Drawing.Size(50, 20);
-            this.fit_start.TabIndex = 423;
+            this.fit_start.TabIndex = 24;
             this.fit_start.Text = "0";
             this.fit_start.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.fit_start.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Analysis_KeyDown);
@@ -457,10 +475,10 @@
             // 
             this.cb_T0Fix.AutoSize = true;
             this.cb_T0Fix.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cb_T0Fix.Location = new System.Drawing.Point(98, 135);
+            this.cb_T0Fix.Location = new System.Drawing.Point(110, 131);
             this.cb_T0Fix.Name = "cb_T0Fix";
             this.cb_T0Fix.Size = new System.Drawing.Size(40, 18);
-            this.cb_T0Fix.TabIndex = 422;
+            this.cb_T0Fix.TabIndex = 17;
             this.cb_T0Fix.Text = "Fix";
             this.cb_T0Fix.UseVisualStyleBackColor = true;
             this.cb_T0Fix.Click += new System.EventHandler(this.Fix_Check_Changed);
@@ -469,10 +487,10 @@
             // 
             this.cb_tauGFix.AutoSize = true;
             this.cb_tauGFix.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cb_tauGFix.Location = new System.Drawing.Point(98, 113);
+            this.cb_tauGFix.Location = new System.Drawing.Point(110, 109);
             this.cb_tauGFix.Name = "cb_tauGFix";
             this.cb_tauGFix.Size = new System.Drawing.Size(40, 18);
-            this.cb_tauGFix.TabIndex = 421;
+            this.cb_tauGFix.TabIndex = 16;
             this.cb_tauGFix.Text = "Fix";
             this.cb_tauGFix.UseVisualStyleBackColor = true;
             this.cb_tauGFix.Click += new System.EventHandler(this.Fix_Check_Changed);
@@ -481,10 +499,10 @@
             // 
             this.cb_tau2Fix.AutoSize = true;
             this.cb_tau2Fix.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cb_tau2Fix.Location = new System.Drawing.Point(98, 91);
+            this.cb_tau2Fix.Location = new System.Drawing.Point(110, 87);
             this.cb_tau2Fix.Name = "cb_tau2Fix";
             this.cb_tau2Fix.Size = new System.Drawing.Size(40, 18);
-            this.cb_tau2Fix.TabIndex = 420;
+            this.cb_tau2Fix.TabIndex = 15;
             this.cb_tau2Fix.Text = "Fix";
             this.cb_tau2Fix.UseVisualStyleBackColor = true;
             this.cb_tau2Fix.Click += new System.EventHandler(this.Fix_Check_Changed);
@@ -493,10 +511,10 @@
             // 
             this.cb_tau1Fix.AutoSize = true;
             this.cb_tau1Fix.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cb_tau1Fix.Location = new System.Drawing.Point(98, 46);
+            this.cb_tau1Fix.Location = new System.Drawing.Point(110, 42);
             this.cb_tau1Fix.Name = "cb_tau1Fix";
             this.cb_tau1Fix.Size = new System.Drawing.Size(40, 18);
-            this.cb_tau1Fix.TabIndex = 419;
+            this.cb_tau1Fix.TabIndex = 13;
             this.cb_tau1Fix.Text = "Fix";
             this.cb_tau1Fix.UseVisualStyleBackColor = true;
             this.cb_tau1Fix.Click += new System.EventHandler(this.Fix_Check_Changed);
@@ -505,11 +523,11 @@
             // 
             this.frac2.AutoSize = true;
             this.frac2.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.frac2.Location = new System.Drawing.Point(95, 70);
+            this.frac2.Location = new System.Drawing.Point(107, 66);
             this.frac2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.frac2.Name = "frac2";
             this.frac2.Size = new System.Drawing.Size(34, 14);
-            this.frac2.TabIndex = 418;
+            this.frac2.TabIndex = 14;
             this.frac2.Text = "0.000";
             this.frac2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
@@ -517,11 +535,11 @@
             // 
             this.frac1.AutoSize = true;
             this.frac1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.frac1.Location = new System.Drawing.Point(95, 26);
+            this.frac1.Location = new System.Drawing.Point(107, 22);
             this.frac1.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.frac1.Name = "frac1";
             this.frac1.Size = new System.Drawing.Size(34, 14);
-            this.frac1.TabIndex = 417;
+            this.frac1.TabIndex = 12;
             this.frac1.Text = "0.000";
             this.frac1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
@@ -529,22 +547,22 @@
             // 
             this.label69.AutoSize = true;
             this.label69.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label69.Location = new System.Drawing.Point(8, 159);
+            this.label69.Location = new System.Drawing.Point(20, 201);
             this.label69.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label69.Name = "label69";
             this.label69.Size = new System.Drawing.Size(53, 14);
-            this.label69.TabIndex = 416;
+            this.label69.TabIndex = 19;
             this.label69.Text = "Mean Tau";
             // 
             // tau_m
             // 
             this.tau_m.AutoSize = true;
             this.tau_m.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tau_m.Location = new System.Drawing.Point(61, 159);
+            this.tau_m.Location = new System.Drawing.Point(74, 201);
             this.tau_m.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.tau_m.Name = "tau_m";
             this.tau_m.Size = new System.Drawing.Size(34, 14);
-            this.tau_m.TabIndex = 415;
+            this.tau_m.TabIndex = 20;
             this.tau_m.Text = "0.000";
             this.tau_m.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
@@ -552,21 +570,21 @@
             // 
             this.label66.AutoSize = true;
             this.label66.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label66.Location = new System.Drawing.Point(15, 139);
+            this.label66.Location = new System.Drawing.Point(27, 135);
             this.label66.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label66.Name = "label66";
             this.label66.Size = new System.Drawing.Size(19, 14);
-            this.label66.TabIndex = 414;
+            this.label66.TabIndex = 5;
             this.label66.Text = "T0";
             // 
             // t0
             // 
             this.t0.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.t0.Location = new System.Drawing.Point(43, 133);
+            this.t0.Location = new System.Drawing.Point(55, 129);
             this.t0.Margin = new System.Windows.Forms.Padding(1);
             this.t0.Name = "t0";
             this.t0.Size = new System.Drawing.Size(50, 20);
-            this.t0.TabIndex = 413;
+            this.t0.TabIndex = 11;
             this.t0.Text = "0";
             this.t0.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.t0.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Analysis_KeyDown);
@@ -575,21 +593,21 @@
             // 
             this.label65.AutoSize = true;
             this.label65.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label65.Location = new System.Drawing.Point(8, 116);
+            this.label65.Location = new System.Drawing.Point(20, 112);
             this.label65.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label65.Name = "label65";
             this.label65.Size = new System.Drawing.Size(32, 14);
-            this.label65.TabIndex = 412;
+            this.label65.TabIndex = 4;
             this.label65.Text = "TauG";
             // 
             // tauG
             // 
             this.tauG.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tauG.Location = new System.Drawing.Point(43, 111);
+            this.tauG.Location = new System.Drawing.Point(55, 107);
             this.tauG.Margin = new System.Windows.Forms.Padding(1);
             this.tauG.Name = "tauG";
             this.tauG.Size = new System.Drawing.Size(50, 20);
-            this.tauG.TabIndex = 411;
+            this.tauG.TabIndex = 10;
             this.tauG.Text = "0";
             this.tauG.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.tauG.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Analysis_KeyDown);
@@ -598,54 +616,54 @@
             // 
             this.label63.AutoSize = true;
             this.label63.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label63.Location = new System.Drawing.Point(9, 69);
+            this.label63.Location = new System.Drawing.Point(21, 65);
             this.label63.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label63.Name = "label63";
             this.label63.Size = new System.Drawing.Size(31, 14);
-            this.label63.TabIndex = 410;
+            this.label63.TabIndex = 2;
             this.label63.Text = "Pop2";
             // 
             // label64
             // 
             this.label64.AutoSize = true;
             this.label64.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label64.Location = new System.Drawing.Point(9, 26);
+            this.label64.Location = new System.Drawing.Point(21, 22);
             this.label64.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label64.Name = "label64";
             this.label64.Size = new System.Drawing.Size(31, 14);
-            this.label64.TabIndex = 409;
+            this.label64.TabIndex = 0;
             this.label64.Text = "Pop1";
             // 
             // label62
             // 
             this.label62.AutoSize = true;
             this.label62.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label62.Location = new System.Drawing.Point(9, 92);
+            this.label62.Location = new System.Drawing.Point(21, 88);
             this.label62.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label62.Name = "label62";
             this.label62.Size = new System.Drawing.Size(30, 14);
-            this.label62.TabIndex = 408;
+            this.label62.TabIndex = 3;
             this.label62.Text = "Tau2";
             // 
             // label61
             // 
             this.label61.AutoSize = true;
             this.label61.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label61.Location = new System.Drawing.Point(9, 49);
+            this.label61.Location = new System.Drawing.Point(21, 45);
             this.label61.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label61.Name = "label61";
             this.label61.Size = new System.Drawing.Size(30, 14);
-            this.label61.TabIndex = 407;
+            this.label61.TabIndex = 1;
             this.label61.Text = "Tau1";
             // 
             // tau2
             // 
             this.tau2.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tau2.Location = new System.Drawing.Point(43, 89);
+            this.tau2.Location = new System.Drawing.Point(55, 85);
             this.tau2.Margin = new System.Windows.Forms.Padding(1);
             this.tau2.Name = "tau2";
             this.tau2.Size = new System.Drawing.Size(50, 20);
-            this.tau2.TabIndex = 406;
+            this.tau2.TabIndex = 9;
             this.tau2.Text = "0";
             this.tau2.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.tau2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Analysis_KeyDown);
@@ -653,11 +671,11 @@
             // pop2
             // 
             this.pop2.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.pop2.Location = new System.Drawing.Point(43, 67);
+            this.pop2.Location = new System.Drawing.Point(55, 63);
             this.pop2.Margin = new System.Windows.Forms.Padding(1);
             this.pop2.Name = "pop2";
             this.pop2.Size = new System.Drawing.Size(50, 20);
-            this.pop2.TabIndex = 403;
+            this.pop2.TabIndex = 8;
             this.pop2.Text = "0";
             this.pop2.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.pop2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Analysis_KeyDown);
@@ -665,23 +683,24 @@
             // tau1
             // 
             this.tau1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tau1.Location = new System.Drawing.Point(43, 45);
+            this.tau1.Location = new System.Drawing.Point(55, 41);
             this.tau1.Margin = new System.Windows.Forms.Padding(1);
             this.tau1.Name = "tau1";
             this.tau1.Size = new System.Drawing.Size(50, 20);
-            this.tau1.TabIndex = 405;
+            this.tau1.TabIndex = 7;
             this.tau1.Text = "0";
             this.tau1.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.tau1.TextChanged += new System.EventHandler(this.tau1_TextChanged);
             this.tau1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Analysis_KeyDown);
             // 
             // pop1
             // 
             this.pop1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.pop1.Location = new System.Drawing.Point(43, 23);
+            this.pop1.Location = new System.Drawing.Point(55, 19);
             this.pop1.Margin = new System.Windows.Forms.Padding(1);
             this.pop1.Name = "pop1";
             this.pop1.Size = new System.Drawing.Size(50, 20);
-            this.pop1.TabIndex = 404;
+            this.pop1.TabIndex = 6;
             this.pop1.Text = "0";
             this.pop1.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.pop1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Analysis_KeyDown);
@@ -690,10 +709,10 @@
             // 
             this.Values_selectedROI.AutoSize = true;
             this.Values_selectedROI.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Values_selectedROI.Location = new System.Drawing.Point(266, 53);
+            this.Values_selectedROI.Location = new System.Drawing.Point(266, 46);
             this.Values_selectedROI.Name = "Values_selectedROI";
             this.Values_selectedROI.Size = new System.Drawing.Size(104, 32);
-            this.Values_selectedROI.TabIndex = 399;
+            this.Values_selectedROI.TabIndex = 38;
             this.Values_selectedROI.Text = "Show values \r\nfor selected ROI\r\n";
             this.Values_selectedROI.UseVisualStyleBackColor = true;
             this.Values_selectedROI.Click += new System.EventHandler(this.Fix_Check_Changed);
@@ -702,10 +721,10 @@
             // 
             this.AllRois.AutoSize = true;
             this.AllRois.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.AllRois.Location = new System.Drawing.Point(251, 39);
+            this.AllRois.Location = new System.Drawing.Point(251, 32);
             this.AllRois.Name = "AllRois";
             this.AllRois.Size = new System.Drawing.Size(106, 18);
-            this.AllRois.TabIndex = 398;
+            this.AllRois.TabIndex = 37;
             this.AllRois.Text = "Multi ROIs (blue) ";
             this.AllRois.UseVisualStyleBackColor = true;
             this.AllRois.Click += new System.EventHandler(this.Fix_Check_Changed);
@@ -715,10 +734,10 @@
             this.SelectRoi.AutoSize = true;
             this.SelectRoi.Checked = true;
             this.SelectRoi.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.SelectRoi.Location = new System.Drawing.Point(251, 20);
+            this.SelectRoi.Location = new System.Drawing.Point(251, 15);
             this.SelectRoi.Name = "SelectRoi";
             this.SelectRoi.Size = new System.Drawing.Size(114, 18);
-            this.SelectRoi.TabIndex = 397;
+            this.SelectRoi.TabIndex = 36;
             this.SelectRoi.TabStop = true;
             this.SelectRoi.Text = "Selected ROI (red)";
             this.SelectRoi.UseVisualStyleBackColor = true;
@@ -730,7 +749,7 @@
             this.Fit.Location = new System.Drawing.Point(11, 40);
             this.Fit.Name = "Fit";
             this.Fit.Size = new System.Drawing.Size(75, 23);
-            this.Fit.TabIndex = 393;
+            this.Fit.TabIndex = 2;
             this.Fit.Text = "Fit";
             this.Fit.UseVisualStyleBackColor = true;
             this.Fit.Click += new System.EventHandler(this.Fit_Click);
@@ -852,7 +871,7 @@
             this.Auto1.Location = new System.Drawing.Point(14, 17);
             this.Auto1.Name = "Auto1";
             this.Auto1.Size = new System.Drawing.Size(92, 18);
-            this.Auto1.TabIndex = 440;
+            this.Auto1.TabIndex = 0;
             this.Auto1.Text = "Auto contrast";
             this.Auto1.UseVisualStyleBackColor = true;
             this.Auto1.Click += new System.EventHandler(this.Auto1_CheckedChanged);
@@ -867,7 +886,7 @@
             this.MinSldr1.Name = "MinSldr1";
             this.MinSldr1.Orientation = System.Windows.Forms.Orientation.Vertical;
             this.MinSldr1.Size = new System.Drawing.Size(15, 75);
-            this.MinSldr1.TabIndex = 439;
+            this.MinSldr1.TabIndex = 18;
             this.MinSldr1.TickStyle = System.Windows.Forms.TickStyle.None;
             this.MinSldr1.Scroll += new System.EventHandler(this.Slider_ValueChanged);
             this.MinSldr1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Slider_mouseUp);
@@ -882,7 +901,7 @@
             this.MaxSldr1.Name = "MaxSldr1";
             this.MaxSldr1.Orientation = System.Windows.Forms.Orientation.Vertical;
             this.MaxSldr1.Size = new System.Drawing.Size(15, 75);
-            this.MaxSldr1.TabIndex = 438;
+            this.MaxSldr1.TabIndex = 17;
             this.MaxSldr1.TickStyle = System.Windows.Forms.TickStyle.None;
             this.MaxSldr1.Value = 100;
             this.MaxSldr1.Scroll += new System.EventHandler(this.Slider_ValueChanged);
@@ -899,7 +918,7 @@
             this.label4.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(23, 14);
-            this.label4.TabIndex = 437;
+            this.label4.TabIndex = 8;
             this.label4.Text = "Min";
             // 
             // label3
@@ -913,7 +932,7 @@
             this.label3.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(27, 14);
-            this.label3.TabIndex = 436;
+            this.label3.TabIndex = 7;
             this.label3.Text = "Max";
             // 
             // MinIntensity1
@@ -923,7 +942,7 @@
             this.MinIntensity1.Margin = new System.Windows.Forms.Padding(1);
             this.MinIntensity1.Name = "MinIntensity1";
             this.MinIntensity1.Size = new System.Drawing.Size(40, 20);
-            this.MinIntensity1.TabIndex = 435;
+            this.MinIntensity1.TabIndex = 12;
             this.MinIntensity1.Text = "0";
             this.MinIntensity1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.MinIntensity1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.UpdateFigure_KeyDown);
@@ -935,7 +954,7 @@
             this.MaxIntensity1.Margin = new System.Windows.Forms.Padding(1);
             this.MaxIntensity1.Name = "MaxIntensity1";
             this.MaxIntensity1.Size = new System.Drawing.Size(40, 20);
-            this.MaxIntensity1.TabIndex = 434;
+            this.MaxIntensity1.TabIndex = 11;
             this.MaxIntensity1.Text = "100";
             this.MaxIntensity1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.MaxIntensity1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.UpdateFigure_KeyDown);
@@ -950,7 +969,7 @@
             this.MinSldr2.Name = "MinSldr2";
             this.MinSldr2.Orientation = System.Windows.Forms.Orientation.Vertical;
             this.MinSldr2.Size = new System.Drawing.Size(15, 75);
-            this.MinSldr2.TabIndex = 446;
+            this.MinSldr2.TabIndex = 20;
             this.MinSldr2.TickStyle = System.Windows.Forms.TickStyle.None;
             this.MinSldr2.Scroll += new System.EventHandler(this.Slider_ValueChanged);
             this.MinSldr2.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Slider_mouseUp);
@@ -965,7 +984,7 @@
             this.MaxSldr2.Name = "MaxSldr2";
             this.MaxSldr2.Orientation = System.Windows.Forms.Orientation.Vertical;
             this.MaxSldr2.Size = new System.Drawing.Size(15, 75);
-            this.MaxSldr2.TabIndex = 445;
+            this.MaxSldr2.TabIndex = 19;
             this.MaxSldr2.TickStyle = System.Windows.Forms.TickStyle.None;
             this.MaxSldr2.Value = 100;
             this.MaxSldr2.Scroll += new System.EventHandler(this.Slider_ValueChanged);
@@ -979,7 +998,7 @@
             this.label5.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(23, 14);
-            this.label5.TabIndex = 444;
+            this.label5.TabIndex = 10;
             this.label5.Text = "Min";
             // 
             // label7
@@ -990,7 +1009,7 @@
             this.label7.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(27, 14);
-            this.label7.TabIndex = 443;
+            this.label7.TabIndex = 9;
             this.label7.Text = "Max";
             // 
             // MinIntensity2
@@ -1000,7 +1019,7 @@
             this.MinIntensity2.Margin = new System.Windows.Forms.Padding(1);
             this.MinIntensity2.Name = "MinIntensity2";
             this.MinIntensity2.Size = new System.Drawing.Size(40, 20);
-            this.MinIntensity2.TabIndex = 442;
+            this.MinIntensity2.TabIndex = 14;
             this.MinIntensity2.Text = "0";
             this.MinIntensity2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.MinIntensity2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.UpdateFigure_KeyDown);
@@ -1012,7 +1031,7 @@
             this.MaxIntensity2.Margin = new System.Windows.Forms.Padding(1);
             this.MaxIntensity2.Name = "MaxIntensity2";
             this.MaxIntensity2.Size = new System.Drawing.Size(40, 20);
-            this.MaxIntensity2.TabIndex = 441;
+            this.MaxIntensity2.TabIndex = 13;
             this.MaxIntensity2.Text = "100";
             this.MaxIntensity2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.MaxIntensity2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.UpdateFigure_KeyDown);
@@ -1028,7 +1047,7 @@
             this.MinSldr3.Name = "MinSldr3";
             this.MinSldr3.Orientation = System.Windows.Forms.Orientation.Vertical;
             this.MinSldr3.Size = new System.Drawing.Size(15, 75);
-            this.MinSldr3.TabIndex = 453;
+            this.MinSldr3.TabIndex = 22;
             this.MinSldr3.TickStyle = System.Windows.Forms.TickStyle.None;
             this.MinSldr3.Value = 220;
             this.MinSldr3.Scroll += new System.EventHandler(this.Slider_ValueChanged);
@@ -1041,7 +1060,7 @@
             this.MinIntensity3.Margin = new System.Windows.Forms.Padding(1);
             this.MinIntensity3.Name = "MinIntensity3";
             this.MinIntensity3.Size = new System.Drawing.Size(30, 20);
-            this.MinIntensity3.TabIndex = 450;
+            this.MinIntensity3.TabIndex = 16;
             this.MinIntensity3.Text = "2.00";
             this.MinIntensity3.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.MinIntensity3.KeyDown += new System.Windows.Forms.KeyEventHandler(this.UpdateFigure_KeyDown);
@@ -1057,7 +1076,7 @@
             this.MaxSldr3.Name = "MaxSldr3";
             this.MaxSldr3.Orientation = System.Windows.Forms.Orientation.Vertical;
             this.MaxSldr3.Size = new System.Drawing.Size(15, 75);
-            this.MaxSldr3.TabIndex = 452;
+            this.MaxSldr3.TabIndex = 21;
             this.MaxSldr3.TickStyle = System.Windows.Forms.TickStyle.None;
             this.MaxSldr3.Value = 270;
             this.MaxSldr3.Scroll += new System.EventHandler(this.Slider_ValueChanged);
@@ -1070,14 +1089,23 @@
             this.MaxIntensity3.Margin = new System.Windows.Forms.Padding(1);
             this.MaxIntensity3.Name = "MaxIntensity3";
             this.MaxIntensity3.Size = new System.Drawing.Size(30, 20);
-            this.MaxIntensity3.TabIndex = 449;
+            this.MaxIntensity3.TabIndex = 15;
             this.MaxIntensity3.Text = "3.00";
             this.MaxIntensity3.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.MaxIntensity3.KeyDown += new System.Windows.Forms.KeyEventHandler(this.UpdateFigure_KeyDown);
             // 
             // Fitting_Group
             // 
+            this.Fitting_Group.Controls.Add(this.label14);
+            this.Fitting_Group.Controls.Add(this.ThreshCB);
+            this.Fitting_Group.Controls.Add(this.BG);
+            this.Fitting_Group.Controls.Add(this.BG_perPixels);
+            this.Fitting_Group.Controls.Add(this.cb_BGfix);
+            this.Fitting_Group.Controls.Add(this.label13);
+            this.Fitting_Group.Controls.Add(this.Fit_BG);
+            this.Fitting_Group.Controls.Add(this.lowThreshFLIM);
             this.Fitting_Group.Controls.Add(this.t0_Img);
+            this.Fitting_Group.Controls.Add(this.highThreshFLIM);
             this.Fitting_Group.Controls.Add(this.label12);
             this.Fitting_Group.Controls.Add(this.label2);
             this.Fitting_Group.Controls.Add(this.psPerUnit);
@@ -1120,10 +1148,109 @@
             this.Fitting_Group.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Fitting_Group.Location = new System.Drawing.Point(670, 3);
             this.Fitting_Group.Name = "Fitting_Group";
-            this.Fitting_Group.Size = new System.Drawing.Size(380, 210);
-            this.Fitting_Group.TabIndex = 455;
+            this.Fitting_Group.Size = new System.Drawing.Size(380, 235);
+            this.Fitting_Group.TabIndex = 6;
             this.Fitting_Group.TabStop = false;
             this.Fitting_Group.Text = "Fitting";
+            // 
+            // ThreshCB
+            // 
+            this.ThreshCB.AutoSize = true;
+            this.ThreshCB.Checked = true;
+            this.ThreshCB.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.ThreshCB.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ThreshCB.Location = new System.Drawing.Point(290, 114);
+            this.ThreshCB.Name = "ThreshCB";
+            this.ThreshCB.Size = new System.Drawing.Size(89, 18);
+            this.ThreshCB.TabIndex = 42;
+            this.ThreshCB.Text = "Use FLIM Min";
+            this.ThreshCB.UseVisualStyleBackColor = true;
+            this.ThreshCB.Click += new System.EventHandler(this.UpdateImagesRecalc_Click);
+            // 
+            // BG
+            // 
+            this.BG.AutoSize = true;
+            this.BG.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.BG.Location = new System.Drawing.Point(71, 156);
+            this.BG.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.BG.Name = "BG";
+            this.BG.Size = new System.Drawing.Size(34, 14);
+            this.BG.TabIndex = 41;
+            this.BG.Text = "0.000";
+            this.BG.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            //
+            // BG_perPixels
+            //
+            this.BG_perPixels.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.BG_perPixels.Location = new System.Drawing.Point(55, 172);
+            this.BG_perPixels.Margin = new System.Windows.Forms.Padding(1);
+            this.BG_perPixels.Name = "BG_perPixels";
+            this.BG_perPixels.Size = new System.Drawing.Size(50, 20);
+            this.BG_perPixels.TabIndex = 478;
+            this.BG_perPixels.Text = "0";
+            this.BG_perPixels.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.BG_perPixels.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Analysis_KeyDown);
+            //
+            // cb_BGfix
+            //
+            this.cb_BGfix.AutoSize = true;
+            this.cb_BGfix.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cb_BGfix.Location = new System.Drawing.Point(109, 173);
+            this.cb_BGfix.Name = "cb_BGfix";
+            this.cb_BGfix.Size = new System.Drawing.Size(40, 18);
+            this.cb_BGfix.TabIndex = 479;
+            this.cb_BGfix.Text = "Fix";
+            this.cb_BGfix.UseVisualStyleBackColor = true;
+            this.cb_BGfix.Click += new System.EventHandler(this.Fix_Check_Changed);
+            // 
+            // label13
+            // 
+            this.label13.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label13.AutoSize = true;
+            this.label13.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label13.Location = new System.Drawing.Point(259, 79);
+            this.label13.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(112, 14);
+            this.label13.TabIndex = 477;
+            this.label13.Text = "Mask High/Low pixels";
+            // 
+            // Fit_BG
+            // 
+            this.Fit_BG.AutoSize = true;
+            this.Fit_BG.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Fit_BG.Location = new System.Drawing.Point(18, 155);
+            this.Fit_BG.Name = "Fit_BG";
+            this.Fit_BG.Size = new System.Drawing.Size(55, 18);
+            this.Fit_BG.TabIndex = 40;
+            this.Fit_BG.Text = "Fit BG";
+            this.Fit_BG.UseVisualStyleBackColor = true;
+            // 
+            // lowThreshFLIM
+            // 
+            this.lowThreshFLIM.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lowThreshFLIM.Location = new System.Drawing.Point(308, 93);
+            this.lowThreshFLIM.Margin = new System.Windows.Forms.Padding(1);
+            this.lowThreshFLIM.Name = "lowThreshFLIM";
+            this.lowThreshFLIM.Size = new System.Drawing.Size(40, 20);
+            this.lowThreshFLIM.TabIndex = 476;
+            this.lowThreshFLIM.Text = "0";
+            this.lowThreshFLIM.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.lowThreshFLIM.KeyDown += new System.Windows.Forms.KeyEventHandler(this.UpdateFigure_KeyDown);
+            // 
+            // highThreshFLIM
+            // 
+            this.highThreshFLIM.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.highThreshFLIM.Location = new System.Drawing.Point(266, 93);
+            this.highThreshFLIM.Margin = new System.Windows.Forms.Padding(1);
+            this.highThreshFLIM.Name = "highThreshFLIM";
+            this.highThreshFLIM.Size = new System.Drawing.Size(40, 20);
+            this.highThreshFLIM.TabIndex = 475;
+            this.highThreshFLIM.Text = "Inf";
+            this.highThreshFLIM.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.highThreshFLIM.KeyDown += new System.Windows.Forms.KeyEventHandler(this.UpdateFigure_KeyDown);
             // 
             // label12
             // 
@@ -1133,27 +1260,27 @@
             this.label12.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(24, 14);
-            this.label12.TabIndex = 479;
+            this.label12.TabIndex = 35;
             this.label12.Text = "(fit)";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Arial", 8.25F);
-            this.label2.Location = new System.Drawing.Point(230, 185);
+            this.label2.Location = new System.Drawing.Point(245, 208);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(19, 14);
-            this.label2.TabIndex = 478;
+            this.label2.TabIndex = 34;
             this.label2.Text = "ps";
             // 
             // psPerUnit
             // 
             this.psPerUnit.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.psPerUnit.Location = new System.Drawing.Point(187, 182);
+            this.psPerUnit.Location = new System.Drawing.Point(202, 205);
             this.psPerUnit.Margin = new System.Windows.Forms.Padding(1);
             this.psPerUnit.Name = "psPerUnit";
             this.psPerUnit.Size = new System.Drawing.Size(41, 20);
-            this.psPerUnit.TabIndex = 477;
+            this.psPerUnit.TabIndex = 32;
             this.psPerUnit.Text = "0";
             this.psPerUnit.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.psPerUnit.TextChanged += new System.EventHandler(this.psPerUnit_TextChanged);
@@ -1165,7 +1292,7 @@
             this.AutoApplyOffset.Location = new System.Drawing.Point(181, 163);
             this.AutoApplyOffset.Name = "AutoApplyOffset";
             this.AutoApplyOffset.Size = new System.Drawing.Size(81, 18);
-            this.AutoApplyOffset.TabIndex = 440;
+            this.AutoApplyOffset.TabIndex = 31;
             this.AutoApplyOffset.Text = "Auto offset";
             this.AutoApplyOffset.UseVisualStyleBackColor = true;
             this.AutoApplyOffset.CheckedChanged += new System.EventHandler(this.AutoApplyOffset_CheckedChanged);
@@ -1174,11 +1301,11 @@
             // 
             this.label10.AutoSize = true;
             this.label10.Font = new System.Drawing.Font("Arial", 8.25F);
-            this.label10.Location = new System.Drawing.Point(122, 185);
+            this.label10.Location = new System.Drawing.Point(160, 208);
             this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(69, 14);
-            this.label10.TabIndex = 437;
-            this.label10.Text = "Resolution = ";
+            this.label10.Size = new System.Drawing.Size(38, 14);
+            this.label10.TabIndex = 33;
+            this.label10.Text = "Res = ";
             // 
             // panel1
             // 
@@ -1186,10 +1313,10 @@
             this.panel1.Controls.Add(this.SingleExp);
             this.panel1.Controls.Add(this.Fit);
             this.panel1.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.panel1.Location = new System.Drawing.Point(271, 124);
+            this.panel1.Location = new System.Drawing.Point(271, 134);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(102, 73);
-            this.panel1.TabIndex = 436;
+            this.panel1.Size = new System.Drawing.Size(102, 68);
+            this.panel1.TabIndex = 39;
             // 
             // DoubleExp
             // 
@@ -1199,7 +1326,7 @@
             this.DoubleExp.Location = new System.Drawing.Point(11, 20);
             this.DoubleExp.Name = "DoubleExp";
             this.DoubleExp.Size = new System.Drawing.Size(80, 17);
-            this.DoubleExp.TabIndex = 435;
+            this.DoubleExp.TabIndex = 1;
             this.DoubleExp.TabStop = true;
             this.DoubleExp.Text = "Double Exp";
             this.DoubleExp.UseVisualStyleBackColor = true;
@@ -1211,7 +1338,7 @@
             this.SingleExp.Location = new System.Drawing.Point(11, 5);
             this.SingleExp.Name = "SingleExp";
             this.SingleExp.Size = new System.Drawing.Size(75, 17);
-            this.SingleExp.TabIndex = 434;
+            this.SingleExp.TabIndex = 0;
             this.SingleExp.Text = "Single Exp";
             this.SingleExp.UseVisualStyleBackColor = true;
             // 
@@ -1237,7 +1364,7 @@
             this.FrameSlicePanel.Location = new System.Drawing.Point(185, 102);
             this.FrameSlicePanel.Name = "FrameSlicePanel";
             this.FrameSlicePanel.Size = new System.Drawing.Size(243, 112);
-            this.FrameSlicePanel.TabIndex = 457;
+            this.FrameSlicePanel.TabIndex = 4;
             this.FrameSlicePanel.TabStop = false;
             this.FrameSlicePanel.Text = "Frames / Slices";
             // 
@@ -1245,11 +1372,11 @@
             // 
             this.umPerSliceLabel.AutoSize = true;
             this.umPerSliceLabel.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.umPerSliceLabel.Location = new System.Drawing.Point(175, 48);
+            this.umPerSliceLabel.Location = new System.Drawing.Point(195, 48);
             this.umPerSliceLabel.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.umPerSliceLabel.Name = "umPerSliceLabel";
             this.umPerSliceLabel.Size = new System.Drawing.Size(0, 14);
-            this.umPerSliceLabel.TabIndex = 483;
+            this.umPerSliceLabel.TabIndex = 11;
             // 
             // stopOpening
             // 
@@ -1258,7 +1385,7 @@
             this.stopOpening.Location = new System.Drawing.Point(83, 15);
             this.stopOpening.Name = "stopOpening";
             this.stopOpening.Size = new System.Drawing.Size(123, 27);
-            this.stopOpening.TabIndex = 468;
+            this.stopOpening.TabIndex = 1;
             this.stopOpening.Text = "Stop Opening";
             this.stopOpening.UseVisualStyleBackColor = true;
             this.stopOpening.Visible = false;
@@ -1273,7 +1400,7 @@
             this.EntireStack_Check.Location = new System.Drawing.Point(10, 76);
             this.EntireStack_Check.Name = "EntireStack_Check";
             this.EntireStack_Check.Size = new System.Drawing.Size(71, 18);
-            this.EntireStack_Check.TabIndex = 475;
+            this.EntireStack_Check.TabIndex = 8;
             this.EntireStack_Check.Text = "All pages";
             this.EntireStack_Check.UseVisualStyleBackColor = true;
             this.EntireStack_Check.Click += new System.EventHandler(this.EntireStack_Check_Click);
@@ -1286,7 +1413,7 @@
             this.st_pageN.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_pageN.Name = "st_pageN";
             this.st_pageN.Size = new System.Drawing.Size(25, 14);
-            this.st_pageN.TabIndex = 434;
+            this.st_pageN.TabIndex = 10;
             this.st_pageN.Text = "/ 10";
             // 
             // c_page
@@ -1296,7 +1423,7 @@
             this.c_page.Margin = new System.Windows.Forms.Padding(1);
             this.c_page.Name = "c_page";
             this.c_page.Size = new System.Drawing.Size(51, 20);
-            this.c_page.TabIndex = 474;
+            this.c_page.TabIndex = 9;
             this.c_page.Text = "1";
             this.c_page.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.c_page.KeyDown += new System.Windows.Forms.KeyEventHandler(this.UpdateFigure_KeyDown);
@@ -1308,7 +1435,7 @@
             this.label9.Location = new System.Drawing.Point(148, 70);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(18, 14);
-            this.label9.TabIndex = 473;
+            this.label9.TabIndex = 14;
             this.label9.Text = "To";
             // 
             // label6
@@ -1318,7 +1445,7 @@
             this.label6.Location = new System.Drawing.Point(87, 70);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(31, 14);
-            this.label6.TabIndex = 472;
+            this.label6.TabIndex = 12;
             this.label6.Text = "From";
             // 
             // PageEnd
@@ -1328,7 +1455,7 @@
             this.PageEnd.Margin = new System.Windows.Forms.Padding(1);
             this.PageEnd.Name = "PageEnd";
             this.PageEnd.Size = new System.Drawing.Size(48, 20);
-            this.PageEnd.TabIndex = 471;
+            this.PageEnd.TabIndex = 15;
             this.PageEnd.Text = "1";
             this.PageEnd.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.PageEnd.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ZProcRange_KeyDown);
@@ -1340,7 +1467,7 @@
             this.PageStart.Margin = new System.Windows.Forms.Padding(1);
             this.PageStart.Name = "PageStart";
             this.PageStart.Size = new System.Drawing.Size(51, 20);
-            this.PageStart.TabIndex = 470;
+            this.PageStart.TabIndex = 13;
             this.PageStart.Text = "1";
             this.PageStart.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.PageStart.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ZProcRange_KeyDown);
@@ -1351,7 +1478,7 @@
             this.PageDownDown.Location = new System.Drawing.Point(93, 15);
             this.PageDownDown.Name = "PageDownDown";
             this.PageDownDown.Size = new System.Drawing.Size(32, 23);
-            this.PageDownDown.TabIndex = 467;
+            this.PageDownDown.TabIndex = 2;
             this.PageDownDown.Text = "<<";
             this.PageDownDown.UseVisualStyleBackColor = true;
             this.PageDownDown.Click += new System.EventHandler(this.Page_UpDownClick);
@@ -1362,7 +1489,7 @@
             this.PageUpUp.Location = new System.Drawing.Point(175, 15);
             this.PageUpUp.Name = "PageUpUp";
             this.PageUpUp.Size = new System.Drawing.Size(32, 23);
-            this.PageUpUp.TabIndex = 466;
+            this.PageUpUp.TabIndex = 5;
             this.PageUpUp.Text = ">>";
             this.PageUpUp.UseVisualStyleBackColor = true;
             this.PageUpUp.Click += new System.EventHandler(this.Page_UpDownClick);
@@ -1373,7 +1500,7 @@
             this.PageUp.Location = new System.Drawing.Point(149, 15);
             this.PageUp.Name = "PageUp";
             this.PageUp.Size = new System.Drawing.Size(25, 23);
-            this.PageUp.TabIndex = 464;
+            this.PageUp.TabIndex = 4;
             this.PageUp.Text = ">";
             this.PageUp.UseVisualStyleBackColor = true;
             this.PageUp.Click += new System.EventHandler(this.Page_UpDownClick);
@@ -1384,7 +1511,7 @@
             this.PageDown.Location = new System.Drawing.Point(125, 15);
             this.PageDown.Name = "PageDown";
             this.PageDown.Size = new System.Drawing.Size(25, 23);
-            this.PageDown.TabIndex = 463;
+            this.PageDown.TabIndex = 3;
             this.PageDown.Text = "<";
             this.PageDown.UseVisualStyleBackColor = true;
             this.PageDown.Click += new System.EventHandler(this.Page_UpDownClick);
@@ -1396,7 +1523,7 @@
             this.AveProjection.Location = new System.Drawing.Point(10, 56);
             this.AveProjection.Name = "AveProjection";
             this.AveProjection.Size = new System.Drawing.Size(46, 18);
-            this.AveProjection.TabIndex = 2;
+            this.AveProjection.TabIndex = 7;
             this.AveProjection.Text = "Sum";
             this.AveProjection.UseVisualStyleBackColor = true;
             this.AveProjection.Click += new System.EventHandler(this.UpdateImagesRecalc_Click);
@@ -1409,7 +1536,7 @@
             this.MaxProjection.Location = new System.Drawing.Point(10, 39);
             this.MaxProjection.Name = "MaxProjection";
             this.MaxProjection.Size = new System.Drawing.Size(45, 18);
-            this.MaxProjection.TabIndex = 1;
+            this.MaxProjection.TabIndex = 6;
             this.MaxProjection.TabStop = true;
             this.MaxProjection.Text = "Max";
             this.MaxProjection.UseVisualStyleBackColor = true;
@@ -1434,7 +1561,7 @@
             this.st_Filter.Location = new System.Drawing.Point(151, 14);
             this.st_Filter.Name = "st_Filter";
             this.st_Filter.Size = new System.Drawing.Size(30, 14);
-            this.st_Filter.TabIndex = 458;
+            this.st_Filter.TabIndex = 2;
             this.st_Filter.Text = "Filter";
             // 
             // filterWindow
@@ -1444,7 +1571,7 @@
             this.filterWindow.Margin = new System.Windows.Forms.Padding(1);
             this.filterWindow.Name = "filterWindow";
             this.filterWindow.Size = new System.Drawing.Size(41, 20);
-            this.filterWindow.TabIndex = 459;
+            this.filterWindow.TabIndex = 3;
             this.filterWindow.Text = "0";
             this.filterWindow.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.filterWindow.KeyDown += new System.Windows.Forms.KeyEventHandler(this.UpdateFigure_KeyDown);
@@ -1488,7 +1615,7 @@
             this.Main_Menu.Name = "Main_Menu";
             this.Main_Menu.Padding = new System.Windows.Forms.Padding(6, 1, 0, 1);
             this.Main_Menu.Size = new System.Drawing.Size(1054, 24);
-            this.Main_Menu.TabIndex = 461;
+            this.Main_Menu.TabIndex = 0;
             this.Main_Menu.Text = "menuStrip1";
             // 
             // fileToolStripMenuItem
@@ -1498,9 +1625,12 @@
             this.saveFLIMImageToolStripMenuItem1,
             this.exportToolStripMenuItem,
             this.BatchProcessingToolStripMenuItem,
+            this.convertAllPhtonFilesToolStripMenuItem,
             this.showImageDescriptionToolStripMenuItem,
             this.toolStripSeparator2,
-            this.openFLIMImageInNewWindowToolStripMenuItem});
+            this.openFLIMImageInNewWindowToolStripMenuItem,
+            this.toolStripMenuItem4,
+            this.saveSplitscanInDifferentFilesToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 22);
             this.fileToolStripMenuItem.Text = "File";
@@ -1515,6 +1645,7 @@
             // saveFLIMImageToolStripMenuItem1
             // 
             this.saveFLIMImageToolStripMenuItem1.Name = "saveFLIMImageToolStripMenuItem1";
+            this.saveFLIMImageToolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
             this.saveFLIMImageToolStripMenuItem1.Size = new System.Drawing.Size(251, 22);
             this.saveFLIMImageToolStripMenuItem1.Text = "Save FLIM image ...";
             this.saveFLIMImageToolStripMenuItem1.Click += new System.EventHandler(this.saveFLIMImageToolStripMenuItem1_Click);
@@ -1526,7 +1657,10 @@
             this.exportCurrentImageJPGToolStripMenuItem1,
             this.exportCurrentImagePNGToolStripMenuItem,
             this.exportCurrentImageBMPToolStripMenuItem,
-            this.exportColorBarJPGToolStripMenuItem});
+            this.exportColorBarJPGToolStripMenuItem,
+            this.exportMovieAVIToolStripMenuItem,
+            this.toolStripSeparatorFiberPhotometryCsv,
+            this.exportFiberPhotometryCsvToolStripMenuItem});
             this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
             this.exportToolStripMenuItem.Size = new System.Drawing.Size(251, 22);
             this.exportToolStripMenuItem.Text = "Export";
@@ -1566,12 +1700,39 @@
             this.exportColorBarJPGToolStripMenuItem.Text = "Export color bar (JPG)...";
             this.exportColorBarJPGToolStripMenuItem.Click += new System.EventHandler(this.exportColorBarJPGToolStripMenuItem_Click);
             // 
+            // exportMovieAVIToolStripMenuItem
+            // 
+            this.exportMovieAVIToolStripMenuItem.Name = "exportMovieAVIToolStripMenuItem";
+            this.exportMovieAVIToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
+            this.exportMovieAVIToolStripMenuItem.Text = "Export Movie (AVI)...";
+            this.exportMovieAVIToolStripMenuItem.Click += new System.EventHandler(this.exportMovieAVIToolStripMenuItem_Click);
+            // 
+            // toolStripSeparatorFiberPhotometryCsv
+            // 
+            this.toolStripSeparatorFiberPhotometryCsv.Name = "toolStripSeparatorFiberPhotometryCsv";
+            this.toolStripSeparatorFiberPhotometryCsv.Size = new System.Drawing.Size(228, 6);
+            // 
+            // exportFiberPhotometryCsvToolStripMenuItem
+            // 
+            this.exportFiberPhotometryCsvToolStripMenuItem.Name = "exportFiberPhotometryCsvToolStripMenuItem";
+            this.exportFiberPhotometryCsvToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
+            this.exportFiberPhotometryCsvToolStripMenuItem.Text = "FiberPhotometry CSV...";
+            this.exportFiberPhotometryCsvToolStripMenuItem.Visible = false;
+            this.exportFiberPhotometryCsvToolStripMenuItem.Click += new System.EventHandler(this.exportFiberPhotometryCsvToolStripMenuItem_Click);
+            // 
             // BatchProcessingToolStripMenuItem
             // 
             this.BatchProcessingToolStripMenuItem.Name = "BatchProcessingToolStripMenuItem";
             this.BatchProcessingToolStripMenuItem.Size = new System.Drawing.Size(251, 22);
             this.BatchProcessingToolStripMenuItem.Text = "Batch processing (analysis)";
             this.BatchProcessingToolStripMenuItem.Click += new System.EventHandler(this.BatchProcessingToolStripMenuItem_Click);
+            // 
+            // convertAllPhtonFilesToolStripMenuItem
+            // 
+            this.convertAllPhtonFilesToolStripMenuItem.Name = "convertAllPhtonFilesToolStripMenuItem";
+            this.convertAllPhtonFilesToolStripMenuItem.Size = new System.Drawing.Size(251, 22);
+            this.convertAllPhtonFilesToolStripMenuItem.Text = "Convert all phton files";
+            this.convertAllPhtonFilesToolStripMenuItem.Click += new System.EventHandler(this.convertAllPhtonFilesToolStripMenuItem_Click);
             // 
             // showImageDescriptionToolStripMenuItem
             // 
@@ -1591,6 +1752,18 @@
             this.openFLIMImageInNewWindowToolStripMenuItem.Size = new System.Drawing.Size(251, 22);
             this.openFLIMImageInNewWindowToolStripMenuItem.Text = "Open FLIM image in new window";
             this.openFLIMImageInNewWindowToolStripMenuItem.Click += new System.EventHandler(this.openFLIMImageInNewWindowToolStripMenuItem_Click);
+            // 
+            // toolStripMenuItem4
+            // 
+            this.toolStripMenuItem4.Name = "toolStripMenuItem4";
+            this.toolStripMenuItem4.Size = new System.Drawing.Size(248, 6);
+            // 
+            // saveSplitscanInDifferentFilesToolStripMenuItem
+            // 
+            this.saveSplitscanInDifferentFilesToolStripMenuItem.Name = "saveSplitscanInDifferentFilesToolStripMenuItem";
+            this.saveSplitscanInDifferentFilesToolStripMenuItem.Size = new System.Drawing.Size(251, 22);
+            this.saveSplitscanInDifferentFilesToolStripMenuItem.Text = "Save split-scan in different files";
+            this.saveSplitscanInDifferentFilesToolStripMenuItem.Click += new System.EventHandler(this.saveSplitscanInDifferentFilesToolStripMenuItem_Click);
             // 
             // rOIsToolStripMenuItem
             // 
@@ -1680,6 +1853,7 @@
             this.analysisToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.timeBinningToolStripMenuItem,
             this.alignSlicesframesToolStripMenuItem,
+            this.alignEvenOddLinesToolStripMenuItem,
             this.makeSinlgeFileMovieFromFilesToolStripMenuItem,
             this.stimulationTriggeredIntegrationToolStripMenuItem,
             this.getFocusFrameToolStripMenuItem,
@@ -1688,6 +1862,8 @@
             this.fastZCalibrationToolStripMenuItem,
             this.toolStripSeparator3,
             this.deleteCurrentPageToolStripMenuItem,
+            this.blankCurrentPageToolStripMenuItem,
+            this.extractPagesToolStripMenuItem,
             this.toolStripMenuItem3,
             this.colorSchemeToolStripMenuItem,
             this.toggleZStackAndTimecourseToolStripMenuItem});
@@ -1708,6 +1884,13 @@
             this.alignSlicesframesToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
             this.alignSlicesframesToolStripMenuItem.Text = "Align frames";
             this.alignSlicesframesToolStripMenuItem.Click += new System.EventHandler(this.AlignSlicesframesToolStripMenuItem_Click);
+            // 
+            // alignEvenOddLinesToolStripMenuItem
+            // 
+            this.alignEvenOddLinesToolStripMenuItem.Name = "alignEvenOddLinesToolStripMenuItem";
+            this.alignEvenOddLinesToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
+            this.alignEvenOddLinesToolStripMenuItem.Text = "Align Even Odd Lines";
+            this.alignEvenOddLinesToolStripMenuItem.Click += new System.EventHandler(this.alignEvenOddLinesToolStripMenuItem_Click);
             // 
             // makeSinlgeFileMovieFromFilesToolStripMenuItem
             // 
@@ -1760,6 +1943,21 @@
             this.deleteCurrentPageToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
             this.deleteCurrentPageToolStripMenuItem.Text = "Delete current page";
             this.deleteCurrentPageToolStripMenuItem.Click += new System.EventHandler(this.deleteCurrentPageToolStripMenuItem_Click);
+            // 
+            // blankCurrentPageToolStripMenuItem
+            // 
+            this.blankCurrentPageToolStripMenuItem.Name = "blankCurrentPageToolStripMenuItem";
+            this.blankCurrentPageToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.B)));
+            this.blankCurrentPageToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
+            this.blankCurrentPageToolStripMenuItem.Text = "Blank current page";
+            this.blankCurrentPageToolStripMenuItem.Click += new System.EventHandler(this.blankCurrentPageToolStripMenuItem_Click);
+            // 
+            // extractPagesToolStripMenuItem
+            // 
+            this.extractPagesToolStripMenuItem.Name = "extractPagesToolStripMenuItem";
+            this.extractPagesToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
+            this.extractPagesToolStripMenuItem.Text = "Extract pages ...";
+            this.extractPagesToolStripMenuItem.Click += new System.EventHandler(this.extractPagesToolStripMenuItem_Click);
             // 
             // toolStripMenuItem3
             // 
@@ -1821,10 +2019,18 @@
             this.highlighterYellowBluePrinterModToolStripMenuItem.Text = "Highlighter (Yellow-Blue less saturation)";
             this.highlighterYellowBluePrinterModToolStripMenuItem.Click += new System.EventHandler(this.highlighterYellowBluePrinterModToolStripMenuItem_Click);
             // 
+            // toggleZStackAndTimecourseToolStripMenuItem
+            // 
+            this.toggleZStackAndTimecourseToolStripMenuItem.Name = "toggleZStackAndTimecourseToolStripMenuItem";
+            this.toggleZStackAndTimecourseToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
+            this.toggleZStackAndTimecourseToolStripMenuItem.Text = "Switch to time course";
+            this.toggleZStackAndTimecourseToolStripMenuItem.Click += new System.EventHandler(this.toggleZStackAndTimecourseToolStripMenuItem_Click);
+            // 
             // windowsToolStripMenuItem
             // 
             this.windowsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.timeCoursePlotToolStripMenuItem});
+            this.timeCoursePlotToolStripMenuItem,
+            this.phasorAnalysisToolStripMenuItem});
             this.windowsToolStripMenuItem.Name = "windowsToolStripMenuItem";
             this.windowsToolStripMenuItem.Size = new System.Drawing.Size(68, 22);
             this.windowsToolStripMenuItem.Text = "Windows";
@@ -1832,32 +2038,29 @@
             // timeCoursePlotToolStripMenuItem
             // 
             this.timeCoursePlotToolStripMenuItem.Name = "timeCoursePlotToolStripMenuItem";
-            this.timeCoursePlotToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.timeCoursePlotToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
             this.timeCoursePlotToolStripMenuItem.Text = "Time course plot";
             this.timeCoursePlotToolStripMenuItem.Click += new System.EventHandler(this.TimeCoursePlotToolStripMenuItem_Click);
+            // 
+            // phasorAnalysisToolStripMenuItem
+            // 
+            this.phasorAnalysisToolStripMenuItem.Name = "phasorAnalysisToolStripMenuItem";
+            this.phasorAnalysisToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.phasorAnalysisToolStripMenuItem.Text = "Phasor analysis";
+            this.phasorAnalysisToolStripMenuItem.Click += new System.EventHandler(this.phasorAnalysisToolStripMenuItem_Click);
             // 
             // setttingToolStripMenuItem
             // 
             this.setttingToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.keepPagesInMemoryToolStripMenuItem,
             this.intelMKLLibraryOnToolStripMenuItem});
             this.setttingToolStripMenuItem.Name = "setttingToolStripMenuItem";
             this.setttingToolStripMenuItem.Size = new System.Drawing.Size(60, 22);
             this.setttingToolStripMenuItem.Text = "Settting";
             // 
-            // keepPagesInMemoryToolStripMenuItem
-            // 
-            this.keepPagesInMemoryToolStripMenuItem.Checked = true;
-            this.keepPagesInMemoryToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.keepPagesInMemoryToolStripMenuItem.Name = "keepPagesInMemoryToolStripMenuItem";
-            this.keepPagesInMemoryToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
-            this.keepPagesInMemoryToolStripMenuItem.Text = "Keep images in memory";
-            this.keepPagesInMemoryToolStripMenuItem.Click += new System.EventHandler(this.keepPagesInMemoryToolStripMenuItem_Click);
-            // 
             // intelMKLLibraryOnToolStripMenuItem
             // 
             this.intelMKLLibraryOnToolStripMenuItem.Name = "intelMKLLibraryOnToolStripMenuItem";
-            this.intelMKLLibraryOnToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
+            this.intelMKLLibraryOnToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
             this.intelMKLLibraryOnToolStripMenuItem.Text = "Use Intel MKL library";
             this.intelMKLLibraryOnToolStripMenuItem.Click += new System.EventHandler(this.intelMKLLibraryOnToolStripMenuItem_Click);
             // 
@@ -1875,28 +2078,28 @@
             // averageTimeCoursePythonToolStripMenuItem
             // 
             this.averageTimeCoursePythonToolStripMenuItem.Name = "averageTimeCoursePythonToolStripMenuItem";
-            this.averageTimeCoursePythonToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+            this.averageTimeCoursePythonToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.averageTimeCoursePythonToolStripMenuItem.Text = "Average Time Courses";
             this.averageTimeCoursePythonToolStripMenuItem.Click += new System.EventHandler(this.averageTimeCoursePythonToolStripMenuItem_Click);
             // 
             // runPythonScriptToolStripMenuItem
             // 
             this.runPythonScriptToolStripMenuItem.Name = "runPythonScriptToolStripMenuItem";
-            this.runPythonScriptToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+            this.runPythonScriptToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.runPythonScriptToolStripMenuItem.Text = "Run Python Script";
             this.runPythonScriptToolStripMenuItem.Click += new System.EventHandler(this.runPythonScriptToolStripMenuItem_Click);
             // 
             // setPythonPathToolStripMenuItem
             // 
             this.setPythonPathToolStripMenuItem.Name = "setPythonPathToolStripMenuItem";
-            this.setPythonPathToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+            this.setPythonPathToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.setPythonPathToolStripMenuItem.Text = "Set Python Path";
             this.setPythonPathToolStripMenuItem.Click += new System.EventHandler(this.setPythonPathToolStripMenuItem_Click);
             // 
             // setScriptPathToolStripMenuItem
             // 
             this.setScriptPathToolStripMenuItem.Name = "setScriptPathToolStripMenuItem";
-            this.setScriptPathToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+            this.setScriptPathToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.setScriptPathToolStripMenuItem.Text = "Set Script Path";
             this.setScriptPathToolStripMenuItem.Click += new System.EventHandler(this.setScriptPathToolStripMenuItem_Click);
             // 
@@ -1912,7 +2115,7 @@
             this.FilePanel.Location = new System.Drawing.Point(185, 3);
             this.FilePanel.Name = "FilePanel";
             this.FilePanel.Size = new System.Drawing.Size(243, 57);
-            this.FilePanel.TabIndex = 462;
+            this.FilePanel.TabIndex = 2;
             this.FilePanel.TabStop = false;
             this.FilePanel.Text = "File";
             // 
@@ -1922,7 +2125,7 @@
             this.FileUp.Location = new System.Drawing.Point(190, 25);
             this.FileUp.Name = "FileUp";
             this.FileUp.Size = new System.Drawing.Size(25, 23);
-            this.FileUp.TabIndex = 469;
+            this.FileUp.TabIndex = 5;
             this.FileUp.Text = ">";
             this.FileUp.UseVisualStyleBackColor = true;
             this.FileUp.Click += new System.EventHandler(this.FileUpDown_Click);
@@ -1933,7 +2136,7 @@
             this.FileDown.Location = new System.Drawing.Point(166, 25);
             this.FileDown.Name = "FileDown";
             this.FileDown.Size = new System.Drawing.Size(25, 23);
-            this.FileDown.TabIndex = 468;
+            this.FileDown.TabIndex = 4;
             this.FileDown.Text = "<";
             this.FileDown.UseVisualStyleBackColor = true;
             this.FileDown.Click += new System.EventHandler(this.FileUpDown_Click);
@@ -1945,7 +2148,7 @@
             this.FileN.Margin = new System.Windows.Forms.Padding(1);
             this.FileN.Name = "FileN";
             this.FileN.Size = new System.Drawing.Size(51, 20);
-            this.FileN.TabIndex = 16;
+            this.FileN.TabIndex = 3;
             this.FileN.Text = "1";
             this.FileN.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.FileN.KeyDown += new System.Windows.Forms.KeyEventHandler(this.FileN_KeyDown);
@@ -1958,7 +2161,7 @@
             this.BaseName.Name = "BaseName";
             this.BaseName.ReadOnly = true;
             this.BaseName.Size = new System.Drawing.Size(88, 20);
-            this.BaseName.TabIndex = 5;
+            this.BaseName.TabIndex = 1;
             this.BaseName.Text = "Test";
             // 
             // st_fileN
@@ -1969,7 +2172,7 @@
             this.st_fileN.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_fileN.Name = "st_fileN";
             this.st_fileN.Size = new System.Drawing.Size(29, 14);
-            this.st_fileN.TabIndex = 17;
+            this.st_fileN.TabIndex = 2;
             this.st_fileN.Text = "File#";
             // 
             // st_BaseName
@@ -1980,7 +2183,7 @@
             this.st_BaseName.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.st_BaseName.Name = "st_BaseName";
             this.st_BaseName.Size = new System.Drawing.Size(62, 14);
-            this.st_BaseName.TabIndex = 10;
+            this.st_BaseName.TabIndex = 0;
             this.st_BaseName.Text = "Base Name";
             // 
             // groupBox3
@@ -1993,7 +2196,7 @@
             this.groupBox3.Location = new System.Drawing.Point(3, 3);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(180, 147);
-            this.groupBox3.TabIndex = 463;
+            this.groupBox3.TabIndex = 0;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Display";
             // 
@@ -2007,7 +2210,7 @@
             this.LifetimeCh_panel.Location = new System.Drawing.Point(25, 105);
             this.LifetimeCh_panel.Name = "LifetimeCh_panel";
             this.LifetimeCh_panel.Size = new System.Drawing.Size(136, 38);
-            this.LifetimeCh_panel.TabIndex = 481;
+            this.LifetimeCh_panel.TabIndex = 3;
             // 
             // label8
             // 
@@ -2016,7 +2219,7 @@
             this.label8.Location = new System.Drawing.Point(5, 4);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(63, 14);
-            this.label8.TabIndex = 478;
+            this.label8.TabIndex = 0;
             this.label8.Text = "Lifetime Ch:";
             // 
             // Ch1
@@ -2027,7 +2230,7 @@
             this.Ch1.Location = new System.Drawing.Point(83, 2);
             this.Ch1.Name = "Ch1";
             this.Ch1.Size = new System.Drawing.Size(44, 18);
-            this.Ch1.TabIndex = 479;
+            this.Ch1.TabIndex = 1;
             this.Ch1.TabStop = true;
             this.Ch1.Text = "Ch1";
             this.Ch1.UseVisualStyleBackColor = true;
@@ -2040,7 +2243,7 @@
             this.Ch2.Location = new System.Drawing.Point(83, 18);
             this.Ch2.Name = "Ch2";
             this.Ch2.Size = new System.Drawing.Size(44, 18);
-            this.Ch2.TabIndex = 480;
+            this.Ch2.TabIndex = 2;
             this.Ch2.Text = "Ch2";
             this.Ch2.UseVisualStyleBackColor = true;
             this.Ch2.Click += new System.EventHandler(this.Ch1_Click);
@@ -2052,7 +2255,7 @@
             this.Channel12.Location = new System.Drawing.Point(11, 78);
             this.Channel12.Name = "Channel12";
             this.Channel12.Size = new System.Drawing.Size(142, 20);
-            this.Channel12.TabIndex = 302;
+            this.Channel12.TabIndex = 2;
             this.Channel12.Text = "Ch1/Ch2 (Intensity)";
             this.Channel12.UseVisualStyleBackColor = true;
             this.Channel12.Click += new System.EventHandler(this.Channel1_Clicked);
@@ -2064,7 +2267,7 @@
             this.st_im1.Location = new System.Drawing.Point(0, 35);
             this.st_im1.Name = "st_im1";
             this.st_im1.Size = new System.Drawing.Size(64, 14);
-            this.st_im1.TabIndex = 464;
+            this.st_im1.TabIndex = 1;
             this.st_im1.Text = "Intensity 1";
             // 
             // st_im2
@@ -2074,7 +2277,7 @@
             this.st_im2.Location = new System.Drawing.Point(385, 35);
             this.st_im2.Name = "st_im2";
             this.st_im2.Size = new System.Drawing.Size(42, 14);
-            this.st_im2.TabIndex = 465;
+            this.st_im2.TabIndex = 4;
             this.st_im2.Text = "FLIM 1";
             // 
             // LifetimeCurvePlot
@@ -2096,7 +2299,7 @@
             this.st_panel.Location = new System.Drawing.Point(1, 4);
             this.st_panel.Name = "st_panel";
             this.st_panel.Size = new System.Drawing.Size(62, 14);
-            this.st_panel.TabIndex = 470;
+            this.st_panel.TabIndex = 0;
             this.st_panel.Text = "Lifetime 1";
             // 
             // st_2Ch
@@ -2106,7 +2309,7 @@
             this.st_2Ch.Location = new System.Drawing.Point(90, 62);
             this.st_2Ch.Name = "st_2Ch";
             this.st_2Ch.Size = new System.Drawing.Size(33, 14);
-            this.st_2Ch.TabIndex = 472;
+            this.st_2Ch.TabIndex = 5;
             this.st_2Ch.Text = "FLIM";
             // 
             // st_1stCh
@@ -2116,7 +2319,7 @@
             this.st_1stCh.Location = new System.Drawing.Point(13, 62);
             this.st_1stCh.Name = "st_1stCh";
             this.st_1stCh.Size = new System.Drawing.Size(55, 14);
-            this.st_1stCh.TabIndex = 473;
+            this.st_1stCh.TabIndex = 4;
             this.st_1stCh.Text = "Intensity";
             // 
             // st_panel2
@@ -2126,7 +2329,7 @@
             this.st_panel2.Location = new System.Drawing.Point(68, 4);
             this.st_panel2.Name = "st_panel2";
             this.st_panel2.Size = new System.Drawing.Size(137, 14);
-            this.st_panel2.TabIndex = 474;
+            this.st_panel2.TabIndex = 1;
             this.st_panel2.Text = "(Pixels above FLIM min)";
             // 
             // Image2
@@ -2195,7 +2398,7 @@
             this.groupBox1.Location = new System.Drawing.Point(432, 3);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(233, 210);
-            this.groupBox1.TabIndex = 476;
+            this.groupBox1.TabIndex = 5;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Image control";
             // 
@@ -2208,7 +2411,7 @@
             this.FrameAdjustment.Location = new System.Drawing.Point(14, 33);
             this.FrameAdjustment.Name = "FrameAdjustment";
             this.FrameAdjustment.Size = new System.Drawing.Size(169, 18);
-            this.FrameAdjustment.TabIndex = 476;
+            this.FrameAdjustment.TabIndex = 1;
             this.FrameAdjustment.Text = "#Adjust for number of frames";
             this.FrameAdjustment.UseVisualStyleBackColor = true;
             this.FrameAdjustment.Click += new System.EventHandler(this.Auto1_CheckedChanged);
@@ -2220,7 +2423,7 @@
             this.st_lifetime_ns.Location = new System.Drawing.Point(157, 56);
             this.st_lifetime_ns.Name = "st_lifetime_ns";
             this.st_lifetime_ns.Size = new System.Drawing.Size(78, 14);
-            this.st_lifetime_ns.TabIndex = 475;
+            this.st_lifetime_ns.TabIndex = 6;
             this.st_lifetime_ns.Text = "Lifetime (ns)";
             // 
             // colorBar
@@ -2282,10 +2485,10 @@
             this.ctrlPanel.Controls.Add(this.Fitting_Group);
             this.ctrlPanel.Controls.Add(this.groupBox1);
             this.ctrlPanel.Controls.Add(this.FrameSlicePanel);
-            this.ctrlPanel.Location = new System.Drawing.Point(0, 435);
+            this.ctrlPanel.Location = new System.Drawing.Point(0, 437);
             this.ctrlPanel.Name = "ctrlPanel";
-            this.ctrlPanel.Size = new System.Drawing.Size(1053, 220);
-            this.ctrlPanel.TabIndex = 482;
+            this.ctrlPanel.Size = new System.Drawing.Size(1053, 241);
+            this.ctrlPanel.TabIndex = 7;
             // 
             // FastZPhasePanel
             // 
@@ -2300,7 +2503,7 @@
             this.FastZPhasePanel.Location = new System.Drawing.Point(3, 150);
             this.FastZPhasePanel.Name = "FastZPhasePanel";
             this.FastZPhasePanel.Size = new System.Drawing.Size(180, 63);
-            this.FastZPhasePanel.TabIndex = 471;
+            this.FastZPhasePanel.TabIndex = 1;
             this.FastZPhasePanel.TabStop = false;
             this.FastZPhasePanel.Text = "Fast Z parameters";
             this.FastZPhasePanel.Visible = false;
@@ -2313,7 +2516,7 @@
             this.label11.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(0, 14);
-            this.label11.TabIndex = 481;
+            this.label11.TabIndex = 2;
             // 
             // FastZFreqText
             // 
@@ -2322,7 +2525,7 @@
             this.FastZFreqText.Location = new System.Drawing.Point(99, 15);
             this.FastZFreqText.Name = "FastZFreqText";
             this.FastZFreqText.Size = new System.Drawing.Size(45, 14);
-            this.FastZFreqText.TabIndex = 482;
+            this.FastZFreqText.TabIndex = 3;
             this.FastZFreqText.Text = "188KHz";
             // 
             // FastZAmpText
@@ -2332,7 +2535,7 @@
             this.FastZAmpText.Location = new System.Drawing.Point(59, 15);
             this.FastZAmpText.Name = "FastZAmpText";
             this.FastZAmpText.Size = new System.Drawing.Size(38, 14);
-            this.FastZAmpText.TabIndex = 480;
+            this.FastZAmpText.TabIndex = 4;
             this.FastZAmpText.Text = "29.8%";
             // 
             // FastZPhaseText
@@ -2342,7 +2545,7 @@
             this.FastZPhaseText.Location = new System.Drawing.Point(37, 15);
             this.FastZPhaseText.Name = "FastZPhaseText";
             this.FastZPhaseText.Size = new System.Drawing.Size(19, 14);
-            this.FastZPhaseText.TabIndex = 476;
+            this.FastZPhaseText.TabIndex = 1;
             this.FastZPhaseText.Text = "30";
             // 
             // PhaseDetectionMode_Status2
@@ -2353,7 +2556,7 @@
             this.PhaseDetectionMode_Status2.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.PhaseDetectionMode_Status2.Name = "PhaseDetectionMode_Status2";
             this.PhaseDetectionMode_Status2.Size = new System.Drawing.Size(29, 14);
-            this.PhaseDetectionMode_Status2.TabIndex = 479;
+            this.PhaseDetectionMode_Status2.TabIndex = 6;
             this.PhaseDetectionMode_Status2.Text = "Best";
             // 
             // PhaseDetectionMode_Status
@@ -2364,7 +2567,7 @@
             this.PhaseDetectionMode_Status.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.PhaseDetectionMode_Status.Name = "PhaseDetectionMode_Status";
             this.PhaseDetectionMode_Status.Size = new System.Drawing.Size(120, 14);
-            this.PhaseDetectionMode_Status.TabIndex = 478;
+            this.PhaseDetectionMode_Status.TabIndex = 5;
             this.PhaseDetectionMode_Status.Text = "Phase matching = 6.2%";
             // 
             // label1
@@ -2375,7 +2578,7 @@
             this.label1.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(37, 14);
-            this.label1.TabIndex = 476;
+            this.label1.TabIndex = 0;
             this.label1.Text = "Phase";
             // 
             // FastZPanel
@@ -2388,7 +2591,7 @@
             this.FastZPanel.Location = new System.Drawing.Point(185, 60);
             this.FastZPanel.Name = "FastZPanel";
             this.FastZPanel.Size = new System.Drawing.Size(243, 41);
-            this.FastZPanel.TabIndex = 470;
+            this.FastZPanel.TabIndex = 3;
             this.FastZPanel.TabStop = false;
             this.FastZPanel.Text = "Fast Z pages";
             this.FastZPanel.Visible = false;
@@ -2401,7 +2604,7 @@
             this.TotalFastZFrame.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
             this.TotalFastZFrame.Name = "TotalFastZFrame";
             this.TotalFastZFrame.Size = new System.Drawing.Size(25, 14);
-            this.TotalFastZFrame.TabIndex = 470;
+            this.TotalFastZFrame.TabIndex = 1;
             this.TotalFastZFrame.Text = "/ 10";
             // 
             // FastZUp
@@ -2410,7 +2613,7 @@
             this.FastZUp.Location = new System.Drawing.Point(190, 10);
             this.FastZUp.Name = "FastZUp";
             this.FastZUp.Size = new System.Drawing.Size(25, 23);
-            this.FastZUp.TabIndex = 469;
+            this.FastZUp.TabIndex = 3;
             this.FastZUp.Text = ">";
             this.FastZUp.UseVisualStyleBackColor = true;
             this.FastZUp.Click += new System.EventHandler(this.FastZUpDown);
@@ -2421,7 +2624,7 @@
             this.FastZDown.Location = new System.Drawing.Point(166, 10);
             this.FastZDown.Name = "FastZDown";
             this.FastZDown.Size = new System.Drawing.Size(25, 23);
-            this.FastZDown.TabIndex = 468;
+            this.FastZDown.TabIndex = 2;
             this.FastZDown.Text = "<";
             this.FastZDown.UseVisualStyleBackColor = true;
             this.FastZDown.Click += new System.EventHandler(this.FastZUpDown);
@@ -2433,7 +2636,7 @@
             this.CurrentFastZPageTB.Margin = new System.Windows.Forms.Padding(1);
             this.CurrentFastZPageTB.Name = "CurrentFastZPageTB";
             this.CurrentFastZPageTB.Size = new System.Drawing.Size(51, 20);
-            this.CurrentFastZPageTB.TabIndex = 16;
+            this.CurrentFastZPageTB.TabIndex = 0;
             this.CurrentFastZPageTB.Text = "1";
             this.CurrentFastZPageTB.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.CurrentFastZPageTB.KeyDown += new System.Windows.Forms.KeyEventHandler(this.CurrentFastZPageTB_KeyDown);
@@ -2446,7 +2649,7 @@
             this.st_im3.Location = new System.Drawing.Point(770, 30);
             this.st_im3.Name = "st_im3";
             this.st_im3.Size = new System.Drawing.Size(283, 20);
-            this.st_im3.TabIndex = 483;
+            this.st_im3.TabIndex = 6;
             // 
             // rightClick_CreateUncaging
             // 
@@ -2515,7 +2718,7 @@
             this.HoldCurrentImageCheckBox.Location = new System.Drawing.Point(87, 34);
             this.HoldCurrentImageCheckBox.Name = "HoldCurrentImageCheckBox";
             this.HoldCurrentImageCheckBox.Size = new System.Drawing.Size(148, 17);
-            this.HoldCurrentImageCheckBox.TabIndex = 484;
+            this.HoldCurrentImageCheckBox.TabIndex = 2;
             this.HoldCurrentImageCheckBox.Text = "Hold this image (magenta)";
             this.HoldCurrentImageCheckBox.UseVisualStyleBackColor = true;
             this.HoldCurrentImageCheckBox.Click += new System.EventHandler(this.HoldCurrentImageCheckBox_Click);
@@ -2526,7 +2729,7 @@
             this.MergeCB.Location = new System.Drawing.Point(263, 34);
             this.MergeCB.Name = "MergeCB";
             this.MergeCB.Size = new System.Drawing.Size(102, 17);
-            this.MergeCB.TabIndex = 485;
+            this.MergeCB.TabIndex = 3;
             this.MergeCB.Text = "Merge channels";
             this.MergeCB.UseVisualStyleBackColor = true;
             this.MergeCB.Click += new System.EventHandler(this.MergeCB_Click);
@@ -2550,20 +2753,24 @@
             this.LineBox.TabStop = false;
             this.LineBox.Click += new System.EventHandler(this.ToolPanelClicked);
             this.LineBox.Paint += new System.Windows.Forms.PaintEventHandler(this.ToolPanelPaint);
-            // 
-            // toggleZStackAndTimecourseToolStripMenuItem
-            // 
-            this.toggleZStackAndTimecourseToolStripMenuItem.Name = "toggleZStackAndTimecourseToolStripMenuItem";
-            this.toggleZStackAndTimecourseToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
-            this.toggleZStackAndTimecourseToolStripMenuItem.Text = "Switch to time course";
-            this.toggleZStackAndTimecourseToolStripMenuItem.Click += new System.EventHandler(this.toggleZStackAndTimecourseToolStripMenuItem_Click);
+            //
+            // label14
+            //
+            this.label14.AutoSize = true;
+            this.label14.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label14.Location = new System.Drawing.Point(8, 176);
+            this.label14.Margin = new System.Windows.Forms.Padding(1, 0, 1, 0);
+            this.label14.Name = "label14";
+            this.label14.Size = new System.Drawing.Size(47, 14);
+            this.label14.TabIndex = 480;
+            this.label14.Text = "BG\\pixel";
             // 
             // Image_Display
             // 
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1054, 661);
+            this.ClientSize = new System.Drawing.Size(1054, 679);
             this.Controls.Add(this.LineBox);
             this.Controls.Add(this.ThreeDROIPanel);
             this.Controls.Add(this.Image1);
@@ -2748,6 +2955,7 @@
         public System.Windows.Forms.Button stopOpening;
         public System.Windows.Forms.ToolStripMenuItem windowsToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem timeCoursePlotToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem phasorAnalysisToolStripMenuItem;
         public System.Windows.Forms.Panel ctrlPanel;
         public System.Windows.Forms.Panel st_im3;
         public System.Windows.Forms.RadioButton Channel12;
@@ -2804,7 +3012,6 @@
         public System.Windows.Forms.Button FastZDown;
         public System.Windows.Forms.TextBox CurrentFastZPageTB;
         public System.Windows.Forms.Label TotalFastZFrame;
-        public System.Windows.Forms.ToolStripMenuItem keepPagesInMemoryToolStripMenuItem;
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         public System.Windows.Forms.ToolStripMenuItem showImageDescriptionToolStripMenuItem;
         public System.Windows.Forms.GroupBox FastZPhasePanel;
@@ -2859,5 +3066,23 @@
         private System.Windows.Forms.ToolStripMenuItem highlighterYellowBluePrinterModToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem setFieldOfViewSizeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem toggleZStackAndTimecourseToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem convertAllPhtonFilesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
+        private System.Windows.Forms.ToolStripMenuItem saveSplitscanInDifferentFilesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem extractPagesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem alignEvenOddLinesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem exportMovieAVIToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparatorFiberPhotometryCsv;
+        private System.Windows.Forms.ToolStripMenuItem exportFiberPhotometryCsvToolStripMenuItem;
+        public System.Windows.Forms.CheckBox Fit_BG;
+        public System.Windows.Forms.TextBox BG_perPixels;
+        public System.Windows.Forms.CheckBox cb_BGfix;
+        private System.Windows.Forms.ToolStripMenuItem blankCurrentPageToolStripMenuItem;
+        public System.Windows.Forms.Label BG;
+        public System.Windows.Forms.TextBox lowThreshFLIM;
+        public System.Windows.Forms.TextBox highThreshFLIM;
+        public System.Windows.Forms.CheckBox ThreshCB;
+        public System.Windows.Forms.Label label13;
+        public System.Windows.Forms.Label label14;
     }
 }

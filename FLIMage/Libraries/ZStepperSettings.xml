@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ZStepperSettings>
+
+  <Connection portID="21" baudRate="115200" address="1"/>
+
+  <StepConfig microstep="16" prescaler=".78125" stepToEncoder="1" mmPerRot=".019305"/>
+
+<!-- Older Motor use these settings
+  <StepConfig microstep="16" prescaler="3.125" stepToEncoder="1" mmPerRot=".01"/>
+-->
+
+  <RangeConfig minMM="-2" maxMM="2" threshold="0.400"/>
+
+</ZStepperSettings>

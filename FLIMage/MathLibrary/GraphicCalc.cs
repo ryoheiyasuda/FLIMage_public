@@ -25,7 +25,7 @@ namespace MathLibrary
         // on line segment 'pr' 
         static bool onSegment(PointF p, PointF q, PointF r)
         {
-            if (q.X <= Math.Max(p.X, r.Y) &&
+            if (q.X <= Math.Max(p.X, r.X) &&
                 q.X >= Math.Min(p.X, r.X) &&
                 q.Y <= Math.Max(p.Y, r.Y) &&
                 q.Y >= Math.Min(p.Y, r.Y))
@@ -78,7 +78,7 @@ namespace MathLibrary
                 return true;
             }
 
-            // p1, q1 and p2 are colinear and 
+            // p1, q1 and q2 are colinear and 
             // q2 lies on segment p1q1 
             if (o2 == 0 && onSegment(p1, q2, q1))
             {
@@ -118,7 +118,8 @@ namespace MathLibrary
 
             // Count intersections of the above line  
             // with sides of polygon 
-            int count = 0, i = 0;
+            float count = 0.0f;
+            int i = 0;
             do
             {
                 int next = (i + 1) % n;
@@ -130,20 +131,46 @@ namespace MathLibrary
                                 polygon[next], p, extreme))
                 {
                     // If the point 'p' is colinear with line  
-                    // segment 'i-next', then check if it lies  
-                    // on segment. If it lies, return true, otherwise false 
-                    if (orientation(polygon[i], p, polygon[next]) == 0)
+                    // segment 'i-next' and it lies  
+                    // on segment, return true
+                    if (orientation(polygon[i], p, polygon[next]) == 0 &&
+                        onSegment(polygon[i], p, polygon[next]))
                     {
-                        return onSegment(polygon[i], p,
-                                         polygon[next]);
+                        return true;
                     }
-                    count++;
+                    // If either point of 'polygon[i]' or 'polygon[next]' 
+                    // lies on the segment 'p-extreme', then check  
+                    // orientation of triplet (i-next-extreme) and 
+                    // count +0.5/-0.5 according to clockwise/counterclockwise
+                    if ((orientation(p, polygon[next], extreme) == 0 &&
+                        orientation(p, polygon[i], extreme) != 0 &&
+                        onSegment(p, polygon[next], extreme)) ||
+                        (orientation(p, polygon[i], extreme) == 0 &&
+                        orientation(p, polygon[next], extreme) != 0 &&
+                        onSegment(p, polygon[i], extreme)))
+                    {
+                        int o = orientation(polygon[i], polygon[next], extreme);
+                        if (o == 1) //clockwise
+                            count += 0.5f;
+                        if (o == 2) //counterclockwise
+                            count -= 0.5f;
+                    }
+                    // count +1 in the general case, but exclude a case where 
+                    // both points of 'polygon[i]' and 'polygon[next]' lie
+                    // on 'p-extreme'
+                    else if (!(orientation(p, polygon[i], extreme) == 0 &&
+                        orientation(p, polygon[next], extreme) == 0 &&
+                        onSegment(p, polygon[i], extreme) &&
+                        onSegment(p, polygon[next], extreme)))
+                    {
+                        count++;
+                    }
                 }
                 i = next;
             } while (i != 0);
 
             // Return true if count is odd, false otherwise 
-            return (count % 2 == 1); // Same as (count%2 == 1) 
+            return (Math.Abs(count) % 2 == 1); 
         }
 
     }

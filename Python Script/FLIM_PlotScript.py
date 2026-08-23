@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Feb 15 10:46:04 2019
-This is an example script that uses FLIMageFileReader to open '*.flim' images created by FLIMage, calculate lifetime and plot.
+This is an example script that uses FLIMageFileIO to open '*.flim' images
+created by FLIMage, calculate lifetime, and plot.
 @author: yasudar
 """
 
 #Plotting example
-from FLIMageFileReader import FileReader
+from FLIMageFileIO import FLIMTiff
 import matplotlib as mpl
 mpversion = mpl.__version__
 mplversion = [int(x) for x in mpversion.split('.')]
@@ -27,8 +28,8 @@ plotWindow = tk.Tk()
 plotWindow.wm_title('Fluorescence lifetime')                
 
 file_path = filedialog.askopenfilename()
-iminfo = FileReader()
-iminfo.read_imageFile(file_path, True)
+iminfo = FLIMTiff()
+iminfo.read(file_path, read_image=True)
 iminfo.calculatePage(0, 0, 0, [0, iminfo.n_time[0]], [0, 50], [1.6, 3], 1.5)
 
 f = Figure(figsize = plotsize, dpi=windowResolution) #define the size of the figure.  

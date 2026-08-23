@@ -1,4 +1,4 @@
-﻿using FLIMage.Analysis;
+using FLIMage.Analysis;
 using MathLibrary;
 using System;
 using System.Collections.Concurrent;
@@ -39,7 +39,7 @@ namespace FLIMage
         public bool[] ProjectCalculated { get; private set; }
         public bool[] FLIMMapCalculated { get; private set; }
         public bool LifetimeCalculated { get; private set; }
-        public DateTime acquiredTime { get; private set; }
+        public DateTime acquiredTime { get; set; }
 
         public UInt16[][][][,,] FLIM_Pages5D { get; private set; }  //[page][c][z][data]
         public UInt16[][][,,] FLIM_Pages { get; private set; }  //[page][c][data]
@@ -75,6 +75,8 @@ namespace FLIMage
         public bool ZProjection = false;
         public int[] ZProjection_Range = new int[] { 0, 0 };
         public bool ZProjectionCalculated = false;
+
+        public bool use_mask_for_intensity = false;
         //
         //
         public int currentPage = -1;
@@ -82,6 +84,7 @@ namespace FLIMage
         //public int currentFastZ = -1;
 
         public double[] low_threshold;
+        public double[] high_threshold;
 
         //public double[] beta;
         //public List<double[]> fittingList { get; private set; }
@@ -98,8 +101,12 @@ namespace FLIMage
         public ROI Roi;
         public ROI bgRoi;
         public ROI RoiFit;
+
+        // Line-scan trace ROI (reserved for scanning; not part of ROIs list)
+        public ROI LineScanTraceRoi;
+
         public List<ROI> ROIs;
-        public int currentRoi;
+        public int currentRoi; //Roi number. -2 for background.
         public FitType Fit_type = FitType.WholeImage;
         public bool ThreeDRoi = false;
         //
@@ -112,6 +119,8 @@ namespace FLIMage
         public string fullFileName = "Test001";
         public string pathName = "C:\\";
         public string fileExtension = ".flim";
+        public string photon_file_extension = ".phtn";
+        public string photon_file_path = "";
         public bool numberedFile = true;
 
         public string image_description = "";
@@ -130,6 +139,7 @@ namespace FLIMage
             {
                 Roi = new ROI(flim1.Roi);
                 RoiFit = new ROI(flim1.RoiFit);
+                LineScanTraceRoi = flim1.LineScanTraceRoi != null ? new ROI(flim1.LineScanTraceRoi) : null;
                 ROIs.Clear();
                 foreach (var roi in flim1.ROIs)
                 {
@@ -175,6 +185,14 @@ namespace FLIMage
             State = fileIO.CopyState(fileIO.headerList_nonDevice);
             width = State.Acq.pixelsPerLine;
             height = State.Acq.linesPerFrame;
+
+            // Fiber photometry mode: time-binned single-pixel line scan (1 x nLines).
+            // Keep width at 1, height = linesPerFrame to represent time bins as lines.
+            if ((State?.Init?.MicroscopeSystem ?? "").ToLower().Contains("fiber"))
+            {
+                width = 1;
+                height = Math.Max(1, State.Acq.linesPerFrame);
+            }
 
             z_projection_type = projectionType.Max;
 
@@ -234,6 +252,10 @@ namespace FLIMage
             fit_range = new int[nChannels][];
 
             low_threshold = new double[nChannels];
+            high_threshold = new double[nChannels];
+
+            for (int i = 0; i < nChannels; i++)
+                high_threshold[i] = -1;
 
             acquiredTime = DateTime.Now;
 
@@ -273,9 +295,49 @@ namespace FLIMage
                 ResetRoi(true);
             }
 
+            SyncLineScanTraceRoiFromState();
+
             loadFittingParamFromState();
 
             //intitializeAll();
+        }
+
+        private void SyncLineScanTraceRoiFromState()
+        {
+            try
+            {
+                var xs = State?.Acq?.LineScanArrayX;
+                var ys = State?.Acq?.LineScanArrayY;
+
+                if (xs == null || ys == null || xs.Length != ys.Length || xs.Length < 3)
+                {
+                    LineScanTraceRoi = null;
+                    return;
+                }
+
+                // Internally, polygon ROIs are stored as closed (last point == first point)
+                // so that MovePoint() keeps closure consistent.
+                int n = xs.Length;
+                var xF = new float[n + 1];
+                var yF = new float[n + 1];
+                for (int i = 0; i < n; i++)
+                {
+                    xF[i] = (float)xs[i];
+                    yF[i] = (float)ys[i];
+                }
+                xF[n] = xF[0];
+                yF[n] = yF[0];
+
+                // polyLineRadius is irrelevant for polygons, but required by constructor.
+                float polyLineRadius = 8;
+                LineScanTraceRoi = new ROI(ROI.ROItype.Polygon, xF, yF, nChannels, polyLineRadius, -3, false, new int[] { 0 });
+                LineScanTraceRoi.IsLineScanTrace = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("SyncLineScanTraceRoiFromState failed: " + ex.Message);
+                LineScanTraceRoi = null;
+            }
         }
 
         public void PutROIs(List<ROI> rois)
@@ -310,10 +372,14 @@ namespace FLIMage
             RoiFit = new ROI(ROI.ROItype.Rectangle, new Rectangle(0, 0, width, height), nChannels, -100, false, new int[] { 0, 0 });
             RoiFit.flim_parameters.initializeParams(nChannels, n_time);
 
+            if (low_threshold.Length < nChannels)
+                low_threshold = new double[nChannels];
+
             for (int ch = 0; ch < nChannels; ch++)
             {
                 double[] intensity_range = (double[])State.Display.GetType().GetField("Intensity_Range" + (ch + 1)).GetValue(State.Display);
                 low_threshold[ch] = intensity_range[0];
+
                 int[] fit_range1 = (int[])State.Spc.analysis.GetType().GetField("fit_range" + (ch + 1)).GetValue(State.Spc.analysis);
                 double[] beta1 = (double[])State.Spc.analysis.GetType().GetField("fit_param" + (ch + 1)).GetValue(State.Spc.analysis);
 
@@ -371,7 +437,7 @@ namespace FLIMage
                 rect.Location = new Point(0, 0);
                 rect.Width = 0;
                 rect.Height = 0;
-                bgRoi = new ROI(ROI.ROItype.Rectangle, rect, nChannels, 0, false, new int[] { 0 });
+                bgRoi = new ROI(ROI.ROItype.Rectangle, rect, nChannels, -2, false, new int[] { 0 });
             }
         }
 
@@ -418,7 +484,12 @@ namespace FLIMage
 
         public void removeCurrentRoi()
         {
-            ROIs.RemoveAt(currentRoi);
+            if (currentRoi >= 0)
+                ROIs.RemoveAt(currentRoi);
+            else if (currentRoi == -2)
+                bgRoi = null;
+            else if (currentRoi == -3)
+                LineScanTraceRoi = null;
         }
 
 
@@ -836,11 +907,20 @@ namespace FLIMage
             {
                 FLIMRaw5D[i] = new ushort[nFastZ][,,];
                 ushort[,,] tempImage;
+                int nTime = (n_time != null && i < n_time.Length) ? n_time[i] : 0;
+                if (nTime <= 0)
+                {
+                    FLIMRaw[i] = new ushort[height, width, 0];
+                    for (int z = 0; z < nFastZ; z++)
+                        FLIMRaw5D[i][z] = FLIMRaw[i];
+                    continue;
+                }
+
                 for (int z = 0; z < nFastZ; z++)
                 {
                     //var res = State.Spc.spcData.resolution[0] / 1000.0;
                     //double[] beta2 = { 4, 1 / (2.6 / res), 6, 1 / (0.5 / res), tau_g / res, offset / res };
-                    tempImage = MathLibrary.ImageProcessing.CreateFLIM_Sim(n_time[0], height, width, beta2, pulseI, 2);
+                    tempImage = MathLibrary.ImageProcessing.CreateFLIM_Sim(nTime, height, width, beta2, pulseI, 2);
                     //MatrixCalc.CopyFrom3DToLinear(tempImage, out FLIMRaw5D[i][z]);
                     FLIMRaw5D[i][z] = (ushort[,,])tempImage.Clone();
                     FLIMRaw[i] = tempImage;
@@ -852,9 +932,30 @@ namespace FLIMage
             addCurrentToPage5D(0, false);
         }
 
+        public void CopyDataFrom5DPage_To_4DPage()
+        {
+            for (int i = 0; i < FLIM_Pages5D.Length; i++)
+            {
+                var flim_page = FLIM_Pages5D[i];
+                var FLIM4D_Pages = ImageProcessing.PermuteFLIM5D(flim_page, false);
+                if (FLIM4D_Pages != null && FLIM4D_Pages.Length == 1)
+                    PutToPage(FLIM4D_Pages[0], acquiredTime_Pages5D[i], i);
+                else
+                    break;
+            }
+        }
+
+
         public void LoadFLIMData4D_Page_fromFLIMData5D(ushort[][][,,] FLIMData5D, int page, DateTime acquired_time, bool deepCopy)
         {
+            if (FLIMData5D == null)
+                return;
+
             var FLIM4D_Pages = ImageProcessing.PermuteFLIM5D(FLIMData5D, deepCopy);
+
+            if (FLIM4D_Pages == null)
+                return;
+
             acquiredTime = acquired_time;
             if (page <= FLIM_Pages.Length)
                 expandPage(page + 1);
@@ -878,6 +979,11 @@ namespace FLIMage
             return arr;
         }
 
+        private bool UsesSingleDirectory5DZStack()
+        {
+            return nFastZ <= 1 && imagesPerFile > 1;
+        }
+
         public void Delete5DFLIM(int page_position)
         {
             if (page_position < n_pages5D && page_position >= 0)
@@ -897,6 +1003,107 @@ namespace FLIMage
 
                 gotoPage5D(page_position);
             }
+        }
+
+        public void Extract5DFLIMPages(int start_page, int end_page)
+        {
+            if (start_page < 0)
+                start_page = 0;
+            if (end_page < 1)
+                end_page = 1;
+            if (start_page >= n_pages5D)
+                start_page = n_pages5D - 1;
+            if (end_page <= start_page)
+                end_page = start_page + 1;
+            if (end_page >= n_pages5D)
+                end_page = n_pages5D - 1;
+            if (end_page > n_pages5D)
+                end_page = n_pages5D;
+
+            int n_pages_new = end_page - start_page;
+            if (n_pages_new == n_pages)
+                return;
+
+            for (int i = 0; i < n_pages_new; i++)
+            {
+                FLIM_Pages5D[i] = FLIM_Pages5D[i + start_page];
+                acquiredTime_Pages5D[i] = acquiredTime_Pages5D[i + start_page];
+            }
+
+            FLIM_Pages5D = ArrayResizePrivate(FLIM_Pages5D, n_pages_new);
+            acquiredTime_Pages5D = ArrayResizePrivate(acquiredTime_Pages5D, n_pages_new);
+            n_pages5D = FLIM_Pages5D.Length;
+
+            gotoPage5D(0);
+
+        }
+
+        public void Brank4DFLIMPage(int page_position)
+        {
+            if (page_position < n_pages && page_position >= 0 && KeepPagesInMemory)
+            {
+                var page1 = FLIM_Pages[page_position];
+                for (int i = 0; i < page1.Length; i++)
+                {
+                    page1[i] = MatrixCalc.Blanck3DMatrix(page1[i]);
+                }
+                ProjectCalculated_Pages[page_position] = false;
+                FLIMMapCalculated_Pages[page_position] = false;
+                LifetimeCalculated_Pages[page_position] = false;
+                gotoPage(page_position);
+            }
+        }
+
+        public void Brank5DFLIMPage(int page_position)
+        {
+            if (page_position < n_pages5D && page_position >= 0 && KeepPagesInMemory)
+            {
+                var page1 = FLIM_Pages5D[page_position];
+                for (int i = 0; i < page1.Length; i++)
+                {
+                    for (int j = 0; j < page1[i].Length; j++)
+                    {
+                        page1[i][j] = MatrixCalc.Blanck3DMatrix(page1[i][j]);
+                    }
+                }
+                gotoPage5D(page_position);
+            }
+        }
+
+        public void Extract4DFLIMPages(int start_page, int end_page)
+        {
+            if (start_page < 0)
+                start_page = 0;
+            if (end_page < 1)
+                end_page = 1;
+            if (start_page >= n_pages)
+                start_page = n_pages - 1;
+            if (end_page <= start_page)
+                end_page = start_page + 1;
+            if (start_page >= n_pages)
+                start_page = n_pages - 1;
+            if (end_page > n_pages)
+                end_page = n_pages;
+
+            int n_pages_new = end_page - start_page;
+            if (n_pages_new == n_pages)
+                return;
+
+            for (int i = 0; i < n_pages_new; i++)
+            {
+                FLIM_Pages[i] = FLIM_Pages[i + start_page];
+                acquiredTime_Pages[i + 1] = acquiredTime_Pages[i + start_page];
+                Project_Pages[i] = Project_Pages[i + start_page];
+                LifetimeMapBase_Pages[i] = LifetimeMapBase_Pages[i + start_page];
+                ProjectCalculated_Pages[i] = ProjectCalculated_Pages[i + start_page];
+                FLIMMapCalculated_Pages[i] = FLIMMapCalculated_Pages[i + start_page];
+                LifetimeCalculated_Pages[i] = LifetimeCalculated_Pages[i + start_page];
+            }
+
+            resizePage(n_pages_new);
+
+            gotoPage(0);
+
         }
 
         public void Delete4DFLIM(int page_position)
@@ -1003,6 +1210,19 @@ namespace FLIMage
                 acquiredTime_Pages5D = ArrayResizePrivate(acquiredTime_Pages5D, page_position + 1);
         }
 
+        public void SetAcquiredTimePage5D(int page_position, DateTime acqTime)
+        {
+            if (page_position < 0)
+                return;
+
+            if (acquiredTime_Pages5D.Length <= page_position)
+                acquiredTime_Pages5D = ArrayResizePrivate(acquiredTime_Pages5D, page_position + 1);
+
+            acquiredTime_Pages5D[page_position] = acqTime;
+            if (n_pages5D < page_position + 1)
+                n_pages5D = page_position + 1;
+        }
+
         public void LoadFLIMRawFromData4D(ushort[][,,] FLIM_data, DateTime acquired_time, bool deepCopy)
         {
             if (deepCopy)
@@ -1014,26 +1234,42 @@ namespace FLIMage
                 FLIMRaw = ShallowCopyFLIM4D(FLIM_data);
 
             acquiredTime = acquired_time;
-            FLIMMapCalculated = new bool[nChannels];
-            ProjectCalculated = new bool[nChannels];
-            LifetimeCalculated = false;
+            ResetCalculation();
         }
 
         public void addToPageAndCalculate5D(ushort[][][,,] FLIM_5D, DateTime acqTime, bool calcProjection, bool calcLifetime1, int page_position, bool deepCopy)
         {
+            if (FLIM_5D == null)
+                return;
+
             if (KeepPagesInMemory)
             {
                 Add5DFLIM(FLIM_5D, acqTime, page_position, deepCopy);
             }
 
-            var FLIM5D = ImageProcessing.PermuteFLIM5D(FLIM_5D, true);
-            var previous_n_pages = n_pages;
+            LoadFLIMdata5D_Realtime(FLIM_5D, acqTime, deepCopy);
 
-            expandPage(previous_n_pages + FLIM5D.Length);
+            var FLIM5D = ImageProcessing.PermuteFLIM5D(FLIM_5D, true);
+            if (FLIM5D == null)
+                return;
+
+            bool replaceCurrentZPages = UsesSingleDirectory5DZStack() && !KeepPagesInMemory;
+            int previous_n_pages = replaceCurrentZPages ? 0 : n_pages;
+
+            if (replaceCurrentZPages)
+                resizePage(FLIM5D.Length);
+            else
+                expandPage(previous_n_pages + FLIM5D.Length);
 
             for (int z = 0; z < FLIM5D.Length; z++)
             {
                 PutToPageAndCalculate(FLIM5D[z], acqTime, calcProjection, calcLifetime1, previous_n_pages + z);
+            }
+
+            if (replaceCurrentZPages && FLIM5D.Length > 0)
+            {
+                currentPage = 0;
+                CopyFromFLIM_PageToFLIMRaw(0);
             }
         }
 
@@ -1052,6 +1288,8 @@ namespace FLIMage
             n_pages5D = new_pageN;
             FLIM_Pages5D = ArrayResizePrivate(FLIM_Pages5D, new_pageN);
             acquiredTime_Pages5D = ArrayResizePrivate(acquiredTime_Pages5D, new_pageN);
+
+            InitializeAllROI_FlimParameters_Pages();
         }
 
         public void resizePage(int new_pageN)
@@ -1099,10 +1337,14 @@ namespace FLIMage
         public void CopyFromFLIM_PageToFLIMRaw(int page)
         {
             //FLIMRaw = (ushort[][,,]) Copier.DeepCopyArray(FLIM_Pages[page]);
-            FLIMRaw = ShallowCopyFLIM4D(FLIM_Pages[page]);
+            if (page >= 0 && page < FLIM_Pages.Length)
+            {
+                FLIMRaw = ShallowCopyFLIM4D(FLIM_Pages[page]);
+            }
             ProjectCalculated = new bool[nChannels];
             FLIMMapCalculated = new bool[nChannels];
             LifetimeCalculated = false;
+
         }
 
 
@@ -1222,25 +1464,47 @@ namespace FLIMage
 
         public int[] ApplyFitRange(int[] fit_range1, int channel)
         {
-            int[] save_fit = (int[])fit_range[channel].Clone();
+            if (fit_range == null || channel < 0 || channel >= fit_range.Length)
+                return new int[] { 0, 0 };
+
+            int[] save_fit = fit_range[channel] != null ? (int[])fit_range[channel].Clone() : null;
 
             int[] fit_range2;
             if (fit_range1 != null)
                 fit_range2 = (int[])fit_range1.Clone();
             else
             {
-                if (fit_range[0] != null)
+                if (fit_range.Length > 0 && fit_range[0] != null)
                     fit_range2 = (int[])fit_range[0].Clone();
                 else
-                    fit_range2 = new int[] { 0, n_time[channel] - 1 };
+                    fit_range2 = null;
             }
 
-            fit_range[channel] = new int[] { fit_range2.Min(), fit_range2.Max() };
-
-            if (!fit_range[channel].SequenceEqual(save_fit))
+            int nTime = (n_time != null && channel < n_time.Length) ? n_time[channel] : 0;
+            if (nTime <= 0)
+                fit_range[channel] = new int[] { 0, 0 };
+            else
             {
-                FLIMMapCalculated_Pages = new bool[FLIMMapCalculated_Pages.Length];
-                FLIMMapCalculated[channel] = false;
+                int start = 0;
+                int end = nTime;
+                if (fit_range2 != null && fit_range2.Length > 0)
+                {
+                    start = fit_range2[0];
+                    if (fit_range2.Length > 1)
+                        end = fit_range2[1];
+                }
+
+                start = Math.Max(0, Math.Min(start, nTime - 1));
+                end = Math.Max(start + 1, Math.Min(end, nTime));
+                fit_range[channel] = new int[] { start, end };
+            }
+
+            if (save_fit == null || !fit_range[channel].SequenceEqual(save_fit))
+            {
+                if (FLIMMapCalculated_Pages != null)
+                    FLIMMapCalculated_Pages = new bool[FLIMMapCalculated_Pages.Length];
+                if (FLIMMapCalculated != null && channel < FLIMMapCalculated.Length)
+                    FLIMMapCalculated[channel] = false;
             }
 
             return (int[])fit_range[channel].Clone();
@@ -1328,26 +1592,16 @@ namespace FLIMage
             //double[] beta1 = fittingList[ch]; //fitting from all ROIs.
             //int n = roi1.flim_parameters.LifetimeX[ch].Length;
 
-            int p = 6;
+            int p = 7;
             if (mode == 1)
-                p = 4;
-            //int p = beta1.Length;
-
-            bool page_direct = PageDirect(page);
-
+                p = 5;
 
             bool[] fix = Enumerable.Repeat<bool>(true, p).ToArray();
 
             double[] x = roi1.flim_parameters.LifetimeX[ch]; //this is just 1,2,3,4...
             double[] y = roi1.flim_parameters.LifetimeY[ch];
 
-            if (page_direct)
-            {
-                x = roi1.flim_parameters_Pages[page].LifetimeX[ch];
-                y = roi1.flim_parameters_Pages[page].LifetimeY[ch];
-            }
-
-            if (y == null)
+            if (x == null || y == null || x.Length < 2 || y.Length < 2)
             {
                 return;
             }
@@ -1363,19 +1617,34 @@ namespace FLIMage
 
             double maxY = y.Max();
 
+            var nPixel_Roi = roi1.flim_parameters.nPixels[ch];
+            var nPixel_all = RoiFit.flim_parameters.nPixels[ch];
+
             if (mode == 1)
             {
                 beta0[0] = maxY;
+                if (nPixel_all > 0 && nPixel_Roi > 0)
+                    beta0[4] = beta0[4] * nPixel_Roi / nPixel_all;
+                else
+                    beta0[4] = 0;
                 fix[0] = false;
                 fix[1] = false;
+                if (roi1.ID == -2) //Background ROI
+                    fix[4] = false;
             }
             else
             {
                 double ratio = maxY / (beta0[0] + beta0[2]);
                 beta0[0] = beta0[0] * ratio;
                 beta0[2] = beta0[2] * ratio;
+                if (nPixel_all > 0 && nPixel_Roi > 0)
+                    beta0[6] = beta1[6] * nPixel_Roi / nPixel_all;
+                else
+                    beta0[6] = 0;
                 fix[0] = false;
                 fix[2] = false;
+                if (roi1.ID == -2) //Background ROI
+                    fix[6] = false;
             }
 
             Fitting.Nlinfit fit = new Fitting.Nlinfit(beta0, x, y);
@@ -1384,18 +1653,65 @@ namespace FLIMage
             double res0 = State.Spc.spcData.resolution[0]; //picoseconds
             double pulseI = 1.0e12 / State.Spc.datainfo.syncRate[0] / res0;
 
+            // IMPORTANT:
+            // In single-exp ROI fitting we actually fit the decay rate (beta[1]) which can go invalid
+            // without bounds (leading to NaN SSE and huge slowdown due to Debug output spam).
+            // Keep bounds consistent with fitData() below.
+            double tauG_Max = 1000; // ps
+            double tauG_Min = 10;   // ps
+            double maxTau = 100000; // ps
+            double minTau = 10;     // ps
+
+            double rateMin = res0 / maxTau;
+            double rateMax = res0 / minTau;
+            double tauGMinBin = tauG_Min / res0;
+            double tauGMaxBin = tauG_Max / res0;
+
 
             if (mode == 1)
             {
                 fit.modelFunc = ((betaA, xA) => ImageProcessing.ExpGaussArray(betaA, xA, pulseI));
+                fit.modelFuncInPlace = ((betaA, xA, yA) => ImageProcessing.ExpGaussArrayInPlace(betaA, xA, pulseI, yA));
+                fit.jacobianFuncInPlace = ((betaA, xA, jtA) => ImageProcessing.ExpGaussJacobianInPlace(betaA, xA, pulseI, jtA));
+
+                fit.betaMin[0] = 0;
+                fit.betaMin[1] = rateMin;
+                fit.betaMax[1] = rateMax;
+                fit.betaMin[2] = tauGMinBin;
+                fit.betaMax[2] = tauGMaxBin;
+                fit.betaMin[4] = 0;
             }
             else
             {
                 fit.modelFunc = ((betaA, xA) => ImageProcessing.Exp2GaussArray(betaA, xA, pulseI));
+                fit.modelFuncInPlace = ((betaA, xA, yA) => ImageProcessing.Exp2GaussArrayInPlace(betaA, xA, pulseI, yA));
+                fit.jacobianFuncInPlace = ((betaA, xA, jtA) => ImageProcessing.Exp2GaussJacobianInPlace(betaA, xA, pulseI, jtA));
+
+                fit.betaMin[0] = 0;
+                fit.betaMin[1] = rateMin;
+                fit.betaMax[1] = rateMax;
+                fit.betaMin[2] = 0;
+                fit.betaMin[3] = rateMin;
+                fit.betaMax[3] = rateMax;
+                fit.betaMin[4] = tauGMinBin;
+                fit.betaMax[4] = tauGMaxBin;
+                fit.betaMin[6] = 0;
             }
 
-            fit.PoisonWeights(); //Apply poison waits.
-            fit.Perform();
+            // Ensure starting guess is within bounds (bounds only affect step proposals).
+            for (int bi = 0; bi < beta0.Length; bi++)
+            {
+                double mn = fit.betaMin[bi];
+                double mx = fit.betaMax[bi];
+                if (!Double.IsInfinity(mn) && beta0[bi] < mn)
+                    beta0[bi] = mn;
+                if (!Double.IsInfinity(mx) && beta0[bi] > mx)
+                    beta0[bi] = mx;
+            }
+
+            fit.PoissonMaximumLikelihood();
+            if (fit.Perform() != 0 || fit.beta == null || fit.fitCurve == null)
+                return;
 
             double tau_mA;
 
@@ -1411,34 +1727,21 @@ namespace FLIMage
 
             double res = psPerUnit / 1000;
 
-            if (page_direct)
-            {
-                roi1.flim_parameters_Pages[page].tau_m[ch] = tau_mA * res;
-                roi1.flim_parameters_Pages[page].xi_square[ch] = fit.xi_square;
-                roi1.flim_parameters_Pages[page].beta[ch] = (double[])fit.beta.Clone();
-                roi1.flim_parameters_Pages[page].fitCurve[ch] = fit.fitCurve;
-            }
-            else
-            {
-                roi1.flim_parameters.tau_m[ch] = tau_mA * res;
-                roi1.flim_parameters.xi_square[ch] = fit.xi_square;
-                roi1.flim_parameters.beta[ch] = (double[])fit.beta.Clone();
-                roi1.flim_parameters.fitCurve[ch] = fit.fitCurve;
-            }
+
+            roi1.flim_parameters.tau_m[ch] = tau_mA * res;
+            roi1.flim_parameters.xi_square[ch] = fit.xi_square;
+            roi1.flim_parameters.beta[ch] = (double[])fit.beta.Clone();
+            roi1.flim_parameters.fitCurve[ch] = fit.fitCurve;
+            roi1.flim_parameters.n_exponentials = mode;
+
         }
 
         public void fitDataAllROIs(int mode, int page1, double[][] betaCh)
         {
             int nROIs = ROIs.Count;
 
-            bool pageDirect = PageDirect(page1);
 
-            if (pageDirect && ROIs.Any(x => x.flim_parameters_Pages[page1].LifetimeY == null))
-            {
-                ResetLifetimeCalculation(true);
-                return;
-            }
-            else if (!pageDirect && ROIs.Any(x => x.flim_parameters.LifetimeY == null))
+            if (ROIs.Any(x => x.flim_parameters.LifetimeY == null))
             {
                 ResetLifetimeCalculation(false);
                 return;
@@ -1447,19 +1750,12 @@ namespace FLIMage
 
             for (int i = 0; i < nROIs; i++)
             {
-                if (pageDirect)
-                {
-                    ROIs[i].flim_parameters_Pages[page1].AssureSizeAllParameters();
-                    if (ROIs[i].flim_parameters_Pages[page1].LifetimeX.Length != nChannels)
-                        return;
-                }
-                else
-                {
-                    ROIs[i].flim_parameters.AssureSizeAllParameters();
 
-                    if (ROIs[i].flim_parameters.LifetimeX.Length != nChannels)
-                        return;
-                }
+                ROIs[i].flim_parameters.AssureSizeAllParameters();
+
+                if (ROIs[i].flim_parameters.LifetimeX.Length != nChannels)
+                    return;
+
 
                 for (int ch = 0; ch < nChannels; ch++)
                 {
@@ -1476,25 +1772,11 @@ namespace FLIMage
                             if (microRoi.flim_parameters.LifetimeX[ch] == null)
                                 microRoi.flim_parameters.LifetimeX[ch] = (double[])ROIs[i].flim_parameters.LifetimeX[ch].Clone();
 
-                            if (pageDirect && microRoi.flim_parameters_Pages[page1].LifetimeX[ch] == null)
-                                microRoi.flim_parameters_Pages[page1].LifetimeX[ch] = (double[])ROIs[i].flim_parameters_Pages[page1].LifetimeX[ch].Clone();
-
                             fitData_ROI_Ch(microRoi, ch, mode, betaCh[ch], page1);
                         }
                     }
                 } //Channels
             } //ROI
-        }
-
-        public bool PageDirect(int page)
-        {
-            bool threeD = ThreeDRoi && (nFastZ > 1 || ZStack) && n_pages > 1;
-            bool page_direct = page >= 0 && page < n_pages && !ZStack && nFastZ < 2
-                && RoiFit.flim_parameters_Pages != null && !threeD;
-
-            //InitializeAllROI_FlimParameters_Pages();
-
-            return page_direct;
         }
 
         public double[] fitData(int ch, int mode, double[] beta0, bool[] fix, int page)
@@ -1508,17 +1790,8 @@ namespace FLIMage
             double[] beta_i = (double[])beta0.Clone();
 
 
-            int p = 6;// beta0.Length;
-
             double[] x = RoiFit.flim_parameters.LifetimeX[ch];
             double[] y = RoiFit.flim_parameters.LifetimeY[ch];
-
-            bool page_direct = PageDirect(page);
-            if (page_direct)
-            {
-                x = RoiFit.flim_parameters_Pages[page].LifetimeX[ch];
-                y = RoiFit.flim_parameters_Pages[page].LifetimeY[ch];
-            }
 
             int n = x.Length;
             double maxY = y.Max();
@@ -1532,39 +1805,43 @@ namespace FLIMage
                 sumX = sumX + y[i] * x[i];
             }
 
-            double Tau1 = sum / maxY;
+            double Tau1_bin = sum / maxY;
             double resP = (double)psPerUnit;
             double res = psPerUnit / 1000;
             double TauG = 100 / resP;
 
-            double[] beta1 = new double[p];
+            double[] beta1;
             if (mode == 1)
             {
-                beta1[0] = maxY * (1 + TauG / Tau1);
-                beta1[1] = 1 / Tau1;
+                beta1 = new double[5];
+                beta1[0] = maxY * (1 + TauG / Tau1_bin);
+                beta1[1] = 1 / Tau1_bin;
                 beta1[2] = TauG;
                 beta1[3] = maxX - 2 * TauG; //peak position
+                beta1[4] = 0;
             }
             else
             {
+                beta1 = new double[7];
                 beta1[0] = maxY / 2;
-                beta1[1] = 1 / Tau1 / 2;
+                beta1[1] = 1 / Tau1_bin * 0.25;
                 beta1[2] = maxY / 2;
-                beta1[3] = 1 / Tau1 / 0.5;
+                beta1[3] = 1 / Tau1_bin * 2;
                 beta1[4] = TauG;
                 beta1[5] = maxX - 1 * TauG; //peak position
+                beta1[6] = 0;
             }
 
-            for (int i = 0; i < p; i++)
+            for (int i = 0; i < beta1.Length; i++)
             {
-                if (beta0.Length > i && beta1.Length > i && !fix[i])
+                if (beta0.Length > i && !fix[i])
                     beta0[i] = beta1[i];
             }
 
-            double tauG_Max = 500; //ps
-            double tauG_Min = 60; //ps
-            double maxTau = 10000; //ps
-            double minTau = 100; //picoseconds
+            double tauG_Max = 1000; //ps
+            double tauG_Min = 10; //ps
+            double maxTau = 100000; //ps
+            double minTau = 10; //picoseconds
 
             double pulseI = 1.0e12 / State.Spc.datainfo.syncRate[0] / resP;
 
@@ -1573,34 +1850,50 @@ namespace FLIMage
             if (mode == 1)
             {
                 fit.modelFunc = ((betaA, xA) => ImageProcessing.ExpGaussArray(betaA, xA, pulseI));
+                fit.modelFuncInPlace = ((betaA, xA, yA) => ImageProcessing.ExpGaussArrayInPlace(betaA, xA, pulseI, yA));
+                fit.jacobianFuncInPlace = ((betaA, xA, jtA) => ImageProcessing.ExpGaussJacobianInPlace(betaA, xA, pulseI, jtA));
+                fit.betaMin[0] = 0;
                 fit.betaMax[1] = resP / minTau;
-                fit.betaMin[1] = 1 / maxTau;
+                fit.betaMin[1] = resP / maxTau;
                 fit.betaMax[2] = tauG_Max / resP; //picosecond
                 fit.betaMin[2] = tauG_Min / resP;
-                //fit.betaMax[3] = 10000 / resP;
+                fit.betaMin[4] = 0;
+                //fit.betaMax[3] = 10000 / resP; Shift
             }
             else
             {
                 fit.modelFunc = ((betaA, xA) => ImageProcessing.Exp2GaussArray(betaA, xA, pulseI));
-                //fit.betaMin[0] = 0;
+                fit.modelFuncInPlace = ((betaA, xA, yA) => ImageProcessing.Exp2GaussArrayInPlace(betaA, xA, pulseI, yA));
+                fit.jacobianFuncInPlace = ((betaA, xA, jtA) => ImageProcessing.Exp2GaussJacobianInPlace(betaA, xA, pulseI, jtA));
+                fit.betaMin[0] = 0;
                 fit.betaMax[1] = resP / minTau;
-                fit.betaMin[1] = 1 / maxTau;
-                //fit.betaMin[2] = 0;
+                fit.betaMin[1] = resP / maxTau;
+                fit.betaMin[2] = 0;
                 fit.betaMax[3] = resP / minTau;
-                fit.betaMin[3] = 1 / maxTau;
+                fit.betaMin[3] = resP / maxTau;
                 fit.betaMax[4] = tauG_Max / resP;
                 fit.betaMin[4] = tauG_Min / resP;
-                fit.betaMax[5] = 10000 / resP;
+                //fit.betaMax[5] = 10000 / resP; Shift
+                fit.betaMin[6] = 0;
             }
 
-            fit.PoisonWeights();
+            fit.PoissonMaximumLikelihood();
+
+            int fitResult;
             try
             {
-                fit.Perform();
+                fitResult = fit.Perform();
             }
-            catch
+            catch (Exception ex)
             {
-                Debug.WriteLine("Fitting did not work!");
+                Debug.WriteLine("Fitting did not work: " + ex);
+                return null;
+            }
+
+            if (fitResult != 0 || fit.beta == null || fit.fitCurve == null)
+            {
+                Debug.WriteLine("Fitting did not converge. Error code: " + fitResult);
+                return null;
             }
 
             double tau_m0;
@@ -1619,26 +1912,16 @@ namespace FLIMage
 
             if (fit.fitCurve != null)
             {
-                if (page_direct)
-                {
-                    RoiFit.flim_parameters_Pages[page].fitCurve[ch] = (double[])fit.fitCurve.Clone();
-                    RoiFit.flim_parameters_Pages[page].residual[ch] = (double[])fit.residual.Clone();
-                    RoiFit.flim_parameters_Pages[page].offset_fit[ch] = res * (sumX / sum - tau_m0);
 
-                    RoiFit.flim_parameters_Pages[page].beta[ch] = (double[])fit.beta.Clone();
-                    RoiFit.flim_parameters_Pages[page].xi_square[ch] = fit.xi_square;
-                    RoiFit.flim_parameters_Pages[page].tau_m[ch] = tau_m0 * res;
-                }
-                else
-                {
-                    RoiFit.flim_parameters.fitCurve[ch] = (double[])fit.fitCurve.Clone();
-                    RoiFit.flim_parameters.residual[ch] = (double[])fit.residual.Clone();
-                    RoiFit.flim_parameters.offset_fit[ch] = res * (sumX / sum - tau_m0);
+                RoiFit.flim_parameters.fitCurve[ch] = (double[])fit.fitCurve.Clone();
+                RoiFit.flim_parameters.residual[ch] = (double[])fit.residual.Clone();
+                RoiFit.flim_parameters.offset_fit[ch] = res * (sumX / sum - tau_m0);
 
-                    RoiFit.flim_parameters.beta[ch] = (double[])fit.beta.Clone();
-                    RoiFit.flim_parameters.xi_square[ch] = fit.xi_square;
-                    RoiFit.flim_parameters.tau_m[ch] = tau_m0 * res;
-                }
+                RoiFit.flim_parameters.n_exponentials = 2;
+                RoiFit.flim_parameters.beta[ch] = (double[])fit.beta.Clone();
+                RoiFit.flim_parameters.xi_square[ch] = fit.xi_square;
+                RoiFit.flim_parameters.tau_m[ch] = tau_m0 * res;
+
 
                 return (double[])fit.beta.Clone();
             }
@@ -1696,19 +1979,29 @@ namespace FLIMage
             return b;
         }
 
+        public void ResetCalculation()
+        {
+            ProjectCalculated = new bool[nChannels];
+            FLIMMapCalculated = new bool[nChannels];
+            LifetimeCalculated = false;
+        }
 
+        public void DisplayZProjection(Image_Display img)
+        {
+            FLIMRaw = ShallowCopyFLIM4D(FLIMRawZProjection);
+            ResetCalculation();
+            ZProjection = true;
+            img.UpdateImages(true, false, false, true, true);
+            Application.DoEvents();
+        }
 
         /// <summary>
         /// Calculate Z projection.
         /// </summary>
         /// <param name="procType"></param>
         /// <param name="page_range"></param>
-        public void calcZProject(projectionType procType, int[] page_range)
+        public void calcZProject(projectionType procType, Image_Display img)
         {
-            ZProjection_Range = (int[])page_range.Clone();
-
-            z_projection_type = procType;
-
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
@@ -1716,8 +2009,9 @@ namespace FLIMage
             if (n == 0)
                 return;
 
-            int startPage = page_range[0];
-            int endPage = page_range[1];
+            int startPage = ZProjection_Range[0];
+            int endPage = ZProjection_Range[1];
+
             if (startPage < 0 || startPage >= n)
             {
                 startPage = 0;
@@ -1725,50 +2019,117 @@ namespace FLIMage
             if (endPage <= startPage || endPage < 1 || endPage > n)
             {
                 endPage = n;
+                if (endPage > 20)
+                    endPage = 20;
             }
 
-            gotoPage(startPage);
+            ZProjection_Range = new int[] { startPage, endPage };
 
-            FLIMRawZProjection = (ushort[][,,])Copier.DeepCopyArray(FLIM_Pages[startPage]);
+            gotoPage(startPage);
+            calculateAll();
+            FLIMRawZProjection = (ushort[][,,])Copier.DeepCopyArray(FLIMRaw);
+            //FLIMRawZProjection = (ushort[][,,])Copier.DeepCopyArray(FLIM_Pages[startPage]);
 
             if (procType == projectionType.Sum)
             {
                 for (int page = startPage; page < endPage; page++)
                 {
-                    for (int ch = 0; ch < nChannels; ch++)
+                    if (KeepPagesInMemory)
                     {
-                        if (FLIM_Pages[page][ch] != null)
+                        for (int ch = 0; ch < nChannels; ch++)
                         {
-                            if (page != startPage)
-                                MatrixCalc.ArrayCalc(FLIMRawZProjection[ch], FLIM_Pages[page][ch], CalculationType.Add);
-                        }
-                        else
-                        {
-                            FLIMRawZProjection[ch] = null;
-                            break;
+                            if (FLIM_Pages[page][ch] != null)
+                            {
+                                if (page != startPage)
+                                    MatrixCalc.ArrayCalc(FLIMRawZProjection[ch], FLIM_Pages[page][ch], CalculationType.Add);
+                            }
+                            else
+                            {
+                                FLIMRawZProjection[ch] = null;
+                                break;
+                            }
                         }
                     }
+                    else
+                    {
+                        gotoPage(page);
+                        calculateAll();
+                        for (int ch = 0; ch < nChannels; ch++)
+                        {
+                            MatrixCalc.ArrayCalc(FLIMRawZProjection[ch], FLIMRaw[ch], CalculationType.Add);
+                        }
+                    }
+
                 }
             }
             else if (procType == projectionType.Max || procType == projectionType.Min)
             {
-                UInt16[,] ProjectAMax = new ushort[height, width];
-
-                CalculateAllPages_Direct(false);
-
-                if (Project_Pages == null)
-                    return;
-
-                for (int ch = 0; ch < nChannels; ch++)
+                if (KeepPagesInMemory)
                 {
+                    ushort[][,] ProjectAMax = new ushort[nChannels][,];
+                    ushort[][,] ProjectA = new ushort[nChannels][,];
+
+                    CalculateAllPages_Direct(false);
+                    if (Project_Pages == null)
+                        return;
+
+
                     for (int page = startPage; page < endPage; page++)
                     {
-                        if (Project_Pages[page] != null && Project_Pages[page][ch] != null)
+                        for (int ch = 0; ch < nChannels; ch++)
                         {
-                            UInt16[,] ProjectA = Project_Pages[page][ch];
+                            if (Project_Pages[page] != null && Project_Pages[page][ch] != null)
+                            {
+                                ProjectA[ch] = Project_Pages[page][ch];
+                                if (page == startPage)
+                                {
+                                    ProjectAMax[ch] = (ushort[,])ProjectA[ch].Clone();
+                                }
+                                else
+                                {
+                                    if (procType == projectionType.Max)
+                                    {
+                                        for (int y = 0; y < height; y++)
+                                            for (int x = 0; x < width; x++)
+                                                if (ProjectAMax[ch][y, x] < ProjectA[ch][y, x])
+                                                {
+                                                    Array.Copy(FLIM_Pages[page][ch], (y * width + x) * n_time[ch], FLIMRawZProjection[ch], (y * width + x) * n_time[ch], n_time[ch]);
+                                                    ProjectAMax[ch][y, x] = ProjectA[ch][y, x];
+                                                }
+                                    }
+                                    else //Minimum.
+                                    {
+                                        for (int y = 0; y < width; y++)
+                                            for (int x = 0; x < width; x++)
+                                                if (ProjectAMax[ch][y, x] > ProjectA[ch][y, x])
+                                                {
+                                                    Array.Copy(FLIM_Pages[page][ch], (y * width + x) * n_time[ch], FLIMRawZProjection[ch], (y * width + x) * n_time[ch], n_time[ch]);
+                                                    ProjectAMax[ch][y, x] = ProjectA[ch][y, x];
+                                                }
+                                    }
+                                }
+                            }
+                        }
+                    } //page
+                } //keep memory
+                else
+                {
+                    var Data_max = new ushort[nChannels][,,];
+                    var project_max = new ushort[nChannels][,];
+
+
+                    for (int page = startPage; page < endPage; page++)
+                    {
+                        gotoPage(page);
+                        calculateAll();
+
+
+                        for (int ch = 0; ch < nChannels; ch++)
+                        {
                             if (page == startPage)
                             {
-                                ProjectAMax = (ushort[,])Utilities.Copier.DeepCopyArray(ProjectA);
+                                project_max[ch] = (ushort[,])Project[ch].Clone();
+                                Data_max[ch] = (ushort[,,])FLIMRaw[ch].Clone();
                             }
                             else
                             {
@@ -1776,40 +2137,34 @@ namespace FLIMage
                                 {
                                     for (int y = 0; y < height; y++)
                                         for (int x = 0; x < width; x++)
-                                            if (ProjectAMax[y, x] < ProjectA[y, x])
+                                            if (project_max[ch][y, x] < Project[ch][y, x])
                                             {
-                                                Array.Copy(FLIM_Pages[page][ch], (y * width + x) * n_time[ch], FLIMRawZProjection[ch], (y * width + x) * n_time[ch], n_time[ch]);
-                                                ProjectAMax[y, x] = ProjectA[y, x];
+                                                Array.Copy(FLIMRaw[ch], (y * width + x) * n_time[ch], FLIMRawZProjection[ch], (y * width + x) * n_time[ch], n_time[ch]);
+                                                project_max[ch][y, x] = Project[ch][y, x];
                                             }
                                 }
                                 else //Minimum.
                                 {
                                     for (int y = 0; y < width; y++)
                                         for (int x = 0; x < width; x++)
-                                            if (ProjectAMax[y, x] > ProjectA[y, x])
+                                            if (project_max[ch][y, x] > Project[ch][y, x])
                                             {
-                                                Array.Copy(FLIM_Pages[page][ch], (y * width + x) * n_time[ch], FLIMRawZProjection[ch], (y * width + x) * n_time[ch], n_time[ch]);
-                                                ProjectAMax[y, x] = ProjectA[y, x];
+                                                Array.Copy(FLIMRaw[ch], (y * width + x) * n_time[ch], FLIMRawZProjection[ch], (y * width + x) * n_time[ch], n_time[ch]);
+                                                project_max[ch][y, x] = Project[ch][y, x];
                                             }
                                 }
                             }
-                        }
-                    } //page
-                } //channel
-            } //max or min
+                        }//ch
 
-            //currentPage = page_range[0];
+                    } //page
+                }
+            }//max or min
+
+            currentPage = startPage;
 
             Debug.WriteLine("elapsed time (calculaton) - page" + n + " = " + sw.ElapsedMilliseconds);
             ZProjectionCalculated = true;
-
-            //FLIMRaw = (ushort[][,,])Copier.DeepCopyArray(FLIMRawZProjection);
-            FLIMRaw = ShallowCopyFLIM4D(FLIMRawZProjection);
-            ProjectCalculated = new bool[nChannels];
-            FLIMMapCalculated = new bool[nChannels];
-            LifetimeCalculated = false;
-            ZProjection = true;
-
+            DisplayZProjection(img);
             calculateAll();
         }
 
@@ -1847,7 +2202,6 @@ namespace FLIMage
             else
             {
                 State.Display.filterWindow_FLIM = fw;
-
                 var temp = new float[height, width];
                 var tempI = new ushort[height, width]; //new UInt16[height, width];
 
@@ -1899,8 +2253,8 @@ namespace FLIMage
         public void calculate_MeanLifetime_General(ROI roi, int ch, bool threeD, int page1, bool recalc_all, double[] offsetC)
         {
             int start_page = 0;
-            double sum = 0;
-            double pix = 0;
+            double lifetimeWeightedSum = 0;
+            double lifetimeWeight = 0;
             double sumi = 0;
             double pixi = 0;
             double val;
@@ -1908,19 +2262,11 @@ namespace FLIMage
             int nRoi = ROIs.Count;
 
             int nPages = n_pages;
-            bool page_direct = PageDirect(page1);
 
-            if (page_direct && (roi.flim_parameters_Pages == null || roi.flim_parameters_Pages.Length != n_pages))
-                InitializeROI_FlimParameters_Pages(roi);
 
-            if (!threeD || page_direct)
+            if (!threeD)
             {
                 nPages = 1;
-                if (page_direct)
-                {
-                    start_page = page1;
-                    page_direct = true;
-                }
                 threeD = false;
             }
 
@@ -1932,7 +2278,7 @@ namespace FLIMage
                     float[,] lf_img;
 
 
-                    if (threeD || page_direct)
+                    if (threeD)
                     {
                         if (recalc_all || Project_Pages == null
                             || Project_Pages[page] == null
@@ -1965,8 +2311,8 @@ namespace FLIMage
                     if (lf_img == null || height1 != lf_img.GetLength(0) || width1 != lf_img.GetLength(1))
                         lf_img = null;
 
-                    for (int y = (int)roi.Rect.Top; y < roi.Rect.Bottom; y++)
-                        for (int x = (int)roi.Rect.Left; x < roi.Rect.Right; x++)
+                    for (int y = (int)roi.Rect.Top; y <= roi.Rect.Bottom; y++)
+                        for (int x = (int)roi.Rect.Left; x <= roi.Rect.Right; x++)
                             if (x < width1 && y < height1 && x >= 0 && y >= 0)
                             {
                                 intensity = img[y, x];
@@ -1980,38 +2326,70 @@ namespace FLIMage
 
                                 if (roi.IsInsideRoi(P))
                                 {
-                                    sumi = sumi + intensity;
-                                    pixi = pixi + 1;
-
-                                    if (intensity > low_threshold[ch])
+                                    if ((intensity > low_threshold[ch] && (high_threshold[ch] < 0 || intensity < high_threshold[ch])) || !use_mask_for_intensity)
                                     {
-                                        sum = sum + val;
-                                        pix = pix + 1;
+                                        sumi = sumi + intensity;
+                                        pixi = pixi + 1;
+
+                                        if (intensity > low_threshold[ch] && (high_threshold[ch] < 0 || intensity < high_threshold[ch]))
+                                        {
+                                            lifetimeWeightedSum += val * intensity;
+                                            lifetimeWeight += intensity;
+                                        }
                                     }
                                 }
                             }
                 } //ThreeDCond
             } //pges
 
-            if (page_direct && roi.flim_parameters_Pages != null && roi.flim_parameters_Pages.Length > page1)
+            if (threeD && roi.flim_parameters_Pages != null && roi.flim_parameters_Pages.Length > page1)
             {
                 roi.flim_parameters_Pages[page1].meanIntensity[ch] = sumi / pixi;
                 roi.flim_parameters_Pages[page1].sumIntensity[ch] = sumi;
                 roi.flim_parameters_Pages[page1].nPixels[ch] = pixi;
-                if (pix > 0)
-                    roi.flim_parameters_Pages[page1].tau_m_fromMAP[ch] = sum / pix - offsetC[ch];
+                if (lifetimeWeight > 0)
+                    roi.flim_parameters_Pages[page1].tau_m_fromMAP[ch] = lifetimeWeightedSum / lifetimeWeight - offsetC[ch];
                 else
                     roi.flim_parameters_Pages[page1].tau_m_fromMAP[ch] = 0;
+
+                ROI_FLIM_Parameters pageParams = roi.flim_parameters_Pages[page1];
+                pageParams.n_exponentials = roi.flim_parameters.n_exponentials;
+                if (roi.flim_parameters.tau_m != null && roi.flim_parameters.tau_m.Length > ch)
+                    pageParams.tau_m[ch] = roi.flim_parameters.tau_m[ch];
+                if (roi.flim_parameters.xi_square != null && roi.flim_parameters.xi_square.Length > ch)
+                    pageParams.xi_square[ch] = roi.flim_parameters.xi_square[ch];
+                if (roi.flim_parameters.beta != null && roi.flim_parameters.beta.Length > ch && roi.flim_parameters.beta[ch] != null)
+                    pageParams.beta[ch] = (double[])roi.flim_parameters.beta[ch].Clone();
             }
             else
             {
                 roi.flim_parameters.meanIntensity[ch] = sumi / pixi;
                 roi.flim_parameters.sumIntensity[ch] = sumi;
                 roi.flim_parameters.nPixels[ch] = pixi;
-                if (pix > 0)
-                    roi.flim_parameters.tau_m_fromMAP[ch] = sum / pix - offsetC[ch];
+                if (lifetimeWeight > 0)
+                    roi.flim_parameters.tau_m_fromMAP[ch] = lifetimeWeightedSum / lifetimeWeight - offsetC[ch];
                 else
                     roi.flim_parameters.tau_m_fromMAP[ch] = 0;
+
+                if (page1 >= 0 &&
+                    roi.flim_parameters_Pages != null &&
+                    roi.flim_parameters_Pages.Length > page1 &&
+                    roi.flim_parameters_Pages[page1] != null)
+                {
+                    ROI_FLIM_Parameters pageParams = roi.flim_parameters_Pages[page1];
+                    pageParams.meanIntensity[ch] = roi.flim_parameters.meanIntensity[ch];
+                    pageParams.sumIntensity[ch] = roi.flim_parameters.sumIntensity[ch];
+                    pageParams.nPixels[ch] = roi.flim_parameters.nPixels[ch];
+                    pageParams.tau_m_fromMAP[ch] = roi.flim_parameters.tau_m_fromMAP[ch];
+                    pageParams.n_exponentials = roi.flim_parameters.n_exponentials;
+
+                    if (roi.flim_parameters.tau_m != null && roi.flim_parameters.tau_m.Length > ch)
+                        pageParams.tau_m[ch] = roi.flim_parameters.tau_m[ch];
+                    if (roi.flim_parameters.xi_square != null && roi.flim_parameters.xi_square.Length > ch)
+                        pageParams.xi_square[ch] = roi.flim_parameters.xi_square[ch];
+                    if (roi.flim_parameters.beta != null && roi.flim_parameters.beta.Length > ch && roi.flim_parameters.beta[ch] != null)
+                        pageParams.beta[ch] = (double[])roi.flim_parameters.beta[ch].Clone();
+                }
             }
         }
 
@@ -2020,24 +2398,41 @@ namespace FLIMage
         {
             InitializeROI_FlimParameters_Pages(Roi);
             InitializeROI_FlimParameters_Pages(RoiFit);
+            InitializeROI_FlimParameters_Pages(bgRoi);
+            if (Roi.ROI_type == ROI.ROItype.PolyLine)
+            {
+                foreach (var roi in Roi.polyLineROIs)
+                    InitializeROI_FlimParameters_Pages(roi);
+            }
+
             for (int i = 0; i < ROIs.Count; i++)
-                InitializeROI_FlimParameters_Pages(ROIs[i]);
+            {
+                if (!ROIs[i].IsLineScanTrace)
+                {
+                    InitializeROI_FlimParameters_Pages(ROIs[i]);
+                    if (ROIs[i].ROI_type == ROI.ROItype.PolyLine)
+                    {
+                        foreach (var roi in ROIs[i].polyLineROIs)
+                            InitializeROI_FlimParameters_Pages(roi);
+                    }
+                }
+            }
         }
 
         public void InitializeROI_FlimParameters_Pages(ROI roi)
         {
             int nPage = n_pages;
-            if (nFastZ > 1)
+            if (nFastZ > 1 || (ZStack && n_pages5D > 1))
                 nPage = n_pages5D;
             else if (ZStack)
                 nPage = 1;
 
             if (roi.flim_parameters_Pages == null)
-                roi.flim_parameters_Pages = new ROI_FLIM_Parameters[n_pages];
-            else if (roi.flim_parameters_Pages.Length != n_pages)
-                Array.Resize(ref roi.flim_parameters_Pages, n_pages);
+                roi.flim_parameters_Pages = new ROI_FLIM_Parameters[nPage];
+            else if (roi.flim_parameters_Pages.Length != nPage)
+                Array.Resize(ref roi.flim_parameters_Pages, nPage);
 
-            for (int i = 0; i < n_pages; i++)
+            for (int i = 0; i < nPage; i++)
             {
                 if (roi.flim_parameters_Pages[i] == null)
                 {
@@ -2058,8 +2453,7 @@ namespace FLIMage
         /// <param name="page">-1 for current page</param>
         public void calculate_MeanLifetime_ch(int ch, int page1, double[] offsetC)
         {
-            bool page_direct = PageDirect(page1);
-            bool threeD = ThreeDRoi && (nFastZ > 1 || ZStack) && n_pages > 1 && !page_direct;
+            bool threeD = ThreeDRoi && !ZProjection && (nFastZ > 1 || ZStack) && n_pages > 1;
 
             calculate_MeanLifetime_General(Roi, ch, threeD, page1, true, offsetC);
 
@@ -2071,6 +2465,9 @@ namespace FLIMage
 
             for (int i = 0; i < ROIs.Count; i++)
             {
+                if (ROIs[i].IsLineScanTrace)
+                    continue;
+
                 calculate_MeanLifetime_General(ROIs[i], ch, threeD, page1, false, offsetC);
                 if (ROIs[i].ROI_type == ROI.ROItype.PolyLine)
                 {
@@ -2092,7 +2489,7 @@ namespace FLIMage
 
                 bgRoi.flim_parameters.meanIntensity[ch] = 0;
                 bgRoi.flim_parameters.sumIntensity[ch] = 0;
-                bgRoi.flim_parameters.nPixels[ch] = 1;
+                bgRoi.flim_parameters.nPixels[ch] = 0;
 
             }
         }
@@ -2104,7 +2501,7 @@ namespace FLIMage
         }
 
 
-        public void calculateLifetimeChRoi(int ch, ROI roi, int[] range, bool threeD, int page1)
+        public void calculateLifetimeChRoi(int ch, ROI roi, int[] range, bool threeD, bool inverse)
         {
             int simd_ulong = Vector<ulong>.Count;
             int simd_ushort = Vector<ushort>.Count;
@@ -2113,12 +2510,10 @@ namespace FLIMage
             int n_point = range[1] - range[0];
             int fitStart = range[0];
 
-            bool page_direct = PageDirect(page1);
-            if (page_direct && (roi.flim_parameters_Pages == null || roi.flim_parameters_Pages.Length != n_pages))
-                InitializeROI_FlimParameters_Pages(roi);
-
             var lifetimeY = new double[n_point];
-            List<Vector<ulong>> vlist = new List<Vector<ulong>>();
+
+            // SIMD accumulation buffers
+            var vlist = new List<Vector<ulong>>();
             int t1;
             for (t1 = 0; t1 <= n_point - simd_ushort; t1 += simd_ushort)
             {
@@ -2127,10 +2522,10 @@ namespace FLIMage
                 vlist.Add(Vector<ulong>.Zero);
                 vlist.Add(Vector<ulong>.Zero);
             }
-
             int iblock = vlist.Count;
             int rest = t1;
 
+            // ROI bounding box (used only in 3D fallback)
             float xstart = 0;
             float xend = width;
             float ystart = 0;
@@ -2142,20 +2537,15 @@ namespace FLIMage
                 xend = Math.Min(roi.Rect.Right, width);
                 ystart = Math.Max(0, roi.Rect.Top);
                 yend = Math.Min(roi.Rect.Bottom, height);
-
             }
             else
+            {
                 return;
+            }
 
             int nPages = 1;
             int savePage = currentPage;
-
             int start_page = 0;
-            if (page_direct)
-            {
-                start_page = page1;
-                threeD = false;
-            }
 
             ushort[,] Img = Project[ch];
             ushort[,,] lifetimeImg = FLIMRaw[ch];
@@ -2163,98 +2553,188 @@ namespace FLIMage
             if (threeD)
             {
                 nPages = n_pages;
-                lifetimeImg = (ushort[,,])FLIMRaw[ch].Clone();
+                // NOTE: we do NOT clone FLIMRaw[ch] here to avoid huge allocations.
             }
 
-            double[] lifeimte = new double[n_time[ch]];
+            // Scratch buffer for a single pixel's decay
+            ushort[] FLIMRawT = new ushort[n_time[ch]];
+
+            int nPixels = 0;
 
             for (int page = start_page; page < start_page + nPages; page++)
             {
-                if (!threeD || roi.Z.Any(z => z == page))
+                // For 3D, respect roi.Z selection
+                if (threeD)
                 {
-                    if (threeD || page_direct)
+                    if (roi.Z != null && !roi.Z.Any(z => z == page))
+                        continue;
+
+                    // Prepare per-page projections
+                    CalculatePage_Direct(page, true);
+                    Img = Project_Pages[page][ch];
+                    lifetimeImg = FLIM_Pages[page][ch];
+                }
+
+                if (Img == null || lifetimeImg == null)
+                    continue;
+
+                int hImg = Img.GetLength(0);
+                int wImg = Img.GetLength(1);
+                int hLife = lifetimeImg.GetLength(0);
+                int wLife = lifetimeImg.GetLength(1);
+                // Safety: in FiberPhotometry mode lifetimeImg is 1x1, but Img/Project can still be larger.
+                // Always bound-check against the intersection size so extract3rdAxis never goes OOB.
+                int h = Math.Min(hImg, hLife);
+                int w = Math.Min(wImg, wLife);
+
+                if (!threeD)
+                {
+                    // ---------- 2D path: use ROI's 2D pixel cache ----------
+                    var roiPixels = roi.GetPixelsInside2D(new Size(w, h));
+
+                    foreach (Point P in roiPixels)
                     {
-                        CalculatePage_Direct(page, true);
-                        Img = Project_Pages[page][ch];
-                        lifetimeImg = FLIM_Pages[page][ch];
-                    }
+                        int x = P.X;
+                        int y = P.Y;
 
-                    if (Img == null || lifetimeImg == null)
-                        return;
+                        // Safety: ROI caches can temporarily contain out-of-bounds points
+                        // when switching modes (e.g. FiberPhotometry 1x1) or resizing.
+                        if ((uint)x >= (uint)w || (uint)y >= (uint)h)
+                            continue;
 
-                    ushort[] FLIMRawT = new ushort[n_time[ch]];
-                    for (int y = (int)ystart; y < yend; ++y)
-                        for (int x = (int)xstart; x < xend; ++x)
+                        int intensity = Img[y, x];
+
+                        // Thresholding
+                        if (intensity < low_threshold[ch] ||
+                            (high_threshold[ch] >= 0 && intensity >= high_threshold[ch]))
+                            continue;
+
+                        MatrixCalc.extract3rdAxis(lifetimeImg, ref FLIMRawT, y, x);
+                        nPixels++;
+
+                        if (simd_accel && iblock > 0)
                         {
-                            int val, intensity;
-                            intensity = Img[y, x];
-                            MatrixCalc.extract3rdAxis(lifetimeImg, ref FLIMRawT, y, x);
-                            Point P = new Point(x, y);
-
-                            if (intensity >= low_threshold[ch])
+                            for (int k = 0; k < iblock; k += 4)
                             {
-                                if (roi.ROI_type == ROI.ROItype.Rectangle || roi.IsInsideRoi(P)) //if rectangle, it is always in.
-                                {
-                                    if (simd_accel)
-                                    {
-                                        for (int k = 0; k < iblock; k += 4)
-                                        {
-                                            var vF = new Vector<ushort>(FLIMRawT, k * simd_ulong + fitStart);
-                                            Vector.Widen(vF, out Vector<uint> vF1, out Vector<uint> vF2);
-                                            Vector.Widen(vF1, out Vector<ulong> vF11, out Vector<ulong> vF12);
-                                            Vector.Widen(vF2, out Vector<ulong> vF21, out Vector<ulong> vF22);
+                                var vF = new Vector<ushort>(FLIMRawT, k * simd_ulong + fitStart);
+                                Vector.Widen(vF, out Vector<uint> vF1, out Vector<uint> vF2);
+                                Vector.Widen(vF1, out Vector<ulong> vF11, out Vector<ulong> vF12);
+                                Vector.Widen(vF2, out Vector<ulong> vF21, out Vector<ulong> vF22);
 
-                                            vlist[k] += vF11;
-                                            vlist[k + 1] += vF12;
-                                            vlist[k + 2] += vF21;
-                                            vlist[k + 3] += vF22;
-                                        }
+                                vlist[k] += vF11;
+                                vlist[k + 1] += vF12;
+                                vlist[k + 2] += vF21;
+                                vlist[k + 3] += vF22;
+                            }
 
-                                        for (int t = rest; t < n_point; t++) //Rest
-                                        {
-                                            val = FLIMRawT[t + fitStart];
-                                            lifetimeY[t] += val;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        for (int t = 0; t < n_point; ++t)
-                                        {
-                                            val = FLIMRawT[t + fitStart];
-                                            lifetimeY[t] += val;
-                                        }
-                                    }
-                                } //roi condition.
-                            } //threshold
-                        } // xy loop
-                } //threeD condition.
-            } //page loop
+                            // Remainder
+                            for (int t = rest; t < n_point; t++)
+                            {
+                                int val = FLIMRawT[t + fitStart];
+                                lifetimeY[t] += val;
+                            }
+                        }
+                        else
+                        {
+                            // Scalar accumulation
+                            for (int t = 0; t < n_point; ++t)
+                            {
+                                int val = FLIMRawT[t + fitStart];
+                                lifetimeY[t] += val;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // ---------- 3D path: per-Z pixel cache ----------
+                    var roiPixels = roi.GetPixelsInside3D(page, new Size(w, h));
 
-            if (simd_accel)
+                    foreach (Point P in roiPixels)
+                    {
+                        int x = P.X;
+                        int y = P.Y;
+
+                        if ((uint)x >= (uint)w || (uint)y >= (uint)h)
+                            continue;
+
+                        int intensity = Img[y, x];
+
+                        // Thresholding
+                        if (intensity < low_threshold[ch] ||
+                            (high_threshold[ch] >= 0 && intensity >= high_threshold[ch]))
+                            continue;
+
+                        MatrixCalc.extract3rdAxis(lifetimeImg, ref FLIMRawT, y, x);
+                        nPixels++;
+
+                        if (simd_accel && iblock > 0)
+                        {
+                            for (int k = 0; k < iblock; k += 4)
+                            {
+                                var vF = new Vector<ushort>(FLIMRawT, k * simd_ulong + fitStart);
+                                Vector.Widen(vF, out Vector<uint> vF1, out Vector<uint> vF2);
+                                Vector.Widen(vF1, out Vector<ulong> vF11, out Vector<ulong> vF12);
+                                Vector.Widen(vF2, out Vector<ulong> vF21, out Vector<ulong> vF22);
+
+                                vlist[k] += vF11;
+                                vlist[k + 1] += vF12;
+                                vlist[k + 2] += vF21;
+                                vlist[k + 3] += vF22;
+                            }
+
+                            for (int t = rest; t < n_point; t++)
+                            {
+                                int val = FLIMRawT[t + fitStart];
+                                lifetimeY[t] += val;
+                            }
+                        }
+                        else
+                        {
+                            for (int t = 0; t < n_point; ++t)
+                            {
+                                int val = FLIMRawT[t + fitStart];
+                                lifetimeY[t] += val;
+                            }
+                        }
+                    }
+                }
+            } // page loop
+
+            // Collapse SIMD accumulators into double[]
+            if (simd_accel && iblock > 0)
+            {
                 for (int k = 0; k < iblock; k++)
                     Vector.ConvertToDouble(vlist[k]).CopyTo(lifetimeY, k * simd_ulong);
-
-
-            if (page_direct)
-                roi.flim_parameters_Pages[page1].LifetimeY[ch] = (double[])lifetimeY.Clone();
-            else
-            {
-                if (roi.flim_parameters.LifetimeY.Length < ch + 1)
-                    Array.Resize(ref roi.flim_parameters.LifetimeY, ch + 1);
-                roi.flim_parameters.LifetimeY[ch] = (double[])lifetimeY.Clone();
             }
-        } //roi                    
+
+            var lifetimeX1 = new double[n_point];
+            for (int t = 0; t < n_point; t++)
+                lifetimeX1[t] = (double)(fitStart + t);
+
+            // Ensure arrays large enough
+            if (roi.flim_parameters.LifetimeY == null ||
+                roi.flim_parameters.LifetimeY.Length < ch + 1)
+            {
+                Array.Resize(ref roi.flim_parameters.LifetimeY, ch + 1);
+                Array.Resize(ref roi.flim_parameters.LifetimeX, ch + 1);
+                Array.Resize(ref roi.flim_parameters.nPixels, ch + 1);
+            }
+
+            roi.flim_parameters.LifetimeY[ch] = (double[])lifetimeY.Clone();
+            roi.flim_parameters.LifetimeX[ch] = lifetimeX1;
+            roi.flim_parameters.nPixels[ch] = nPixels;
+        }
+
+
 
         /// <summary>
         /// Return success.
         /// </summary>
         /// <param name="ch"></param>
-        /// <param name="page1"></param>
-        /// <param name="page_direct"></param>
         /// <returns></returns>
-        public bool calculateLifetimeCh(int ch, int page1, out bool page_direct)
+        public bool calculateLifetimeCh(int ch)
         {
-            page_direct = PageDirect(page1);
             if (FLIMRaw == null)
                 return false;
 
@@ -2287,77 +2767,58 @@ namespace FLIMage
             else
                 return false;
 
-            bool threeD = ThreeDRoi && (nFastZ > 1 || ZStack) && n_pages > 1;
+            bool threeD = ThreeDRoi && !ZProjection && (nFastZ > 1 || ZStack) && n_pages > 1;
 
             double[] lifetimeX1 = new double[n_point];
             double[] lifetimeY1 = new double[n_point];
-            //double[,] sum1 = new double[nRoi,n_point];
-
-
-
-            bool calc_something = ((page_direct && !LifetimeCalculated_Pages[page1])
-                        || (!page_direct && !LifetimeCalculated));
 
 
             for (int t = 0; t < n_point; t++)
                 lifetimeX1[t] = (double)(fitStart + t);
 
-            if (page_direct && RoiFit.flim_parameters_Pages == null)
-            {
-                InitializeROI_FlimParameters_Pages(RoiFit);
-                ResetLifetimeCalculation(true);
-                calc_something = true;
-            }
 
             if (Fit_type.Equals(FitType.GlobalRois))
             {
+                //if (bgRoi == null && !(bgRoi.Rect.Width > 0 && bgRoi.Rect.Height > 0))
+                //    bgRoi = new ROI(ROI.ROItype.Rectangle, new Rectangle(0, 0, width, height), nChannels, -2, false, new int[] { 0, 0 });
 
-                if (calc_something)
+                if (bgRoi != null && (bgRoi.Rect.Width > 0 && bgRoi.Rect.Height > 0))
+                    calculateLifetimeChRoi(ch, bgRoi, fit_range[ch], threeD, true);
+
+                for (int i = 0; i < nRoi; i++)
                 {
-                    for (int i = 0; i < nRoi; i++)
-                    {
-                        calculateLifetimeChRoi(ch, ROIs[i], fit_range[ch], threeD, page1);
+                    // Line-scan-trace ROI is reserved for scanning and excluded from analysis.
+                    if (ROIs[i].IsLineScanTrace)
+                        continue;
 
-                        if (page_direct)
+                    calculateLifetimeChRoi(ch, ROIs[i], fit_range[ch], threeD, false);
+
+
+                    if (ROIs[i].ROI_type == ROI.ROItype.PolyLine)
+                    {
+                        for (int j = 0; j < ROIs[i].polyLineROIs.Count; j++)
                         {
-                            ROIs[i].flim_parameters_Pages[page1].LifetimeX[ch] = (double[])lifetimeX1.Clone();
+                            calculateLifetimeChRoi(ch, ROIs[i].polyLineROIs[j], fit_range[ch], threeD, false);
                         }
-                        else
-                        {
-                            ROIs[i].flim_parameters.LifetimeX[ch] = (double[])lifetimeX1.Clone();
-                        }
-
-                        if (calc_something)
-                            if (ROIs[i].ROI_type == ROI.ROItype.PolyLine)
-                            {
-                                for (int j = 0; j < ROIs[i].polyLineROIs.Count; j++)
-                                {
-                                    calculateLifetimeChRoi(ch, ROIs[i].polyLineROIs[j], fit_range[ch], threeD, page1);
-                                }
-                            }
-                    } //Roi loop
-
-                    for (int i = 0; i < nRoi; i++)
-                    {
-                        if (page_direct && !LifetimeCalculated_Pages[page1])
-                            MatrixCalc.ArrayCalc(lifetimeY1, ROIs[i].flim_parameters_Pages[page1].LifetimeY[ch], CalculationType.Add);
-                        else
-                            MatrixCalc.ArrayCalc(lifetimeY1, ROIs[i].flim_parameters.LifetimeY[ch], CalculationType.Add);
                     }
+                } //Roi loop
 
-                    if (page_direct)
-                    {
-                        RoiFit.flim_parameters_Pages[page1].LifetimeX[ch] = (double[])lifetimeX1.Clone();
-                        RoiFit.flim_parameters_Pages[page1].LifetimeY[ch] = (double[])lifetimeY1.Clone();
-                        //LifetimeCalculated_Pages[page1] = true; Channel is not calculated y et.
-                    }
-                    else
-                    {
-                        RoiFit.flim_parameters.LifetimeX[ch] = (double[])lifetimeX1.Clone();
-                        RoiFit.flim_parameters.LifetimeY[ch] = (double[])lifetimeY1.Clone();
-                        //LifetimeCalculated = true;
-                    }
+                double n_pixels = 0;
+                for (int i = 0; i < nRoi; i++)
+                {
+                    if (ROIs[i].IsLineScanTrace)
+                        continue;
+
+                    n_pixels += (double)ROIs[i].flim_parameters.nPixels[ch];
+                    MatrixCalc.ArrayCalc(lifetimeY1, ROIs[i].flim_parameters.LifetimeY[ch], CalculationType.Add);
                 }
+
+
+                RoiFit.flim_parameters.LifetimeX[ch] = (double[])lifetimeX1.Clone();
+                RoiFit.flim_parameters.LifetimeY[ch] = (double[])lifetimeY1.Clone();
+                RoiFit.flim_parameters.nPixels[ch] = n_pixels;
+
+
             }
             else if (Fit_type.Equals(FitType.WholeImage))
             {
@@ -2365,90 +2826,75 @@ namespace FLIMage
                 {
                     RoiFit = new ROI(ROI.ROItype.Rectangle, new Rectangle(0, 0, width, height), nChannels, -100, false, new int[] { 0, 0 });
                     ResetLifetimeCalculation(true);
-                    calc_something = true;
                 }
 
-                if (calc_something)
-                {
-                    if (page_direct)
-                    {
-                        calculateLifetimeChRoi(ch, RoiFit, fit_range[ch], false, page1);
-                        RoiFit.flim_parameters_Pages[page1].LifetimeX[ch] = (double[])lifetimeX1.Clone();
-                        lifetimeY1 = RoiFit.flim_parameters_Pages[page1].LifetimeY[ch];
-                    }
-                    else
-                    {
-                        calculateLifetimeChRoi(ch, RoiFit, fit_range[ch], false, page1);
-                        RoiFit.flim_parameters.LifetimeX[ch] = (double[])lifetimeX1.Clone();
-                        lifetimeY1 = RoiFit.flim_parameters.LifetimeY[ch];
-                    }
-                }
+                calculateLifetimeChRoi(ch, RoiFit, fit_range[ch], false, false);
+                RoiFit.flim_parameters.LifetimeX[ch] = (double[])lifetimeX1.Clone();
+                lifetimeY1 = RoiFit.flim_parameters.LifetimeY[ch];
             }
             else //Selected.
             {
                 if (Roi.Rect.Width == 0 || Roi.Rect.Height == 0)
                 {
-                    Roi = new ROI(ROI.ROItype.Rectangle, new Rectangle(0, 0, width, height), nChannels, -1, false, new int[] { 0, 0 });
+                    Roi = new ROI(ROI.ROItype.Rectangle, new Rectangle(0, 0, width, height), nChannels, currentRoi, false, new int[] { 0, 0 });
                     ResetLifetimeCalculation(true);
-                    calc_something = true;
                 }
 
-                if (calc_something)
+                //if (calc_something)
                 {
-                    calculateLifetimeChRoi(ch, Roi, fit_range[ch], threeD, page1);
-                    if (page_direct)
-                    {
-                        if (Roi.flim_parameters_Pages[page1].LifetimeX.Length < ch + 1)
-                            Array.Resize(ref Roi.flim_parameters_Pages[page1].LifetimeX, ch + 1);
-                        Roi.flim_parameters_Pages[page1].LifetimeX[ch] = (double[])lifetimeX1.Clone();
+                    Roi.ID = currentRoi;
+                    calculateLifetimeChRoi(ch, Roi, fit_range[ch], threeD, false);
 
-                        if (Roi.flim_parameters_Pages[page1].LifetimeY.Length < ch + 1)
-                            Array.Resize(ref Roi.flim_parameters_Pages[page1].LifetimeY, ch + 1);
-                        lifetimeY1 = Roi.flim_parameters_Pages[page1].LifetimeY[ch];
-                    }
-                    else
-                    {
-                        if (Roi.flim_parameters.LifetimeX.Length < ch + 1)
-                            Array.Resize(ref Roi.flim_parameters.LifetimeX, ch + 1);
-                        Roi.flim_parameters.LifetimeX[ch] = (double[])lifetimeX1.Clone();
-                        if (Roi.flim_parameters.LifetimeY.Length < ch + 1)
-                            Array.Resize(ref Roi.flim_parameters.LifetimeY, ch + 1);
-                        lifetimeY1 = Roi.flim_parameters.LifetimeY[ch];
-                    }
+                    if (Roi.flim_parameters.LifetimeX.Length < ch + 1)
+                        Array.Resize(ref Roi.flim_parameters.LifetimeX, ch + 1);
+                    Roi.flim_parameters.LifetimeX[ch] = (double[])lifetimeX1.Clone();
+                    if (Roi.flim_parameters.LifetimeY.Length < ch + 1)
+                        Array.Resize(ref Roi.flim_parameters.LifetimeY, ch + 1);
+                    lifetimeY1 = Roi.flim_parameters.LifetimeY[ch];
+
 
                     if (Roi.ROI_type == ROI.ROItype.PolyLine)
                     {
                         for (int j = 0; j < Roi.polyLineROIs.Count; j++)
                         {
-                            if (page_direct)
-                                Roi.polyLineROIs[j].flim_parameters_Pages[page1].LifetimeX[ch] = (double[])lifetimeX1.Clone();
-                            else
-                                Roi.polyLineROIs[j].flim_parameters.LifetimeX[ch] = (double[])lifetimeX1.Clone();
+                            Roi.polyLineROIs[j].flim_parameters.LifetimeX[ch] = (double[])lifetimeX1.Clone();
 
-                            calculateLifetimeChRoi(ch, Roi.polyLineROIs[j], fit_range[ch], threeD, page1);
+                            calculateLifetimeChRoi(ch, Roi.polyLineROIs[j], fit_range[ch], threeD, false);
                         }
                     }
 
-                    if (page_direct)
-                    {
-                        if (RoiFit.flim_parameters_Pages == null)
-                        {
-                            RoiFit.initialize_flimParameter_Pages(nChannels, n_time, n_pages);
-                        }
-                        RoiFit.flim_parameters_Pages[page1].LifetimeX[ch] = (double[])lifetimeX1.Clone();
-                        RoiFit.flim_parameters_Pages[page1].LifetimeY[ch] = (double[])lifetimeY1.Clone();
-                    }
-                    else
-                    {
-                        RoiFit.flim_parameters.LifetimeX[ch] = (double[])lifetimeX1.Clone();
-                        RoiFit.flim_parameters.LifetimeY[ch] = (double[])lifetimeY1.Clone();
-                    }
+                    RoiFit.flim_parameters.LifetimeX[ch] = (double[])lifetimeX1.Clone();
+                    RoiFit.flim_parameters.LifetimeY[ch] = (double[])lifetimeY1.Clone();
                 } //caclulte something.
             }//Type.
 
             return true;
 
         } // end function
+
+        public bool HasBackgroundRoi()
+        {
+            return bgRoi != null && bgRoi.Rect.Width > 0 && bgRoi.Rect.Height > 0;
+        }
+
+        public void calculateBackgroundLifetime(int page1)
+        {
+            if (!HasBackgroundRoi())
+                return;
+
+            bgRoi.flim_parameters.AssureSizeAllParameters();
+
+            bool threeD = ThreeDRoi && !ZProjection && (nFastZ > 1 || ZStack) && n_pages > 1;
+
+            for (int ch = 0; ch < nChannels; ch++)
+            {
+                if (!FLIM_on[ch])
+                    continue;
+
+                int[] range = ApplyFitRange(fit_range[ch], ch);
+                calculateLifetimeChRoi(ch, bgRoi, range, threeD, true);
+            }
+        }
 
         public void ResetLifetimeCalculation(bool all_pages)
         {
@@ -2481,13 +2927,15 @@ namespace FLIMage
                 return;
 
             int nRoi = ROIs.Count;
-            bool page_direct = PageDirect(page1);
 
 
             if (Fit_type.Equals(FitType.GlobalRois))
             {
                 for (int i = 0; i < nRoi; i++)
                 {
+                    if (ROIs[i].IsLineScanTrace)
+                        continue;
+
                     var n_point = new int[nChannels];
                     for (int ch = 0; ch < nChannels; ch++)
                         n_point[ch] = fit_range[ch][1] - fit_range[ch][0];
@@ -2499,46 +2947,26 @@ namespace FLIMage
                     }
                 }
 
-                if (page_direct)
-                {
-
-                    foreach (ROI roi in ROIs)
+                foreach (ROI roi in ROIs)
+                    if (!roi.IsLineScanTrace &&
+                        (roi.flim_parameters == null ||
+                        roi.flim_parameters.LifetimeY == null ||
+                         roi.flim_parameters.LifetimeY.Any(x => x == null)))
                     {
-                        if (roi.flim_parameters_Pages == null ||
-                            roi.flim_parameters_Pages[page1].LifetimeY == null ||
-                                roi.flim_parameters_Pages[page1].LifetimeY.Any(x => x == null))
-                        {
-                            ResetLifetimeCalculation(true);
-                            break;
-                        }
+                        ResetLifetimeCalculation(false);
+                        break;
                     }
-                }
-                else if (!page_direct)
-                {
-                    foreach (ROI roi in ROIs)
-                        if (roi.flim_parameters == null ||
-                            roi.flim_parameters.LifetimeY == null ||
-                            roi.flim_parameters.LifetimeY.Any(x => x == null))
-                        {
-                            ResetLifetimeCalculation(false);
-                            break;
-                        }
-                }
+
             }
 
             bool[] success = new bool[nChannels];
             for (int ch = 0; ch < nChannels; ch++)
             {
-                success[ch] = calculateLifetimeCh(ch, page1, out page_direct);
+                success[ch] = calculateLifetimeCh(ch);
             } //ch
 
             if (success.All(x => x == true))
-                if (page_direct)
-                {
-                    LifetimeCalculated_Pages[page1] = true;
-                }
-                else
-                    LifetimeCalculated = true;
+                LifetimeCalculated = true;
 
 
         }
@@ -2549,8 +2977,6 @@ namespace FLIMage
             Roi.initialize_flimParameter_Pages(nChannels, n_time, n_pages);
             RoiFit.flim_parameters.AssureSizeAllParameters();
             RoiFit.initialize_flimParameter_Pages(nChannels, n_time, n_pages);
-
-            //ResetLifetimeCalculation(resetAllPages);
         }
 
         public void calculateLifetimeMapCh(int ch, double offset1)
@@ -2634,6 +3060,7 @@ namespace FLIMage
 
         public void calculateAll()
         {
+            ResetCalculation();
             calculateProject();
             calculateLifetimeMap(offset);
             calculateLifetime(-1);
@@ -2696,16 +3123,18 @@ namespace FLIMage
                 NPages = Project_Pages.Length - initialPage;
 
             int new_pageN = FLIM_Pages5D.Length - NPages;
+            if (new_pageN > 0)
+            {
+                Array.Copy(FLIM_Pages, initialPage, FLIM_Pages, 0, new_pageN);
+                Array.Copy(Project_Pages, initialPage, Project_Pages, 0, new_pageN);
+                Array.Copy(LifetimeMapBase_Pages, initialPage, LifetimeMapBase_Pages, 0, new_pageN);
+                Array.Copy(FLIMMapCalculated_Pages, initialPage, FLIMMapCalculated_Pages, 0, new_pageN);
+                Array.Copy(ProjectCalculated_Pages, initialPage, ProjectCalculated_Pages, 0, new_pageN);
+                Array.Copy(LifetimeCalculated_Pages, initialPage, LifetimeCalculated_Pages, 0, new_pageN);
+                Array.Copy(acquiredTime_Pages, initialPage, acquiredTime_Pages, 0, new_pageN);
 
-            Array.Copy(FLIM_Pages, initialPage, FLIM_Pages, 0, new_pageN);
-            Array.Copy(Project_Pages, initialPage, Project_Pages, 0, new_pageN);
-            Array.Copy(LifetimeMapBase_Pages, initialPage, LifetimeMapBase_Pages, 0, new_pageN);
-            Array.Copy(FLIMMapCalculated_Pages, initialPage, FLIMMapCalculated_Pages, 0, new_pageN);
-            Array.Copy(ProjectCalculated_Pages, initialPage, ProjectCalculated_Pages, 0, new_pageN);
-            Array.Copy(LifetimeCalculated_Pages, initialPage, LifetimeCalculated_Pages, 0, new_pageN);
-            Array.Copy(acquiredTime_Pages, initialPage, acquiredTime_Pages, 0, new_pageN);
-
-            resizePage(new_pageN);
+                resizePage(new_pageN);
+            }
 
             n_pages = FLIM_Pages.Length;
             currentPage = -1;
@@ -2756,6 +3185,9 @@ namespace FLIMage
         {
             if (page >= Project_Pages.Length)
                 expandPage(page + 1);
+
+            if (page < 0)
+                page = 0;
 
             if (deepCopy)
                 FLIM_Pages[page] = (ushort[][,,])Copier.DeepCopyArray(FLIMRaw);
@@ -2809,7 +3241,14 @@ namespace FLIMage
 
         public void MakeFLIM_Pages4DFromFLIMRaw5D(bool deepCopy)
         {
-            FLIM_Pages = ImageProcessing.PermuteFLIM5D(FLIMRaw5D, deepCopy);
+            if (FLIMRaw5D == null)
+                return;
+
+            var flimPages = ImageProcessing.PermuteFLIM5D(FLIMRaw5D, deepCopy);
+            if (flimPages == null)
+                return;
+
+            FLIM_Pages = flimPages;
             n_pages = FLIM_Pages.Length;
             Project_Pages = new ushort[n_pages][][,];
             LifetimeMapBase_Pages = new float[n_pages][][,];
@@ -2848,40 +3287,101 @@ namespace FLIMage
             n_pages5D = FLIM_Pages5D.Length;
         }
 
-        public void gotoPage5D(int page)
+        private int ClampToLoadedPage5D(int page)
         {
-            if (FLIM_Pages5D.Length == 0 && KeepPagesInMemory)
-                return;
+            if (FLIM_Pages5D == null || FLIM_Pages5D.Length == 0 || n_pages5D <= 0)
+                return -1;
 
-            if (n_pages5D <= page)
-                page = n_pages5D - 1;
+            int maxPage = Math.Min(n_pages5D, FLIM_Pages5D.Length) - 1;
+            if (maxPage < 0)
+                return -1;
+
+            if (page > maxPage)
+                page = maxPage;
             if (page < 0)
                 page = 0;
 
+            if (FLIM_Pages5D[page] != null)
+                return page;
+
+            for (int i = page; i >= 0; i--)
+            {
+                if (FLIM_Pages5D[i] != null)
+                    return i;
+            }
+
+            for (int i = page + 1; i <= maxPage; i++)
+            {
+                if (FLIM_Pages5D[i] != null)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        public void gotoPage5D(int page)
+        {
             FileIO.FileError error = 0;
 
             int saveCurrentPage = currentPage;
 
             if (KeepPagesInMemory)
             {
-                if (FLIM_Pages5D != null)
-                {
-                    FLIMRaw5D = FLIM_Pages5D[page];
+                page = ClampToLoadedPage5D(page);
+                if (page < 0)
+                    return;
 
+                FLIMRaw5D = FLIM_Pages5D[page];
+                if (FLIMRaw5D == null)
+                    return;
 
+                if (acquiredTime_Pages5D != null && page < acquiredTime_Pages5D.Length)
                     acquiredTime = acquiredTime_Pages5D[page];
-                    if (FLIM_Pages.Length != nFastZ)
-                        FLIM_Pages = ArrayResizePrivate(FLIM_Pages, nFastZ);
+                if (FLIM_Pages == null || FLIM_Pages.Length != nFastZ)
+                    FLIM_Pages = ArrayResizePrivate(FLIM_Pages, nFastZ);
 
-                    MakeFLIM_Pages4DFromFLIMRaw5D(true);
-                }
+                MakeFLIM_Pages4DFromFLIMRaw5D(true);
             }
             else
             {
-                int pageStart = page * nFastZ;
-                for (int i = 0; i < nFastZ; i++)
+                if (n_pages5D <= page)
+                    page = n_pages5D - 1;
+                if (page < 0)
+                    page = 0;
+
+                if (UsesSingleDirectory5DZStack())
                 {
-                    error = FileIO.OpenFLIMTiffFilePage(fullFileName, (short)(pageStart + i), i, this, i == 0, KeepPagesInMemory);
+                    error = FileIO.OpenFLIMTiffFilePage(fullFileName, page, 0, this, false, KeepPagesInMemory);
+                    if (error != FileIO.FileError.Success)
+                    {
+                        MessageBox.Show(String.Format("Could not open this 5D page {0}", page + 1));
+                        return;
+                    }
+                }
+                else
+                {
+                    int pageStart = page * nFastZ;
+                    DateTime pageAcqTime = DateTime.MinValue;
+                    for (int i = 0; i < nFastZ; i++)
+                    {
+                        error = FileIO.OpenFLIMTiffFilePage(fullFileName, pageStart + i, i, this, i == 0, KeepPagesInMemory);
+                        if (error != FileIO.FileError.Success)
+                        {
+                            MessageBox.Show(String.Format("Could not open this 5D page {0}", page + 1));
+                            return;
+                        }
+
+                        if (i == 0)
+                        {
+                            if (acquiredTime_Pages != null && acquiredTime_Pages.Length > 0)
+                                pageAcqTime = acquiredTime_Pages[0];
+                            else
+                                pageAcqTime = acquiredTime;
+                        }
+                    }
+
+                    if (pageAcqTime > DateTime.MinValue)
+                        SetAcquiredTimePage5D(page, pageAcqTime);
                 }
             }
 
@@ -2896,38 +3396,45 @@ namespace FLIMage
 
         public void gotoPage(int page)
         {
+            if (page < 0)
+                // Kengo BEGIN 05-30-2025
+                // change to page=0
+                //return; 
+                page = 0;
+            // Kengo END
+
             if (n_pages <= page)
                 page = n_pages - 1;
-            if (page < 0)
-                page = 0;
 
             FileIO.FileError error = 0;
 
-            if (KeepPagesInMemory || nFastZ > 1 || State.Acq.ZStack)
+            if (KeepPagesInMemory || UsesSingleDirectory5DZStack())
             {
                 CopyFromFLIM_PageToFLIMRaw(page);
             }
             else
             {
-                if (page == currentPage && !ZProjection)
-                    return;
-
-
-                error = FileIO.OpenFLIMTiffFilePage(fullFileName, (short)page, page, this, false, KeepPagesInMemory);
+                error = FileIO.OpenFLIMTiffFilePage(fullFileName, page, page, this, false, KeepPagesInMemory);
 
                 if (error != FileIO.FileError.Success) //No file??
                 {
-                    if (FLIM_Pages.Length > page) //Attempt to open if it exist in the page.
-                        CopyFromFLIM_PageToFLIMRaw(page);
-                    else
-                        MessageBox.Show("Could not open this image");
+                    MessageBox.Show(String.Format("Could not open this page {0}", page + 1));
+                    return;
                 }
-
+                if (page >= 0 && page < ProjectCalculated_Pages.Length)
+                {
+                    ProjectCalculated_Pages[page] = false;
+                    FLIMMapCalculated_Pages[page] = false;
+                }
+                currentPage = page;
             }
 
             ProjectCalculated = new bool[nChannels];
             FLIMMapCalculated = new bool[nChannels];
             LifetimeCalculated = false;
+
+            if (page < 0)
+                return;
 
             if (ProjectCalculated_Pages[page] && Project_Pages[page] != null)
             {
@@ -2970,7 +3477,6 @@ namespace FLIMage
         public void CopyLifetimeDecayFromPageToCurrent(int page)
         {
             if (LifetimeCalculated_Pages != null
-                && PageDirect(page)
                 && LifetimeCalculated_Pages[page]
                 && RoiFit.flim_parameters_Pages[page] != null)
             {

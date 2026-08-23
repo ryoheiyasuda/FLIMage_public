@@ -12,6 +12,11 @@ using System.Windows.Forms;
 
 namespace MicroscopeHardwareLibs.Stage_Contoller
 {
+    /// <summary>
+    /// This is a general driver wrapper for thorlab DLL.
+    /// To add thorlab motor, add DLL name in MotorTypeEnum (MotorCtrl).
+    /// Then, in the MotorCtrl class constructor, add the link between the name of the motor in the device file (like State.Init.MotorHWName = "ZStepper") and the DLL name. Please see how ZStepper is added. All thorlab motor should run with this system. Configuration will be done by DLL.
+    /// </summary>
     public class ThorMCMX000
     {
 
@@ -43,13 +48,15 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
 
         public bool start_moving, moving;
 
-        public double resolutionX = 1000;   
+        public double resolutionX = 1000;
         public double resolutionY = 1000; //=0.04
         public double resolutionZ = 1000; //=0.005
 
         public double[] velocity = new double[3];
         public double[] maxVelocity = new double[3];
         public double[] minVelocity = new double[3];
+
+        public bool[] motor_axis_available = new bool[3];
 
         public bool forceStop = false;
 
@@ -105,6 +112,10 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             {
                 thordll = ThorDLL.ThorDLL_Load(ThorDLL.DLLType.ThorMCM3000);
             }
+            else if (motor_type == MotorCtrl.MotorTypeEnum.thorZStepper)
+            {
+                thordll = ThorDLL.ThorDLL_Load(ThorDLL.DLLType.ThorZStepper);
+            }
             else
                 thordll = ThorDLL.ThorDLL_Load(ThorDLL.DLLType.ThorBScope);
 
@@ -143,6 +154,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             {
                 XMax = paramMax * resolutionX;
                 XMin = paramMin * resolutionX;
+                motor_axis_available[0] = true;
             }
 
             if (thordll.GetParamInfo(ThorParam.PARAM_Y_POS, ref paramType, ref paramAvailable, ref paramReadOnly, ref paramMin, ref paramMax, ref paramDefault) != TRUE)
@@ -155,6 +167,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             {
                 YMax = paramMax * resolutionY;
                 YMin = paramMin * resolutionY;
+                motor_axis_available[1] = true;
             }
 
 
@@ -168,6 +181,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             {
                 ZMax = paramMax * resolutionZ;
                 ZMin = paramMin * resolutionZ;
+                motor_axis_available[2] = true;
             }
 
             if (thordll.GetParamInfo(ThorParam.PARAM_LIGHTPATH_GG, ref paramType, ref paramAvailable, ref paramReadOnly, ref paramMin, ref paramMax, ref paramDefault) != TRUE)
@@ -186,13 +200,13 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             }
 
             GetVelocityLimits();
-            
+
             GetPosition();
             velocity = GetStatus();
 
             start_moving = false;
             moving = false;
-            
+
             tString = "";
             freezing = false;
 
@@ -273,10 +287,18 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                 }
 
                 double readPos = 0;
-                thordll.GetParam(ThorParam.PARAM_X_POS_CURRENT, ref readPos);
-                XPos = readPos;
-                thordll.GetParam(ThorParam.PARAM_Y_POS_CURRENT, ref readPos);
-                YPos = readPos;
+                if (motorType == MotorCtrl.MotorTypeEnum.thorZStepper)
+                {
+                    XPos = 0;
+                    YPos = 0;
+                }
+                else
+                {
+                    thordll.GetParam(ThorParam.PARAM_X_POS_CURRENT, ref readPos);
+                    XPos = readPos;
+                    thordll.GetParam(ThorParam.PARAM_Y_POS_CURRENT, ref readPos);
+                    YPos = readPos;
+                }
                 thordll.GetParam(ThorParam.PARAM_Z_POS_CURRENT, ref readPos);
                 ZPos = readPos;
 
@@ -374,26 +396,23 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
         public void SetVelocity(double[] val)
         {
             WaitUntilAllTaskDone();
-            //if (val[0] < maxVelocity[0] && val[0] > minVelocity[0])
-            //    SetParam(PARAM_X_VELOCITY, val[0]);
-            //if (val[1] < maxVelocity[1] && val[1] > minVelocity[1])
-            //    SetParam(PARAM_Y_VELOCITY, val[2]);
-            //if (val[2] < maxVelocity[2] && val[2] > minVelocity[2])
-            //    SetParam(PARAM_Z_VELOCITY, val[2]);
         }
 
 
         public void SetNewPosition(double[] XYZ)
         {
-            if (XYZ[0] < XMax && XYZ[0] > XMin)
-                XNewPos = XYZ[0];
-            else
-                MessageBox.Show("X position is over the limit");
+            if (motorType != MotorCtrl.MotorTypeEnum.thorZStepper)
+            {
+                if (XYZ[0] < XMax && XYZ[0] > XMin)
+                    XNewPos = XYZ[0];
+                else
+                    MessageBox.Show("X position is over the limit");
 
-            if (XYZ[1] < YMax && XYZ[1] > YMin)
-                YNewPos = XYZ[1];
-            else
-                MessageBox.Show("Y position is over the limit");
+                if (XYZ[1] < YMax && XYZ[1] > YMin)
+                    YNewPos = XYZ[1];
+                else
+                    MessageBox.Show("Y position is over the limit");
+            }
 
             if (XYZ[2] < ZMax && XYZ[2] > ZMin)
                 ZNewPos = XYZ[2];
@@ -421,7 +440,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                 moving = true;
                 int ret = 1;
 
-                if (Math.Abs(XNewPos - XPos) > minMovX / resolutionX)
+                if (motor_axis_available[0] && Math.Abs(XNewPos - XPos) > minMovX / resolutionX)
                 {
                     double Xtmp = 0;
                     thordll.GetParam(ThorParam.PARAM_X_POS, ref Xtmp);
@@ -430,14 +449,15 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
                     ret = WaitUntilMovementDone(); //Note that ret == 0 is fail. 
                 }
 
-                if (Math.Abs(YNewPos - YPos) > minMovY / resolutionY)
+                if (motor_axis_available[1] && Math.Abs(YNewPos - YPos) > minMovY / resolutionY)
                 {
                     thordll.SetParam(ThorParam.PARAM_Y_POS, YNewPos);
                     ret = Move();
                     ret = WaitUntilMovementDone(); //Note that ret == 0 is fail. 
                 }
 
-                if (Math.Abs(ZNewPos - ZPos) > minMovZ / resolutionZ)
+
+                if (motor_axis_available[2] && Math.Abs(ZNewPos - ZPos) > minMovZ / resolutionZ)
                 {
                     thordll.SetParam(ThorParam.PARAM_Z_POS, ZNewPos);
                     ret = Move();
@@ -458,49 +478,69 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
         {
             if (connected)
             {
-                thordll.GetParam(ThorParam.PARAM_X_VELOCITY_CURRENT, ref param);
-                velocity[0] = param;
-                thordll.GetParam(ThorParam.PARAM_Y_VELOCITY_CURRENT, ref param);
-                velocity[1] = param;
-                thordll.GetParam(ThorParam.PARAM_Z_VELOCITY_CURRENT, ref param);
-                velocity[2] = param;
+                if (motor_axis_available[0])
+                {
+                    thordll.GetParam(ThorParam.PARAM_X_VELOCITY_CURRENT, ref param);
+                    velocity[0] = param;
+                }
+
+                if (motor_axis_available[1])
+                { 
+                    thordll.GetParam(ThorParam.PARAM_Y_VELOCITY_CURRENT, ref param);
+                    velocity[1] = param;
+                }
+
+                if (motor_axis_available[2])
+                {
+                    thordll.GetParam(ThorParam.PARAM_Z_VELOCITY_CURRENT, ref param);
+                    velocity[2] = param;
+                }
                 return velocity;
             }
             else
-                return null;
+                return new double[] { 0, 0, 0 };
         }
 
         public void HardZero()
         {
+            var parameters = new int[] { ThorParam.PARAM_X_ZERO, ThorParam.PARAM_Y_ZERO, ThorParam.PARAM_Z_ZERO };
             if (connected)
             {
-                thordll.SetParam(ThorParam.PARAM_X_ZERO, 1);
-                thordll.SetParam(ThorParam.PARAM_Y_ZERO, 1);
-                thordll.SetParam(ThorParam.PARAM_Z_ZERO, 1);
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    if (motor_axis_available[i])
+                        thordll.SetParam(parameters[i], 1);
+                }
             }
         }
 
         public void GetPosition()
         {
+            var parameters = new int[] { ThorParam.PARAM_X_POS_CURRENT, ThorParam.PARAM_Y_POS_CURRENT, ThorParam.PARAM_Z_POS_CURRENT };
+
             if (connected)
             {
-                param = 0;
-                thordll.GetParam(ThorParam.PARAM_X_POS_CURRENT, ref param);
-                XPos = param;
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    if (motor_axis_available[i])
+                        thordll.GetParam(parameters[i], ref param);
+                    else
+                        param = 0;
 
-                param = 0;
-                thordll.GetParam(ThorParam.PARAM_Y_POS_CURRENT, ref param);
-                YPos = param;
+                    if (i == 0)
+                        XPos = param;
+                    else if (i == 1)
+                        YPos = param;
+                    else if (i == 2)
+                        ZPos = param;
+                }
 
-                param = 0;
-                thordll.GetParam(ThorParam.PARAM_Z_POS_CURRENT, ref param);
-                ZPos = param;
-
-                //getCalibratedAbsolutePosition(); //Actually not necessary... but anyway.
-                //getCalibratedRelativePosition();
-
-                e = new MotrEventArgs("");
-                MotH?.Invoke(this, e);
+                //Kengo BIGEN 11-23-2023
+                //immediately invoke EventArgs
+                //e = new MotrEventArgs("");
+                //MotH?.Invoke(this, e);
+                MotH?.Invoke(this, new MotrEventArgs(""));
+                //Kengo END
             }
         }
 
@@ -597,7 +637,7 @@ namespace MicroscopeHardwareLibs.Stage_Contoller
             if (connected && !start_moving && !moving && continuous_readCheck)
                 GetPosition();
         }
-        
+
 
     } //ThorMCM3000
 

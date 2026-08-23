@@ -24,9 +24,9 @@ from ReadFLIMageCSV_OneFile import makeColorDict #For legend.
 
 mutant = False
 if mutant:
-    ParentFolder = r'C:\Users\yasudar\Dropbox\GRANT_AND_PAPER\CREB paper\New version 2019\Tal_NoiseData\raw files for day 1-2 data\S133A'
+    ParentFolder = r'S:\DropBox\Dropbox\GRANT_AND_PAPER\Done\CREB paper\New version 2019\Tal_NoiseData\raw files for day 1-2 data\S133A'
 else:
-    ParentFolder = r'C:\Users\yasudar\Dropbox\GRANT_AND_PAPER\CREB paper\New version 2019\Tal_NoiseData\raw files for day 1-2 data\wt'
+    ParentFolder = r'S:\DropBox\Dropbox\GRANT_AND_PAPER\Done\CREB paper\New version 2019\Tal_NoiseData\raw files for day 1-2 data\wt'
 
 exclude = ['M173L3'] #put weird data here.
 #exclude = []

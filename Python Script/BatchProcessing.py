@@ -11,7 +11,7 @@ It is useful for noise analysis.
 
 Before using this program, you have to open FLIMage and then open "Remote 
 controls" window (FLIMage->Tools->Remote Controls)
-Turn on PIPE by clicking "Connect with client through PIPE"
+Turn on PIPE by clicking "Enable PIPE server (listening)"
 
 Used for Tal Laviv et al., 2019 (in revision)
 
@@ -44,16 +44,13 @@ else:
 mutant = True
 
 if mutant:
-    ParentFolder = r'C:\Users\yasudar\Dropbox\GRANT_AND_PAPER\CREB paper\New version 2019\Tal_NoiseData\raw files for day 1-2 data\S133A'
+    ParentFolder = r'Path\To\Your\Mutant\Data'
 else:
-    ParentFolder = r'C:\Users\yasudar\Dropbox\GRANT_AND_PAPER\CREB paper\New version 2019\Tal_NoiseData\raw files for day 1-2 data\wt'
+    ParentFolder = r'Path\To\Your\WT\Data'
 
 folders = [f for f in os.listdir(ParentFolder) if (f != 'Analysis') and ('.' not in f)]
 
-#analyze = ['M172L4']
-#folders = [f for f in os.listdir(ParentFolder) if (f != 'Analysis') and ('.' not in f) \
-#           and (f in analyze)]
-
+#Parameters for CREB
 fixTau = [2.6,1.1]
 fitRange = [10,60]
 lowThresh = 1.5 #For frame = 1. Calculation start with frame = 10.

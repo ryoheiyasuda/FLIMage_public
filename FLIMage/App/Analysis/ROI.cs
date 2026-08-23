@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -14,7 +14,6 @@ namespace FLIMage.Analysis
     {
         public int nChannels = 2;
         public int[] n_timePoints = { 64, 50 };
-        public int n_beta = 6;
         public double[][] LifetimeX;
         public double[][] LifetimeY;
         public double[][] beta;
@@ -24,11 +23,13 @@ namespace FLIMage.Analysis
         public double[] offset_fit;
         //public double[] intensity;
         public double[] nPixels;
+        public double[] background_per_million_pixel;
         public double[] meanIntensity;
         public double[] sumIntensity;
         public double[] tau_m;
         public double[] tau_m_fromMAP;
         public double[] xi_square;
+        public int n_exponentials = 2;
         public int roiID = -1;
 
         public ROI_FLIM_Parameters()
@@ -76,11 +77,11 @@ namespace FLIMage.Analysis
             {
                 if (beta0[ch] == null)
                 {
-                    beta0[ch] = new double[] { 100, 0.2 / 2.6, 100, 0.2 / 1.1, 10 / 0.2, 0.3 / 0.2 };
+                    beta0[ch] = new double[] { 100, 0.2 / 2.6, 100, 0.2 / 1.1, 10 / 0.2, 0.3 / 0.2, 0 };
                 }
                 if (beta[ch] == null)
                 {
-                    beta[ch] = new double[] { 100, 0.2 / 2.6, 100, 0.2 / 1.1, 10 / 0.2, 0.3 / 0.2 };
+                    beta[ch] = new double[] { 100, 0.2 / 2.6, 100, 0.2 / 1.1, 10 / 0.2, 0.3 / 0.2, 0 };
                 }
             }
         }
@@ -141,6 +142,7 @@ namespace FLIMage.Analysis
                 Array.Resize(ref meanIntensity, finalChannels);
                 Array.Resize(ref sumIntensity, finalChannels);
                 Array.Resize(ref nPixels, finalChannels);
+                Array.Resize(ref background_per_million_pixel, finalChannels);
                 Array.Resize(ref xi_square, finalChannels);
                 Array.Resize(ref LifetimeX, finalChannels);
                 Array.Resize(ref LifetimeY, finalChannels);
@@ -174,6 +176,15 @@ namespace FLIMage.Analysis
 
         public RectangleF Rect = new RectangleF(0, 0, 0, 0);
 
+        // 2D cache (single image)
+        public List<Point> PixelList2D = null;
+        public bool PixelList2DDirty = true;
+        public Size PixelList2DSize = Size.Empty;
+
+        // 3D cache: per-Z, per image size
+        private Dictionary<int, List<Point>> PixelList3D = null;
+        private Dictionary<int, Size> PixelList3DSize = null;
+
         //Curve and Fitting stored in ROI.
         public ROI_FLIM_Parameters flim_parameters = new ROI_FLIM_Parameters();
         public List<ROI> polyLineROIs = new List<ROI>();
@@ -181,6 +192,10 @@ namespace FLIMage.Analysis
         public ROI_FLIM_Parameters[] flim_parameters_Pages;
 
         public int ID = 1;
+
+        // If true, this polygon ROI is reserved for line-scan-trace scanning and should be ignored by analysis.
+        // (Still editable / drawable in the image display.)
+        public bool IsLineScanTrace = false;
 
 
         //For 3DROI. Not implemented yer.
@@ -190,6 +205,7 @@ namespace FLIMage.Analysis
 
         public ROI()
         {
+            InvalidatePixelCache();
         }
 
         public ROI(ROI roi)
@@ -208,12 +224,15 @@ namespace FLIMage.Analysis
 
             Z = (int[])roi.Z.Clone();
             Roi3d = roi.Roi3d;
+            IsLineScanTrace = roi.IsLineScanTrace;
 
             if (ROI_type == ROItype.PolyLine)
             {
                 GetSmoothCurve();
                 GetEqualDistanceCenters(roi.polyLineROI_Radius);
             }
+
+            InvalidatePixelCache();
         }
 
         public ROI(ROItype R, float[] x, float[] y, int n_channels, float polyLineRadius, int id, bool roi3d, int[] z) //Constructor
@@ -243,6 +262,8 @@ namespace FLIMage.Analysis
                 GetSmoothCurve();
                 GetEqualDistanceCenters(polyLineRadius);
             }
+
+            InvalidatePixelCache();
         }
 
         public ROI(ROItype R, RectangleF Rect1, int n_channels, int id, bool roi3d, int[] z) //Constructor 2
@@ -258,6 +279,8 @@ namespace FLIMage.Analysis
 
             Roi3d = roi3d;
             Z = (int[])z.Clone();
+
+            InvalidatePixelCache();
         }
 
         public ROI CopyROI(int new_id)
@@ -299,6 +322,7 @@ namespace FLIMage.Analysis
                     Points[i] = new PointF(X[i], Y[i]);
                 }
             }
+            InvalidatePixelCache();
         }
 
         public void initialize_flimParameter_Pages(int nChannels, int[] ndTimes, int nPages)
@@ -357,6 +381,8 @@ namespace FLIMage.Analysis
 
             int n_channels = flim_parameters.nChannels;
             var newRoi = new ROI(ROI_type, new RectangleF(newLeft, newTop, newWidth, newHeight), n_channels, ID, Roi3d, (int[])Z.Clone());
+            newRoi.IsLineScanTrace = roiBefore.IsLineScanTrace;
+
             return newRoi;
         }
 
@@ -383,6 +409,8 @@ namespace FLIMage.Analysis
             }
             int n_channels = flim_parameters.nChannels;
             var newRoi = new ROI(ROI_type, X1, Y1, n_channels, polyLineROI_Radius, ID, Roi3d, (int[])Z.Clone());
+            newRoi.IsLineScanTrace = IsLineScanTrace;
+
             return newRoi;
         }
 
@@ -415,6 +443,7 @@ namespace FLIMage.Analysis
             int n_channels = flim_parameters.nChannels;
 
             var newRoi = new ROI(ROI_type, X1, Y1, n_channels, polyLineROI_Radius, ID, Roi3d, (int[])Z.Clone());
+            newRoi.IsLineScanTrace = IsLineScanTrace;
 
             return newRoi;
         }
@@ -438,9 +467,116 @@ namespace FLIMage.Analysis
 
             ROI roi = new ROI(ROI_type, X1, Y1, n_channels, polyline_radius_afterScale, ID, Roi3d, (int[])Z.Clone());
             roi.flim_parameters = flim_parameters.Copy();
+            roi.IsLineScanTrace = IsLineScanTrace;
 
             return roi;
         }
+        public void InvalidatePixelCache()
+        {
+            PixelList2DDirty = true;
+            PixelList2D = null;
+            PixelList2DSize = Size.Empty;
+
+            if (PixelList3D != null)
+                PixelList3D.Clear();
+            if (PixelList3DSize != null)
+                PixelList3DSize.Clear();
+        }
+
+        public IReadOnlyList<Point> GetPixelsInside2D(Size imageSize)
+        {
+            if (!PixelList2DDirty &&
+                PixelList2D != null &&
+                PixelList2DSize == imageSize)
+            {
+                return PixelList2D;
+            }
+
+            PixelList2D = new List<Point>();
+            PixelList2DSize = imageSize;
+            PixelList2DDirty = false;
+
+            int xstart = Math.Max(0, (int)Math.Floor(Rect.Left));
+            int xend = Math.Min(imageSize.Width, (int)Math.Ceiling(Rect.Right));
+            int ystart = Math.Max(0, (int)Math.Floor(Rect.Top));
+            int yend = Math.Min(imageSize.Height, (int)Math.Ceiling(Rect.Bottom));
+
+            if (xend <= xstart || yend <= ystart)
+                return PixelList2D;
+
+            bool rect = ROI_type == ROItype.Rectangle;
+
+            for (int y = ystart; y < yend; y++)
+            {
+                for (int x = xstart; x < xend; x++)
+                {
+                    if (rect)
+                    {
+                        PixelList2D.Add(new Point(x, y));
+                    }
+                    else
+                    {
+                        if (IsInsideRoi(new PointF(x, y)))
+                            PixelList2D.Add(new Point(x, y));
+                    }
+                }
+            }
+
+            return PixelList2D;
+        }
+
+        // Per-Z (3D) cache. Right now XY geometry does not depend on Z,
+        // but we key the cache by Z so different slices can diverge later.
+        public IReadOnlyList<Point> GetPixelsInside3D(int z, Size imageSize)
+        {
+            if (PixelList3D != null &&
+                PixelList3D.TryGetValue(z, out var cached) &&
+                PixelList3DSize != null &&
+                PixelList3DSize.TryGetValue(z, out var sz) &&
+                sz == imageSize)
+            {
+                return cached;
+            }
+
+            if (PixelList3D == null)
+            {
+                PixelList3D = new Dictionary<int, List<Point>>();
+                PixelList3DSize = new Dictionary<int, Size>();
+            }
+
+            var list = new List<Point>();
+            PixelList3D[z] = list;
+            PixelList3DSize[z] = imageSize;
+
+            int xstart = Math.Max(0, (int)Math.Floor(Rect.Left));
+            int xend = Math.Min(imageSize.Width, (int)Math.Ceiling(Rect.Right));
+            int ystart = Math.Max(0, (int)Math.Floor(Rect.Top));
+            int yend = Math.Min(imageSize.Height, (int)Math.Ceiling(Rect.Bottom));
+
+            if (xend <= xstart || yend <= ystart)
+                return list;
+
+            bool rect = ROI_type == ROItype.Rectangle;
+
+            for (int y = ystart; y < yend; y++)
+            {
+                for (int x = xstart; x < xend; x++)
+                {
+                    if (rect)
+                    {
+                        list.Add(new Point(x, y));
+                    }
+                    else
+                    {
+                        if (IsInsideRoi(new PointF(x, y)))
+                            list.Add(new Point(x, y));
+                    }
+                }
+            }
+
+            return list;
+        }
+
 
         public bool IsInsideRoi(PointF P)
         {
@@ -448,7 +584,11 @@ namespace FLIMage.Analysis
                 return false;
 
             bool c = false;
-            if (ROI_type.Equals(ROItype.Polygon))
+            //Kengo BEGIN 10-25-2024
+            //add ROItype.Traced
+            //if (ROI_type.Equals(ROItype.Polygon) || ROI_type.Equals(ROItype.FreeHand))
+            if (ROI_type.Equals(ROItype.Polygon) || ROI_type.Equals(ROItype.FreeHand) || ROI_type.Equals(ROItype.Traced))
+            //END
                 c = IsInsideROI_Polygon(P);
             else if (ROI_type.Equals(ROItype.Rectangle))
                 c = isInsideROI_Rect(P);
@@ -714,19 +854,22 @@ namespace FLIMage.Analysis
         }
 
         private bool IsInsideROI_Polygon(PointF P)
-        {
-
+        {            
             bool c = MathLibrary.GraphicCalc.isInsidePolygon(Points, Points.Length, P);
 
             //bool c = false;
             //int n = X.Length;
             //int i, j;
-            //float px = P.X; // + 0.5f; //? 
-            //float py = P.Y; // + 0.5f; //?
+            //int px = (int)Math.Round(P.X); // + 0.5f; //? 
+            //int py = (int)Math.Round(P.Y); // + 0.5f; //?
 
+            //var X_1 = X.Select(x => (int)Math.Round(x)).ToList();
+            //var Y_1 = Y.Select(x => (int)Math.Round(x)).ToList();
+
+            ////This only works for integer.
             //for (i = 0, j = n - 1; i < n; j = i++)
             //{
-            //    if (((Y[i] > py) != (Y[j] > py)) && (px < (X[j] - X[i]) * (px - Y[i]) / (Y[j] - Y[i]) + X[i]))
+            //    if (((Y_1[i] > py) != (Y_1[j] > py)) && (px < (X_1[j] - X_1[i]) * (px - Y_1[i]) / (Y_1[j] - Y_1[i]) + X_1[i]))
             //        c = !c;
             //}
 

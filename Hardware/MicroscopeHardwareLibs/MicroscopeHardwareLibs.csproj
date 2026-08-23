@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MicroscopeHardwareLibs</RootNamespace>
     <AssemblyName>MicroscopeHardwareLibs</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -69,12 +70,15 @@
   <ItemGroup>
     <Reference Include="NationalInstruments.Common">
       <HintPath>..\..\FLIMage\Libraries\NationalInstruments.Common.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="NationalInstruments.DAQmx">
       <HintPath>..\..\FLIMage\Libraries\NationalInstruments.DAQmx.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -86,7 +90,10 @@
   <ItemGroup>
     <Compile Include="NiDaq.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serial_Helper\MCM301CommandProvider.cs" />
     <Compile Include="Serial_Helper\SerialCommandObj.cs" />
+    <Compile Include="Serial_Helper\MPC200.cs" />
+    <Compile Include="Serial_Helper\ThorMCM301.cs" />
     <Compile Include="Serial_Helper\ZoZoLab_PMT.cs" />
     <Compile Include="Serial_Helper\ZoZoLab_MC285.cs" />
     <Compile Include="Serial_Helper\SutterMP285.cs" />
@@ -96,13 +103,19 @@
     <Compile Include="Serial_Helper\ThorMCM3000.cs" />
     <Compile Include="Serial_Helper\ThorParam.cs" />
     <Compile Include="Stage_Controller\MotorCtrl.cs" />
+    <Compile Include="Stage_Controller\MotorCtrl_MPC200.cs" />
     <Compile Include="Stage_Controller\MotorCtrl_MP285A.cs" />
+    <Compile Include="Stage_Controller\MotorCtrl_ThorMCM301.cs" />
     <Compile Include="Stage_Controller\MotorCtrl_ThorMCM3001.cs" />
     <Compile Include="Stage_Controller\MotorCtrl_ZoZoLab.cs" />
+    <Compile Include="Stage_Controller\ASI_MS2000.cs" />
+    <Compile Include="Stage_Controller\ZaberMotor.cs" />
     <Compile Include="Stage_Controller\ThorMCMX000.cs" />
+    <Compile Include="WindowsUtil.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(TargetPath)" "$(ProjectDir)..\..\FLIMage\App\External\$(PlatformName)\$(Configuration)\"</PostBuildEvent>
+    <PostBuildEvent>if not exist "$(ProjectDir)..\..\FLIMage\App\External\$(PlatformName)\$(Configuration)\" mkdir "$(ProjectDir)..\..\FLIMage\App\External\$(PlatformName)\$(Configuration)\"
+copy "$(TargetPath)" "$(ProjectDir)..\..\FLIMage\App\External\$(PlatformName)\$(Configuration)\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

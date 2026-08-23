@@ -41,7 +41,7 @@ namespace PhysiologyCSharp
         readonly bool FromFLIMage = false;
 
         PhysAnalysis phys_analysis;
-        public bool stim_running= false;
+        public bool stim_running = false;
 
         string FileExtension = ".txt";
         private WindowLocManager winManager;
@@ -130,24 +130,35 @@ namespace PhysiologyCSharp
             }
         }
 
+        public void SetValueFromPanel_FixValues()
+        {
+            if (PulseSet_Repeat.Text != "NA")
+                Int32.TryParse(PulseSet_Repeat.Text, out phys_parameters.pulse_set_repeat);
+            if (PulseSet_Interval.Text != "NA")
+                Int32.TryParse(PulseSet_Interval.Text, out phys_parameters.pulse_set_interval);
+
+            double.TryParse(OutputRate.Text, out phys_parameters.outputRate);
+            phys_parameters.sync_with_image = SyncWithImage.Checked;
+            phys_parameters.sync_with_uncage = SyncWithUncageCheck.Checked;
+            phys_parameters.acquire_data = AcqDataCheck.Checked;
+            phys_parameters.PulseName = PulseName.Text;
+            phys_parameters.bipolar = Bipolar_CB.Checked ? 1 : 0;
+        }
+
         public void SetValueFromPanel(bool confirm)
         {
             var pulse = phys_parameters.PulseSet[currentKey];
             Int32.TryParse(PulseN.Text, out pulse.Num);
+            Int32.TryParse(addPulse_textBox1.Text, out pulse.add_pulse);
+
             double.TryParse(PulseAmp.Text, out pulse.Amp);
             double.TryParse(PulseWidth.Text, out pulse.Width_ms);
             double.TryParse(PulseDelay.Text, out pulse.Delay_ms);
             double.TryParse(PulseInterval.Text, out pulse.Interval_ms);
             double.TryParse(TotalLength.Text, out phys_parameters.pulseSetTotalLength_ms);
-            double.TryParse(OutputRate.Text, out phys_parameters.outputRate);
-            if (PulseSet_Repeat.Text != "NA")
-                Int32.TryParse(PulseSet_Repeat.Text, out phys_parameters.pulse_set_repeat);
-            if (PulseSet_Interval.Text != "NA")
-                Int32.TryParse(PulseSet_Interval.Text, out phys_parameters.pulse_set_interval);
-            phys_parameters.sync_with_image = SyncWithImage.Checked;
-            phys_parameters.sync_with_uncage = SyncWithUncageCheck.Checked;
-            phys_parameters.acquire_data = AcqDataCheck.Checked;
-            phys_parameters.PulseName = PulseName.Text;
+
+            pulse.bipolar = Bipolar_CB.Checked ? 1 : 0;
+            SetValueFromPanel_FixValues();
 
             if (Cycle.Text == "")
             {
@@ -189,9 +200,13 @@ namespace PhysiologyCSharp
             PulseWidth.Text = pulse.Width_ms.ToString();
             PulseDelay.Text = pulse.Delay_ms.ToString();
             PulseInterval.Text = pulse.Interval_ms.ToString();
+            addPulse_textBox1.Text = pulse.add_pulse.ToString();
+            Bipolar_CB.Checked = pulse.bipolar == 1;
 
+            //These parameters are not changed by radiobutton click
             PulseName.Text = phys_parameters.PulseName;
             TotalLength.Text = phys_parameters.pulseSetTotalLength_ms.ToString();
+
 
             if (change_all)
             {
@@ -222,6 +237,10 @@ namespace PhysiologyCSharp
                     phys_parameters.mkPulse("Stim" + (i - IOControls.nPatchChannels + 1).ToString(), out data_in[i], out time);
             }
 
+            //Since mkPulse will read phys_parameters....
+            SetValueFromPanel(false);
+
+
             if (acquisition)
             {
                 phys_parameters.nChannelsPatch = IOControls.nPatchChannels;
@@ -238,7 +257,7 @@ namespace PhysiologyCSharp
 
             Turn_Parameters_for_Sync_with_FLIMage();
 
-            PulseNumber.Value = phys_parameters.currentPulseN;
+            //phys_parameters.currentPulseN = pulse.Num;
         }
 
         private void PatchStimRadio_CheckedChanged(object sender, EventArgs e)
@@ -272,7 +291,7 @@ namespace PhysiologyCSharp
             }
         }
 
-        private void PulseNumber_ValueChanged(object sender, EventArgs e)
+        private void PulseNumber_Click(object sender, EventArgs e)
         {
             int newN = (int)PulseNumber.Value;
             phys_parameters.ReadParametersByNumber(newN);
@@ -337,10 +356,15 @@ namespace PhysiologyCSharp
 
             triggerTime = io_controls.triggerTime;
 
-            plot_data.InvokeIfRequired(o => o.AcquiredDataPlotAndSave(t, io_controls.dataOutput, io_controls.mc700_params));
+            plot_data.InvokeIfRequired(o => o.AcquiredDataPlotAndSave(t, io_controls.dataOutput, io_controls.mc700_params, io_controls.measurement_done));
             plot_data.InvokeIfRequired(o => o.Show());
-
             StartButton.InvokeIfRequired(o => o.Enabled = true);
+
+            if (io_controls.measurement_done)
+            {
+                if (phys_parameters.pulse_set_repeat == 1)
+                    StopRepeat();
+            }
         }
 
         public void StartAcq()
@@ -349,20 +373,15 @@ namespace PhysiologyCSharp
             if (ret < 0)
                 StopRepeat();
 
-            if (first_event_done)
-            {
-                io_controls.AcqDone -= AcquiredDoneHandlerFcn;
-                io_controls.DataOutDone -= DataOutDoneHandlerFcn;
-            }
-
-            first_event_done = true;
-            io_controls.AcqDone += new IOControls.AcqDoneHandler(AcquiredDoneHandlerFcn);
-            io_controls.DataOutDone += new IOControls.DataOutDoneHandler(DataOutDoneHandlerFcn);
+            io_controls.AcqDone -= AcquiredDoneHandlerFcn;
+            io_controls.DataOutDone -= DataOutDoneHandlerFcn;
+            io_controls.AcqDone += AcquiredDoneHandlerFcn;
+            io_controls.DataOutDone += DataOutDoneHandlerFcn;
 
             bool ext = phys_parameters.sync_with_image || phys_parameters.sync_with_uncage;
             io_controls.Start(ext, phys_parameters.acquire_data);
             stimCounter++;
-            RepeatProgress.InvokeIfRequired(o => o.Text = stimCounter + "/" + phys_parameters.pulse_set_repeat);            
+            RepeatProgress.InvokeIfRequired(o => o.Text = stimCounter + "/" + phys_parameters.pulse_set_repeat);
         }
 
         void StimTimerEvent(Object myObject, EventArgs myEventArgs)
@@ -411,7 +430,7 @@ namespace PhysiologyCSharp
                 return;
             }
 
-            if (!Directory.Exists(plot_data.FolderPathName))
+            if (!Directory.Exists(plot_data.FolderPathName) && phys_parameters.acquire_data)
             {
                 MessageBox.Show("Set save folder and basename from file menu");
                 StopRepeat();
@@ -421,13 +440,16 @@ namespace PhysiologyCSharp
             StartButton.Enabled = false;
             if (StartButton.Text == "Start" && nidaq_on)
             {
+
+                StartButton.Text = "Stop";
+                Application.DoEvents();
+                stimCounter = 0;
+                System.Threading.Thread.Sleep(10); //This seems
+
                 if (scope_panel != null && !scope_panel.IsDisposed)
                 {
                     scope_panel.StopScope();
                 }
-
-                StartButton.Text = "Stop";
-                stimCounter = 0;
 
                 bool sync1 = phys_parameters.sync_with_image || phys_parameters.sync_with_uncage;
                 if (!sync1) //otherwise it will be loaded from FLIMage.
@@ -444,7 +466,7 @@ namespace PhysiologyCSharp
 
                     if (phys_parameters.pulse_set_repeat <= 1)
                     {
-                        StartButton.Text = "Start";
+                        //StartButton.Text = "Start";
                         phys_parameters.pulse_set_repeat = 1;
                     }
 
@@ -600,17 +622,11 @@ namespace PhysiologyCSharp
 
         private void SyncWithUncageCheck_Click(object sender, EventArgs e)
         {
-            if (sender.Equals(SyncWithUncageCheck))
-            {
-                if (SyncWithUncageCheck.Checked)
-                    SyncWithImage.Checked = false;
-            }
+            SetValueFromPanel(true);
+        }
 
-            if (sender.Equals(SyncWithImage))
-            {
-                if (SyncWithImage.Checked)
-                    SyncWithUncageCheck.Checked = false;
-            }
+        private void Parameter_Clicked(object sender, EventArgs e)
+        {
             SetValueFromPanel(true);
         }
     }
